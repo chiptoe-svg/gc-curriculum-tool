@@ -17,6 +17,7 @@
 
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction } from '@/lib/ai/provider';
+import { AiCreditsExhaustedError } from '@/lib/ai/credit-status';
 import type { Message, ToolCall } from '@/lib/ai/tool-use-types';
 import { buildAuditTools } from './audit-tools';
 import { composeSessionBriefing, renderBriefing } from '@/lib/ai/agent/session-briefing';
@@ -36,6 +37,14 @@ import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { buildCourseContextBrief, renderCourseContextBrief, type CourseContextBrief } from '@/lib/capture/course-context-brief';
 import { renderPrerequisiteProfiles } from '@/lib/capture/prereq-profiles-block';
+import {
+  SEARCH_TOOLS,
+  chunkIdsInToolResult,
+  citableFromHistory,
+  keepValidCitations,
+  needsMaterialSearch,
+  previousQuestion,
+} from './interview-controls';
 
 export interface AuditAgentInput {
   sessionId: string;
@@ -84,6 +93,8 @@ interface BuiltAgentCall {
   tools: ReturnType<typeof buildAuditTools>;
   isOpeningTurn: boolean;
   userTurnIndex: number;
+  /** Set when the exchange points at course files: the first step must search. */
+  requireToolFirst?: string[];
 }
 
 // Interview-only (spec 2026-10-06): neighbors' expectations + projects as
@@ -238,7 +249,53 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
   const systemPrompt = await loadPrompt('capture-chat-agent');
   const tools = auditMode === 'full' ? buildAuditTools(courseCode) : [];
 
-  return { systemPrompt, messages, tools, isOpeningTurn, userTurnIndex };
+  // Search check (interview-controls.ts): when the answer, or the question it
+  // answers, points at course files, the first step must search them. Sol low
+  // searched 0/3 at such moments in the 2026-10-27 replays.
+  const search = tools.length && !isOpeningTurn
+    ? needsMaterialSearch(
+        userMessage,
+        includedMaterials.map(m => m.fileName),
+        previousQuestion(messages as Array<{ role: string; content: string | null }>),
+      )
+    : { required: false };
+
+  return {
+    systemPrompt, messages, tools, isOpeningTurn, userTurnIndex,
+    ...(search.required ? { requireToolFirst: SEARCH_TOOLS } : {}),
+  };
+}
+
+/**
+ * Wraps each tool so the chunk ids its results carry are recorded: the
+ * citation check needs to know which passages the interviewer actually saw.
+ */
+export function captureRetrievedChunks(tools: BuiltAgentCall['tools']): { tools: BuiltAgentCall['tools']; retrieved: Set<string> } {
+  const retrieved = new Set<string>();
+  return {
+    retrieved,
+    tools: tools.map(t => ({
+      ...t,
+      async execute(args: unknown) {
+        const result = await t.execute(args);
+        chunkIdsInToolResult(result, retrieved);
+        return result;
+      },
+    })),
+  };
+}
+
+/**
+ * Citation check (interview-controls.ts): keep chunk citations retrieved this
+ * turn or cited earlier, and instructor citations of real messages; drop the
+ * rest before the turn is saved or shown.
+ */
+export function checkTurnCitations(response: AuditResponse, messages: Message[], retrieved: Set<string>, courseCode: string): AuditResponse {
+  const history = citableFromHistory(messages as Array<{ role: string; content: string | null }>);
+  const kept = keepValidCitations(response, { retrievedThisTurn: retrieved, history });
+  const dropped = response.citations.length - kept.citations.length;
+  if (dropped > 0) console.warn(`[audit-agent] ${courseCode}: dropped ${dropped} citation(s) the interviewer never saw`);
+  return kept;
 }
 
 export interface PersistAssistantTurnInput {
@@ -282,10 +339,12 @@ export async function persistAssistantTurn(input: PersistAssistantTurnInput): Pr
 export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentResult> {
   const built = await buildAgentCall(input);
   const provider = await getProviderForFunction('capture-chat-agent');
-  const result = await provider.completeWithTools<AuditResponse>({
+  const capture = captureRetrievedChunks(built.tools);
+  const call = (requireToolFirst?: string[]) => provider.completeWithTools<AuditResponse>({
     systemPrompt: built.systemPrompt,
     messages: built.messages,
-    tools: built.tools,
+    tools: capture.tools,
+    ...(requireToolFirst ? { requireToolFirst } : {}),
     schemaName: 'audit_response',
     jsonSchema: AuditResponseJsonSchema,
     validate: (raw) => AuditResponseSchema.parse(raw),
@@ -293,17 +352,28 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
     // AND program memory (wiki/graph) in the same turn.
     maxToolCalls: 4,
   });
+  let result;
+  try {
+    result = await call(built.requireToolFirst);
+  } catch (err) {
+    // A forced search the model or gateway rejects must not cost the turn:
+    // retry once without it (no worse than before the check existed).
+    if (!built.requireToolFirst || err instanceof AiCreditsExhaustedError) throw err;
+    console.warn(`[audit-agent] ${input.courseCode}: forced search rejected (${err instanceof Error ? err.message : String(err)}); retrying without it`);
+    result = await call();
+  }
   if (result.kind !== 'response') {
     throw new Error('agent loop did not converge — completeWithTools returned mid-loop tool_calls');
   }
+  const response = checkTurnCitations(result.value, built.messages, capture.retrieved, input.courseCode);
   await persistAssistantTurn({
     sessionId: input.sessionId,
     courseCode: input.courseCode,
     isOpeningTurn: built.isOpeningTurn,
     userTurnIndex: built.userTurnIndex,
-    response: result.value,
+    response,
     toolCallsUsed: result.toolCallsUsed,
     instructorName: input.instructorName ?? null,
   });
-  return { response: result.value, toolCallsUsed: result.toolCallsUsed.length };
+  return { response, toolCallsUsed: result.toolCallsUsed.length };
 }

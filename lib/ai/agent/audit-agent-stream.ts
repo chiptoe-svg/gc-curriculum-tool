@@ -15,7 +15,7 @@ import {
   type AuditResponse,
 } from './audit-response-schema';
 import { AiCreditsExhaustedError } from '@/lib/ai/credit-status';
-import { buildAgentCall, persistAssistantTurn, type AuditAgentInput } from './audit-agent';
+import { buildAgentCall, captureRetrievedChunks, checkTurnCitations, persistAssistantTurn, type AuditAgentInput } from './audit-agent';
 
 export type AuditStreamEvent =
   | { kind: 'session'; sessionId: string }
@@ -38,43 +38,61 @@ export async function* streamAuditAgent(
   }
 
   const provider = await getProviderForFunction('capture-chat-agent');
+  const capture = captureRetrievedChunks(built.tools);
 
   let finalValue: AuditResponse | null = null;
   let finalToolCallsUsed: { id: string; toolName: string; args: Record<string, unknown> }[] = [];
 
-  try {
-    const stream = provider.streamWithTools<AuditResponse>({
-      systemPrompt: built.systemPrompt,
-      messages: built.messages,
-      tools: built.tools,
-      schemaName: 'audit_response',
-      jsonSchema: AuditResponseJsonSchema,
-      validate: (raw) => AuditResponseSchema.parse(raw),
-      // Bumped 2→4 (2026-06-11): full-mode turns can now query course materials
-      // AND program memory (wiki/graph) in the same turn.
-      maxToolCalls: 4,
-    });
+  // Forced search first; if the model or gateway rejects it before anything
+  // reached the client, retry once without it (no worse than before the check).
+  const attempts: Array<string[] | undefined> = built.requireToolFirst ? [built.requireToolFirst, undefined] : [undefined];
+  for (const requireToolFirst of attempts) {
+    let emitted = false;
+    let rejected: string | null = null;
+    try {
+      const stream = provider.streamWithTools<AuditResponse>({
+        systemPrompt: built.systemPrompt,
+        messages: built.messages,
+        tools: capture.tools,
+        ...(requireToolFirst ? { requireToolFirst } : {}),
+        schemaName: 'audit_response',
+        jsonSchema: AuditResponseJsonSchema,
+        validate: (raw) => AuditResponseSchema.parse(raw),
+        // Bumped 2→4 (2026-06-11): full-mode turns can now query course materials
+        // AND program memory (wiki/graph) in the same turn.
+        maxToolCalls: 4,
+      });
 
-    for await (const ev of stream as AsyncIterable<StreamEvent<AuditResponse>>) {
-      if (ev.kind === 'tool-start') {
-        yield { kind: 'tool-start', toolName: ev.toolName, args: ev.args };
-      } else if (ev.kind === 'text-delta') {
-        yield { kind: 'text-delta', delta: ev.delta };
-      } else if (ev.kind === 'final') {
-        finalValue = ev.value;
-        finalToolCallsUsed = ev.toolCallsUsed;
-      } else if (ev.kind === 'error') {
-        yield { kind: 'error', message: ev.message };
+      for await (const ev of stream as AsyncIterable<StreamEvent<AuditResponse>>) {
+        if (ev.kind === 'tool-start') {
+          emitted = true;
+          yield { kind: 'tool-start', toolName: ev.toolName, args: ev.args };
+        } else if (ev.kind === 'text-delta') {
+          emitted = true;
+          yield { kind: 'text-delta', delta: ev.delta };
+        } else if (ev.kind === 'final') {
+          finalValue = checkTurnCitations(ev.value, built.messages, capture.retrieved, input.courseCode);
+          finalToolCallsUsed = ev.toolCallsUsed;
+        } else if (ev.kind === 'error') {
+          if (requireToolFirst && !emitted) { rejected = ev.message; break; }
+          yield { kind: 'error', message: ev.message };
+          return;
+        }
+      }
+    } catch (err) {
+      if (requireToolFirst && !emitted && !(err instanceof AiCreditsExhaustedError)) {
+        rejected = err instanceof Error ? err.message : String(err);
+      } else {
+        yield {
+          kind: 'error',
+          message: err instanceof Error ? err.message : String(err),
+          ...(err instanceof AiCreditsExhaustedError ? { code: err.code } : {}),
+        };
         return;
       }
     }
-  } catch (err) {
-    yield {
-      kind: 'error',
-      message: err instanceof Error ? err.message : String(err),
-      ...(err instanceof AiCreditsExhaustedError ? { code: err.code } : {}),
-    };
-    return;
+    if (rejected === null) break;
+    console.warn(`[audit-agent] ${input.courseCode}: forced search rejected (${rejected}); retrying without it`);
   }
 
   if (!finalValue) {

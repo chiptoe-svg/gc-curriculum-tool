@@ -161,11 +161,16 @@ describe('runAuditAgent', () => {
     mockListMaterialsByCourse.mockResolvedValue([makeMaterial()]);
 
     const value = makeAuditResponse();
-    mockCompleteWithTools.mockResolvedValue(
-      makeResponseResult(value, [
+    // The cited chunk must have been retrieved this turn (citation check).
+    mockBuildAuditTools.mockImplementationOnce(() => [
+      { name: 'list_materials', description: 'desc', inputSchema: { parse: (v: unknown) => v }, execute: async () => ({ chunks: [{ id: 'chunk-1', materialId: 'mat-1' }] }) },
+    ]);
+    mockCompleteWithTools.mockImplementation(async (args: { tools: Array<{ execute: (a: unknown) => Promise<unknown> }> }) => {
+      await args.tools[0]!.execute({ courseCode: COURSE });
+      return makeResponseResult(value, [
         { id: 'tc-1', toolName: 'list_materials', args: { courseCode: COURSE } },
-      ]),
-    );
+      ]);
+    });
 
     const result = await runAuditAgent({
       sessionId: SESSION,
@@ -481,3 +486,95 @@ describe('material list view', () => {
   });
 });
 
+
+// Live interview checks (owner, 2026-10-28; from the harness spike): force a
+// search when the exchange points at course files, and keep only citations
+// the interviewer could have seen.
+describe('interview checks', () => {
+  const COURSE = 'GC 4800';
+  const SESSION = 'sess-1';
+  const prevAssistant = { id: 'a1', role: 'assistant', content: JSON.stringify({ question: 'What do students choose on their own?' }), turnIndex: 1 };
+  const userRow = (content: string) => ({ id: 'u2', role: 'user', content, turnIndex: 2 });
+
+  function setup(userMessage: string, mode: 'full' | 'simple' = 'full') {
+    mockGetSessionMessages.mockResolvedValueOnce([{ id: 'u0', role: 'user', content: 'hi', turnIndex: 0 }, prevAssistant]);
+    mockGetSessionMessages.mockResolvedValueOnce([{ id: 'u0', role: 'user', content: 'hi', turnIndex: 0 }, prevAssistant, userRow(userMessage)]);
+    mockGetCourseByCode.mockResolvedValue(makeCourse());
+    mockListMaterialsByCourse.mockResolvedValue([makeMaterial()]);
+    return { sessionId: SESSION, courseCode: COURSE, userMessage, auditMode: mode };
+  }
+
+  it('requires a material search first when the answer is about a rubric', async () => {
+    const input = setup('It is graded on the rubric.');
+    mockCompleteWithTools.mockResolvedValue(makeResponseResult(makeAuditResponse({ citations: [] })));
+    await runAuditAgent(input);
+    const args = mockCompleteWithTools.mock.calls[0]![0] as { requireToolFirst?: string[] };
+    expect(args.requireToolFirst).toEqual(['search_materials', 'fetch_material_section']);
+  });
+
+  it('does not force a search on generic practice talk', async () => {
+    const input = setup('They usually pick bright images and talk it through with me.');
+    mockCompleteWithTools.mockResolvedValue(makeResponseResult(makeAuditResponse({ citations: [] })));
+    await runAuditAgent(input);
+    const args = mockCompleteWithTools.mock.calls[0]![0] as { requireToolFirst?: string[] };
+    expect(args.requireToolFirst).toBeUndefined();
+  });
+
+  it('never forces a search in simple mode (no tools)', async () => {
+    const input = setup('It is graded on the rubric.', 'simple');
+    mockCompleteWithTools.mockResolvedValue(makeResponseResult(makeAuditResponse({ citations: [] })));
+    await runAuditAgent(input);
+    const args = mockCompleteWithTools.mock.calls[0]![0] as { requireToolFirst?: string[] };
+    expect(args.requireToolFirst).toBeUndefined();
+  });
+
+  it('keeps citations of passages retrieved this turn and real instructor messages, drops the rest', async () => {
+    const input = setup('It is graded on the rubric.');
+    mockCompleteWithTools.mockImplementation(async (args: { tools: Array<{ name: string; execute: (a: unknown) => Promise<unknown> }> }) => {
+      await args.tools.find(t => t.name === 'search_materials')!.execute({ courseCode: COURSE, query: 'rubric' });
+      return makeResponseResult(makeAuditResponse({
+        citations: [
+          { type: 'chunk', chunkId: 'chunk-1', excerpt: 'retrieved' },
+          { type: 'chunk', chunkId: 'ghost', excerpt: 'never retrieved' },
+          { type: 'instructor', messageId: 'u2', excerpt: 'real' },
+          { type: 'instructor', messageId: 'user_3', excerpt: 'invented' },
+        ],
+      }));
+    });
+    mockBuildAuditTools.mockImplementationOnce(() => [
+      { name: 'search_materials', description: 'desc', inputSchema: { parse: (v: unknown) => v }, execute: async () => ({ chunks: [{ id: 'chunk-1', materialId: 'mat-1', text: 'x' }] }) },
+    ]);
+    const result = await runAuditAgent(input);
+    expect(result.response.citations.map(c => c.chunkId ?? c.messageId)).toEqual(['chunk-1', 'u2']);
+    const assistantCall = mockAppendMessage.mock.calls.find(c => (c[0] as { role: string }).role === 'assistant')!;
+    expect((assistantCall[0] as { citations: Array<{ chunkId?: string; messageId?: string }> }).citations.map(c => c.chunkId ?? c.messageId)).toEqual(['chunk-1', 'u2']);
+    expect(JSON.parse((assistantCall[0] as { content: string }).content).citations).toHaveLength(2);
+  });
+
+  it('keeps a chunk cited in an earlier turn', async () => {
+    mockGetSessionMessages.mockResolvedValueOnce([{ id: 'u0', role: 'user', content: 'hi', turnIndex: 0 }, { ...prevAssistant, content: JSON.stringify({ question: 'q?', citations: [{ type: 'chunk', chunkId: 'old' }] }) }]);
+    mockGetSessionMessages.mockResolvedValueOnce([{ id: 'u0', role: 'user', content: 'hi', turnIndex: 0 }, { ...prevAssistant, content: JSON.stringify({ question: 'q?', citations: [{ type: 'chunk', chunkId: 'old' }] }) }, userRow('ok')]);
+    mockGetCourseByCode.mockResolvedValue(makeCourse());
+    mockListMaterialsByCourse.mockResolvedValue([makeMaterial()]);
+    mockCompleteWithTools.mockResolvedValue(makeResponseResult(makeAuditResponse({ citations: [{ type: 'chunk', chunkId: 'old', excerpt: 'again' }] })));
+    const result = await runAuditAgent({ sessionId: SESSION, courseCode: COURSE, userMessage: 'ok', auditMode: 'full' });
+    expect(result.response.citations).toHaveLength(1);
+  });
+});
+
+describe('forced search fallback', () => {
+  it('retries once without forcing when the forced request is rejected', async () => {
+    mockGetSessionMessages.mockResolvedValueOnce([]);
+    mockGetSessionMessages.mockResolvedValueOnce([{ id: 'u0', role: 'user', content: 'It is graded on the rubric.', turnIndex: 0 }]);
+    mockGetCourseByCode.mockResolvedValue(makeCourse());
+    mockListMaterialsByCourse.mockResolvedValue([makeMaterial()]);
+    mockCompleteWithTools
+      .mockRejectedValueOnce(new Error('400 tool_choice not supported'))
+      .mockResolvedValueOnce(makeResponseResult(makeAuditResponse({ citations: [] })));
+    const result = await runAuditAgent({ sessionId: 'sess-1', courseCode: 'GC 4800', userMessage: 'It is graded on the rubric.', auditMode: 'full' });
+    expect(result.response.finding).toBe('Some finding text.');
+    expect(mockCompleteWithTools).toHaveBeenCalledTimes(2);
+    expect((mockCompleteWithTools.mock.calls[0]![0] as { requireToolFirst?: string[] }).requireToolFirst).toBeDefined();
+    expect((mockCompleteWithTools.mock.calls[1]![0] as { requireToolFirst?: string[] }).requireToolFirst).toBeUndefined();
+  });
+});

@@ -10,6 +10,7 @@ import { openai as aiOpenai } from '@ai-sdk/openai';
 import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall, StreamEvent } from './tool-use-types';
 import { renderToolDescription } from './tool-use-types';
 import { AiCreditsExhaustedError, isCreditsExhaustedError, markCreditsExhausted, markCreditsOk } from './credit-status';
+import { requireToolFirstStep } from './require-tool-first';
 
 function toCents(usd: number): number {
   return Math.ceil(usd * 100 * 100); // 1/100 of a cent
@@ -240,6 +241,7 @@ export class OpenAIProvider implements AIProvider {
     jsonSchema: object;
     validate: (raw: unknown) => T;
     maxToolCalls?: number;
+    requireToolFirst?: string[];
   }): Promise<CompleteWithToolsResult<T>> {
     if (!this.apiKey) throw new Error('OPENAI_API_KEY not set');
     const start = Date.now();
@@ -301,6 +303,7 @@ export class OpenAIProvider implements AIProvider {
     // it already works and backs the live interview. (Investigated 2026-10-06.)
     const effort = effectiveReasoningEffort(this.model, this.reasoningEffort);
     const { model: toolUseModel, providerOptions } = toolUseModelConfig(this.model, effort);
+    const prepareStep = requireToolFirstStep(args.requireToolFirst);
     const { output, totalUsage, steps } = await this.withCredits('completeWithTools', () => generateText({
       model: toolUseModel,
       ...(providerOptions ? { providerOptions } : {}),
@@ -311,6 +314,7 @@ export class OpenAIProvider implements AIProvider {
       output: Output.object({ schema: aiJsonSchema(args.jsonSchema as never), name: args.schemaName }),
       // Add 1 to maxToolCalls to account for the structured output step itself (v6 requirement).
       stopWhen: stepCountIs((args.maxToolCalls ?? 4) + 1),
+      ...(prepareStep ? { prepareStep: prepareStep as never } : {}),
     }));
 
     const value = args.validate(output);
@@ -365,6 +369,7 @@ export class OpenAIProvider implements AIProvider {
     jsonSchema: object;
     validate: (raw: unknown) => T;
     maxToolCalls?: number;
+    requireToolFirst?: string[];
   }): AsyncGenerator<StreamEvent<T>, void, unknown> {
     if (!this.apiKey) throw new Error('OPENAI_API_KEY not set');
     const start = Date.now();
@@ -412,6 +417,7 @@ export class OpenAIProvider implements AIProvider {
     // tools on them; gpt-5.x and earlier keep the existing Chat Completions path.
     const effort = effectiveReasoningEffort(this.model, this.reasoningEffort);
     const { model: toolUseModel, providerOptions } = toolUseModelConfig(this.model, effort);
+    const prepareStep = requireToolFirstStep(args.requireToolFirst);
     const result = streamText({
       model: toolUseModel,
       ...(providerOptions ? { providerOptions } : {}),
@@ -423,6 +429,7 @@ export class OpenAIProvider implements AIProvider {
         name: args.schemaName,
       }),
       stopWhen: stepCountIs((args.maxToolCalls ?? 4) + 1),
+      ...(prepareStep ? { prepareStep: prepareStep as never } : {}),
     });
 
     try {

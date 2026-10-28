@@ -82,6 +82,9 @@ export interface AIProvider {
     validate: (raw: unknown) => T;
     /** Maximum tool calls allowed per top-level invocation. Default: 4. */
     maxToolCalls?: number;
+    /** The first step must call one of these tools (lib/ai/require-tool-first.ts).
+     *  Honored by the OpenAI provider; others ignore it. */
+    requireToolFirst?: string[];
   }): Promise<CompleteWithToolsResult<T>>;
 
   /**
@@ -100,6 +103,7 @@ export interface AIProvider {
     jsonSchema: object;
     validate: (raw: unknown) => T;
     maxToolCalls?: number;
+    requireToolFirst?: string[];
   }): AsyncIterable<StreamEvent<T>>;
 }
 
