@@ -31,6 +31,20 @@ describe('GET /api/capture/[code]/ingest-status', () => {
     expect(j.etaSeconds).toBeGreaterThanOrEqual(0);
   });
 
+  // PKSC 2200 (owner, 2026-10-28): a skipped file (an image with no text) is
+  // settled, not waiting; counting it kept "14 of 15 done · est. 15 s left"
+  // on screen forever.
+  it('a skipped file is settled: not counted as waiting', async () => {
+    listMaterialsByCourse.mockResolvedValue([
+      { indexingStatus: 'ready', extractionStatus: 'ok', ignored: false, pageCount: 10, mimeType: 'application/pdf' },
+      { indexingStatus: 'skipped', extractionStatus: 'low_text', ignored: false, pageCount: 1, mimeType: 'image/png' },
+    ]);
+    const req = new Request('http://x/api/capture/PKSC%202200/ingest-status?slug=s');
+    const j = await (await GET(req, { params: Promise.resolve({ code: 'PKSC%202200' }) })).json();
+    expect(j.done).toBe(j.total);
+    expect(j.etaSeconds).toBe(0);
+  });
+
   it('401s on an invalid slug', async () => {
     authorizeCourseWrite.mockResolvedValue(false);
     const req = new Request('http://x/api/capture/GC%203620/ingest-status?slug=bad');

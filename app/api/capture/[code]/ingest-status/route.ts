@@ -19,7 +19,12 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
-  const materials = (await listMaterialsByCourse(courseCode)).filter((m) => !m.ignored);
+  // Ignored and skipped files are settled: a skipped file (e.g. an image with
+  // no text) will never be indexed, so counting it would leave the progress
+  // bar waiting forever.
+  const materials = (await listMaterialsByCourse(courseCode)).filter(
+    (m) => !m.ignored && m.indexingStatus !== 'skipped',
+  );
   const total = materials.length;
   const done = materials.filter((m) => m.indexingStatus === 'ready').length;
   const failed = materials.filter(

@@ -128,7 +128,7 @@ function ReadinessStrip({
       </div>
       {coveredEver.length > 0 && (
         <p className="text-xs leading-snug text-muted-foreground">
-          <span className="font-medium text-foreground">Covered (this session):</span>{' '}
+          <span className="font-medium text-foreground">Covered so far:</span>{' '}
           {coveredEver.join(' · ')}
         </p>
       )}
