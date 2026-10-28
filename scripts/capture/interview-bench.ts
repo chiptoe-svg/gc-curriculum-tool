@@ -68,6 +68,11 @@ export interface CaseResult {
   cachedTokens: number;
   completionTokens: number;
   durationMs: number;
+  /** Citations naming a passage not retrieved this turn or cited earlier, or a message id not in the conversation. */
+  badCitations?: number;
+  /** Harness spike: what the controls did (pi/codex loops only). */
+  controlEvents?: string[];
+  requests?: number;
   error?: string;
 }
 
@@ -154,6 +159,22 @@ export async function main(argv: string[]): Promise<number> {
   const expectDb = arg('--expect-db');
   if (!expectDb) { console.error('usage: --expect-db <scratch db> [--configs model:effort,...] [--quick | --cases id,id] [--view index|digests] [--dry] [--out file]'); return 2; }
   if (!expectDb.includes('scratch')) { console.error('refusing: the benchmark writes temporary rows and runs only against a scratch database'); return 2; }
+  // --endpoint campus: send model calls to the RCD campus path (/v1), where the free
+  // hosted models such as glm-5.3 live, instead of the OpenAI proxy (/openai/v1).
+  // Set before the app modules are imported below, which read OPENAI_BASE_URL on import.
+  const endpoint = arg('--endpoint');
+  if (endpoint && endpoint !== 'campus') { console.error('--endpoint must be campus'); return 2; }
+  if (endpoint === 'campus') {
+    if (!process.env.CAMPUS_LLM_BASE_URL || !process.env.CAMPUS_LLM_API_KEY) { console.error('CAMPUS_LLM_BASE_URL / CAMPUS_LLM_API_KEY not set'); return 2; }
+    process.env.OPENAI_BASE_URL = process.env.CAMPUS_LLM_BASE_URL;
+    process.env.OPENAI_API_KEY = process.env.CAMPUS_LLM_API_KEY;
+  }
+  // --loop: which engine runs the interviewer turn (harness spike, 2026-10-28).
+  //   vercel (default) = the live loop; pi = pi-agent-core in-process; codex = codex exec + MCP.
+  // --controls: turn on the deterministic checks in the pi/codex loops (lib/ai/agent/harness/controls.ts).
+  const loop = (arg('--loop') ?? 'vercel') as 'vercel' | 'pi' | 'codex';
+  if (!['vercel', 'pi', 'codex'].includes(loop)) { console.error('--loop must be vercel, pi or codex'); return 2; }
+  const controls = argv.includes('--controls');
   const view = arg('--view') as 'index' | 'digests' | undefined;
   if (view && view !== 'index' && view !== 'digests') { console.error('--view must be index or digests'); return 2; }
 
@@ -185,7 +206,9 @@ export async function main(argv: string[]): Promise<number> {
       sessionId: tempSession, courseCode: c.course, userMessage: pick!.content!, auditMode: 'full', includePriorSessions: false,
       ...(view ? { materialsView: view } : {}),
     });
-    return { tempSession, built };
+    const { listMaterialsByCourse } = await import('@/lib/db/course-materials-queries');
+    const fileNames = (await listMaterialsByCourse(c.course)).filter(m => !m.ignored && m.extractionStatus === 'ok').map(m => m.fileName);
+    return { tempSession, built, userMessage: pick!.content!, fileNames };
   }
 
   async function runCase(c: BenchCase, cfg: BenchConfig): Promise<CaseResult> {
@@ -194,23 +217,44 @@ export async function main(argv: string[]): Promise<number> {
     try {
       const prepared = await prepare(c);
       tempSession = prepared.tempSession;
-      const { built } = prepared;
+      const { built, userMessage, fileNames } = prepared;
+      // Record every chunk the tools return, whichever loop calls them, to score citations the same way.
+      const { chunkIdsInToolResult, checkCitations, citableFromHistory } = await import('@/lib/ai/agent/harness/controls');
+      const retrieved = new Set<string>();
+      const tools = built.tools.map(t => ({ ...t, execute: async (a: unknown) => { const r = await t.execute(a); chunkIdsInToolResult(r, retrieved); return r; } }));
+      const history = citableFromHistory(built.messages as Array<{ role: string; content: string | null }>);
       if (argv.includes('--dry')) {
         const chars = built.systemPrompt.length + built.messages.reduce((n, m) => n + String((m as { content?: unknown }).content ?? '').length, 0);
         console.log(`  ${c.id}: ≈ ${Math.round(chars / 4).toLocaleString('en-US')} tokens per call (dry run, no model call)`);
         return empty;
       }
-      const provider = await getProviderForFunction('capture-chat-agent', cfg.model ? { model: cfg.model, reasoningEffort: cfg.effort } : undefined);
-      const r = await provider.completeWithTools<AuditResponse>({
-        systemPrompt: built.systemPrompt,
-        messages: built.messages,
-        tools: built.tools,
-        schemaName: 'audit_response',
-        jsonSchema: AuditResponseJsonSchema,
-        validate: raw => AuditResponseSchema.parse(raw),
-        maxToolCalls: 4,
-      });
-      if (r.kind !== 'response') throw new Error('agent loop did not converge');
+      let r: { value: AuditResponse; toolCallsUsed: Array<{ toolName: string }>; telemetry: { costUsdCents: number; uncachedPromptTokens: number; cachedTokens: number; completionTokens: number; durationMs: number }; controlEvents?: string[]; requests?: number };
+      if (loop === 'vercel') {
+        const provider = await getProviderForFunction('capture-chat-agent', cfg.model ? { model: cfg.model, reasoningEffort: cfg.effort } : undefined);
+        const v = await provider.completeWithTools<AuditResponse>({
+          systemPrompt: built.systemPrompt,
+          messages: built.messages,
+          tools,
+          schemaName: 'audit_response',
+          jsonSchema: AuditResponseJsonSchema,
+          validate: raw => AuditResponseSchema.parse(raw),
+          maxToolCalls: 4,
+        });
+        if (v.kind !== 'response') throw new Error('agent loop did not converge');
+        r = v;
+      } else {
+        const model = cfg.model ?? 'gpt-6.1-sol';
+        const { usesResponsesApi } = await import('@/lib/ai/models');
+        const endpoint = {
+          baseUrl: process.env.OPENAI_BASE_URL!, apiKey: process.env.OPENAI_API_KEY!, model,
+          api: (usesResponsesApi(model) ? 'openai-responses' : 'openai-completions') as 'openai-responses' | 'openai-completions',
+          reasoning: cfg.effort as 'low' | 'medium' | 'high' | undefined,
+        };
+        const turn = { systemPrompt: built.systemPrompt, messages: built.messages, tools, userMessage, fileNames, endpoint, maxToolCalls: 4, controls };
+        r = loop === 'pi'
+          ? await (await import('@/lib/ai/agent/harness/pi-interview')).runPiTurn(turn)
+          : await (await import('@/lib/ai/agent/harness/codex-interview')).runCodexTurn(turn);
+      }
       const cites = (r.value.citations ?? []) as Array<{ type: string }>;
       return {
         ...empty,
@@ -218,6 +262,9 @@ export async function main(argv: string[]): Promise<number> {
         otherToolCalls: r.toolCallsUsed.filter(t => !MATERIAL_TOOLS.has(t.toolName)).length,
         chunkCitations: cites.filter(x => x.type === 'chunk').length,
         instructorCitations: cites.filter(x => x.type === 'instructor').length,
+        badCitations: checkCitations(r.value, { retrievedThisTurn: retrieved, history }).length,
+        controlEvents: r.controlEvents,
+        requests: r.requests,
         question: String((r.value as { question?: unknown }).question ?? '').slice(0, 400),
         costUsdCents: r.telemetry.costUsdCents,
         uncachedPromptTokens: r.telemetry.uncachedPromptTokens,
@@ -240,7 +287,7 @@ export async function main(argv: string[]): Promise<number> {
       const r = await runCase(c, cfg);
       results.push(r);
       if (!argv.includes('--dry')) {
-        console.log(`  ${c.id} (${c.kind}): ${r.materialToolCalls} search, ${r.chunkCitations} file / ${r.instructorCitations} instructor cites, ${(r.uncachedPromptTokens + r.cachedTokens).toLocaleString('en-US')} tokens, ${(r.durationMs / 1000).toFixed(1)}s${r.error ? '  ERROR ' + r.error.slice(0, 120) : ''}`);
+        console.log(`  ${c.id} (${c.kind}): ${r.materialToolCalls} search, ${r.chunkCitations} file / ${r.instructorCitations} instructor cites, ${(r.uncachedPromptTokens + r.cachedTokens).toLocaleString('en-US')} tokens, ${(r.durationMs / 1000).toFixed(1)}s, ${r.badCitations ?? 0} bad cites${r.controlEvents?.length ? ' [' + r.controlEvents.join('; ') + ']' : ''}${r.error ? '  ERROR ' + r.error.slice(0, 120) : ''}`);
       }
     }
     runs.push({ config: cfg, results });
