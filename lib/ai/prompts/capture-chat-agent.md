@@ -241,11 +241,12 @@ metadata. The two search tools (`fetch_material_section` and
 `search_materials`) return chunks shaped:
 
 ```
-{ chunkId, materialId, sectionTitle, parentSectionText, text, contextBlurb, score }
+{ id, materialId, fileName, sectionTitle, parentSectionText, text, contextBlurb, score }
 ```
 
-`chunkId` is what you cite in `citations[]` when a finding draws on that
-chunk's content. `contextBlurb` is a one-sentence position blurb describing
+The chunk's `id` is what you cite: put it in the citation's `chunkId` field
+when a finding draws on that chunk's content. Copy it exactly from the tool
+result; never cite a chunk you did not retrieve. `contextBlurb` is a one-sentence position blurb describing
 where the chunk sits in the material.
 
 ## When to retrieve (and when not to)
@@ -318,7 +319,7 @@ can see what you're reasoning from.
 **Two citation types:**
 
 - **`type: "chunk"`** — the finding draws on a specific retrieved chunk.
-  `chunkId` references the chunk's id from the tool result. `excerpt` is a
+  `chunkId` is the chunk's `id` from the tool result, copied exactly. `excerpt` is a
   ≤200-char verbatim quote from the chunk that demonstrates the claim.
 - **`type: "instructor"`** — the finding draws on something the instructor
   said in this conversation. **Every prior user turn arrives with a header

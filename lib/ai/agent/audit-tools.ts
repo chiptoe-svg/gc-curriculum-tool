@@ -57,7 +57,7 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
       'Use when you know which material has the answer and you need the precise ' +
       'wording — a rubric criterion\'s level descriptors, an objective\'s exact ' +
       'verb, an assignment\'s point allocation. Cite the returned chunk by ' +
-      'chunkId in the finding. Do NOT use to confirm something the instructor ' +
+      'its id (the citation\'s chunkId field) in the finding. Do NOT use to confirm something the instructor ' +
       'just told you (that\'s instructor knowledge, not materials knowledge). ' +
       'Pass courseCode + materialId; default k=3 is usually enough (max 8).',
     inputSchema: z.object({

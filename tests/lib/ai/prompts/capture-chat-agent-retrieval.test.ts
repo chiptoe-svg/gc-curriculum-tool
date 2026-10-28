@@ -21,3 +21,21 @@ describe('capture-chat-agent prompt: retrieval', () => {
     expect(prompt).not.toContain('The digest already answers the question precisely.');
   });
 });
+
+// Search hits carry the chunk id as `id` (SearchHit in lib/capture/vector-store.ts);
+// the prompt once described a `chunkId` field the results never had (found 2026-10-28).
+describe('capture-chat-agent prompt: chunk citation field', () => {
+  it('describes search results with the fields the tools actually return', () => {
+    const shape = prompt.match(/^\{ (id, materialId[^}]*)\}$/m);
+    expect(shape).not.toBeNull();
+    const fields = (shape?.[1] ?? "").split(',').map((s) => s.trim()).filter(Boolean);
+    const hit: Record<keyof import('@/lib/capture/vector-store').SearchHit, true> = {
+      id: true, materialId: true, courseCode: true, fileName: true, sectionTitle: true, sectionIndex: true, text: true,
+      parentSectionId: true, parentSectionText: true, contextBlurb: true, score: true, uploadedAt: true, snapshotId: true,
+    };
+    for (const f of fields) expect(Object.keys(hit)).toContain(f);
+  });
+  it('says the chunk id goes in the citation chunkId field', () => {
+    expect(prompt).toContain("The chunk's `id` is what you cite: put it in the citation's `chunkId` field");
+  });
+});
