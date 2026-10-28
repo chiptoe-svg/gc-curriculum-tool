@@ -225,15 +225,17 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
   for (const m of agent.state.messages.slice(prior.length) as Array<{ role: string; isError?: boolean; toolName?: string; content?: Array<{ text?: string }> }>) {
     if (m.role === 'toolResult' && m.isError) trace.push(`tool error ${m.toolName}: ${(m.content?.[0]?.text ?? '').replace(/\s+/g, ' ').slice(0, 400)}`);
   }
-  if (process.env.HARNESS_TRACE) controlEvents.push(...trace);
 
   let uncached = 0, cached = 0, out = 0;
   for (const m of agent.state.messages.slice(prior.length)) {
     if ((m as { role: string }).role === 'assistant') {
       const u = (m as { usage?: typeof ZERO_USAGE }).usage ?? ZERO_USAGE;
-      uncached += u.input; cached += u.cacheRead; out += u.output;
+      // The gateway reports cache writes separately; they are new (uncached) input, as in the other loops' counts.
+      uncached += u.input + u.cacheWrite; cached += u.cacheRead; out += u.output;
+      trace.push(`usage in=${u.input} cacheRead=${u.cacheRead} cacheWrite=${u.cacheWrite} out=${u.output} total=${u.totalTokens}`);
     }
   }
+  if (process.env.HARNESS_TRACE) controlEvents.push(...trace);
   return {
     value: final,
     toolCallsUsed,
