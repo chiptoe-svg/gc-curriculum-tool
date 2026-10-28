@@ -109,3 +109,15 @@ the credit budget). The current loop's SDK path reports 0 writes: its "new input
   RCD bills writes differently from plain input is unknown; compare against the credits charged.
 - Four cases: directional. Before any switch, run the full 9-case set and have a person read the
   questions (`--out` saves them).
+
+### The same runs in RCD credits (rates measured 2026-10-28, see STATE.md)
+
+Sol: new input 2.5/M, cache reads 0.08/M, output ≈12.5/M (estimated). Terra: list × 1.25 (input 1.25/M,
+reads ≈0.04/M, output 6.25/M), estimated.
+
+| Run | Credits, 4 turns | Per turn |
+|---|---|---|
+| Sol, current loop | 0.29 | 0.07 |
+| Sol, Pi + controls | 0.30 | 0.075 |
+| Terra, current loop | 0.15 | 0.04 |
+| Terra, Pi + controls | 0.19 | 0.05 |
