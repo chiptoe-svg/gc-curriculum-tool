@@ -21,7 +21,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { AuditResponseJsonSchema, AuditResponseSchema } from '@/lib/ai/agent/audit-response-schema';
 import type { ToolCall } from '@/lib/ai/tool-use-types';
-import { citableFromHistory, needsMaterialSearch } from './controls';
+import { citableFromHistory, needsMaterialSearch, previousQuestion } from './controls';
 import type { LoopTurnInput, LoopTurnResult } from './pi-interview';
 
 const ROOT = process.cwd();
@@ -56,7 +56,7 @@ export async function runCodexTurn(input: LoopTurnInput): Promise<LoopTurnResult
     const history = citableFromHistory(input.messages as Array<{ role: string; content: string | null }>);
     writeFileSync(path.join(dir, 'state.json'), JSON.stringify({
       controls: input.controls, maxToolCalls,
-      searchRule: input.controls ? needsMaterialSearch(input.userMessage, input.fileNames) : { required: false },
+      searchRule: input.controls ? needsMaterialSearch(input.userMessage, input.fileNames, previousQuestion(input.messages as Array<{ role: string; content: string | null }>)) : { required: false },
       history: { messageIds: [...history.messageIds], chunkIds: [...history.chunkIds] },
     }));
     writeFileSync(path.join(dir, 'instructions.md'), input.systemPrompt);

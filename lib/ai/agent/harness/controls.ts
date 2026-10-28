@@ -15,9 +15,16 @@
 import type { AuditResponse } from '@/lib/ai/agent/audit-response-schema';
 
 export const MAX_CONTROL_RETRIES = 2;
+/** Per-check retry limits: one send-back to search, two to fix citations. */
+export const MAX_SEARCH_RETRIES = 1;
+export const MAX_CITATION_RETRIES = 2;
 export const MATERIAL_TOOLS = new Set(['search_materials', 'fetch_material_section', 'list_materials']);
 
-const MATERIAL_WORDS = /\b(rubric|rubrics|assignment|assignments|brief|handout|syllabus|template|worksheet|lab report|project|projects|quiz|quizzes|exam|exams|test|deliverable|deliverables|points|grading|graded|criteria|instructions|guidelines|checklist|lecture|slides|reading)\b/i;
+// Words for graded work and the documents that define it. Generic words such as
+// "project", "test" or "reading" fired on questions about teaching practice (2070-024).
+const MATERIAL_WORDS = /\b(rubrics?|assignments?|brief|handouts?|syllabus|templates?|worksheets?|lab reports?|quiz(?:zes)?|exams?|deliverables?|points|grading|graded|criteria|instructions|guidelines|checklists?|submissions?|requirements?)\b/i;
+// Assignment codes as courses write them: "A2", "B6", "A2–A3", "C6".
+const ASSIGNMENT_CODE = /\b[A-H]\d{1,2}(?:\s*[–-]\s*[A-H]?\d{1,2})?\b/;
 
 // Everyday words that show up in file names but say nothing about which file is meant.
 const COMMON_WORDS = new Set(['about', 'after', 'their', 'there', 'these', 'those', 'which', 'would', 'could', 'should', 'where', 'while', 'using', 'student', 'students', 'class', 'notes', 'guide', 'other', 'first', 'second', 'third', 'final', 'introduction', 'overview', 'general', 'information', 'example', 'examples', 'sample', 'samples', 'image', 'images', 'print', 'printing', 'design', 'color']);
@@ -34,14 +41,32 @@ function fileNameTokens(fileNames: string[]): Set<string> {
   return out;
 }
 
-export function needsMaterialSearch(userMessage: string | undefined, fileNames: string[]): { required: boolean; reason?: string } {
+/**
+ * Must the interviewer search before answering? Reads the instructor's answer
+ * AND the interviewer's previous question: answers are often short ("Based on
+ * final submission only") while the question names the assignment or rubric.
+ */
+export function needsMaterialSearch(userMessage: string | undefined, fileNames: string[], previousQuestion?: string): { required: boolean; reason?: string } {
   if (!userMessage) return { required: false };
-  const kw = userMessage.match(MATERIAL_WORDS);
-  if (kw) return { required: true, reason: `the instructor mentioned "${kw[0]}"` };
+  const text = `${previousQuestion ?? ''}\n${userMessage}`;
+  const kw = text.match(MATERIAL_WORDS);
+  if (kw) return { required: true, reason: `this exchange is about "${kw[0]}"` };
+  const code = text.match(ASSIGNMENT_CODE);
+  if (code) return { required: true, reason: `this exchange names assignment ${code[0]}` };
   const tokens = fileNameTokens(fileNames);
-  const hit = userMessage.toLowerCase().split(/[^a-z]+/).find(w => tokens.has(w));
-  if (hit) return { required: true, reason: `the instructor named "${hit}", which matches a course file` };
+  const hit = text.toLowerCase().split(/[^a-z]+/).find(w => tokens.has(w));
+  if (hit) return { required: true, reason: `this exchange names "${hit}", which matches a course file` };
   return { required: false };
+}
+
+/** The interviewer's last question in the session (its JSON reply's `question`). */
+export function previousQuestion(messages: Array<{ role: string; content: string | null }>): string | undefined {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i]!;
+    if (m.role !== 'assistant' || !m.content) continue;
+    try { return String((JSON.parse(m.content) as { question?: unknown }).question ?? '') || undefined; } catch { return undefined; }
+  }
+  return undefined;
 }
 
 /** Message ids and chunk ids a model may legitimately cite, from the session so far. */
@@ -92,6 +117,14 @@ export function checkCitations(
     }
   }
   return problems;
+}
+
+/** The citations that pass checkCitations; used once retries run out, so no invented citation is kept. */
+export function keepValidCitations<T extends Pick<AuditResponse, 'citations'>>(
+  response: T,
+  allowed: { retrievedThisTurn: Set<string>; history: { messageIds: Set<string>; chunkIds: Set<string> } },
+): T {
+  return { ...response, citations: (response.citations ?? []).filter(c => checkCitations({ citations: [c] }, allowed).length === 0) };
 }
 
 /** The follow-up text the loop sends when a check fails. */

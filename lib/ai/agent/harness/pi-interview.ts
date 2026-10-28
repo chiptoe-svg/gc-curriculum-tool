@@ -21,8 +21,8 @@ import { AuditResponseJsonSchema, AuditResponseSchema, type AuditResponse } from
 import { renderToolDescription, type Message, type ToolCall, type ToolDefinition } from '@/lib/ai/tool-use-types';
 import type { CompletionTelemetry } from '@/lib/ai/provider';
 import {
-  MATERIAL_TOOLS, MAX_CONTROL_RETRIES, checkCitations, chunkIdsInToolResult, citableFromHistory,
-  controlFollowUp, needsMaterialSearch,
+  MATERIAL_TOOLS, MAX_CONTROL_RETRIES, MAX_CITATION_RETRIES, MAX_SEARCH_RETRIES, checkCitations, keepValidCitations, chunkIdsInToolResult, citableFromHistory,
+  controlFollowUp, needsMaterialSearch, previousQuestion,
 } from './controls';
 
 export interface LoopEndpoint {
@@ -94,8 +94,9 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
   const controlEvents: string[] = [];
   const retrievedThisTurn = new Set<string>();
   const history = citableFromHistory(input.messages as Array<{ role: string; content: string | null }>);
-  const searchRule = input.controls ? needsMaterialSearch(input.userMessage, input.fileNames) : { required: false };
-  let controlRetries = 0;
+  const searchRule = input.controls ? needsMaterialSearch(input.userMessage, input.fileNames, previousQuestion(input.messages as Array<{ role: string; content: string | null }>)) : { required: false };
+  let searchRetries = 0;
+  let citeRetries = 0;
   let final: AuditResponse | undefined;
   let requests = 0;
   let forceSubmit = false;
@@ -129,21 +130,23 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
         controlEvents.push('reply did not match the response schema; sent back');
         throw new Error(`submit_turn arguments are invalid: ${parsed.error.issues.slice(0, 5).map(i => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
       }
-      const value = parsed.data;
-      const canRetry = input.controls && controlRetries < MAX_CONTROL_RETRIES && !forceSubmit;
-      if (canRetry && searchRule.required && !toolCallsUsed.some(t => MATERIAL_TOOLS.has(t.toolName))) {
-        controlRetries++;
+      let value = parsed.data;
+      if (input.controls && !forceSubmit && searchRetries < MAX_SEARCH_RETRIES && searchRule.required && !toolCallsUsed.some(t => MATERIAL_TOOLS.has(t.toolName))) {
+        searchRetries++;
         controlEvents.push(`search required (${searchRule.reason}); sent back`);
         throw new Error(controlFollowUp('search', searchRule.reason!));
       }
       if (input.controls) {
         const problems = checkCitations(value, { retrievedThisTurn, history });
-        if (problems.length && canRetry) {
-          controlRetries++;
+        if (problems.length && !forceSubmit && citeRetries < MAX_CITATION_RETRIES) {
+          citeRetries++;
           controlEvents.push(`citation check failed: ${problems.join(' / ').slice(0, 300)}; sent back`);
           throw new Error(controlFollowUp('citations', problems));
         }
-        if (problems.length) controlEvents.push(`citation check failed: ${problems.join(' / ').slice(0, 300)}; accepted, no retries left`);
+        if (problems.length) {
+          controlEvents.push(`citation check failed: ${problems.join(' / ').slice(0, 300)}; no retries left, ${problems.length} citation(s) dropped`);
+          value = keepValidCitations(value, { retrievedThisTurn, history });
+        }
       }
       final = value;
       trace.push('submit_turn accepted');
@@ -176,6 +179,8 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
       messages: prior,
     },
     toolExecution: 'sequential',
+    // Stable per course so OpenAI's prompt cache (prompt_cache_key) reuses the shared prefix across requests.
+    sessionId: `interview-${input.courseCode ?? 'course'}`,
     // Record tool calls Pi itself rejected (argument validation) — they cost a request but never reach our code.
     afterToolCall: async ({ toolCall, isError, result }) => {
       if (isError && toolCall.name === 'submit_turn' && !controlEvents.some(e => e.endsWith('sent back') && e.length && false)) {
@@ -198,6 +203,13 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
       if (requests >= maxToolCalls + 2 + MAX_CONTROL_RETRIES * 2) return { action: 'end' };
       // Answered in plain text instead of calling a tool: ask again and force submit_turn.
       if (!message.content.some(c => c.type === 'toolCall')) {
+        // A search is still owed: say so instead of forcing submit_turn, which would skip the check.
+        if (searchRule.required && !toolCallsUsed.some(t => MATERIAL_TOOLS.has(t.toolName)) && searchRetries < MAX_SEARCH_RETRIES) {
+          searchRetries++;
+          controlEvents.push(`replied in text; search required (${searchRule.reason}); sent back`);
+          agent.followUp({ role: 'user', content: controlFollowUp('search', searchRule.reason!) + ' Then deliver the turn by calling submit_turn.', timestamp: Date.now() } as AgentMessage);
+          return { action: 'continue' };
+        }
         controlEvents.push('replied in text; forced submit_turn');
         forceSubmit = true;
         agent.followUp({ role: 'user', content: 'Deliver this turn now by calling submit_turn.', timestamp: Date.now() } as AgentMessage);
