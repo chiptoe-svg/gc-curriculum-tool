@@ -12,7 +12,7 @@ import { deriveSourceFlag } from '@/lib/ai/synthesis/source-derivation';
 import { deriveEvidenceBand } from '@/lib/program/evidence-ladder';
 import { captureProfileJsonSchema, captureProfileJsonSchemaV2 } from '@/lib/ai/analyze/capture-scores';
 import { humanizeSource, sourceLabel, statusTagFor } from '@/app/capture/[code]/ProfileReviewPanel';
-import { relabelProfile } from '@/scripts/capture/relabel-both-sources';
+import { relabelIndices, relabelProfile } from '@/scripts/capture/relabel-both-sources';
 
 const mixed = [
   { type: 'instructor' as const, messageId: 'm1', excerpt: 'we grade it on the rubric' },
@@ -71,5 +71,19 @@ describe('relabelProfile', () => {
   it('leaves a profile with nothing to change identical', () => {
     const profile = { competencies: [comp('materials', [mixed[1]])] };
     expect(relabelProfile(profile as never)).toEqual({ profile, changed: 0 });
+  });
+});
+
+describe('relabelIndices', () => {
+  it('returns the positions of mixed-citation inferred competencies', () => {
+    const profile = { competencies: [{ source: 'instructor', citations: [mixed[0]] }, { source: 'inferred', citations: mixed }] };
+    expect(relabelIndices(profile)).toEqual([1]);
+  });
+
+  it('skips malformed shapes instead of throwing (review finding, 2026-10-27)', () => {
+    expect(relabelIndices({ competencies: { a: 1 } })).toEqual([]);
+    expect(relabelIndices({ competencies: null })).toEqual([]);
+    expect(relabelIndices(null)).toEqual([]);
+    expect(relabelIndices({ competencies: [null, { source: 'inferred', citations: 'x' }, { source: 'inferred', citations: [null, ...mixed] }] })).toEqual([2]);
   });
 });
