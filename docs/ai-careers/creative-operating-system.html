@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Generative Creative Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (~68ch) with a sticky contents rail on wide screens; evidence tables break out wider. */
+:root {
+  --bg: #fbfbfa;
+  --surface: #f1f0f4;
+  --fg: #1d1b22;
+  --muted: #5d5966;
+  --rule: #dcd9e2;
+  --accent: #c24f00;        /* Clemson orange, darkened for text contrast */
+  --accent-soft: #fde9da;
+  --purple: #522d80;        /* Clemson regalia */
+  --purple-soft: #ece6f4;
+  --good: #2f6b3a;
+  --warn: #8a5a00;
+  --bad: #9b2c2c;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17151b; --surface: #221f28; --fg: #ecebef; --muted: #a7a2b1; --rule: #39343f;
+    --accent: #ff8a3d; --accent-soft: #3a2414; --purple: #b9a2dc; --purple-soft: #2c2338;
+    --good: #7cc58a; --warn: #e3b453; --bad: #f08b8b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17151b; --surface: #221f28; --fg: #ecebef; --muted: #a7a2b1; --rule: #39343f;
+  --accent: #ff8a3d; --accent-soft: #3a2414; --purple: #b9a2dc; --purple-soft: #2c2338;
+  --good: #7cc58a; --warn: #e3b453; --bad: #f08b8b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.62 var(--font-body); margin: 0; }
+.wrap { max-width: 74rem; margin: 0 auto; padding-inline: 20px; padding-block: 2.5rem 5rem;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 3rem; }
+@media (min-width: 1020px) { .wrap { grid-template-columns: 13rem minmax(0, 1fr); } }
+nav.toc { font-size: .85rem; }
+@media (min-width: 1020px) { nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 1.5rem); align-self: start; } }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: .45rem; counter-reset: toc; }
+nav.toc li { counter-increment: toc; display: grid; grid-template-columns: 1.4rem 1fr; }
+nav.toc li::before { content: counter(toc); font-family: var(--font-mono); color: var(--accent); }
+nav.toc a { color: var(--fg); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { text-decoration: underline; text-decoration-color: var(--accent); }
+.toc-label { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 .7rem; }
+main { min-width: 0; }
+.col { max-width: 42rem; }
+header.doc { border-bottom: 1px solid var(--rule); padding-bottom: 1.6rem; margin-bottom: 2.2rem; }
+.eyebrow { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--purple); font-weight: 600; margin: 0 0 .6rem; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; line-height: 1.15; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.1rem); margin: 0 0 .9rem; letter-spacing: -.01em; }
+h2 { font-size: clamp(1.55rem, 3vw, 2rem); margin: 3.4rem 0 .9rem; scroll-margin-top: 1.5rem; }
+h2 .n { font-family: var(--font-mono); font-size: .95rem; color: var(--accent); font-weight: 500; display: block; margin-bottom: .3rem; letter-spacing: .04em; }
+h3 { font-size: 1.22rem; margin: 2.1rem 0 .5rem; }
+p { margin: 0 0 1rem; }
+.lede { font-size: 1.15rem; color: var(--fg); max-width: 40rem; }
+.meta { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; font-size: .85rem; color: var(--muted); margin-top: 1rem; }
+.meta b { color: var(--fg); font-weight: 500; }
+a { color: var(--purple); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cite + .cite::before { content: ","; }
+.cite { font-family: var(--font-mono); font-size: .72em; vertical-align: super; line-height: 0; text-decoration: none; color: var(--accent); margin-left: 1px; }
+.cite:hover { text-decoration: underline; }
+.takeaways { background: var(--surface); border-radius: 6px; padding: 1.4rem 1.5rem; margin: 0 0 1rem; }
+.takeaways h2 { margin: 0 0 .8rem; font-size: 1.3rem; }
+.takeaways ol { margin: 0; padding-left: 1.2rem; display: grid; gap: .65rem; }
+.takeaways li::marker { font-family: var(--font-mono); color: var(--accent); }
+.note { border-left: 3px solid var(--purple); background: var(--purple-soft); padding: .8rem 1rem; margin: 1.2rem 0; font-size: .93rem; border-radius: 0 4px 4px 0; }
+.note strong { color: var(--purple); }
+.figure-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1rem; margin: 1.4rem 0; max-width: 46rem; }
+.fig { border-top: 2px solid var(--accent); padding-top: .6rem; }
+.fig .v { font-family: var(--font-display); font-size: 2rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.fig .l { font-size: .85rem; color: var(--muted); }
+.tbl { overflow-x: auto; margin: 1.2rem 0 1.4rem; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 34rem; }
+th, td { text-align: left; vertical-align: top; padding: .55rem .8rem .55rem 0; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; font-size: .78rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); border-bottom: 1.5px solid var(--fg); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: .86rem; }
+tr.hl td { background: var(--accent-soft); }
+caption { caption-side: bottom; text-align: left; font-size: .8rem; color: var(--muted); padding-top: .5rem; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: .12rem .45rem; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; }
+.chip.good { color: var(--good); } .chip.warn { color: var(--warn); } .chip.bad { color: var(--bad); } .chip.mixed { color: var(--purple); }
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.4rem; margin: 1.2rem 0; max-width: 46rem; }
+.split > div { min-width: 0; }
+.split h4 { margin: 0 0 .4rem; font-size: .8rem; letter-spacing: .07em; text-transform: uppercase; }
+.split .lose h4 { color: var(--bad); } .split .gain h4 { color: var(--good); }
+.split ul { margin: 0; padding-left: 1.1rem; font-size: .93rem; display: grid; gap: .3rem; }
+.target { border-top: 1px solid var(--rule); padding-top: 1.1rem; margin-top: 1.6rem; max-width: 46rem; }
+.target h3 { margin: 0 0 .35rem; display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: baseline; }
+.target h3 .tn { font-family: var(--font-mono); color: var(--accent); font-size: .95rem; font-weight: 500; }
+.target dl { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr); gap: .35rem 1rem; margin: .6rem 0 0; font-size: .93rem; }
+.target dt { color: var(--muted); font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; padding-top: .15rem; }
+.target dd { margin: 0; }
+@media (max-width: 520px) { .target dl { grid-template-columns: minmax(0, 1fr); } .target dd { margin-bottom: .5rem; } }
+ol.sources { padding-left: 0; list-style: none; font-size: .88rem; display: grid; gap: .8rem; counter-reset: s; }
+ol.sources li { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); counter-increment: s; scroll-margin-top: 1.5rem; }
+ol.sources li::before { content: counter(s); font-family: var(--font-mono); color: var(--accent); }
+ol.sources li:target { background: var(--accent-soft); border-radius: 4px; }
+.links { display: flex; flex-wrap: wrap; gap: .3rem .9rem; margin-top: .2rem; font-size: .82rem; }
+.links a { font-family: var(--font-mono); }
+.links .na { color: var(--muted); font-family: var(--font-mono); }
+footer.doc { margin-top: 3.5rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); font-size: .82rem; color: var(--muted); max-width: 46rem; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <p class="toc-label">Contents</p>
+  <ol>
+    <li><a href="#now">What students do now</a></li>
+    <li><a href="#what">What a generative creative system is</a></li>
+    <li><a href="#why">Why it matters now</a></li>
+    <li><a href="#grads">What it means for graduates</a></li>
+    <li><a href="#teach">How teaching could change</a></li>
+    <li><a href="#risks">Risks, and how to design for them</a></li>
+    <li><a href="#start">Starting small</a></li>
+    <li><a href="#unknown">What isn't known yet</a></li>
+    <li><a href="#sources">Sources</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="doc">
+  <p class="eyebrow">Graphic Communications · Clemson University</p>
+  <h1>Generative Creative Systems</h1>
+  <p class="lede">A proposal for how GC could teach the creative side of the program, and how that teaching could carry strategy and production with it, as AI takes over more of the making.</p>
+  <div class="meta">
+    <span><b>For</b> GC faculty and colleagues</span>
+    <span><b>Evidence as of</b> October 2026</span>
+    <span><b>Status</b> draft for discussion</span>
+  </div>
+</header>
+
+<section class="takeaways col" aria-labelledby="tk">
+  <h2 id="tk">The short version</h2>
+  <ol>
+    <li><strong>GC students already take work from idea to finished object.</strong> They develop a brand, design the pieces and produce them. What they hand in is a set of finished items.</li>
+    <li><strong>The proposal is to have them build the system that produces the items.</strong> A system captures a body of work completely enough that a person, or an AI tool directed by a person, could make a new piece nobody planned for and get it right, including getting it printed or built correctly.</li>
+    <li><strong>This is a change in what the job is, not an extra deliverable.</strong> The student stops being the person who makes each piece and becomes the person who builds, directs and improves what makes them. Knowledge that lived in people's heads moves into the system, mistakes get fixed once in the rules instead of again in every file, and the work is judged by whether the system can make the next piece well.</li>
+    <li><strong>It is bigger than a brand.</strong> The same idea applies to a campaign, a product line's packaging, an event, a research initiative or a retail program.</li>
+    <li><strong>The production half is where GC has the edge.</strong> Tools that capture a brand's look for AI already exist. Nothing yet connects them to how things actually print. That knowledge is what GC teaches.</li>
+    <li><strong>It does not replace craft.</strong> Graduates still need one thing they are demonstrably good at to get hired. The system is what makes that person more valuable, and the research on how people learn suggests it has to be built on top of craft, not in place of it.</li>
+  </ol>
+</section>
+
+<section class="col" aria-labelledby="now">
+<h2 id="now"><span class="n">01</span>What students do now</h2>
+<p>GC students already work across the whole chain. They develop a brand, design the pieces that carry it, such as the package, the poster and the signage, and then produce those pieces on real equipment. Few programs take a student from idea to finished, printed object the way GC does.</p>
+<p>What students hand in at the end, though, is a set of finished items, usually with a style guide that records the decisions behind them. The guide describes what was made: these colors, this typeface, this logo lockup. It works as a reference for the next person, but it cannot make anything on its own. Every new item still has to be designed from scratch by someone who has absorbed the brand.</p>
+<p>That model fit the jobs graduates went into. A junior designer made the next piece. A prepress technician made it printable. Someone else checked it. Each person carried part of the knowledge in their head, and the work moved from one desk to the next.</p>
+<p>AI is now taking over much of that first-pass making. It can produce a poster, a social post or a package concept in seconds. What it cannot do on its own is know what the work is for, keep a hundred pieces consistent with each other, or know that the file it just made will fail on a particular press. Those are the parts of the work that remain, and they are the parts a system captures.</p>
+
+<h3>How big a change this is</h3>
+<p>This can sound like one more thing to hand in. It is much more than that. It changes what the student is making. Today the student makes the work. Under this proposal, the student builds the thing that makes the work, then directs it, checks what it produces and improves it. The finished pieces become the output of the system and the proof that it works.</p>
+<p>GC has watched a change of this kind happen once already, on the production side. Getting color right on press used to depend on an experienced operator adjusting by eye, job by job. Color management and process control, with measured targets, profiles and standards such as G7, turned that personal skill into a system, so the same result could be reproduced on any job by any trained operator and checked by measurement. The skill did not disappear. It moved into building, running and maintaining the system. The same change is now reaching the creative side, and AI is what makes it possible.</p>
+<div class="tbl">
+<table>
+  <thead><tr><th></th><th>Making items</th><th>Building a system</th></tr></thead>
+  <tbody>
+    <tr><td>What the student produces</td><td>A set of finished pieces</td><td>A system that produces pieces, plus the pieces that show it works</td></tr>
+    <tr><td>What a new piece takes</td><td>Someone designs it from scratch</td><td>The system generates it; a person directs and checks it</td></tr>
+    <tr><td>Where the know-how lives</td><td>In the heads of the people who did the work</td><td>In the system, where people and tools can both use it</td></tr>
+    <tr><td>What happens after a mistake</td><td>The file gets fixed</td><td>The rule gets fixed, so the mistake does not come back</td></tr>
+    <tr><td>Where production fits</td><td>A late check on a finished design</td><td>Part of the design from the start</td></tr>
+    <tr><td>How the work is judged</td><td>Is this piece good?</td><td>Can the system make the next piece well, including one nobody planned?</td></tr>
+    <tr><td>How specialists work together</td><td>The job passes from desk to desk</td><td>Everyone works on the same system</td></tr>
+  </tbody>
+  <caption>What changes when the system, not the item, is the thing being built.</caption>
+</table>
+</div>
+<p>Each row is a change in how students think about the work, not just a new assignment. That is why the proposal builds toward it across several courses rather than adding it to one.</p>
+</section>
+
+<section class="col" aria-labelledby="what">
+<h2 id="what"><span class="n">02</span>What a generative creative system is</h2>
+<p class="note"><strong>About the name.</strong> "Generative creative system" is a working name, a placeholder until the department settles on a better one. It is used here because it says what is new: the system generates the work. Throughout the report it is shortened to "the system."</p>
+<p>The idea starts with a change in how creative work is organized. Instead of treating each image, campaign, website, package or presentation as a separate task, a team builds a lasting system that guides the creation of all of them.<a class="cite" href="#s-essay">1</a> The finished pieces still matter. But the system becomes a deliverable in its own right, and the one that keeps paying off after the project ends.</p>
+
+<h3>It is bigger than a brand</h3>
+<p>A brand is the obvious example, but the same idea applies to any body of work that has to stay coherent while producing many different things. A seasonal campaign that runs across packaging, in-store displays and social media. A university research initiative that needs a website, a documentary, event signage and presentation decks. A product line whose packaging has to cover forty sizes and six markets. A trade-show program that changes every year but has to be recognizable every year. In each case, the valuable thing is not any single piece. It is the knowledge of how to make the next piece well.</p>
+
+<h3>What goes into it</h3>
+<p>A style guide records the visible choices. A system has to carry the reasoning behind them as well, because that is what lets someone, or something, make a new piece the guide never showed. In plain terms, it answers six questions:</p>
+<ul>
+  <li><strong>Why does this work exist?</strong> Its purpose, its audience, and the response it is meant to produce.</li>
+  <li><strong>What makes it recognizable?</strong> Its look, voice, imagery, motion and values.</li>
+  <li><strong>How are ideas expressed?</strong> Not just "use bold type and blue," but the reasoning: this organization makes complex ideas understandable through human-scale examples, and sounds confident without being aggressive. That reasoning is what lets the work stretch into a form nobody has made yet.</li>
+  <li><strong>How does it change from one medium to another?</strong> A film, a carton and an event space share the same intent but express it differently.</li>
+  <li><strong>How is the work judged?</strong> What counts as good, what gets rejected, what needs a person's approval, and what can be checked automatically.</li>
+  <li><strong>How does the system itself change?</strong> What was learned from work that succeeded or failed, and who decides when a rule should change.</li>
+</ul>
+<p>A good system also says plainly what must never change, what is allowed to vary and within what limits, and where people are encouraged to try something new. That last part matters. Without it, a system just produces the same thing over and over.</p>
+
+<h3>The production half</h3>
+<p>A system that can generate an attractive image has not produced something that can be printed, folded, filled, shipped or installed. So the system also carries production knowledge: which structures and dielines are approved, how the brand color is actually achieved on each substrate and press, minimum line weights and type sizes, barcode and regulatory requirements, finishing, and what each supplier can and cannot do.</p>
+<p>That knowledge changes how ideas get made, not just how they get finished. A brief that says "what can be done with two inks on uncoated board" is a creative brief, and a good one. Production limits stop being a late-stage obstacle and become part of the idea.</p>
+
+<h3>What it looks like in practice</h3>
+<p>It is not one piece of software, and it is not a longer style guide. A style guide is read. A system is used: by designers making new work, by AI tools generating options inside its limits, by production staff and preflight software checking that a job will run, and by clients seeing what they are getting. It holds exact values for color, type, spacing, inks and substrates; approved files and templates; examples of strong and weak work; the reasoning behind the choices; and the checks a piece has to pass. The industry is starting to build formats for this. Google published a draft specification in April 2026 for a DESIGN.md file, which pairs exact values such as colors and type sizes with explanations that AI design tools can read.<a class="cite" href="#s-designmd">2</a> The exact values are modeled on a design-token format that a W3C community group declared stable in October 2025.<a class="cite" href="#s-dtcg">3</a> The test of a system is simple: hand it to someone, or to an AI tool, ask for something new, and see whether what comes back is right.</p>
+</section>
+
+<section class="col" aria-labelledby="why">
+<h2 id="why"><span class="n">03</span>Why it matters now</h2>
+<p>Companies are already moving in this direction, but unevenly. The part that captures a brand's look is real and in use. Brand kits in Canva, Adobe Express, Frontify and Bynder hold logos, colors, fonts and templates, and several now plug directly into AI chat tools. Tools that capture how a brand writes are also in use. The part that captures how ideas should be expressed is in pilot programs. The parts that capture purpose, judgment and how the system should learn are still mostly ideas. Almost every published result on speed or cost so far comes from a vendor, not from an independent study.</p>
+<h3>What Coca-Cola is doing</h3>
+<p>Coca-Cola is the clearest public example of a large brand building toward this idea, and it shows both how far the creative half has come and where the production half stops.</p>
+<p>In 2025 the company announced Fizzion, built with Adobe. Instead of asking designers to follow a guideline, it watches how they work. As designers "build layouts, refine typography, and make real-time decisions" in Illustrator and Photoshop, the system "captures that creative intent and encodes it into a StyleID—a machine-readable identity that automatically applies brand rules across formats, platforms, and markets." The company said it would let teams produce content "up to 10 times faster," a company claim with no independent measure, and described it as "still in its pilot phase."<a class="cite" href="#s-fizzion">4</a> Adobe then turned the idea into a product for businesses generally, Firefly Design Intelligence, saying it was "inspired by a collaboration with The Coca Cola Company" and "moves teams beyond static brand guidelines."<a class="cite" href="#s-adobemax">5</a></p>
+<p>In July 2026 Coca-Cola launched a new global visual identity and, with it, a Brand Center and "Design Intelligence tools" for its own teams and "the wider network of agency partners," meant to "support governance, craft, and consistency at scale."<a class="cite" href="#s-coke2026">6</a> The design press reported that the tools were trained on the brand's archives and that the Brand Center holds the visual principles for "packaging, equipment, retail experiences, and fleet standards," so that, ideally, anyone designing for the brand "will no longer have to navigate a disconnected ecosystem or brand guidelines."<a class="cite" href="#s-dieline">7</a> That is very close to the creative half of the system described in this report.</p>
+<p>Coca-Cola runs its generative AI work with a very small central team. In early 2025, its head of generative AI said there is "no specific department of AI" and described "a team of two," with colleagues in other units giving part of their time to specific projects, and with employees requesting AI tools through a simple form.<a class="cite" href="#s-mktdive">8</a></p>
+<p>The company's AI-made holiday ads show why judgment matters. When it remade its 1995 "Holidays Are Coming" commercial with generative AI in 2024, the company said "the creative decisions were all made by humans."<a class="cite" href="#s-digiday">9</a> Testing by System1, an outside ad-testing firm, found an "overwhelmingly positive" consumer response, yet critics said AI "sucked the warmth and joy out of a holiday classic."<a class="cite" href="#s-adweek">10</a> A system can make work that is on brand and fast and still miss what people feel about it. That is the judgment section of the system, and it is the hardest one to build.</p>
+<p>On the production side, the most relevant public example is more than a decade old. For the 2014 "Share a Coke" labels, HP used "targeted consumer demographics data and variable data printing" to "segment the production lanes" of its digital presses and print different run lengths of each name "based on US regional demand."<a class="cite" href="#s-shareacoke">11</a> That is rules plus data generating many printed versions, the production version of a generative system. But nothing Coca-Cola has published connects its AI design system to presses, substrates or converters. Its Brand Center sets design standards for packaging; the public material says nothing about how those designs are printed. That does not mean the link does not exist inside the company, only that it is not documented. Either way, it is the same gap the rest of the industry shows, and it is GC's ground.</p>
+
+<h3>Formats versus tools</h3>
+<p>Two kinds of things are emerging, and the difference matters for teaching. The first is <em>formats</em>: files that hold a system so any tool can read it. Google's DESIGN.md is one.<a class="cite" href="#s-designmd">2</a> Figma's AI tool reads a guidelines file kept with each project, and Anthropic publishes an open "skills" format with a worked example that applies its own brand guidelines. The second is <em>tools</em> that read or build a system and then generate new work from it. Anthropic's Claude Design, released as a research preview in April 2026, "builds a design system for your team by reading your codebase and design files" and then designs from it.<a class="cite" href="#s-claudedesign">12</a> Google Stitch, Figma Make, Adobe's style tools and Canva brand kits work the same way.</p>
+<p>Look inside one of these tools and the shape is familiar. Claude's design systems are kept as a set of files: a written brand book, a tokens file holding exact colors, type sizes, spacing and corner radii, a guideline and live preview for each interface component, and the logos, icons and fonts themselves.<a class="cite" href="#s-claudetype">13</a><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> That is close to what this report proposes, with two differences. It describes how things look on a screen, not why the work exists, how it should be judged or how it should change. And its color values are screen colors, with no place for a spot color, an ink or a substrate. Its tokens file also uses its own layout rather than the W3C format, so moving a system between tools still means translating it.</p>
+<p>That is the practical argument for teaching students to keep the system independent of any one tool, so each tool works from the student's system rather than the other way around. Otherwise each tool keeps its own copy of "the brand," and the system ends up belonging to whichever vendor holds it.</p>
+<p>The bigger gap is production. None of the brand and creative AI tools reviewed for this proposal carries print or packaging knowledge. They stop at the screen. On the production side, much of the knowledge already exists as industry standards that GC teaches: PDF/X and Ghent Workgroup preflight rules, die lines and varnish carried as labeled layers in the file, job data formats, G7 and ISO color targets, spot-color exchange data and GS1 barcodes. What is missing is the piece that ties those standards to a specific press, substrate and ink, and a way to feed what happens on press back into it.</p>
+<p>The clearest statement of the problem comes from inside the industry. In July 2026, a product lead at Esko, a leading maker of packaging prepress software, wrote that files built with AI design tools "arrive at prepress visually finished and technically unprepared for production," and that "a file can pass every preflight check and still fail on the press it is assigned to." Building customer-specific profiles, the post says, "is expensive, requires specialist knowledge," so "most shops run a generic profile and rely on operator experience to fill the gap."<a class="cite" href="#s-esko">14</a> That operator experience is exactly what a system's production half would capture, and it is what GC graduates are trained to supply.</p>
+<p>Content matters as much as print physics. In an FDA study of food allergen recalls from 2013 to 2019, 71% of recalls with a known cause were traced to labeling errors.<a class="cite" href="#s-sharma">15</a><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> A system that pulls product information from approved sources, instead of retyping it into each new design, addresses that directly.</p>
+</section>
+
+<section class="col" aria-labelledby="grads">
+<h2 id="grads"><span class="n">04</span>What it means for graduates</h2>
+<p>The working assumption behind this proposal is that graduates will be expected to do more than one narrow thing. They will not simply be hired as graphic designers, prepress operators or quality specialists, because AI is absorbing the routine part of each of those jobs. The evidence supports that, with one important limit.</p>
+<h3>The case for breadth</h3>
+<p>In a field experiment with 791 professionals at Procter &amp; Gamble, a single person working with AI produced product ideas as good as a two-person team without it, and AI blurred the line between the technical and commercial thinking those people normally brought from their separate departments.<a class="cite" href="#s-dellacqua">16</a> A study of nearly 30 million job postings in the US, the UK and Australia found that where AI skills are in demand, so are the human skills that complement them, such as analytical thinking and resilience. The authors call the evidence correlational, not proof of cause.<a class="cite" href="#s-makela">17</a> Adobe's research on creative work concludes that creative labor appears to be moving "away from producing first-pass variation and toward selection, direction, client negotiation, and accountability for how work was made."<a class="cite" href="#s-adobe">18</a> Each of those is a system skill.</p>
+<h3>The limit: craft still gets people hired</h3>
+<p>The same Adobe report found creative work "shifted back toward dedicated creative professional roles," with AI skills added to existing job titles rather than replacing them.<a class="cite" href="#s-adobe">18</a> Hiring still centers on specialist titles. So the evidence does not support a flat generalist who knows a little of everything. It supports a graduate who is clearly good at one thing, whether design, production, color or client work, and who also understands how all the pieces fit into a system. The craft gets the first job. The system knowledge is what makes that person more valuable, and it pays more as careers progress.</p>
+<p>About one in seven GC graduates' first jobs is a graphic designer title. The rest go into sales and account management, production and operations, marketing and brand work, and technology roles.<a class="cite" href="#s-careers">19</a> A system gives every one of those paths something to own:</p>
+<div class="tbl">
+<table>
+  <thead><tr><th>Career target</th><th>Their part of the system</th></tr></thead>
+  <tbody>
+    <tr><td>Brand Strategy &amp; Experience</td><td>Why the work exists, who it is for, and how the system should change over time</td></tr>
+    <tr><td>Purposeful Design &amp; Creative Generalist</td><td>How ideas are expressed, how they adapt across media, and what counts as good</td></tr>
+    <tr><td>Production &amp; Operations</td><td>The production profiles: substrates, presses, color, finishing, tolerances</td></tr>
+    <tr><td>Sales Solutions &amp; Account Management</td><td>Using the system to solve a client's problem, and bringing supplier capabilities into it</td></tr>
+    <tr><td>Creative Technology &amp; Systems</td><td>Encoding the system so tools can use it, checking work automatically, and keeping versions straight</td></tr>
+  </tbody>
+  <caption>The five targets as five kinds of authorship on one shared piece of work.</caption>
+</table>
+</div>
+<p>That is the larger point. Today the five targets can look like five separate tracks. A system gives them one thing to work on together, the way the work is actually done in industry.</p>
+</section>
+
+<section class="col" aria-labelledby="teach">
+<h2 id="teach"><span class="n">05</span>How teaching could change</h2>
+<p>Nothing here removes what students make now. They would still develop a brand, design the pieces and produce them. What changes is what they are building toward, and the order in which they learn it. The faculty's recent agreement to move students into GC 4400 and GC 4060 by about the middle of the junior year, where the program comes together, gives this a natural home.<a class="cite" href="#s-threeact">20</a></p>
+
+<h3>The path into GC 4060 and 4400</h3>
+<p>GC 4060 (Package and Specialty Printing) and GC 4400 (Commercial Printing) share the same prerequisites: GC 2070 and the first internship, GC 3500, with GC 3460 taken before or alongside. Behind GC 2070 sit the first-year courses GC 1010, 1020, 1050 and 1040. In the published plan, students take GC 4060 in the fall of the junior year and GC 4400 in the spring.<a class="cite" href="#s-catalog">21</a> Those eight courses are where a student would build up to creating a system. The descriptions below of what each course covers come from the catalog and from faculty interviews recorded in the curriculum tool.<a class="cite" href="#s-tool">22</a> The additions are suggestions for faculty to weigh. They add to what each course does well now; they do not replace it.</p>
+
+<h3>Five threads that run through every course</h3>
+<p>Most of what students need in technology and AI is not a new course. It is five threads that each course picks up at its own level:</p>
+<ul>
+  <li><strong>Building systems that tools can use.</strong> Exact values (colors, type sizes, spacing) kept in a form tools can read, not only inside a design file, with the reasoning behind each project stated alongside. By the junior year, students are comfortable handing a system to an AI tool and judging what comes back.</li>
+  <li><strong>Turning production knowledge into rules.</strong> Every time a press run, a proof or a measurement teaches something, it becomes a rule in the system, with its conditions: on this substrate, with this ink, hold lines above this weight.</li>
+  <li><strong>Using AI, after the craft and inside limits.</strong> Students sketch and develop ideas on their own first, then use AI to explore variations, and judge the results against the system. They also learn what they are allowed to put into which AI tool, who owns what comes out, and when a tool is worth what it costs.</li>
+  <li><strong>Automation.</strong> Actions and scripts, preflight profiles, variable data and templates: the ordinary tools that make many versions from one set of rules. These are the production side's version of a generative system, and GC already teaches several of them.</li>
+  <li><strong>Keeping versions.</strong> Saving each version of a system with a short note on what changed and why, so students can see how it grew.</li>
+</ul>
+<p>Two courses off this path already use AI in ways that fit these threads: in web design (GC 2400), students prompt AI for code and then evaluate and improve it against a wireframe, and in digital imaging (GC 3400), students use custom AI assistants to critique their images and plan better reshoots.<a class="cite" href="#s-tool">22</a> Both treat AI output as something to judge, which is the habit a system depends on.</p>
+
+<h3>Course by course</h3>
+
+<div class="target">
+<h3><span class="tn">GC 1010</span>Orientation to Graphic Communications</h3>
+<dl>
+<dt>Covers now</dt><dd>The curriculum, the industry, its processes and careers, through employer conversations, facility tours and degree planning.</dd>
+<dt>Could add</dt><dd>A first look at what students will be building toward: a real company's system, shown alongside the products it produced, and a short, honest introduction to how AI is changing the work and what the program expects of students when they use it.</dd>
+</dl>
+</div>
+
+<div class="target">
+<h3><span class="tn">GC 1020</span>Introduction to Digital Graphics</h3>
+<dl>
+<dt>Covers now</dt><dd>Illustrator, Photoshop and InDesign through tutorials and short production projects, ending in a restaurant branding package.</dd>
+<dt>Could add</dt><dd>The branding package handed in with the system behind it: the colors, type and spacing as exact values, and the reasons they were chosen. The test is whether a classmate can make a new piece from it that clearly belongs. Software skills are learned by hand, without AI generation, so students know what good work takes before a tool makes it for them.</dd>
+</dl>
+</div>
+
+<div class="target">
+<h3><span class="tn">GC 1050</span>Application of Digital Graphics</h3>
+<dl>
+<dt>Covers now</dt><dd>Logos, apparel graphics, sublimation products, packaging, posters, brochures and magazine layouts, with 3D packaging design, ending in a portfolio. Students produce finished pieces through digital print, dye sublimation and direct-to-garment.</dd>
+<dt>Could add</dt><dd>Working inside someone else's system: students receive a well-built system, from a real company or one faculty prepare, and use it to make new pieces across apparel, packaging and print. This is the step where students learn what a system feels like from the inside. AI comes in here for the first time, after unaided sketching, to explore variations that students then judge against the system.</dd>
+</dl>
+</div>
+
+<div class="target">
+<h3><span class="tn">GC 1040</span>Graphic Communications I</h3>
+<dl>
+<dt>Covers now</dt><dd>A complete file-to-press workflow in screen printing and flexography: preparing press-ready files with spot colors, trapping and distortion, and collecting press-trial data on how substrate and line screen affect dot gain.</dd>
+<dt>Could add</dt><dd>The first production profile. The press-trial data students already collect becomes production rules in the system, with their conditions: what dot gain to expect on this substrate, what line screen holds, what the minimum line weight is. Students see that production knowledge can be captured once and reused, by other people and by tools, instead of living in one operator's memory.</dd>
+</dl>
+</div>
+
+<div class="target">
+<h3><span class="tn">GC 2070</span>Graphic Communications II</h3>
+<dl>
+<dt>Covers now</dt><dd>Artwork for cylindrical screen printing, coordinated packaging, four-color printing and flatbed inkjet; proofs, measurement, cost records and workflow decisions.</dd>
+<dt>Could add</dt><dd>Carrying one system across several outputs. The coordinated packaging work becomes the place where students take a system from one format to the next and explain what carried over, what changed and why. Cost and production results feed back into the system's production rules. Students set their system beside a classmate's and compare them. Basic automation, such as actions, templates and preflight profiles, shows how one set of rules can produce many versions.</dd>
+</dl>
+</div>
+
+<div class="target">
+<h3><span class="tn">GC 3460</span>Ink and Substrates</h3>
+<dl>
+<dt>Covers now</dt><dd>How inks and substrates behave and interact, through measured data, spectrophotometers, ICC color management and CxF spectral data for spot-color proofing.</dd>
+<dt>Could add</dt><dd>The color section of the system, which is exactly what screen-based design tools are missing. Students record how a brand color is actually achieved on each substrate, as measured values rather than screen colors, and back each rule with their own measurements. This is the part of a system that only someone with GC's training can build.</dd>
+</dl>
+</div>
+
+<div class="target">
+<h3><span class="tn">GC 3500</span>Internship I</h3>
+<dl>
+<dt>Covers now</dt><dd>Full-time supervised work in industry.</dd>
+<dt>Could add</dt><dd>A short field study: how does this company keep its system? What is written down, what lives in people's heads, where does work get redone, and how is AI being used and governed? Students return to GC 4060 and 4400 with a real example to compare their own work against.</dd>
+</dl>
+</div>
+
+<div class="target">
+<h3><span class="tn">GC 4060</span>Package and Specialty Printing</h3>
+<dl>
+<dt>Covers now</dt><dd>Printing and converting for packages, labels and specialty products: flexographic prepress, workflow, proofing, die making and cutting, converting, and graphics for the consumer's experience of the package.</dd>
+<dt>Could add</dt><dd>Building a complete system for a packaging body of work, such as a product line with several sizes, flavors or seasonal editions. Production rules come from the course itself: approved structures and die lines, flexographic prepress limits, proofing and converting requirements. Students use the system, with and without AI, to generate new variants nobody planned for, check that each one can actually be produced, take some through to finished packages, and revise the system based on what happened.</dd>
+</dl>
+</div>
+
+<div class="target">
+<h3><span class="tn">GC 4400</span>Commercial Printing</h3>
+<dl>
+<dt>Covers now</dt><dd>Commercial and large-format production from design concept through finishing, with preflight judgment and correction, color configuration and variable data. Its projects already include a brand specification, a versioned variable-data booklet and a brand story.</dd>
+<dt>Could add</dt><dd>This course is already close. A variable-data job is a small generative system: rules plus data produce many correct versions. The brand specification project could grow into a full system, with the course's own preflight profiles serving as its automated checks, AI-assisted generation working inside it, and the print-to-digital work carrying it across media.</dd>
+</dl>
+</div>
+
+<h3>What GC 4060 and 4400 would share</h3>
+<p>In both courses, each revision of the system ends with a short review led by an instructor: what happened, why, and what changes in the system as a result. Reviews like that, when someone leads them, are about three times as effective as ones people do on their own.<a class="cite" href="#s-tannenbaum">23</a> Students also set their system beside at least one other, because comparing two examples side by side more than doubled the share of people who applied the underlying idea to a new problem in one well-known study (48% against 19%).<a class="cite" href="#s-gentner">24</a> How the two courses divide the work, for instance packaging in one and commercial and variable-data work in the other, is a faculty decision.</p>
+<p>The final test changes too. Today the question is whether the items are good. Under a system, the question is whether the system can generate the next item well, including one nobody planned for. A fair assessment hands students a system they did not build and asks them to extend it.</p>
+
+<h3>The final year: taking the system into a career direction</h3>
+<p>The system does not end with the course. In the final stretch, students develop it through the lens of where they are headed. A production-minded student deepens the production profiles and tests them on press. A sales-minded student uses the system to solve a client's problem. A brand-minded student works on purpose and on how the system should evolve. A design-minded student pushes how ideas are expressed. A technology-minded student makes the system usable by tools and checks work against it automatically.</p>
+<p>The intent and identity work overlaps with what Brand Communications teaches, and the production work is GC's ground. That makes a system a natural place for the two curricula to work together in the later years.</p>
+</section>
+
+<section class="col" aria-labelledby="risks">
+<h2 id="risks"><span class="n">06</span>Risks, and how to design for them</h2>
+<p>The idea has real risks. Each one points to a design choice.</p>
+<h3>Everything starts to look the same</h3>
+<p>AI-assisted creative work tends to converge. A 2026 review of the research found a small overall effect: groups using AI produce less varied work than groups working without it, with the largest effect in generating ideas. Results varied a lot from study to study.<a class="cite" href="#s-derooij">25</a> A system that hands everyone the same house style and the same prompts would make this worse. The answer is to build variety into the system on purpose, with a clearly marked space where new directions are expected, and to use techniques that research has shown restore variety, such as asking the AI to draft a long list of ideas and then make them bolder and more different from one another. That study tested AI-generated idea pools, not people working with AI, so it shows what is possible rather than what happens in a classroom.<a class="cite" href="#s-meincke">26</a></p>
+<h3>Judgment gets weaker, not stronger</h3>
+<p>In the Procter &amp; Gamble experiment, AI raised the quality of ideas, but people working with AI picked their own best idea less often: roughly 37% of the time, against about 50% for teams without AI. People working alone with AI also misjudged how good their own work was.<a class="cite" href="#s-dellacqua">16</a> So judging and choosing have to be taught directly, with classmates and instructors in the loop, not left to happen on their own. The judgment section of the system is where students practice this.</p>
+<h3>Craft erodes</h3>
+<p>In a small study of visual ideation (60 people), those given an AI image generator fixated more on an example they had been shown, and "produced fewer ideas, with less variety and lower originality" than people with no inspiration source. Most of the differences were small, but they all pointed the same way.<a class="cite" href="#s-wadi">27</a> So students should sketch and develop ideas on their own before bringing AI in, and their craft should be checked without AI at every stage of the program.</p>
+<h3>Too abstract, too early</h3>
+<p>Asking first-year students to build a system before they can make things well would teach them vocabulary, not skill. That is why the sequence above starts with craft, moves to using a good system, then to stretching one, and only then to building one.</p>
+<h3>The tools keep changing</h3>
+<p>Brand AI platforms are changing every few months, and each stores "the brand" in its own format. A system the student owns, with exact values in open formats rather than locked inside one product, outlives any one tool. Students should learn the thinking, not a particular product.</p>
+</section>
+
+<section class="col" aria-labelledby="start">
+<h2 id="start"><span class="n">07</span>Starting small</h2>
+<p>This does not need to start as a program-wide change. A practical first step is one recurring body of work, one production pathway and one real client, run through GC 4400 or 4060:</p>
+<ol>
+  <li>Build the creative foundation: why the work exists, what makes it recognizable, how ideas are expressed, examples of strong and weak work, and what is fixed versus open.</li>
+  <li>Connect one production pathway, such as folding cartons or labels, with approved files, a supplier's real capabilities and the checks a job has to pass.</li>
+  <li>Run a real project end to end: explore, choose, build, proof, approve and produce. Record where knowledge was missing and where people had to step in.</li>
+  <li>Review both what was learned creatively and what was learned in production, and revise the system.</li>
+  <li>Add other media and partners only once the first pathway works.</li>
+</ol>
+<p>Industry partners matter here. A converter or prepress partner can supply real press and substrate profiles. A brand-side partner can supply a real body of work. Both are relationships GC already has.</p>
+<p>The measures should go beyond volume: the quality of the work, how much rework it took, whether it was accepted for production, whether students' craft held up without AI, and whether they can pick up a system they did not build and extend it. Comparing one cohort taught this way against one taught with one-off projects would show whether it works.</p>
+</section>
+
+<section class="col" aria-labelledby="unknown">
+<h2 id="unknown"><span class="n">08</span>What isn't known yet</h2>
+<ul>
+  <li><strong>No one has tested this way of teaching.</strong> No study has looked at teaching design or brand systems, let alone a generative creative system. The case here is built from nearby research on how people learn, mostly from other fields, and from industry evidence.</li>
+  <li><strong>Industry results are mostly vendor claims.</strong> Reports of work done "two times faster" or "ten times faster" come from the companies selling the tools.</li>
+  <li><strong>The job data has a gap.</strong> No dataset counts openings for creative operations, brand operations or packaging commercialization roles, and few GC graduates' first jobs carry those titles yet. GC's alumni figures describe where graduates went; the coding has not had an independent second check.</li>
+  <li><strong>The research on sameness and judgment is young.</strong> Most of it comes from lab tasks or single companies, and none of it tests a persistent system.</li>
+  <li><strong>Open design questions.</strong> How complete a system should be, and how early. Whether a real client encourages bold work or pushes students toward safe choices. Whether working inside a system makes a class's AI-assisted work look more alike.</li>
+  <li><strong>The tools are changing fast.</strong> What is described in section 3 reflects October 2026.</li>
+</ul>
+</section>
+
+<section class="col" aria-labelledby="sources">
+<h2 id="sources"><span class="n">09</span>Sources</h2>
+<p class="note"><strong>Draft.</strong> Sources marked <sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> were read on the web and are not yet archived in the project library. Vendor sources are labeled as such.</p>
+<ol class="sources">
+<li id="s-essay"><div>Tonkin, C. (2026). <em>A Creative Operating System: From design systems to shared creative and production intelligence</em>. Proposed framework, October 2026. Internal.</div></li>
+<li id="s-designmd"><div>Xu, C. (2026, April 21). Stitch DESIGN.md. Google Labs blog [vendor]; draft specification at github.com/google-labs-code/design.md (alpha).<div class="links"><a href="https://blog.google/innovation-and-ai/models-and-research/google-labs/stitch-design-md/" target="_blank" rel="noopener noreferrer">blog.google</a><a href="https://github.com/google-labs-code/design.md" target="_blank" rel="noopener noreferrer">github</a></div></div></li>
+<li id="s-dtcg"><div>W3C Design Tokens Community Group (2025, October 28). Design Tokens specification reaches first stable version (Format Module 2025.10, a community group report, not a W3C standard).<div class="links"><a href="https://www.w3.org/community/design-tokens/2025/10/28/design-tokens-specification-reaches-first-stable-version/" target="_blank" rel="noopener noreferrer">w3.org</a></div></div></li>
+<li id="s-fizzion"><div>The Coca-Cola Company (2025, May 15). The Coca-Cola Company introduces Fizzion: A new era of AI-governed creativity at global scale. Company release.<div class="links"><a href="https://www.coca-colacompany.com/media-center/the-coca-cola-company-introduces-fizzion" target="_blank" rel="noopener noreferrer">coca-colacompany.com</a></div></div></li>
+<li id="s-adobemax"><div>Adobe (2025, October 28). Adobe GenStudio introduces new scaled content production capabilities (Adobe MAX press release) [vendor]. Held.<div class="links"><a href="https://news.adobe.com/news/downloads/pdfs/2025/10/102825-genstudio-innovations-at-adobe-max.pdf" target="_blank" rel="noopener noreferrer">adobe.com PDF</a></div></div></li>
+<li id="s-coke2026"><div>The Coca-Cola Company (2026, July 20). Coca-Cola sharpens its identity under one bold visual system. Company release.<div class="links"><a href="https://www.coca-colacompany.com/media-center/coca-cola-sharpens-its-identity-under-one-bold-visual-system" target="_blank" rel="noopener noreferrer">coca-colacompany.com</a></div></div></li>
+<li id="s-dieline"><div>McCool, B. (2026, July 20). Coca-Cola unveils newly refreshed global visual identity system. <em>The Dieline</em>.<div class="links"><a href="https://thedieline.com/coca-cola-unveils-newly-refreshed-global-visual-identity-system/" target="_blank" rel="noopener noreferrer">thedieline.com</a></div></div></li>
+<li id="s-mktdive"><div>Kelly, C. (2025, March 10). What Coca-Cola has learned on its generative AI journey so far. <em>Marketing Dive</em> (interview with the company's global head of generative AI).<div class="links"><a href="https://www.marketingdive.com/news/what-coca-cola-learned-generative-ai/741709/" target="_blank" rel="noopener noreferrer">marketingdive.com</a></div></div></li>
+<li id="s-digiday"><div>Peterson, T. (2024, November 20). Future of TV Briefing: A Q&amp;A with Coca-Cola's generative AI head about that holiday ad. <em>Digiday</em>.<div class="links"><a href="https://digiday.com/future-of-tv/future-of-tv-briefing-a-qa-with-coca-colas-generative-ai-head-about-that-holiday-ad/" target="_blank" rel="noopener noreferrer">digiday.com</a></div></div></li>
+<li id="s-adweek"><div>Kiefer, B. (2024, November 20). How Coca-Cola's AI holiday ad went from praise to rage. <em>Adweek</em> (opening paragraphs; rest paywalled).<div class="links"><a href="https://www.adweek.com/creativity/how-coca-colas-ai-holiday-ad-went-from-praise-to-rage/" target="_blank" rel="noopener noreferrer">adweek.com</a></div></div></li>
+<li id="s-shareacoke"><div>Katz, S. (2014, September 16). HP plays key role in 'Share a Coke' campaign. <em>Label &amp; Narrow Web</em> (based on HP information).<div class="links"><a href="https://www.labelandnarrowweb.com/contents/view_breaking-news/2014-09-16/hp-plays-key-role-in-share-a-coke-campaign/" target="_blank" rel="noopener noreferrer">labelandnarrowweb.com</a></div></div></li>
+<li id="s-claudedesign"><div>Anthropic (2026, April 17). Introducing Claude Design by Anthropic Labs [vendor]. Research preview.<div class="links"><a href="https://www.anthropic.com/news/claude-design-anthropic-labs" target="_blank" rel="noopener noreferrer">anthropic.com</a></div></div></li>
+<li id="s-claudetype"><div>Anthropic (2026). Design System artifact type: file layout of a design system on claude.ai (README brand book, tokens.json, component guidelines and previews, assets, fonts). Observed in the type's own instructions file, release of October 2026 [vendor]. Not public documentation.<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup></div></li>
+<li id="s-esko"><div>Rengarajan, B. (2026, July 8). Bridging the gap between generative AI design and print physics. Esko AI blog [vendor]. Quotes checked against the page 2026-10-29.<div class="links"><a href="https://www.esko.com/ai-blog/bridging-the-gap-between-generative-ai-design-and-print-physics" target="_blank" rel="noopener noreferrer">esko.com</a></div></div></li>
+<li id="s-sharma"><div>Sharma, G. M., Ma, Y., &amp; Luccioli, S. (2023). Recalls associated with food allergens and gluten in FDA-regulated foods from fiscal years 2013 to 2019. <em>Journal of Food Protection</em>, 86(4), 100069. Abstract read (Europe PMC record held; full text not held).<div class="links"><a href="https://doi.org/10.1016/j.jfp.2023.100069" target="_blank" rel="noopener noreferrer">doi:10.1016/j.jfp.2023.100069</a></div><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup></div></li>
+<li id="s-dellacqua"><div>Dell'Acqua, F., Ayoubi, C., Lifshitz, H., Sadun, R., Mollick, E., Mollick, L., Han, Y., Goldman, J., Nair, H., Taub, S., &amp; Lakhani, K. R. (2026). The Cybernetic Teammate: A field experiment on generative AI and teamwork. <em>Organization Science</em>. Published version held; idea-selection figures from pp. 21–22.<div class="links"><a href="https://doi.org/10.1287/orsc.2025.20702" target="_blank" rel="noopener noreferrer">doi:10.1287/orsc.2025.20702</a></div></div></li>
+<li id="s-makela"><div>Mäkelä, E., Bone, M., Nanji, F., Sehrer, M., &amp; Stephany, F. (2026). Complement or substitute? How AI increases the demand for human skills. arXiv:2412.19754 (latest version). Held.<div class="links"><a href="https://arxiv.org/abs/2412.19754" target="_blank" rel="noopener noreferrer">arXiv</a></div></div></li>
+<li id="s-adobe"><div>Adobe Research Teams (2026, June). <em>How AI Is Redistributing Creative Work</em>. The Future of Creative Work, Vol. 1 [vendor research]. Held.<div class="links"><a href="https://www.adobe.com/cc-shared/assets/ai/research/adobe-ai-research-june-2026-how-ai-is-redistributing-creative-work.pdf" target="_blank" rel="noopener noreferrer">adobe.com PDF</a></div></div></li>
+<li id="s-careers"><div>AI and GC Careers (2026). Clemson Graphic Communications, October 2026. First-job figures: 661 validated graduates, 2016–26; descriptive, second-coder check pending.<div class="links"><a href="https://tonkin.people.clemson.edu/pages/gc-curriculum/ai-careers/ai-and-gc-careers.html" target="_blank" rel="noopener noreferrer">tonkin.people.clemson.edu</a></div></div></li>
+<li id="s-threeact"><div>The 3-Act Program Structure: A research synthesis (2026, May 25). GC Curriculum Tool. Faculty retreat agreement to move students into GC 4400 and 4060 by about mid-junior year, reported October 2026.<div class="links"><a href="https://tonkin.people.clemson.edu/pages/gc-curriculum/three-act-deep-dive.html" target="_blank" rel="noopener noreferrer">tonkin.people.clemson.edu</a></div></div></li>
+<li id="s-catalog"><div>Clemson University (2026). <em>2026–2027 Undergraduate Catalog</em>: Graphic Communications, BS, and GC course descriptions. Text from a local copy saved 2026-08-25/26; the live catalog blocked automated reading on 2026-10-29.<div class="links"><a href="https://catalog.clemson.edu/preview_program.php?catoid=49&amp;poid=16765" target="_blank" rel="noopener noreferrer">catalog.clemson.edu</a></div></div></li>
+<li id="s-tool"><div>GC Curriculum Tool (2026). Course pages built from faculty interviews and course materials, as of 2026-10-28. Internal.</div></li>
+<li id="s-tannenbaum"><div>Tannenbaum, S. I., &amp; Cerasoli, C. P. (2013). Do team and individual debriefs enhance performance? A meta-analysis. <em>Human Factors</em>, 55(1), 231–245. Facilitated debriefs "about 3 times as effective as nonfacilitated debriefs" (p. 239). Held.</div></li>
+<li id="s-gentner"><div>Gentner, D., Loewenstein, J., &amp; Thompson, L. (2003). Learning and transfer: A general role for analogical encoding. <em>Journal of Educational Psychology</em>, 95(2), 393–408. Experiment 2, undergraduates: 48% vs 19%. Held.</div></li>
+<li id="s-derooij"><div>de Rooij, A., &amp; Biskjaer, M. M. (2026). Does generative AI make us think alike? A systematic review and meta-analysis of homogenization effects in human–AI co-creation. Preprint, April 15, 2026 (pooled <em>d</em> = .334); journal version in <em>Behaviour &amp; Information Technology</em>. Preprint held.</div></li>
+<li id="s-meincke"><div>Meincke, L., Mollick, E., &amp; Terwiesch, C. (2024). Prompting diverse ideas: Increasing AI idea variance. arXiv:2402.01727. Held.</div></li>
+<li id="s-wadi"><div>Wadinambiarachchi, S., Kelly, R. M., Pareek, S., Zhou, Q., &amp; Velloso, E. (2024). The effects of generative AI on design fixation and divergent thinking. <em>CHI ’24</em>. Held.<div class="links"><a href="https://doi.org/10.1145/3613904.3642919" target="_blank" rel="noopener noreferrer">doi:10.1145/3613904.3642919</a></div></div></li>
+</ol>
+</section>
+
+<footer class="doc">
+  <p>Prepared for discussion in Clemson Graphic Communications, October 2026. A proposal for faculty to react to, not a decision. Research notes: library/notes/creative-operating-system/.</p>
+</footer>
+</main>
+</div>
+
+</body>
+</html>
