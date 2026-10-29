@@ -352,4 +352,24 @@ describe('CanvasBox', () => {
     expect(urls.indexOf(urls.find(u => u.includes('/canvas-reextract'))!))
       .toBeLessThan(urls.indexOf(urls.find(u => u.includes('/scan-linked-docs'))!));
   });
+
+  it('a Canvas import reports how many items came in and names the files it left out', async () => {
+    // The live (list-mode) import answers with a manifest, not `imported`; the
+    // box said "imported 0" and never showed the skipped files (2026-10-29).
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, headers: { get: () => 'application/json' },
+      json: async () => ({ manifest: {
+        rows: [{ id: 'a' }, { id: 'b' }],
+        skipped: [{ fileName: 'Locked handout', mimeType: '', reason: "Canvas wouldn't share this file (it may be locked, hidden or deleted)" }],
+      } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<CanvasBox course={course} materials={[]} slug="s" onMaterialsChange={noop} />);
+    fireEvent.click(screen.getByRole('button', { name: /import from canvas/i }));
+    fireEvent.change(screen.getByLabelText(/canvas course url/i), { target: { value: 'https://clemson.instructure.com/courses/1' } });
+    fireEvent.change(screen.getByLabelText(/canvas api token/i), { target: { value: 'tok' } });
+    fireEvent.click(screen.getByRole('button', { name: /^import$/i }));
+    await waitFor(() => expect(screen.getByText(/imported 2 files/i)).toBeTruthy());
+    expect(screen.getByText(/Locked handout/)).toBeTruthy();
+  });
 });

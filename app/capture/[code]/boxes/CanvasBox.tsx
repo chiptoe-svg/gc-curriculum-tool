@@ -62,6 +62,21 @@ function skippedSummary(skipped?: SkippedFile[]): string {
   return parts.length ? ` ${parts.join('. ')}.` : '';
 }
 
+/** canvas-import answers `imported` (legacy) or a `manifest` (list mode). */
+interface CanvasImportResponse {
+  imported?: number;
+  manifest?: { rows?: unknown[]; skipped?: Array<{ fileName: string; reason: string }> };
+}
+
+/** Item count plus a note naming every file the import left out, so none
+ *  disappears silently (2026-10-29). */
+function canvasImportResult(json: CanvasImportResponse): { n: number; note: string } {
+  const n = json.imported ?? json.manifest?.rows?.length ?? 0;
+  const left = json.manifest?.skipped ?? [];
+  const note = left.length ? ` Not imported: ${left.map(f => `${f.fileName} (${f.reason})`).join('; ')}.` : '';
+  return { n, note };
+}
+
 /** Rank readiness so the collapsed summary can surface the worst (least ready). */
 const STATUS_RANK: Record<string, number> = {
   ready: 0,
@@ -187,10 +202,10 @@ function BundledGroupHeader({
         setImportMsg(`Server returned ${res.status}.`);
         return;
       }
-      const json = await res.json() as { imported?: number; inserted?: number; updated?: number; error?: string };
+      const json = await res.json() as CanvasImportResponse & { error?: string };
       if (!res.ok) { setImportMsg(json.error ?? `Import failed (${res.status})`); return; }
-      const imp = json.imported ?? 0;
-      setImportMsg(`imported ${imp} material${imp === 1 ? '' : 's'}.`);
+      const { n: imp, note } = canvasImportResult(json);
+      setImportMsg(`imported ${imp} material${imp === 1 ? '' : 's'}.${note}`);
       setToken('');
       setCanvasUrl('');
       setFormOpen(false);
@@ -323,9 +338,10 @@ function BundledGroupHeader({
             </p>
           </div>
           )}
-          {importMsg && <p className="text-sm text-muted-foreground">{importMsg}</p>}
         </div>
       )}
+      {/* Outside the form, which closes on success (2026-10-29). */}
+      {importMsg && <p className="px-3 pb-2 text-sm text-muted-foreground">{importMsg}</p>}
     </div>
   );
 }
@@ -440,18 +456,19 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEn
         setReextractMsg(`Server returned ${res.status}.`);
         return;
       }
-      const json = await res.json() as { updated?: number; imported?: number; skipped?: number; error?: string };
+      const json = await res.json() as CanvasImportResponse & { updated?: number; error?: string };
       if (!res.ok) { setReextractMsg(json.error ?? `Import failed (${res.status})`); return; }
-      const n = url ? (json.imported ?? 0) : (json.updated ?? 0);
+      const result = url ? canvasImportResult(json) : { n: json.updated ?? 0, note: '' };
+      const n = result.n;
       const verb = url ? 'imported' : 're-extracted';
-      setReextractMsg(`${verb} ${n} file${n === 1 ? '' : 's'}.`);
+      setReextractMsg(`${verb} ${n} file${n === 1 ? '' : 's'}.${result.note}`);
       setToken('');
       setReimportUrl('');
       setTokenOpen(false);
       const fresh = await fetchCourseMaterials(course.code, slug);
       if (fresh) onMaterialsChange(fresh);
       if (autoScanAfterImport) {
-        setReextractMsg(`${verb} ${n} file${n === 1 ? '' : 's'}; scanning linked docs…`);
+        setReextractMsg(`${verb} ${n} file${n === 1 ? '' : 's'}; scanning linked docs…${result.note}`);
         await scanLinkedDocs();
       }
     } catch (e) {
@@ -920,9 +937,11 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEn
             />
             Scan linked Google/YouTube files automatically after import
           </label>
-          {reextractMsg && <p className="mt-1 text-sm text-muted-foreground">{reextractMsg}</p>}
         </div>
       )}
+      {/* Outside the form: a successful import closes it, and the result
+          (count + files left out) must stay visible (2026-10-29). */}
+      {!isBundled && reextractMsg && <p className="border-t px-3 py-1.5 text-sm text-muted-foreground">{reextractMsg}</p>}
 
       {/* ── Expanded body ── */}
       {open && (

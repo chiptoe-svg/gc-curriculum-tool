@@ -31,9 +31,8 @@ import { putLocal, courseSlug, safeFilename } from '@/lib/storage/local-storage'
 import { SUPPORTED_MIME_TYPES } from '@/lib/courses/extract-text';
 import { isLegacyOfficeMime } from '@/lib/courses/legacy-converter';
 import { EXT_TO_MIME } from '@/lib/canvas/ext-to-mime';
+import { planCanvasFiles } from '@/lib/canvas/canvas-file-plan';
 
-const CANVAS_FILE_ID_RE = /\/files\/(\d+)(?:\/|\?|"|$)/g;
-const MAX_FILES_PER_IMPORT = 20;
 const MAX_FILE_BYTES = 5 * 1024 * 1024;  // 5 MB cap per file
 
 /** Maps a Canvas: fileName prefix to the manifest kind field. */
@@ -126,10 +125,9 @@ export async function runListImport(
     data.assignments.map(a => a.descriptionHtml).join('\n\n');
   const combinedScan = allExtractedText + '\n\n' + allHtml;
 
-  const referencedFileIds = new Set<string>();
-  for (const m of combinedScan.matchAll(CANVAS_FILE_ID_RE)) {
-    if (m[1]) referencedFileIds.add(m[1]);
-  }
+  // Module files first, then files linked from the text (2026-10-29).
+  const filePlan = planCanvasFiles(combinedScan, data.modules);
+  const moduleTitles = new Map(data.modules.flatMap(m => m.items.flatMap(i => (i.fileId ? [[i.fileId, i.title] as const] : []))));
 
   // ── Upsert HTML-derived items ──────────────────────────────────────────────
   const manifestRows: ManifestRow[] = [];
@@ -187,11 +185,19 @@ export async function runListImport(
   }
 
   // ── Download + store file attachments (no extraction, no enqueue) ─────────
-  const skippedFiles: SkippedFile[] = [];
-  const fileIdList = Array.from(referencedFileIds).slice(0, MAX_FILES_PER_IMPORT);
-  for (const fileId of fileIdList) {
+  const skippedFiles: SkippedFile[] = filePlan.overLimit.map(f => ({
+    fileName: f.name, mimeType: '', reason: `over the ${filePlan.ids.length}-file import limit`,
+  }));
+  for (const fileId of filePlan.ids) {
     const meta = await fetchCanvasFileMeta(canvasBaseUrl, fileId, canvasToken);
-    if (!meta) continue;
+    if (!meta) {
+      skippedFiles.push({
+        fileName: moduleTitles.get(fileId) ?? `Canvas file ${fileId}`,
+        mimeType: '',
+        reason: "Canvas wouldn't share this file (it may be locked, hidden or deleted)",
+      });
+      continue;
+    }
 
     const reportedMime = meta.mimeType?.toLowerCase() || '';
     const ext = (meta.displayName.split('.').pop() ?? '').toLowerCase();

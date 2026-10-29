@@ -301,6 +301,7 @@ export async function parseImscc(
           externalUrl: null,
           htmlUrl: null,
           published: true,
+          fileId: null, // a cartridge carries its files itself
         }));
 
         modules.push({

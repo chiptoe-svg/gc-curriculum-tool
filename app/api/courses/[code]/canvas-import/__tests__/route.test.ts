@@ -15,6 +15,7 @@ vi.mock('@/lib/capture/ingest-queue', () => ({
 }));
 vi.mock('@/lib/canvas/fetchCanvasCourse', () => ({
   fetchCanvasCourse: vi.fn(),
+  fetchCanvasFileMeta: vi.fn(),
 }));
 vi.mock('@/lib/canvas/htmlToText', () => ({
   htmlToText: (s: string) => s.replace(/<[^>]+>/g, '').trim(),
@@ -28,7 +29,7 @@ import {
   updateMaterialMetadata,
   updateExtractionResult,
 } from '@/lib/db/course-materials-queries';
-import { fetchCanvasCourse } from '@/lib/canvas/fetchCanvasCourse';
+import { fetchCanvasCourse, fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 
 const mockGetCourse = getCourseByCode as ReturnType<typeof vi.fn>;
 const mockInsert = insertMaterial as ReturnType<typeof vi.fn>;
@@ -168,5 +169,20 @@ describe('POST /api/courses/[code]/canvas-import', () => {
       expect.objectContaining({ id: 'existing-mat-id', extractionStatus: 'ok' }),
     );
     expect(mockEnqueue).toHaveBeenCalledWith('existing-mat-id');
+  });
+
+  it('tries the files placed directly in modules, and counts the ones it could not get', async () => {
+    // PKSC 2200, 2026-10-28: the syllabus PDF sat in a module and was never fetched.
+    mockGetCourse.mockResolvedValue(FAKE_COURSE);
+    mockFetch.mockResolvedValue({
+      ...CANVAS_DATA,
+      modules: [{ id: '1', name: 'Course Information', published: true, items: [
+        { title: 'Course Syllabus.pdf', type: 'File', externalUrl: null, htmlUrl: null, published: true, fileId: '901' },
+      ] }],
+    });
+    const [req, ctx] = makeReq({ slug: 'valid-slug', canvasUrl: 'https://clemson.instructure.com/courses/12345', canvasToken: 'tok' });
+    const json = await (await POST(req, ctx)).json();
+    expect(fetchCanvasFileMeta).toHaveBeenCalledWith(expect.anything(), '901', 'tok');
+    expect(json.details.filesSkipped).toBe(1);
   });
 });

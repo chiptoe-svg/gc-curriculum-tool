@@ -14,14 +14,10 @@ import { htmlToText } from '@/lib/canvas/htmlToText';
 import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
 import { isLegacyOfficeMime } from '@/lib/courses/legacy-converter';
 import { EXT_TO_MIME } from '@/lib/canvas/ext-to-mime';
+import { planCanvasFiles } from '@/lib/canvas/canvas-file-plan';
 
 export const maxDuration = 120;
 
-// Canvas file URLs embedded in materials follow this shape regardless of which
-// course they belong to: /files/{ID}/{download|preview|edit|...}?...
-// We pull the ID anywhere the API or HTML surfaces this pattern.
-const CANVAS_FILE_ID_RE = /\/files\/(\d+)(?:\/|\?|"|$)/g;
-const MAX_FILES_PER_IMPORT = 20;
 const MAX_FILE_BYTES = 5 * 1024 * 1024;  // 5 MB cap per file
 
 interface Ctx { params: Promise<{ code: string }> }
@@ -128,14 +124,12 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   // so far for Canvas file URLs, fetch each unique file, extract PDF/DOCX text,
   // and add as a new material. Images / videos / audio / binary types are
   // recorded as 'failed' so the auditor knows they exist but couldn't be read.
+  // Files placed directly in modules are fetched too (2026-10-29).
   const allExtractedText = toInsert.map(t => t.text).join('\n\n');
-  const referencedFileIds = new Set<string>();
-  for (const m of allExtractedText.matchAll(CANVAS_FILE_ID_RE)) {
-    if (m[1]) referencedFileIds.add(m[1]);
-  }
-  const fileResults: Array<{ id: string; status: 'ok' | 'skipped' | 'failed'; fileName?: string; reason?: string }> = [];
-  const fileIdList = Array.from(referencedFileIds).slice(0, MAX_FILES_PER_IMPORT);
-  for (const fileId of fileIdList) {
+  const filePlan = planCanvasFiles(allExtractedText, data.modules);
+  const fileResults: Array<{ id: string; status: 'ok' | 'skipped' | 'failed'; fileName?: string; reason?: string }> =
+    filePlan.overLimit.map(f => ({ id: f.id, status: 'skipped', fileName: f.name, reason: `over the ${filePlan.ids.length}-file import limit` }));
+  for (const fileId of filePlan.ids) {
     const meta = await fetchCanvasFileMeta(canvasBaseUrl, fileId, canvasToken);
     if (!meta) {
       fileResults.push({ id: fileId, status: 'failed', reason: 'metadata not accessible' });

@@ -37,6 +37,9 @@ export interface CanvasModuleItem {
   /** Canvas's own internal URL for the item (page, file, etc.). Useful for File/Page items. */
   htmlUrl: string | null;
   published: boolean;
+  /** For File items, the Canvas file id (`content_id`), so a file placed
+   *  straight into a module can be downloaded. Null otherwise. */
+  fileId: string | null;
 }
 
 export interface CanvasModule {
@@ -390,6 +393,7 @@ export async function fetchCanvasCourse(canvasBaseUrl: string, courseId: string,
       externalUrl: typeof i['external_url'] === 'string' ? (i['external_url'] as string) : null,
       htmlUrl: typeof i['html_url'] === 'string' ? (i['html_url'] as string) : null,
       published: typeof i['published'] === 'boolean' ? (i['published'] as boolean) : true,
+      fileId: i['type'] === 'File' && i['content_id'] != null ? String(i['content_id']) : null,
     })),
   }));
 
