@@ -31,8 +31,21 @@ describe('CaptureChatPanel — credits exhausted', () => {
     );
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'my answer' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    await waitFor(() => expect(screen.getByText(MSG)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(MSG));
     expect(screen.queryByText('ai_credits_exhausted')).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('shows the message when the opening turn fails (stream error event, no messages yet)', async () => {
+    const body = JSON.stringify({ kind: 'session', sessionId: 's1' }) + '\n' + JSON.stringify({ kind: 'error', code: 'ai_credits_exhausted', message: MSG }) + '\n';
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(body, { status: 200, headers: { 'content-type': 'application/x-ndjson' } })));
+    render(
+      <CaptureChatPanel courseCode="GC 4060" slug="" messages={[]}
+        onMessagesChange={vi.fn()} onGenerate={vi.fn()} sessionId={null} onSessionIdChange={vi.fn()} chooserInstructor="T" onInstructorChange={vi.fn()}
+        chooserMode="fresh" onModeChange={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Start the interview' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(MSG));
     vi.unstubAllGlobals();
   });
 });

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { CheckInResult } from '@/lib/ai/analyze/ingestion-checkin';
+import { apiErrorText } from '@/lib/ai/credit-client';
 
 interface Props {
   courseCode: string;
@@ -25,6 +26,7 @@ const KIND_LABEL: Record<'missing' | 'set-aside', string> = {
 export function IngestionCheckIn({ courseCode, slug }: Props) {
   const [result, setResult] = useState<CheckInResult | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [creditsMessage, setCreditsMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +36,12 @@ export function IngestionCheckIn({ courseCode, slug }: Props) {
           `/api/courses/${encodeURIComponent(courseCode)}/checkin?slug=${encodeURIComponent(slug)}`,
           { cache: 'no-store' },
         );
-        if (!res.ok) return;
+        if (!res.ok) {
+          // Credits used up is the one failure worth saying out loud.
+          const json = await res.json().catch(() => ({})) as { error?: unknown };
+          if (!cancelled && json.error === 'ai_credits_exhausted') setCreditsMessage(apiErrorText(json, ''));
+          return;
+        }
         const r = (await res.json()) as CheckInResult;
         if (!cancelled) setResult(r);
       } catch {
@@ -44,6 +51,13 @@ export function IngestionCheckIn({ courseCode, slug }: Props) {
     return () => { cancelled = true; };
   }, [courseCode, slug]);
 
+  if (creditsMessage) {
+    return (
+      <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        {creditsMessage}
+      </div>
+    );
+  }
   if (dismissed) return null;
   if (!result || result.message === null) return null;
 

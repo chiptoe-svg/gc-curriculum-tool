@@ -9,6 +9,7 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
+import { creditsExhaustedResponse } from '@/lib/ai/credit-response';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -97,6 +98,10 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       : { ...result, highlights: filteredHighlights };
     return NextResponse.json(filtered);
   } catch (e) {
+    // Credits used up: say so (503 + faculty message) — an empty check-in
+    // would read as "materials look good".
+    const credits = creditsExhaustedResponse(e);
+    if (credits) return credits;
     // Silent failure — the panel renders nothing if the AI call fails.
     console.error('ingestion-checkin failed:', e);
     const empty: CheckInResult = { message: null, highlights: [], model: 'failed' };

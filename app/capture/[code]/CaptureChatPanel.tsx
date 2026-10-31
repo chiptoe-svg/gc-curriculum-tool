@@ -540,6 +540,15 @@ export function CaptureChatPanel({
       )}
       </div>
 
+      {/* Shown whether or not the interview has started: an opening turn that
+          fails (e.g. the shared OpenAI credits are used up) leaves no messages,
+          so the error can't live inside the reply area. */}
+      {error && (
+        <div role="alert" className="mx-4 my-3 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
       {/* Reading order: interviewer question (end of transcript) → reply box →
           Record/Send → readiness → finish actions. The readiness strip used to
           sit between the question and the reply box; it now sits with the
@@ -577,7 +586,6 @@ export function CaptureChatPanel({
               {busy ? 'Sending…' : 'Send'}
             </button>
           </div>
-          {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
         </div>
       )}
 
