@@ -48,6 +48,19 @@ function mode<T>(xs: T[]): T | undefined {
   return [...c.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
 }
 
+/** Retry gateway errors (5xx, connection) twice with a pause, so a cluster
+ *  hiccup is not scored as a model failure. Model errors fail at once. */
+async function withBackoff<T>(fn: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try { return await fn(); } catch (e) {
+      const status = (e as { status?: number }).status;
+      const gateway = (typeof status === 'number' && status >= 500) || /ECONNRESET|ETIMEDOUT|ECONNREFUSED|fetch failed|Connection error|timed out/i.test((e as Error).message);
+      if (!gateway || attempt >= 2) throw e;
+      await new Promise(r => setTimeout(r, 30_000 * (attempt + 1)));
+    }
+  }
+}
+
 async function main() {
   const inputs = [];
   for (const course of COURSES) {
@@ -75,12 +88,12 @@ async function main() {
       await Promise.all(inputs.map(async p => {
         const t0 = Date.now();
         try {
-          const result = await scoreSnapshotCompetencies({
+          const result = await withBackoff(() => scoreSnapshotCompetencies({
             snapshotId: p.snap.id, courseCode: p.snap.courseCode, snapshotProfile: p.snap.profile,
             competencies: p.subs.map(x => ({ id: x.id, name: x.name, knowDescriptor: x.knowDescriptor, understandDescriptor: x.understandDescriptor, doDescriptor: x.doDescriptor, ...flagsFor(p.flags, x.id) })),
             modelOverride: s.model,
             reasoningEffortOverride: s.level,
-          });
+          }));
           calls.push({ setup: s.label, course: p.course, run, ok: true, ms: Date.now() - t0,
             cells: result.result.cells.map(c => ({ sub: c.competency_id, k: c.k_depth ?? null, u: c.u_depth ?? null, d: c.d_depth, excerpt: c.evidence_excerpt ?? '' })) });
           process.stdout.write('.');

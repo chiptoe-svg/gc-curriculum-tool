@@ -58,7 +58,23 @@ Levels tested *(builder's call)*:
 | Write | off, low |
 | Extract | off; low only for a model that fails off |
 
-xhigh is skipped: it was slower and no more accurate in CUassistant's runs. A role's chosen campus setting is stored as a model plus level, like the OpenAI roles.
+xhigh is skipped: it was slower and no more accurate in CUassistant's runs.
+
+**Lessons from CUassistant's advisor** (Cob_advisor session, 2026-11-01; `src/thinking-router.ts`, `src/method-check.ts`, `docs/superpowers/specs/2026-08-15-adaptive-thinking-router-design.md`, `2026-10-31-admin-method-check-design.md`):
+
+- **Structure comes from the harness, not from asking the model to plan.** What helped most, in order:
+  1. Deterministic tools that do the multi-step work.
+  2. A prompt rule that fixes the answer's shape before the first call.
+  3. A model-free check that names the evidence a turn must have gathered, with one rerun naming the missing step.
+- **Thinking off by default, turned on by a pattern or after a failed check,** beat both always-on and always-off: 71/96, vs 65/96 always-off and 63/96 always-on. It is also their answer to runaway thinking.
+- **A second model reviewing the answer afterward made results worse** (236 vs 245 of 256). We do not add one.
+
+**What this changes here:**
+- **Converse also gets an adaptive setting.** Thinking is off, and turns on for the one rerun after a failed search or citation check. It also turns on from the first call when the instructor's answer names a course file or asks for a comparison. It is benchmarked beside off, low and medium.
+- **Pi pitfalls to check per model:**
+  - `tool_choice: required` together with `enable_thinking: true` returns HTTP 400 on the campus vLLM stack. Strip it when thinking is on, or test that each model accepts it.
+  - Qwen's `enable_thinking` reaches the wire only when the Pi model object has `reasoning: true`, the qwen chat-template thinking format, and a reasoning level.
+- **Benchmarks back off and retry on endpoint errors,** so a cluster hiccup isn't counted as a model failure. A role's chosen campus setting is stored as a model plus level, like the OpenAI roles.
 
 ### Test sets and how each is judged
 
