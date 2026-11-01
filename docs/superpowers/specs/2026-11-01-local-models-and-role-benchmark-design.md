@@ -99,6 +99,8 @@ Outputs: a results page in `docs/superpowers/audits/`, plus one line in STATE.md
 - **Each model's reasoning setting is sent the way that model accepts it** (from the 2026-11-01 probe): thinking off via `chat_template_kwargs.enable_thinking=false` (GLM, Qwen3.8, DeepSeek; gpt-oss has no off); levels via top-level `reasoning_effort` (GLM low/medium/high, DeepSeek low/high/xhigh/max, gpt-oss low/medium/high) or `chat_template_kwargs.reasoning_effort` with thinking on (Qwen3.8 low/medium/xhigh).
 - `AI_PROVIDER` stays the global fallback for code that isn't role-aware. `CAMPUS_LLM_DEFAULT_MODEL` no longer overrides a role that names a campus model.
 
+- **Runaway guard on every campus call** (2026-11-01 probe: GLM-5.3 thought until a 16k-token cap at every level, including off, on a hard multi-step puzzle, with garbled text in one answer): a per-call token cap and time limit; a call that hits either is a failure and is retried once at a lower level (or thinking off). Pi's own per-call cap must be confirmed to reach the wire (in CUassistant, pi-agent-core dropped `maxTokens`). In the benchmark a runaway counts as a failure.
+
 ### The course switch
 
 - **Label:** "Only use local LLM models for this course" (owner's wording), with a hover note that they run on Clemson's RCD servers and nothing is sent to OpenAI.
