@@ -56,13 +56,14 @@ async function main() {
       .innerJoin(courseCaptureSnapshots, eq(courseCaptureSnapshots.id, snapshotCompetencyCoverage.snapshotId))
       .where(and(eq(courseCaptureSnapshots.courseCode, course), gte(snapshotCompetencyCoverage.generatedAt, SINCE)));
     if (!base.length) throw new Error(`no post-fix Sol cells for ${course}`);
-    const snap = base[0]!.s;
-    if (base.some(b => b.s.id !== snap.id)) throw new Error(`${course}: baseline spans several snapshots`);
-    const ids = base.map(b => b.c.competencyId);
+    // A course re-scored on several snapshots: use its newest one.
+    const snap = base.map(b => b.s).sort((a, b) => +b.createdAt - +a.createdAt)[0]!;
+    const own = base.filter(b => b.s.id === snap.id);
+    const ids = own.map(b => b.c.competencyId);
     const subs = await db.select().from(subCompetencies).where(inArray(subCompetencies.id, ids));
     inputs.push({
       course, snap, subs, flags: await getScoringFlags(ids), haystack: norm(JSON.stringify(snap.profile)),
-      baseline: base.map(b => ({ sub: b.c.competencyId, k: b.c.kDepth, u: b.c.uDepth, d: b.c.dDepth, excerpt: b.c.evidenceExcerpt ?? '' })),
+      baseline: own.map(b => ({ sub: b.c.competencyId, k: b.c.kDepth, u: b.c.uDepth, d: b.c.dDepth, excerpt: b.c.evidenceExcerpt ?? '' })),
     });
   }
   console.log(`courses: ${inputs.map(i => `${i.course} (${i.subs.length})`).join(' | ')}\nsetups: ${SETUPS.map(s => s.label).join(' | ')}\nruns: ${N_RUNS}`);
