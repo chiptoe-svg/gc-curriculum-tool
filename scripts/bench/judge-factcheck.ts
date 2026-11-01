@@ -107,8 +107,9 @@ async function main() {
       if (!v) return cell;
       return {
         ...cell,
-        // Cap each score at the level the checker's grounded quote supports (Know never below 1 if scored).
-        k: cell.k == null || !v.know ? cell.k : Math.min(cell.k, Math.max(v.know.level, 1)),
+        // Cap each score at the level the checker's grounded quote supports. Know uses the
+        // checker's level as given: it answers 1 for content that is only presented, 0 for none.
+        k: cell.k == null || !v.know ? cell.k : Math.min(cell.k, v.know.level),
         u: cell.u == null || !v.understand ? cell.u : Math.min(cell.u, v.understand.level),
         d: !v.do ? cell.d : Math.min(cell.d, v.do.level),
       };
