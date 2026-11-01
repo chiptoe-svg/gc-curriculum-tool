@@ -110,7 +110,7 @@ export interface AIProvider {
 import { OpenAIProvider, functionEffort } from './openai';
 import { AnthropicProvider } from './anthropic';
 import { LocalProvider } from './local';
-import { CampusProvider } from './campus';
+import { CampusProvider, type CampusReasoning } from './campus';
 import { resolveForFunction, type AIFunctionId } from './function-settings';
 import { visionModel, DEFAULT_LOCAL_VISION_MODEL } from './vision-models';
 import { ROLE_SETTINGS } from './models';
@@ -142,13 +142,16 @@ export async function getProviderForFunction(
   functionId: AIFunctionId,
   override?: { model?: string; reasoningEffort?: string },
 ): Promise<AIProvider> {
-  if (override?.model) return buildProvider(override.model, override.reasoningEffort);
+  if (override?.model) return buildProvider(override.model, override.reasoningEffort, true);
   const resolved = await resolveForFunction(functionId);
   // The evaluation knob OPENAI_REASONING_EFFORT stays above the role's effort.
   return buildProvider(resolved.model, functionEffort(resolved.effort));
 }
 
-function buildProvider(modelOverride: string | undefined, reasoningEffort?: string): AIProvider {
+/** `explicitEffort`: the effort came from an explicit caller override (an
+ *  evaluation script), not a role. Only then is it sent to a campus model, as
+ *  that model's reasoning level; a role effort is an OpenAI setting. */
+function buildProvider(modelOverride: string | undefined, reasoningEffort?: string, explicitEffort = false): AIProvider {
   // Trim every env var defensively — Vercel sometimes preserves trailing
   // newlines from pasted values, and OpenAI rejects an API key with CR/LF.
   //
@@ -204,7 +207,8 @@ function buildProvider(modelOverride: string | undefined, reasoningEffort?: stri
       process.env.CAMPUS_LLM_DEFAULT_MODEL?.trim() ??
       modelOverride ??
       'qwen3.6-35b-a3b-fp8';
-    return new CampusProvider(model, baseURL, apiKey);
+    return new CampusProvider(model, baseURL, apiKey,
+      explicitEffort && reasoningEffort ? { reasoning: reasoningEffort as CampusReasoning } : undefined);
   }
   throw new Error(`Unknown AI provider: ${which}`);
 }
