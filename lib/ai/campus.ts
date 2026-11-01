@@ -24,6 +24,44 @@ export function toOpenAiToolDefs(tools: ToolDefinition[]): ChatCompletionTool[] 
 }
 
 /**
+ * A campus model's reasoning level. 'off' turns thinking off; the others set
+ * how hard it thinks. Each model family accepts a different set and a
+ * different wire format (2026-11-01 probe against RCD; spec
+ * docs/superpowers/specs/2026-11-01-local-models-and-role-benchmark-design.md).
+ */
+export type CampusReasoning = 'off' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+
+const CAMPUS_REASONING_FAMILIES: Array<{
+  name: string;
+  match: RegExp;
+  levels: CampusReasoning[];
+  wire: 'top-level' | 'template';
+}> = [
+  { name: 'GLM', match: /glm/i, levels: ['off', 'low', 'medium', 'high'], wire: 'top-level' },
+  { name: 'DeepSeek', match: /deepseek/i, levels: ['off', 'low', 'high', 'xhigh', 'max'], wire: 'top-level' },
+  { name: 'gpt-oss', match: /gpt-?oss/i, levels: ['low', 'medium', 'high'], wire: 'top-level' },
+  { name: 'Qwen3.8', match: /qwen3\.8/i, levels: ['off', 'low', 'medium', 'xhigh'], wire: 'template' },
+];
+
+/** Request-body fields that set `level` on `model`. Throws for a moving alias
+ *  (tiger, cub), an unknown model, or a level the model does not accept, so a
+ *  setting is never silently dropped. */
+export function campusReasoningParams(model: string, level: CampusReasoning | undefined): Record<string, unknown> {
+  if (!level) return {};
+  if (/^(tiger|cub)$/i.test(model)) {
+    throw new Error(`Campus alias "${model}" moves between models; name the exact model to set its reasoning level`);
+  }
+  const family = CAMPUS_REASONING_FAMILIES.find(f => f.match.test(model));
+  if (!family) throw new Error(`No known reasoning setting for campus model "${model}"`);
+  if (!family.levels.includes(level)) {
+    throw new Error(`${family.name} (${model}) does not accept reasoning level "${level}"; it accepts ${family.levels.join(', ')}`);
+  }
+  if (level === 'off') return { chat_template_kwargs: { enable_thinking: false } };
+  if (family.wire === 'template') return { chat_template_kwargs: { enable_thinking: true, reasoning_effort: level } };
+  return { reasoning_effort: level };
+}
+
+/**
  * Campus-hosted LLM provider (Clemson RCD). Speaks the OpenAI-compatible
  * chat-completions + tool-use protocol exposed by the RCD vLLM/SGLang
  * deployment at https://llm.rcd.clemson.edu/v1. The default model is
@@ -44,15 +82,19 @@ export class CampusProvider implements AIProvider {
   private client: OpenAI;
   private baseURL: string;
   private apiKey: string;
-  /** gpt-oss reasoning effort. When set, isolates reasoning into a separate
-   *  response field so `content` stays clean JSON; 'low' keeps it fast. */
-  private reasoningEffort?: 'low' | 'medium' | 'high';
+  /** Reasoning fields sent on every request (campusReasoningParams). */
+  private reasoningParams: Record<string, unknown>;
 
-  constructor(model: string, baseURL: string, apiKey: string, opts?: { reasoningEffort?: 'low' | 'medium' | 'high' }) {
+  /** `reasoning` sets the level for any known campus model. `reasoningEffort`
+   *  is the older gpt-oss form; it isolates reasoning into a separate response
+   *  field so `content` stays clean JSON. */
+  constructor(model: string, baseURL: string, apiKey: string, opts?: { reasoningEffort?: 'low' | 'medium' | 'high'; reasoning?: CampusReasoning }) {
     this.model = model;
     this.baseURL = baseURL;
     this.apiKey = apiKey;
-    this.reasoningEffort = opts?.reasoningEffort;
+    this.reasoningParams = opts?.reasoning
+      ? campusReasoningParams(model, opts.reasoning)
+      : opts?.reasoningEffort ? { reasoning_effort: opts.reasoningEffort } : {};
     this.client = new OpenAI({ apiKey, baseURL });
   }
 
@@ -78,9 +120,8 @@ export class CampusProvider implements AIProvider {
       ],
       response_format: { type: 'json_object' },
       temperature: 0.2,
-      // reasoning_effort is a gpt-oss/o-series param; cast because the SDK type
-      // may not include it for all models. Other campus models ignore it.
-      ...(this.reasoningEffort ? { reasoning_effort: this.reasoningEffort } : {}),
+      // Cast because the SDK type doesn't include chat_template_kwargs.
+      ...this.reasoningParams,
     } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
     const durationMs = Date.now() - started;
 
@@ -182,7 +223,8 @@ export class CampusProvider implements AIProvider {
         tools: oaiTools.length > 0 ? oaiTools : undefined,
         tool_choice: oaiTools.length > 0 ? 'auto' : undefined,
         temperature: 0.2,
-      });
+        ...this.reasoningParams,
+      } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
       totalPromptTokens += response.usage?.prompt_tokens ?? 0;
       totalCompletionTokens += response.usage?.completion_tokens ?? 0;
 
@@ -233,7 +275,8 @@ export class CampusProvider implements AIProvider {
       messages: [{ role: 'system', content: systemWithSchema }, ...history],
       response_format: { type: 'json_object' },
       temperature: 0.2,
-    });
+      ...this.reasoningParams,
+    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
     totalPromptTokens += finalResponse.usage?.prompt_tokens ?? 0;
     totalCompletionTokens += finalResponse.usage?.completion_tokens ?? 0;
 
