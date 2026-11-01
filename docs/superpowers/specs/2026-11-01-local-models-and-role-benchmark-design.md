@@ -54,7 +54,7 @@ Levels tested *(builder's call)*:
 | Role | Levels per model |
 |---|---|
 | Judge | low, medium; thinking always on |
-| Converse | off, low |
+| Converse | off, low, medium (owner, 2026-11-01: choosing the next question is judgment work; Sol needed medium to search reliably). The 15 s per turn bar decides between levels that pass. |
 | Write | off, low |
 | Extract | off; low only for a model that fails off |
 
