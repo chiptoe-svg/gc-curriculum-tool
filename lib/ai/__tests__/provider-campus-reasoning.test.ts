@@ -17,6 +17,7 @@ describe('getProviderForFunction on the campus provider', () => {
     process.env.CAMPUS_LLM_BASE_URL = 'http://campus';
     process.env.CAMPUS_LLM_API_KEY = 'k';
     delete process.env.CAMPUS_LLM_DEFAULT_MODEL;
+    delete process.env.CAMPUS_LLM_REASONING;
   });
 
   it('sends an explicit override level to the named campus model', async () => {
@@ -28,5 +29,13 @@ describe('getProviderForFunction on the campus provider', () => {
   it('does not send a role effort meant for OpenAI to a campus model', async () => {
     const p = await getProviderForFunction('program-score-coverage');
     expect(sent(p)).toEqual({});
+  });
+
+  it('applies CAMPUS_LLM_REASONING to role calls on the pinned campus model (benchmarks)', async () => {
+    process.env.CAMPUS_LLM_DEFAULT_MODEL = 'deepseek-v4.1-flash-1017';
+    process.env.CAMPUS_LLM_REASONING = 'off';
+    const p = await getProviderForFunction('material-classify');
+    expect(p.model).toBe('deepseek-v4.1-flash-1017');
+    expect(sent(p)).toEqual({ chat_template_kwargs: { enable_thinking: false } });
   });
 });

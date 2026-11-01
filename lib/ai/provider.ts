@@ -207,8 +207,10 @@ function buildProvider(modelOverride: string | undefined, reasoningEffort?: stri
       process.env.CAMPUS_LLM_DEFAULT_MODEL?.trim() ??
       modelOverride ??
       'qwen3.6-35b-a3b-fp8';
-    return new CampusProvider(model, baseURL, apiKey,
-      explicitEffort && reasoningEffort ? { reasoning: reasoningEffort as CampusReasoning } : undefined);
+    // CAMPUS_LLM_REASONING (benchmarks): a reasoning level for every role call on the
+    // pinned CAMPUS_LLM_DEFAULT_MODEL. An explicit override's level still wins.
+    const reasoning = explicitEffort && reasoningEffort ? reasoningEffort : process.env.CAMPUS_LLM_REASONING?.trim();
+    return new CampusProvider(model, baseURL, apiKey, reasoning ? { reasoning: reasoning as CampusReasoning } : undefined);
   }
   throw new Error(`Unknown AI provider: ${which}`);
 }
