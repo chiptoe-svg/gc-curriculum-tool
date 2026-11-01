@@ -95,6 +95,8 @@ Outputs: a results page in `docs/superpowers/audits/`, plus one line in STATE.md
 - Each entry in `ROLE_SETTINGS` (`lib/ai/models.ts`) gains a provider: `openai` or `campus`. Moving a role to campus stays a one-line edit.
 - A second table, `LOCAL_ROLE_SETTINGS`, names the campus model and effort each role uses when a course has the switch on. It is filled from the part 1 results.
 - Campus model names live in `lib/ai/models.ts` with the OpenAI ones (the registry guard test covers them).
+- **Roles name exact campus models, never the moving aliases** (owner, 2026-11-01): `glm-5.3`, not `tiger`. A daily check compares what `tiger` and `cub` serve against the pinned models and tells the owner when an alias moves, so the newer model is tested before any switch.
+- **Each model's reasoning setting is sent the way that model accepts it** (from the 2026-11-01 probe): thinking off via `chat_template_kwargs.enable_thinking=false` (GLM, Qwen3.8, DeepSeek; gpt-oss has no off); levels via top-level `reasoning_effort` (GLM low/medium/high, DeepSeek low/high/xhigh/max, gpt-oss low/medium/high) or `chat_template_kwargs.reasoning_effort` with thinking on (Qwen3.8 low/medium/xhigh).
 - `AI_PROVIDER` stays the global fallback for code that isn't role-aware. `CAMPUS_LLM_DEFAULT_MODEL` no longer overrides a role that names a campus model.
 
 ### The course switch
