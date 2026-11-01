@@ -33,6 +33,8 @@ if (!/gc_curriculum_bench/.test(process.env.DATABASE_URL ?? '')) throw new Error
 const IN = process.env.IN!, OUT = process.env.OUT!;
 const MODEL = process.env.CHECK_MODEL ?? 'deepseek-v4.1-flash-1017';
 const LEVEL = (process.env.CHECK_LEVEL ?? 'low') as CampusReasoning;
+/** Checker runs per competency; the median level is kept (the checker varies run to run). */
+const CHECK_RUNS = Number(process.env.CHECK_RUNS ?? 1);
 const SINCE = new Date('2026-10-19T16:33:55Z');
 const client = new OpenAI({ baseURL: process.env.CAMPUS_LLM_BASE_URL, apiKey: process.env.CAMPUS_LLM_API_KEY });
 
@@ -84,12 +86,15 @@ async function main() {
       const foundational = c.foundational;
       const dims = foundational ? (['do'] as const) : (['know', 'understand', 'do'] as const);
       const t0 = Date.now();
-      const ans = await check(snap.profile, c, [...dims]);
+      const answers = await Promise.all(Array.from({ length: CHECK_RUNS }, () => check(snap.profile, c, [...dims])));
       const v: Record<string, { quote: string | null; level: number; why: string; valid: boolean }> = {};
       for (const d of dims) {
-        const q = ans[d]?.quote ?? null;
-        const valid = !!q && grounded(q, hay);
-        v[d] = { quote: q, level: valid ? Number(ans[d]?.level ?? 0) : 0, why: ans[d]?.why ?? '', valid };
+        const each = answers.map(ans => {
+          const q = ans[d]?.quote ?? null;
+          const valid = !!q && grounded(q, hay);
+          return { quote: q, level: valid ? Number(ans[d]?.level ?? 0) : 0, why: ans[d]?.why ?? '', valid };
+        }).sort((a, b) => a.level - b.level);
+        v[d] = each[Math.floor((each.length - 1) / 2)]!;
       }
       verdicts[`${course}|${c.id}`] = v;
       process.stdout.write(`${course} ${c.id} ${dims.map(d => `${d[0]}:${v[d]!.valid ? 'Y' : v[d]!.quote ? 'ungrounded' : 'N'}`).join(' ')} ${((Date.now() - t0) / 1000).toFixed(0)}s\n`);
