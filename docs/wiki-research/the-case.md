@@ -11,13 +11,13 @@ tags: [research, ai, careers, curriculum, direction]
 
 ## The argument in brief
 
-1. In every market GC graduates enter, AI is splitting the work. Producing variants is getting cheap. Designing, governing and running the systems that produce them is gaining value.
+1. In every market GC graduates enter, AI is splitting the work. Producing routine variants is getting cheap. Designing, governing and running the systems that produce them is gaining value, and so is execution in the larger sense: carrying work through to a finished piece that works where it lands, and answering for it.
 2. The shrinking half is where new graduates have always started and learned, so entry-level jobs are where the pressure lands.
 3. Cheaper output will not bring those jobs back. Marketing budgets are flat and package demand follows the goods being sold, so savings show up as fewer hours, not more work.
 4. GC graduates start on the shrinking side: the largest target, design, is led by graphic design, the most exposed occupation, and very few start in the systems roles that are gaining value. They reach the growing side later, on their own.
 5. Design's answer is the creative generalist: a designer with depth in one specialty who works across media and understands what each design decision costs downstream. That is where the evidence says design is heading.
 6. The curriculum covers four of the five targets well but barely touches Creative Technology & Systems. Students learn about workflow more than they practice it, and they are graded on finished work, which AI can now produce on demand.
-7. So the direction is to keep what GC teaches well and shift the weight toward systems and judgment: build the proposed Creative Technology & Systems target, teach every target's systems side, business acumen and judgment over AI output, grow problem-solvers across the program, teach design as the creative generalist, require evidence AI cannot fake, and give students the experience entry-level jobs used to provide.
+7. So the direction is to keep what GC teaches well and shift the weight toward systems and judgment: build the proposed Creative Technology & Systems target, teach every target's systems side, business acumen and judgment over AI output, grow problem-solvers across the program, teach design as the creative generalist, require evidence AI cannot fake, give students the experience entry-level jobs used to provide, and teach them to build the design and production systems that carry work through to every channel.
 
 Each step below gives its evidence; the caveats are collected at the end.
 
@@ -35,7 +35,7 @@ Four reasons support the proposal:
 
 - **The targets come from where graduates actually go.** They are drawn from ten years of the program's own data on graduates' first and later jobs, and nine in ten first jobs fall into one of the five. As careers progress, graduates move along the chain toward strategy, accounts and systems roles.
 - **Each target covers a role in the chain, not a single occupation.** Federal codes scatter GC work, and step 5 shows AI moving tasks across occupational lines. Roles in the chain stay stable while job titles change around them.
-- **The chain is what makes GC distinctive.** GC's thread across all five targets is understanding downstream consequences: what happens to the work after it leaves each person's hands. That knowledge only exists across the whole chain. A designer who knows what the decision costs on press, or a seller who understands the brand's versioning problem, is the GC graduate.
+- **The chain is what makes GC distinctive.** GC's thread across all five targets is understanding downstream consequences: what happens to the work after it leaves each person's hands. That knowledge only exists across the whole chain. A designer who knows what the decision costs on press, or a seller who understands the brand's versioning problem, is the GC graduate. Put another way, GC's strength is execution in the larger sense: carrying work from an idea to a finished piece that works on press, on shelf, on a phone or in an ad slot. AI is absorbing routine execution, not that.
 - **Careers move along the chain.** The five are connected stages of a career, not separate tracks; the movement figures are in step 4.
 
 Creative Technology & Systems is included for a different reason: few graduates start there, but it is where step 3 says value is moving. It also absorbs most of an earlier research list of eight emerging roles, such as workflow technologist and packaging compliance.
@@ -44,7 +44,7 @@ Creative Technology & Systems is included for a different reason: few graduates 
 
 The same pattern appears in each of the four markets GC graduates enter: design and visual content, marketing, print and packaging, and the sales and client roles around them. Print and packaging shows it twice, in prepress and on the plant side.
 
-| Market | Shrinking: executing variants | Growing: specifying, governing, integrating |
+| Market | Shrinking: executing routine variants | Growing: specifying, governing, integrating |
 | --- | --- | --- |
 | Design and visual content | Resizes, ad variants, production art | Brand systems and templates that AI varies; art direction; quality control of AI output |
 | Marketing | Routine reporting, first-draft copy | Experiment design, measurement, running marketing technology |
@@ -135,10 +135,10 @@ The gap at Creative Technology & Systems shows in every source.
 
 ## 7. The direction
 
-Eight moves follow from the steps above. They keep what GC already teaches well and shift where the weight falls: toward systems, judgment, business sense and the growing side of each target.
+Nine moves follow from the steps above. They keep what GC already teaches well and shift where the weight falls: toward systems, judgment, business sense and the growing side of each target.
 
 1. **Build the Creative Technology & Systems target.** On this evidence it should be the highest priority, and it is the least covered today. Entry postings are still few, but pay rises steeply with experience: senior creative-technologist roles pay well into six figures. An industry panel can set the role's tasks, entry path and what counts as evidence of readiness. *Answers steps 3 and 4.*
-2. **Teach every target's systems side, not just its execution.** *Answers step 1.*
+2. **Teach every target's systems side, not just its routine execution.** *Answers step 1.*
    - Design: design systems, variable-data templates and scripting, generative pipelines, asset management and brand governance.
    - Packaging: artwork-management platforms, regulatory labeling, 2D barcode standards, color across flexo and digital, and the cost of short digital runs.
    - Marketing: testing, attribution and running marketing technology.
@@ -149,6 +149,7 @@ Eight moves follow from the steps above. They keep what GC already teaches well 
 6. **Teach design as the creative generalist.** Each designer should build depth in one specialty and practice it across print, packaging, screen and campaign, informed by production knowledge, the brand's strategy and the customer's view. The work should carry its cost, production and compliance consequences, and students should work as AI natives, using and shaping AI tools as a normal part of their practice. *Answers steps 4 and 5.*
 7. **Require evidence that AI cannot fake.** Assessment should lean on reasoning through new cases, adapting to changed conditions, critiquing and extending work, and producing physical work that has to run, print and perform, not on a single finished artifact. *Answers step 6.*
 8. **Give students the experience entry-level jobs used to provide.** Junior roles once taught the trade through the routine work AI now absorbs, so employers increasingly expect graduates to arrive able to do the growing work. Internships, co-ops and capstones should have students do real work on that side, such as setting up a design system that others use, automating a production or marketing workflow, or running and measuring a campaign test, so they graduate with proof they can do it. *Answers step 2.*
+9. **Teach students to build design and production systems.** Instead of handing in finished items, students build the system that produces them, with a production half for every channel they publish to: print and packaging, web, social media, advertising and video. Each proposed target owns a part of it, and print and packaging is where GC's execution strength runs deepest. The proposal, its course-by-course suggestions and a working prototype are in Design and Production Systems. *Answers steps 1, 5 and 6.*
 
 To carry these moves, here are a few thought starters for possible curriculum changes:
 
@@ -182,10 +183,11 @@ They are starting points for faculty discussion, not decisions.
 
 ## Sources
 
-Every figure on this page comes from two program papers, which cite and link each study, with two exceptions taken directly from sources the main paper already cites. The design task-flow finding (step 5) is from Chin and Richmond, *Work at the Frontier* (OpenAI, July 2026), pp. 9–10. The P&G silo finding (step 5) is from Dell'Acqua et al., *The Cybernetic Teammate* (Organization Science, 2026), Figure 5 and the discussion section. Both papers were citation-checked against the full texts of their sources:
+Every figure on this page comes from three program papers, which cite and link each study, with two exceptions taken directly from sources the main paper already cites. The design task-flow finding (step 5) is from Chin and Richmond, *Work at the Frontier* (OpenAI, July 2026), pp. 9–10. The P&G silo finding (step 5) is from Dell'Acqua et al., *The Cybernetic Teammate* (Organization Science, 2026), Figure 5 and the discussion section. All three papers were citation-checked against the full texts of their sources:
 
 - [AI and GC Careers](https://tonkin.people.clemson.edu/pages/gc-curriculum/ai-careers/ai-and-gc-careers.html) covers steps 1, 2, 4 and 6 and the direction.
 - [Demand Elasticity and AI Jobs](https://tonkin.people.clemson.edu/pages/gc-curriculum/ai-careers/demand-elasticity-and-ai-jobs.html) covers step 3 and part of step 5.
+- [Design and Production Systems](https://tonkin.people.clemson.edu/pages/gc-curriculum/ai-careers/creative-operating-system.html) covers move 9 and the execution thread.
 
 The alumni figures come from the GC Alumni outcome study, which records each graduate's first job, later positions and current job (summary figures only). The coverage figures come from the GC Curriculum Tool record read on 5 October 2026. The program's curriculum research behind the direction:
 
