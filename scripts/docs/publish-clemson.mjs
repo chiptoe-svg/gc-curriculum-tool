@@ -2,7 +2,8 @@
 // Publish the public documents to the owner's Clemson personal web space
 // (https://tonkin.people.clemson.edu/pages/gc-curriculum/), replacing GitHub Pages.
 //
-// Starts from every git-tracked .html under docs/ outside docs/superpowers/, follows
+// Starts from every git-tracked .html under docs/ outside docs/superpowers/ and
+// docs/ai-careers/ (published by the ai_career session), follows
 // relative href/src links (recursively through linked .html), and copies the result
 // to the mounted share, keeping paths relative to docs/. Only git-tracked files are
 // ever copied, so git-ignored material (e.g. docs/references/_pdfs) can't leak.
@@ -24,7 +25,10 @@ const shareRoot = '/Volumes/people';
 const tracked = new Set(
   execFileSync('git', ['ls-files', 'docs'], { encoding: 'utf8' }).split('\n').filter(Boolean),
 );
-const entries = [...tracked].filter(f => f.endsWith('.html') && !f.startsWith('docs/superpowers/'));
+// The ai_career session publishes docs/ai-careers/ itself (owner, 2026-11-03); copying
+// it from here could overwrite the live papers with an older working-tree copy.
+const PEER_PUBLISHED = 'docs/ai-careers/';
+const entries = [...tracked].filter(f => f.endsWith('.html') && !f.startsWith('docs/superpowers/') && !f.startsWith(PEER_PUBLISHED));
 // The original May 2026 spec lives at the repo root; README links it. Published flat.
 const ROOT_EXTRAS = ['gc-curriculum-tool-spec.html'];
 const outPath = f => (f.startsWith('docs/') ? relative('docs', f) : f);
@@ -61,6 +65,7 @@ while (queue.length) {
       continue;
     }
     const target = normalize(join(dirname(f), decodeURI(ref)));
+    if (target.startsWith(PEER_PUBLISHED)) continue; // live already; published by ai_career
     if (!target.startsWith('docs/')) { missing.push(`${f} -> ${ref} (outside docs/)`); continue; }
     if (!tracked.has(target)) { missing.push(`${f} -> ${ref} (not tracked)`); continue; }
     queue.push(target);

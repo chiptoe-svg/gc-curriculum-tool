@@ -83,3 +83,7 @@ drizzle/meta/
 # OCR/text sidecars of held sources (copyrighted text) — never commit
 /docs/references/_pdfs/*.md
 !/docs/references/_pdfs/README.md
+
+# Published by the ai_career session (owner, 2026-11-03); its publish_papers.py
+# keeps a working copy here. Not tracked so this repo never overwrites the live papers.
+/docs/ai-careers/
