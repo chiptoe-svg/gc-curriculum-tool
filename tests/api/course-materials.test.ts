@@ -28,6 +28,7 @@ const {
   isTriageEnabled,
   probeSize,
   classifyManifestItem,
+  supersedeOlderSyllabi,
   afterCallbacks,
 } = vi.hoisted(() => ({
   isValidSlug: vi.fn(),
@@ -57,6 +58,7 @@ const {
   isTriageEnabled: vi.fn(),
   probeSize: vi.fn(),
   classifyManifestItem: vi.fn(),
+  supersedeOlderSyllabi: vi.fn(),
   // Captures callbacks scheduled via next/server's after() so tests can flush
   // the background tier-classification work and assert on it.
   afterCallbacks: [] as Array<() => unknown>,
@@ -97,6 +99,7 @@ vi.mock('@/lib/capture/ingest-queue', () => ({ enqueue }));
 vi.mock('@/lib/capture/triage-flag', () => ({ isTriageEnabled }));
 vi.mock('@/lib/capture/size-probe', () => ({ probeSize }));
 vi.mock('@/lib/capture/material-tier', () => ({ classifyManifestItem }));
+vi.mock('@/lib/capture/syllabus-replace', () => ({ supersedeOlderSyllabi }));
 // after() requires a Next request scope (absent in direct route invocation);
 // capture the scheduled callbacks so tests can run them explicitly.
 vi.mock('next/server', async (importOriginal) => {
@@ -248,6 +251,14 @@ describe('POST /api/courses/[code]/materials', () => {
     const res = await POST(req, ctx);
     expect(res.status).toBe(200);
     expect(insertMaterial).toHaveBeenCalledWith(expect.objectContaining({ isSyllabus: true }));
+  });
+
+  it('a syllabus upload replaces the older syllabus (supersede runs on the inserted row)', async () => {
+    const row = { id: 'mat-syl', courseCode: CODE, fileName: 'course outline.pdf', sourceCode: null, isSyllabus: true };
+    insertMaterial.mockResolvedValueOnce(row);
+    const [req, ctx] = makeUploadReq({ fileName: 'course outline.pdf', role: 'syllabus' });
+    expect((await POST(req, ctx)).status).toBe(200);
+    expect(supersedeOlderSyllabi).toHaveBeenCalledWith(row);
   });
 
   it('does not flag an ordinary upload', async () => {

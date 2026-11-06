@@ -22,6 +22,7 @@ import {
   updateExtractionResult,
   updateMaterialTier,
 } from '@/lib/db/course-materials-queries';
+import { supersedeOlderSyllabi } from '@/lib/capture/syllabus-replace';
 import { classifyManifestItem } from '@/lib/capture/material-tier';
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
 import { fetchCanvasCourse, fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
@@ -149,6 +150,7 @@ export async function runListImport(
         extractedText: text,
       });
       matId = existing.id;
+      await supersedeOlderSyllabi(existing);
     } else {
       const mat = await insertMaterial({
         courseCode: code,
@@ -166,6 +168,7 @@ export async function runListImport(
         extractedText: text,
       });
       matId = mat.id;
+      await supersedeOlderSyllabi(mat);
     }
     const htmlKind = kindFromFileName(fileName);
     let htmlTier = 'background';

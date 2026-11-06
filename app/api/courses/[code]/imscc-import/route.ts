@@ -8,6 +8,7 @@ import { authorizeRequest } from '@/lib/auth/route-auth';
 import { hashIp } from '@/lib/ip-hash';
 import { getCourseByCode, updateCourseCanvasImport } from '@/lib/db/courses-queries';
 import { insertMaterial, findMaterialByFileName, updateMaterialMetadata, updateExtractionResult } from '@/lib/db/course-materials-queries';
+import { supersedeOlderSyllabi } from '@/lib/capture/syllabus-replace';
 import { enqueue } from '@/lib/capture/ingest-queue';
 import { parseImscc } from '@/lib/canvas/parseImscc';
 import { assembleCanvasMaterials } from '@/lib/canvas/assemble-canvas-materials';
@@ -156,6 +157,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       });
       await enqueue(existing.id);
       imported.push({ id: existing.id, fileName });
+      await supersedeOlderSyllabi(existing);
       updatedCount++;
     } else {
       const ipHash = hashIp(req);
@@ -176,6 +178,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       });
       await enqueue(mat.id);
       imported.push({ id: mat.id, fileName });
+      await supersedeOlderSyllabi(mat);
       insertedCount++;
     }
     console.log(`[imscc-import] queued ${matIdx}/${toInsert.length}: ${fileName} in ${Date.now() - tMat}ms`);

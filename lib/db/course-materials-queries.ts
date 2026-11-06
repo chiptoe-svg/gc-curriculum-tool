@@ -1,4 +1,4 @@
-import { eq, and, asc, isNull, sql } from 'drizzle-orm';
+import { eq, and, asc, isNull, ne, sql } from 'drizzle-orm';
 import { tierChangeNeedsReread } from '@/lib/capture/ingest-selection';
 import { db } from '@/lib/db/client';
 import { courseMaterials } from '@/lib/db/schema';
@@ -78,6 +78,48 @@ export async function insertMaterial(input: InsertMaterialInput): Promise<Course
     .returning();
   if (!row) throw new Error('insertMaterial: no row returned');
   return row;
+}
+
+/** Set-aside reason this file writes on a syllabus a newer one replaced. */
+export const SUPERSEDED_REASON = 'Replaced by a newer syllabus';
+
+/**
+ * Make `written` the course section's only active syllabus (owner 2026-11-06):
+ * un-retire it (and un-ignore it only if this rule set it aside earlier), then
+ * retire + set aside every other active syllabus of the same course and section
+ * (sourceCode; null = the course's own shell). Returns the replaced ids. The
+ * caller removes their chunks from the search index (lib/capture/syllabus-replace).
+ */
+export async function supersedeSyllabusRows(written: {
+  id: string;
+  courseCode: string;
+  sourceCode: string | null;
+}): Promise<string[]> {
+  const sameSection = written.sourceCode === null
+    ? isNull(courseMaterials.sourceCode)
+    : eq(courseMaterials.sourceCode, written.sourceCode);
+  return db.transaction(async (tx) => {
+    await tx
+      .update(courseMaterials)
+      .set({ retiredAt: null })
+      .where(eq(courseMaterials.id, written.id));
+    await tx
+      .update(courseMaterials)
+      .set({ ignored: false, setAsideReason: null })
+      .where(and(eq(courseMaterials.id, written.id), eq(courseMaterials.setAsideReason, SUPERSEDED_REASON)));
+    const rows = await tx
+      .update(courseMaterials)
+      .set({ retiredAt: new Date(), ignored: true, setAsideReason: SUPERSEDED_REASON, indexingStatus: 'pending' })
+      .where(and(
+        eq(courseMaterials.courseCode, written.courseCode),
+        eq(courseMaterials.isSyllabus, true),
+        isNull(courseMaterials.retiredAt),
+        ne(courseMaterials.id, written.id),
+        sameSection,
+      ))
+      .returning({ id: courseMaterials.id });
+    return rows.map((r) => r.id);
+  });
 }
 
 export async function listMaterialsByCourse(courseCode: string): Promise<CourseMaterialRow[]> {

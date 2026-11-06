@@ -8,6 +8,7 @@ import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { insertMaterial, listMaterialsByCourse, deleteMaterial, updateMaterialTier } from '@/lib/db/course-materials-queries';
 import { createVectorStore, tenantForCourse } from '@/lib/capture/vector-store';
 import { enqueue } from '@/lib/capture/ingest-queue';
+import { supersedeOlderSyllabi } from '@/lib/capture/syllabus-replace';
 import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { probeSize } from '@/lib/capture/size-probe';
 import { classifyManifestItem } from '@/lib/capture/material-tier';
@@ -183,6 +184,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     ipHash,
     isSyllabus,
   });
+  // A Syllabus-box upload replaces the older syllabus (owner 2026-11-06).
+  await supersedeOlderSyllabi(material);
 
   if (isTriageEnabled()) {
     // Phase-1 (list-mode) upload: store now, but do NOT enqueue and do NOT block
