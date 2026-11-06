@@ -23,6 +23,7 @@ import {
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 import { assessMaterialsHealth } from '@/lib/capture/materials-health';
+import { isSentToAI } from '@/lib/capture/material-in-use';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -132,7 +133,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         }
       : null,
     materials: materials
-      .filter(m => !m.ignored)
+      .filter(isSentToAI)
       .map(m => ({
         id: m.id,
         fileName: m.fileName,

@@ -10,6 +10,7 @@ import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 import { creditsExhaustedResponse } from '@/lib/ai/credit-response';
+import { isSentToAI } from '@/lib/capture/material-in-use';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -45,7 +46,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
   const allMaterials = await listMaterialsByCourse(courseCode);
   // Mirror the audit-context filter: only materials the audit chat could
   // actually retrieve evidence from.
-  const materials = allMaterials.filter(m => !m.ignored && m.extractionStatus === 'ok');
+  const materials = allMaterials.filter(m => isSentToAI(m) && m.extractionStatus === 'ok');
 
   // Catalog-richness + materials-presence signals so the LLM can suppress
   // false-positive "missing core source" highlights without us having to

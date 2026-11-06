@@ -185,6 +185,9 @@ export function createWeaviateVectorStore(): VectorStore {
         input.materialId
           ? chunks.filter.byProperty('materialId').equal(input.materialId)
           : undefined,
+        input.materialIds
+          ? chunks.filter.byProperty('materialId').containsAny(input.materialIds)
+          : undefined,
         input.courseCode
           ? chunks.filter.byProperty('courseCode').equal(input.courseCode)
           : undefined,

@@ -42,6 +42,7 @@ export interface SearchInput {
   queryText: string;        // used by Weaviate BM25 side; ignored by in-memory backend
   k: number;
   materialId?: string;
+  materialIds?: string[];   // restrict to these materials (the ones still sent to the AI)
   courseCode?: string;      // cross-course spine: drill-down to one course
 }
 
@@ -118,6 +119,7 @@ export function createInMemoryVectorStore(): VectorStore {
       const scored: SearchHit[] = [];
       for (const c of state.chunks.values()) {
         if (input.materialId && c.materialId !== input.materialId) continue;
+        if (input.materialIds && !input.materialIds.includes(c.materialId)) continue;
         if (input.courseCode && c.courseCode !== input.courseCode) continue;
         const parent = state.sections.get(c.parentSectionId) ?? null;
         scored.push({

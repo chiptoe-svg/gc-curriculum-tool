@@ -13,6 +13,7 @@ import { creditsExhaustedResponse } from '@/lib/ai/credit-response';
 import { runStressTest } from '@/lib/ai/stress-test/run';
 import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
+import { isSentToAI } from '@/lib/capture/material-in-use';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -94,7 +95,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         }
       : null,
     materials: materials
-      .filter(m => !m.ignored)
+      .filter(isSentToAI)
       .map(m => ({
         id: m.id,
         fileName: m.fileName,

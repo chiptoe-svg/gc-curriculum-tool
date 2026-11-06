@@ -88,4 +88,15 @@ describe('InMemoryVectorStore', () => {
     const hits = await store.hybridSearch('t', { queryVector: [1, 0, 0], queryText: 'x', k: 5, materialId: 'm1' });
     expect(hits.map(h => h.materialId)).toEqual(['m1']);
   });
+
+  it('restricts search to a set of materialIds when provided', async () => {
+    const store = createInMemoryVectorStore();
+    await store.upsert('t', [
+      make('a', [1, 0, 0], { materialId: 'm1' }),
+      make('b', [1, 0, 0], { materialId: 'm2' }),
+      make('c', [1, 0, 0], { materialId: 'm3' }),
+    ]);
+    const hits = await store.hybridSearch('t', { queryVector: [1, 0, 0], queryText: 'x', k: 5, materialIds: ['m1', 'm3'] });
+    expect(hits.map(h => h.materialId).sort()).toEqual(['m1', 'm3']);
+  });
 });

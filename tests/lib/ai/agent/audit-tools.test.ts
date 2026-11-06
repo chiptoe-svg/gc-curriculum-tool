@@ -45,6 +45,7 @@ function makeMaterial(overrides: Record<string, unknown> = {}) {
     digest: 'A digest string',
     ferpaRisk: 'low',
     ignored: false,
+    retiredAt: null,
     extractionStatus: 'ok',
     ...overrides,
   };
@@ -117,6 +118,17 @@ describe('buildAuditTools', () => {
       });
     });
 
+    it('leaves out retired materials', async () => {
+      mockListMaterialsByCourse.mockResolvedValue([
+        makeMaterial({ id: 'mat-1' }),
+        makeMaterial({ id: 'mat-old', retiredAt: new Date('2026-10-01') }),
+      ]);
+      const tools = buildAuditTools(COURSE);
+      const tool = tools.find(t => t.name === 'list_materials')!;
+      const result = await tool.execute({ courseCode: COURSE }) as { materials: Array<{ id: string }> };
+      expect(result.materials.map(m => m.id)).toEqual(['mat-1']);
+    });
+
     it('calls listMaterialsByCourse with the closed-over courseCode', async () => {
       mockListMaterialsByCourse.mockResolvedValue([]);
       const tools = buildAuditTools(COURSE);
@@ -143,6 +155,10 @@ describe('buildAuditTools', () => {
   // -------------------------------------------------------------------------
 
   describe('fetch_material_section', () => {
+    beforeEach(() => {
+      mockListMaterialsByCourse.mockResolvedValue([makeMaterial({ id: 'mat-1' }), makeMaterial({ id: 'mat-x' })]);
+    });
+
     it('calls embedText then hybridSearch with materialId and default k=3', async () => {
       const fakeVector = [0.1, 0.2, 0.3];
       const fakeHits = [makeHit()];
@@ -168,6 +184,23 @@ describe('buildAuditTools', () => {
         },
       );
       expect(result.chunks).toBe(fakeHits);
+    });
+
+    it.each([
+      ['set aside from the AI', { ignored: true }],
+      ['retired', { retiredAt: new Date('2026-10-01') }],
+    ])('returns no chunks for a material %s, without searching', async (_label, flags) => {
+      mockListMaterialsByCourse.mockResolvedValue([makeMaterial({ id: 'mat-1', ...flags })]);
+      mockEmbedText.mockResolvedValue([0.1]);
+      mockHybridSearch.mockResolvedValue([makeHit()]);
+
+      const tools = buildAuditTools(COURSE);
+      const tool = tools.find(t => t.name === 'fetch_material_section')!;
+      const result = await tool.execute({ courseCode: COURSE, materialId: 'mat-1', query: 'x' }) as { chunks: SearchHit[]; note?: string };
+
+      expect(result.chunks).toEqual([]);
+      expect(result.note).toMatch(/not in use/i);
+      expect(mockHybridSearch).not.toHaveBeenCalled();
     });
 
     it('passes custom k to hybridSearch', async () => {
@@ -216,6 +249,10 @@ describe('buildAuditTools', () => {
   // -------------------------------------------------------------------------
 
   describe('search_materials', () => {
+    beforeEach(() => {
+      mockListMaterialsByCourse.mockResolvedValue([makeMaterial({ id: 'mat-1' })]);
+    });
+
     it('calls hybridSearch WITHOUT materialId and with default k=5', async () => {
       const fakeVector = [0.5, 0.6];
       const fakeHits = [makeHit(), makeHit({ id: 'hit-2' })];
@@ -235,12 +272,43 @@ describe('buildAuditTools', () => {
           queryVector: fakeVector,
           queryText: 'project deliverables',
           k: 5,
+          materialIds: ['mat-1'],
         },
       );
       // materialId must NOT be present
       const callArg = mockHybridSearch.mock.calls[0]![1] as Record<string, unknown>;
       expect(callArg).not.toHaveProperty('materialId');
       expect(result.chunks).toBe(fakeHits);
+    });
+
+    it('searches only materials in use (not set aside, not retired)', async () => {
+      mockListMaterialsByCourse.mockResolvedValue([
+        makeMaterial({ id: 'mat-1' }),
+        makeMaterial({ id: 'mat-ignored', ignored: true }),
+        makeMaterial({ id: 'mat-retired', retiredAt: new Date('2026-10-01') }),
+        makeMaterial({ id: 'mat-2' }),
+      ]);
+      mockEmbedText.mockResolvedValue([0.5]);
+      mockHybridSearch.mockResolvedValue([]);
+
+      const tools = buildAuditTools(COURSE);
+      const tool = tools.find(t => t.name === 'search_materials')!;
+      await tool.execute({ courseCode: COURSE, query: 'q' });
+
+      const callArg = mockHybridSearch.mock.calls[0]![1] as { materialIds?: string[] };
+      expect(callArg.materialIds).toEqual(['mat-1', 'mat-2']);
+    });
+
+    it('returns no chunks, without searching, when no material is in use', async () => {
+      mockListMaterialsByCourse.mockResolvedValue([makeMaterial({ ignored: true })]);
+      mockEmbedText.mockResolvedValue([0.5]);
+
+      const tools = buildAuditTools(COURSE);
+      const tool = tools.find(t => t.name === 'search_materials')!;
+      const result = await tool.execute({ courseCode: COURSE, query: 'q' }) as { chunks: SearchHit[] };
+
+      expect(result.chunks).toEqual([]);
+      expect(mockHybridSearch).not.toHaveBeenCalled();
     });
 
     it('input schema rejects k > 10', () => {

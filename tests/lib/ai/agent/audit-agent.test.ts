@@ -463,6 +463,20 @@ describe('material list view', () => {
     return first.content as string;
   }
 
+  it('leaves retired materials out of the interviewer context', async () => {
+    mockGetSessionMessages.mockResolvedValue([]);
+    mockGetCourseByCode.mockResolvedValue(makeCourse());
+    mockListMaterialsByCourse.mockResolvedValue([
+      makeMaterial({ id: 'mat-1', fileName: 'Spring syllabus.pdf', retiredAt: null }),
+      makeMaterial({ id: 'mat-old', fileName: 'Fall 2019 syllabus.pdf', retiredAt: new Date('2026-10-01') }),
+    ]);
+    const built = await buildAgentCall({ sessionId: SESSION, courseCode: COURSE, auditMode: 'full' });
+    const first = built.messages[0]!;
+    if (first.role !== 'user') throw new Error('unreachable');
+    expect(first.content).toContain('Spring syllabus.pdf');
+    expect(first.content).not.toContain('Fall 2019 syllabus.pdf');
+  });
+
   it('sends the list on a continuing full-mode turn by default', async () => {
     const content = await firstMessage({ userMessage: 'hi', auditMode: 'full' });
     expect(content).toContain('# Material list');

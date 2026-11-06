@@ -58,6 +58,7 @@ function makeMockCol(cls: string, tenant: string) {
     filter: {
       byProperty: (name: string) => ({
         equal: (value: unknown) => makeFilter(name, value),
+        containsAny: (value: unknown) => ({ operator: 'ContainsAny' as const, target: { property: name }, value }),
       }),
     },
   };
@@ -311,6 +312,22 @@ describe('WeaviateVectorStore', () => {
       expect(filter).toBeDefined();
       expect(filter.operator).toBe('Equal');
       expect(filter.value).toBe('mat-1');
+    });
+
+    it('passes a containsAny filter when materialIds is provided', async () => {
+      const store = createWeaviateVectorStore();
+      await store.hybridSearch('tenant-a', {
+        queryText: 'hello',
+        queryVector: [1, 0, 0],
+        k: 3,
+        materialIds: ['mat-1', 'mat-2'],
+      });
+
+      const [, opts] = mockHybridQuery.mock.calls[0] as [string, Record<string, unknown>];
+      const filter = opts['filters'] as { operator: string; target: { property: string }; value: unknown };
+      expect(filter.operator).toBe('ContainsAny');
+      expect(filter.target.property).toBe('materialId');
+      expect(filter.value).toEqual(['mat-1', 'mat-2']);
     });
 
     it('maps score from o.metadata.score', async () => {

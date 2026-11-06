@@ -3,6 +3,7 @@ import type { ToolDefinition } from '@/lib/ai/tool-use-types';
 import { embedText } from '@/lib/ai/embeddings';
 import { createVectorStore, tenantForCourse } from '@/lib/capture/vector-store';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
+import { isSentToAI } from '@/lib/capture/material-in-use';
 import { wikiReadTool, wikiSearchTool } from '@/lib/ai/wiki/tools';
 import { buildCurriculumGraphTools } from '@/lib/ai/wiki/graph-tools';
 
@@ -22,6 +23,11 @@ import { buildCurriculumGraphTools } from '@/lib/ai/wiki/graph-tools';
  */
 export function buildAuditTools(courseCode: string): ToolDefinition[] {
   const tenant = tenantForCourse(courseCode);
+  // Set-aside and retired materials keep their chunks in the course index
+  // (un-ignoring must not need a re-index), so every search is limited to the
+  // materials still sent to the AI.
+  const inUseIds = async () =>
+    (await listMaterialsByCourse(courseCode)).filter(isSentToAI).map(m => m.id);
 
   const list_materials: ToolDefinition = {
     name: 'list_materials',
@@ -37,7 +43,7 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
     async execute(_args) {
       const rows = await listMaterialsByCourse(courseCode);
       const materials = rows
-        .filter(m => !m.ignored && m.extractionStatus === 'ok')
+        .filter(m => isSentToAI(m) && m.extractionStatus === 'ok')
         .map(m => ({
           id: m.id,
           fileName: m.fileName,
@@ -68,6 +74,9 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
     }),
     async execute(args) {
       const a = args as { courseCode: string; materialId: string; query: string; k?: number };
+      if (!(await inUseIds()).includes(a.materialId)) {
+        return { chunks: [], note: 'That material is not in use (set aside from the AI or retired).' };
+      }
       const store = createVectorStore();
       const queryVector = await embedText(a.query);
       try {
@@ -107,6 +116,8 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
     }),
     async execute(args) {
       const a = args as { courseCode: string; query: string; k?: number };
+      const materialIds = await inUseIds();
+      if (!materialIds.length) return { chunks: [], note: 'No materials are in use for this course.' };
       const store = createVectorStore();
       const queryVector = await embedText(a.query);
       try {
@@ -114,6 +125,7 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
           queryVector,
           queryText: a.query,
           k: a.k ?? 5,
+          materialIds,
         });
         return { chunks };
       } catch (e) {

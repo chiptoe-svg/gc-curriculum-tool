@@ -37,6 +37,7 @@ import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { buildCourseContextBrief, renderCourseContextBrief, type CourseContextBrief } from '@/lib/capture/course-context-brief';
 import { renderPrerequisiteProfiles } from '@/lib/capture/prereq-profiles-block';
+import { isSentToAI } from '@/lib/capture/material-in-use';
 import {
   SEARCH_TOOLS,
   chunkIdsInToolResult,
@@ -176,7 +177,7 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
   const history = await getSessionMessages(courseCode, sessionId);
 
   const includedMaterials = materials
-    .filter(m => !m.ignored && m.extractionStatus === 'ok')
+    .filter(m => isSentToAI(m) && m.extractionStatus === 'ok')
     .sort((a, b) => a.fileName.localeCompare(b.fileName));
 
   const learningObjectives = (course.learningObjectives ?? []) as string[];
