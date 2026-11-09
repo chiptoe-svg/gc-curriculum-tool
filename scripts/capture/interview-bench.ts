@@ -55,6 +55,36 @@ export interface BenchCase {
 
 export interface BenchConfig { model?: string; effort?: string; label: string }
 
+/** RCD credits per million tokens, measured 2026-10-28 (docs/STATE.md, "RCD credit
+ *  rates"): new input (including what the gateway reports as cache writes, with no
+ *  premium), cache reads, output (output and Terra estimated as list × 1.25). */
+const CREDIT_RATES: Record<string, { input: number; cachedRead: number; output: number }> = {
+  'gpt-6.1-sol': { input: 2.5, cachedRead: 0.08, output: 12.5 },
+  'gpt-6.1-terra': { input: 1.25, cachedRead: 0.04, output: 6.25 },
+};
+
+export function estimateCredits(
+  model: string,
+  t: { uncachedPromptTokens: number; cachedTokens: number; completionTokens: number; cacheWriteTokens?: number },
+): number {
+  const r = CREDIT_RATES[model];
+  if (!r) throw new Error(`no credit rate for ${model}: add a measured rate before spending credits on it`);
+  // uncachedPromptTokens already includes cache writes (cacheWriteTokens is a breakdown).
+  return (t.uncachedPromptTokens * r.input + t.cachedTokens * r.cachedRead + t.completionTokens * r.output) / 1_000_000;
+}
+
+/** Owner rule (2026-11-08): a paid run names its models and carries a hard
+ *  ceiling (`--max-credits`); the run stops itself when it reaches it. */
+export function spendGuardError(o: { paid: boolean; models: Array<string | undefined>; maxCredits: number | undefined }): string | null {
+  if (!o.paid) return null;
+  if (o.maxCredits === undefined || !(o.maxCredits > 0)) return 'a paid run needs --max-credits <n> (RCD credits); it stops itself at that ceiling';
+  for (const m of o.models) {
+    if (!m) return 'a paid run must name each model with --configs model:effort';
+    if (!CREDIT_RATES[m]) return `no credit rate for ${m}: add a measured rate before spending credits on it`;
+  }
+  return null;
+}
+
 export interface CaseResult {
   caseId: string;
   kind: BenchCase['kind'];
@@ -68,6 +98,18 @@ export interface CaseResult {
   cachedTokens: number;
   completionTokens: number;
   durationMs: number;
+  /** Of uncachedPromptTokens, the part the provider wrote to its prompt cache (reported separately for credit budgeting). */
+  cacheWriteTokens?: number;
+  /** Citations naming a passage not retrieved this turn or cited earlier, or a message id not in the conversation. */
+  badCitations?: number;
+  /** Harness spike: what the controls did (pi/codex loops only). */
+  controlEvents?: string[];
+  transcript?: unknown;
+  requests?: number;
+  /** Raw citations and what was citable, to inspect bad citations. */
+  citations?: unknown[];
+  retrievedIds?: string[];
+  historyMessageIds?: string[];
   error?: string;
 }
 
@@ -145,7 +187,7 @@ export function renderTable(rows: ConfigSummary[]): string {
   const head = '| Setting | Files cases: searched | Files cases: cited a file | Instructor cases: searched | Tokens in (cached) | Tokens out | Cost est. | s/turn | Errors |';
   const sep = '|---|---|---|---|---|---|---|---|---|';
   const body = rows.map(r =>
-    `| ${r.label} | ${r.filesSearched}/${r.filesCases} | ${r.filesCited}/${r.filesCases} | ${r.instructorSearched}/${r.instructorCases} | ${r.tokensIn.toLocaleString('en-US')} (${Math.round(r.cachedShare * 100)}%) | ${r.tokensOut.toLocaleString('en-US')} | $${(r.costUsdCents / 100).toFixed(2)} | ${r.secondsPerTurn.toFixed(1)} | ${r.errors} |`);
+    `| ${r.label} | ${r.filesSearched}/${r.filesCases} | ${r.filesCited}/${r.filesCases} | ${r.instructorSearched}/${r.instructorCases} | ${r.tokensIn.toLocaleString('en-US')} (${Math.round(r.cachedShare * 100)}%) | ${r.tokensOut.toLocaleString('en-US')} | $${(r.costUsdCents / 10_000).toFixed(2)} | ${r.secondsPerTurn.toFixed(1)} | ${r.errors} |`);
   return [head, sep, ...body].join('\n');
 }
 
@@ -154,6 +196,21 @@ export async function main(argv: string[]): Promise<number> {
   const expectDb = arg('--expect-db');
   if (!expectDb) { console.error('usage: --expect-db <scratch db> [--configs model:effort,...] [--quick | --cases id,id] [--view index|digests] [--dry] [--out file]'); return 2; }
   if (!expectDb.includes('scratch')) { console.error('refusing: the benchmark writes temporary rows and runs only against a scratch database'); return 2; }
+  // --endpoint campus: send model calls to the RCD campus path (/v1), where the free
+  // hosted models such as glm-5.3 live, instead of the OpenAI proxy (/openai/v1).
+  // Set before the app modules are imported below, which read OPENAI_BASE_URL on import.
+  const endpoint = arg('--endpoint');
+  if (endpoint && endpoint !== 'campus') { console.error('--endpoint must be campus'); return 2; }
+  if (endpoint === 'campus') {
+    if (!process.env.CAMPUS_LLM_BASE_URL || !process.env.CAMPUS_LLM_API_KEY) { console.error('CAMPUS_LLM_BASE_URL / CAMPUS_LLM_API_KEY not set'); return 2; }
+    process.env.OPENAI_BASE_URL = process.env.CAMPUS_LLM_BASE_URL;
+    process.env.OPENAI_API_KEY = process.env.CAMPUS_LLM_API_KEY;
+  }
+  // --loop: which engine runs the interviewer turn. vercel (default) = the current
+  // loop; pi = the app's Pi loop (lib/ai/agent/pi/turn.ts, controls always on), so
+  // the benchmark and the app run the same code (Pi plan Task 6).
+  const loop = (arg('--loop') ?? 'vercel') as 'vercel' | 'pi';
+  if (!['vercel', 'pi'].includes(loop)) { console.error('--loop must be vercel or pi'); return 2; }
   const view = arg('--view') as 'index' | 'digests' | undefined;
   if (view && view !== 'index' && view !== 'digests') { console.error('--view must be index or digests'); return 2; }
 
@@ -170,6 +227,13 @@ export async function main(argv: string[]): Promise<number> {
   catch (err) { console.error(err instanceof Error ? err.message : String(err)); return 2; }
   const configs = parseConfigs(arg('--configs'));
   console.log(`${cases.length} case(s) × ${configs.length} setting(s): ${configs.map(c => c.label).join('; ')}`);
+  const paid = endpoint !== 'campus' && process.env.AI_PROVIDER !== 'campus';
+  const maxCreditsArg = arg('--max-credits');
+  const maxCredits = maxCreditsArg === undefined ? undefined : Number(maxCreditsArg);
+  const guard = spendGuardError({ paid, models: configs.map(c => c.model), maxCredits });
+  if (guard) { console.error(`refusing: ${guard}`); return 2; }
+  if (paid) console.log(`paid run: stops at ${maxCredits} credits`);
+  let spent = 0;
 
   /** Copy the case's history into a temporary session and build the interviewer call for it. */
   async function prepare(c: BenchCase) {
@@ -185,7 +249,9 @@ export async function main(argv: string[]): Promise<number> {
       sessionId: tempSession, courseCode: c.course, userMessage: pick!.content!, auditMode: 'full', includePriorSessions: false,
       ...(view ? { materialsView: view } : {}),
     });
-    return { tempSession, built };
+    const { listMaterialsByCourse } = await import('@/lib/db/course-materials-queries');
+    const fileNames = (await listMaterialsByCourse(c.course)).filter(m => !m.ignored && m.extractionStatus === 'ok').map(m => m.fileName);
+    return { tempSession, built, userMessage: pick!.content!, fileNames };
   }
 
   async function runCase(c: BenchCase, cfg: BenchConfig): Promise<CaseResult> {
@@ -194,23 +260,51 @@ export async function main(argv: string[]): Promise<number> {
     try {
       const prepared = await prepare(c);
       tempSession = prepared.tempSession;
-      const { built } = prepared;
+      const { built, userMessage, fileNames } = prepared;
+      // Record every chunk the tools return, whichever loop calls them, to score citations the same way.
+      const { chunkIdsInToolResult, checkCitations, citableFromHistory, parseInterviewReply } = await import('@/lib/ai/agent/interview-controls');
+      const retrieved = new Set<string>();
+      const tools = built.tools.map(t => ({ ...t, execute: async (a: unknown) => { const r = await t.execute(a); chunkIdsInToolResult(r, retrieved); return r; } }));
+      const history = citableFromHistory(built.messages as Array<{ role: string; content: string | null }>);
       if (argv.includes('--dry')) {
         const chars = built.systemPrompt.length + built.messages.reduce((n, m) => n + String((m as { content?: unknown }).content ?? '').length, 0);
         console.log(`  ${c.id}: ≈ ${Math.round(chars / 4).toLocaleString('en-US')} tokens per call (dry run, no model call)`);
         return empty;
       }
-      const provider = await getProviderForFunction('capture-chat-agent', { courseCode: c.course }, cfg.model ? { model: cfg.model, reasoningEffort: cfg.effort } : undefined);
-      const r = await provider.completeWithTools<AuditResponse>({
-        systemPrompt: built.systemPrompt,
-        messages: built.messages,
-        tools: built.tools,
-        schemaName: 'audit_response',
-        jsonSchema: AuditResponseJsonSchema,
-        validate: raw => AuditResponseSchema.parse(raw),
-        maxToolCalls: 4,
-      });
-      if (r.kind !== 'response') throw new Error('agent loop did not converge');
+      let r: { value: AuditResponse; toolCallsUsed: Array<{ toolName: string }>; telemetry: { costUsdCents: number; uncachedPromptTokens: number; cachedTokens: number; completionTokens: number; durationMs: number; cacheWriteTokens?: number }; controlEvents?: string[]; requests?: number };
+      if (loop === 'vercel') {
+        const provider = await getProviderForFunction('capture-chat-agent', { courseCode: c.course }, cfg.model ? { model: cfg.model, reasoningEffort: cfg.effort } : undefined);
+        // Mirror the live loop (audit-agent.ts): force a search when the live search check asks
+        // for one, and retry once without it if the forced request is rejected.
+        const call = (requireToolFirst?: string[]) => provider.completeWithTools<AuditResponse>({
+          systemPrompt: built.systemPrompt,
+          messages: built.messages,
+          tools,
+          schemaName: 'audit_response',
+          jsonSchema: AuditResponseJsonSchema,
+          validate: raw => parseInterviewReply(raw, built.messages as Array<{ role: string; content: string | null }>),
+          maxToolCalls: 4,
+          ...(requireToolFirst ? { requireToolFirst } : {}),
+        });
+        let v;
+        try { v = await call(built.requireToolFirst); }
+        catch (err) { if (!built.requireToolFirst) throw err; console.log(`  ${c.id}: forced search rejected, retrying without it — ${(err instanceof Error ? err.message : String(err)).replace(/\s+/g, " ").slice(0, 300)}`); v = await call(); }
+        if (v.kind !== 'response') throw new Error('agent loop did not converge');
+        r = v;
+      } else {
+        const model = cfg.model ?? 'gpt-6.1-sol';
+        const { usesResponsesApi } = await import('@/lib/ai/models');
+        const loopEndpoint = {
+          baseUrl: process.env.OPENAI_BASE_URL!, apiKey: process.env.OPENAI_API_KEY!, model,
+          api: (usesResponsesApi(model) ? 'openai-responses' : 'openai-completions') as 'openai-responses' | 'openai-completions',
+          // Campus models take their own reasoning wire format (off included).
+          ...(endpoint === 'campus'
+            ? { campusReasoning: cfg.effort as import('@/lib/ai/campus').CampusReasoning | undefined }
+            : { reasoning: cfg.effort as 'low' | 'medium' | 'high' | undefined }),
+        };
+        const turn = { systemPrompt: built.systemPrompt, messages: built.messages, tools, userMessage, fileNames, courseCode: c.course, endpoint: loopEndpoint, maxToolCalls: 4 };
+        r = await (await import('@/lib/ai/agent/pi/turn')).runPiTurn(turn);
+      }
       const cites = (r.value.citations ?? []) as Array<{ type: string }>;
       return {
         ...empty,
@@ -218,11 +312,19 @@ export async function main(argv: string[]): Promise<number> {
         otherToolCalls: r.toolCallsUsed.filter(t => !MATERIAL_TOOLS.has(t.toolName)).length,
         chunkCitations: cites.filter(x => x.type === 'chunk').length,
         instructorCitations: cites.filter(x => x.type === 'instructor').length,
+        badCitations: (((r as { retrievedChunkIds?: string[] }).retrievedChunkIds ?? []).forEach(id => retrieved.add(id)), checkCitations(r.value, { retrievedThisTurn: retrieved, history }).length),
+        controlEvents: r.controlEvents,
+        requests: r.requests,
+        transcript: (r as { transcript?: unknown }).transcript,
         question: String((r.value as { question?: unknown }).question ?? '').slice(0, 400),
+        citations: r.value.citations ?? [],
+        retrievedIds: [...retrieved],
+        historyMessageIds: [...history.messageIds],
         costUsdCents: r.telemetry.costUsdCents,
         uncachedPromptTokens: r.telemetry.uncachedPromptTokens,
         cachedTokens: r.telemetry.cachedTokens,
         completionTokens: r.telemetry.completionTokens,
+        cacheWriteTokens: r.telemetry.cacheWriteTokens ?? 0,
         durationMs: r.telemetry.durationMs,
       };
     } catch (err) {
@@ -233,14 +335,21 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   const runs: Array<{ config: BenchConfig; results: CaseResult[] }> = [];
+  let stopped = false;
   for (const cfg of configs) {
+    if (stopped) break;
     console.log(`\n${cfg.label}`);
     const results: CaseResult[] = [];
     for (const c of cases) {
       const r = await runCase(c, cfg);
       results.push(r);
+      if (paid && !argv.includes('--dry')) {
+        spent += estimateCredits(cfg.model!, r as Parameters<typeof estimateCredits>[1]);
+        console.log(`  credits so far ≈ ${spent.toFixed(3)} of ${maxCredits}`);
+        if (spent >= maxCredits!) { console.error(`STOPPED: reached the ${maxCredits}-credit ceiling`); stopped = true; break; }
+      }
       if (!argv.includes('--dry')) {
-        console.log(`  ${c.id} (${c.kind}): ${r.materialToolCalls} search, ${r.chunkCitations} file / ${r.instructorCitations} instructor cites, ${(r.uncachedPromptTokens + r.cachedTokens).toLocaleString('en-US')} tokens, ${(r.durationMs / 1000).toFixed(1)}s${r.error ? '  ERROR ' + r.error.slice(0, 120) : ''}`);
+        console.log(`  ${c.id} (${c.kind}): ${r.materialToolCalls} search, ${r.chunkCitations} file / ${r.instructorCitations} instructor cites, ${(r.uncachedPromptTokens + r.cachedTokens).toLocaleString('en-US')} tokens, ${(r.durationMs / 1000).toFixed(1)}s, ${r.badCitations ?? 0} bad cites${r.controlEvents?.length ? ' [' + r.controlEvents.join('; ') + ']' : ''}${r.error ? '  ERROR ' + r.error.slice(0, 120) : ''}`);
       }
     }
     runs.push({ config: cfg, results });
@@ -250,7 +359,9 @@ export async function main(argv: string[]): Promise<number> {
   const summaries = runs.map(r => summarize(r.config.label, r.results));
   console.log('\n' + renderTable(summaries));
   const out = arg('--out');
-  if (out) writeFileSync(out, JSON.stringify({ ranAt: new Date().toISOString(), cases, runs, summaries }, null, 2));
+  if (paid) console.log(`credits spent ≈ ${spent.toFixed(3)} (estimate from tokens; check the RCD dashboard)`);
+  if (out) writeFileSync(out, JSON.stringify({ ranAt: new Date().toISOString(), cases, runs, summaries, creditsEstimate: paid ? spent : 0, stoppedAtCeiling: stopped }, null, 2));
+  if (stopped) return 4;
   return summaries.some(s => s.errors) ? 3 : 0;
 }
 
