@@ -13,6 +13,8 @@ import { getSessionMessages, startNewSession } from '@/lib/db/capture-messages-q
 import { upsertCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { assistantTurnMessage } from '@/lib/capture/saved-turn';
 import type { AuditResponse } from '@/lib/ai/agent/audit-response-schema';
+import { getSessionMode, isRevisionMode, recordSessionMode, type RevisionMode } from '@/lib/db/capture-sessions-queries';
+import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -115,7 +117,31 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // When true, the agent's at-rest context skips the "prior sessions" block —
   // fresh-start capture for a new instructor who shouldn't be anchored on
   // prior instructors' findings.
-  const includePriorSessions = body.includePriorSessions !== false;
+  let includePriorSessions = body.includePriorSessions !== false;
+
+  // Revision mode (spec 2026-11-08-course-revision-modes-labels-design.md):
+  // chosen on the landing page when the course has an approved snapshot, sent
+  // every turn. Stored before the agent runs so a reload never finds messages
+  // without a mode; the first stored mode wins for the session.
+  let revisionMode: RevisionMode | null = null;
+  let baselineSnapshotId: string | null = null;
+  if (isRevisionMode(body.revisionMode)) {
+    const latest = body.revisionMode === 'fresh' ? null : await getLatestSnapshotByCourse(courseCode);
+    if (body.revisionMode === 'fresh' || latest) {
+      await recordSessionMode({
+        sessionId,
+        courseCode,
+        revisionMode: body.revisionMode,
+        baselineSnapshotId: latest?.id ?? null,
+      });
+    }
+    const stored = await getSessionMode(sessionId);
+    if (stored) {
+      revisionMode = stored.revisionMode;
+      baselineSnapshotId = stored.baselineSnapshotId;
+      includePriorSessions = stored.revisionMode !== 'fresh';
+    }
+  }
 
   const wantsStream =
     url.searchParams.get('stream') === '1' ||
@@ -133,6 +159,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
             auditMode: course.auditMode as 'full' | 'simple',
             instructorName,
             includePriorSessions,
+            revisionMode,
+            baselineSnapshotId,
           });
           let final: AuditResponse | null = null;
           for await (const ev of gen) {
@@ -168,6 +196,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       auditMode: course.auditMode as 'full' | 'simple',
       instructorName,
       includePriorSessions,
+      revisionMode,
+      baselineSnapshotId,
     });
     await saveTurn(response);
     return NextResponse.json({

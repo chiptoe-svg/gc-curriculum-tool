@@ -10,6 +10,7 @@ import { assistantTurnMessage } from '@/lib/capture/saved-turn';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { InstructorSelect } from './InstructorSelect';
 import { InterviewChecklist } from './InterviewChecklist';
+import { REVISION_MODE_COPY, type RevisionMode } from '@/lib/capture/revision-copy';
 import { EMPTY_CHECKLIST, nextChecklist, type InterviewChecklist as InterviewChecklistData } from '@/lib/capture/interview-checklist';
 
 // Re-export so existing imports from this module keep working.
@@ -148,9 +149,11 @@ interface Props {
   /** Auditor identity — controlled by CaptureClient (single source; shared with the landing hero's chooser + the start request). */
   chooserInstructor: string;
   onInstructorChange: (v: string) => void;
-  /** Build-on-prior vs. fresh — controlled by CaptureClient. */
-  chooserMode: 'fresh' | 'continue';
-  onModeChange: (v: 'fresh' | 'continue') => void;
+  /** Revision mode (approved course) — controlled by CaptureClient; null until chosen. */
+  chooserMode: RevisionMode | null;
+  onModeChange?: (v: RevisionMode) => void;
+  /** True when the course has an approved snapshot, so a mode must be chosen before starting. */
+  modeRequired?: boolean;
   /** Distilled recap of prior sessions for the "Where we left off" card. Empty/omitted hides the card. */
   priorBriefings?: SessionBriefingView[];
 }
@@ -172,7 +175,7 @@ export function CaptureChatPanel({
   chooserInstructor,
   onInstructorChange,
   chooserMode,
-  onModeChange,
+  modeRequired = false,
   priorBriefings,
 }: Props) {
   const [input, setInput] = useState('');
@@ -224,11 +227,10 @@ export function CaptureChatPanel({
             ...(message !== undefined ? { message } : {}),
             ...(sessionId ? { sessionId } : {}),
             instructorName: chooserInstructor,
-            // Only "fresh" sessions skip the prior-sessions block. Once a
-            // session has started (sessionId set), the choice doesn't
-            // change behavior — but we send it anyway so the server can
-            // validate consistency if it wants.
+            // Only "Start over" skips the prior-sessions block. The server
+            // stores the mode on the first turn and the stored one wins.
             includePriorSessions: chooserMode !== 'fresh',
+            ...(chooserMode ? { revisionMode: chooserMode } : {}),
           }),
         },
       );
@@ -355,6 +357,12 @@ export function CaptureChatPanel({
             The interviewer reads everything already in the system and asks clarifying questions about
             prereqs, stated vs. evidenced outcomes, and any contradictions across sources.
           </p>
+          {chooserMode && messages.length > 0 && (
+            <p className="mt-1 text-xs">
+              <span className="text-muted-foreground">Revision: </span>
+              <span className="font-medium">{REVISION_MODE_COPY[chooserMode].label}</span>
+            </p>
+          )}
         </div>
         {/* Always-visible auditor badge — same source of truth as the
             session-start chooser. Mid-session changes propagate to the
@@ -446,16 +454,19 @@ export function CaptureChatPanel({
             </p>
 
             <p className="mt-3 text-xs text-muted-foreground">
-              Pick who&apos;s interviewing (and build-on vs. fresh) in the panel above, then:
+              Pick who&apos;s interviewing{modeRequired ? ' and what has changed' : ''} in the panel above, then:
             </p>
             <button
               type="button"
               onClick={handleStart}
-              disabled={busy || chooserInstructor.trim() === ''}
+              disabled={busy || chooserInstructor.trim() === '' || (modeRequired && chooserMode === null)}
               className="mt-3 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {busy ? 'Starting…' : 'Start the interview'}
             </button>
+            {modeRequired && chooserMode === null && (
+              <p className="mt-2 text-xs text-muted-foreground">Choose what&apos;s changed above to start.</p>
+            )}
             {chooserInstructor.trim() === '' && (
               <p className="mt-2 text-xs text-muted-foreground">Pick an instructor above to start.</p>
             )}

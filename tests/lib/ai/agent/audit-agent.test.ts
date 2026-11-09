@@ -26,6 +26,12 @@ vi.mock('@/lib/db/course-materials-queries', () => ({
   listMaterialsByCourse: (...a: unknown[]) => mockListMaterialsByCourse(...a),
 }));
 
+const mockGetSnapshotById = vi.fn();
+
+vi.mock('@/lib/db/capture-snapshots-queries', () => ({
+  getSnapshotById: (...a: unknown[]) => mockGetSnapshotById(...a),
+}));
+
 const mockCompleteWithTools = vi.fn();
 const mockGetProviderForFunction = vi.fn(async () => ({
   name: 'fake',
@@ -475,6 +481,42 @@ describe('material list view', () => {
     if (first.role !== 'user') throw new Error('unreachable');
     expect(first.content).toContain('Spring syllabus.pdf');
     expect(first.content).not.toContain('Fall 2019 syllabus.pdf');
+  });
+
+  describe('revision modes', () => {
+    const approved = {
+      id: 'snap-1',
+      profile: {
+        competencies: [
+          { statement: 'Color management', type: 'technical', k_depth: 3, u_depth: 2, d_depth: 4 },
+          { statement: 'Agency', type: 'foundational', k_depth: null, u_depth: null, d_depth: 2 },
+        ],
+      },
+    };
+    async function opening(revisionMode: 'targeted' | 'recheck' | null) {
+      mockGetSessionMessages.mockResolvedValue([]);
+      mockGetCourseByCode.mockResolvedValue(makeCourse());
+      mockListMaterialsByCourse.mockResolvedValue([makeMaterial()]);
+      mockGetSnapshotById.mockResolvedValue(approved);
+      const built = await buildAgentCall({ sessionId: SESSION, courseCode: COURSE, auditMode: 'full', revisionMode, baselineSnapshotId: revisionMode ? 'snap-1' : null });
+      return built.messages.map(m => ('content' in m && typeof m.content === 'string' ? m.content : '')).join('\n');
+    }
+
+    it('targeted adds the approved profile block and the what-changed instruction', async () => {
+      const all = await opening('targeted');
+      expect(mockGetSnapshotById).toHaveBeenCalledWith('snap-1');
+      expect(all).toContain('# Approved profile (what this revision starts from)');
+      expect(all).toContain('- Color management — K3/U2/D4');
+      expect(all).toContain('- Agency — D2');
+      expect(all).toMatch(/what (has )?changed/i);
+    });
+
+    it('recheck and no mode add neither', async () => {
+      for (const mode of ['recheck', null] as const) {
+        const all = await opening(mode);
+        expect(all).not.toContain('# Approved profile');
+      }
+    });
   });
 
   it('sends the list on a continuing full-mode turn by default', async () => {

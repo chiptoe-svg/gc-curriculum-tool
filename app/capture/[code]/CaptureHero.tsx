@@ -2,8 +2,8 @@
  * Goal-first landing hero for Course Capture's first-run (empty-conversation)
  * state. Answers, in plain GC-faculty language, the three questions a busy
  * instructor has on arrival: what am I doing here, am I ready, and what do I do
- * next. It now also owns the pre-start chooser (who's auditing + build-on vs.
- * fresh) — the controlled state lives in CaptureClient (single source) and is
+ * next. It now also owns the pre-start chooser (who's auditing + the revision
+ * mode for an approved course) — the controlled state lives in CaptureClient (single source) and is
  * shared with the chat panel's mid-session auditor badge + the start request.
  * The "Start audit" button itself stays in CaptureChatPanel directly below
  * (it owns postChat); this hero is the decision surface above it.
@@ -12,6 +12,7 @@
  */
 
 import { InstructorSelect } from './InstructorSelect';
+import { REVISION_HEADING, REVISION_MODES, REVISION_MODE_COPY, type RevisionMode } from '@/lib/capture/revision-copy';
 
 export function CaptureHero({
   courseCode,
@@ -28,8 +29,9 @@ export function CaptureHero({
   materialsCount: number;
   instructor: string;
   onInstructorChange: (v: string) => void;
-  mode: 'fresh' | 'continue';
-  onModeChange: (v: 'fresh' | 'continue') => void;
+  /** Revision mode for a course with an approved snapshot; null until chosen. */
+  mode: RevisionMode | null;
+  onModeChange: (v: RevisionMode) => void;
   priorSnapshotInfo: { instructorName: string | null; createdAt: string } | null;
 }) {
   const ready = materialsCount > 0;
@@ -76,49 +78,36 @@ export function CaptureHero({
         </div>
 
         {priorSnapshotInfo && (
-          <fieldset className="space-y-1">
-            <legend className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Start mode
-            </legend>
-            <label className="flex items-start gap-2 rounded border border-transparent px-1 py-1 text-xs hover:bg-muted/40">
-              <input
-                type="radio"
-                name="hero-chooser-mode"
-                value="continue"
-                checked={mode === 'continue'}
-                onChange={() => onModeChange('continue')}
-                className="mt-0.5"
-              />
-              <span>
-                <span className="font-medium">Build on prior capture</span>
-                <span className="block text-xs text-muted-foreground">
-                  {priorSnapshotInfo.instructorName ?? 'Unknown'}
-                  {' · '}
-                  {new Date(priorSnapshotInfo.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+          <fieldset className="space-y-1 sm:col-span-2">
+            <legend className="text-sm font-semibold">{REVISION_HEADING}</legend>
+            <p className="text-xs text-muted-foreground">
+              Approved version: {priorSnapshotInfo.instructorName ?? 'Unknown'}
+              {' · '}
+              {new Date(priorSnapshotInfo.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </p>
+            {REVISION_MODES.map(m => (
+              <label
+                key={m}
+                className="flex items-start gap-2 rounded border border-transparent px-1 py-1 text-xs hover:bg-muted/40"
+              >
+                <input
+                  type="radio"
+                  name="hero-chooser-mode"
+                  value={m}
+                  checked={mode === m}
+                  onChange={() => onModeChange(m)}
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="font-medium">{REVISION_MODE_COPY[m].label}</span>
+                  <span className="block text-xs text-muted-foreground">{REVISION_MODE_COPY[m].description}</span>
                 </span>
-              </span>
-            </label>
-            <label className="flex items-start gap-2 rounded border border-transparent px-1 py-1 text-xs hover:bg-muted/40">
-              <input
-                type="radio"
-                name="hero-chooser-mode"
-                value="fresh"
-                checked={mode === 'fresh'}
-                onChange={() => onModeChange('fresh')}
-                className="mt-0.5"
-              />
-              <span>
-                <span className="font-medium">Fresh capture</span>
-                <span className="block text-xs text-muted-foreground">
-                  Don&apos;t anchor on what previous instructors found — start from materials +
-                  catalog only.
-                </span>
-              </span>
-            </label>
+              </label>
+            ))}
           </fieldset>
         )}
       </div>

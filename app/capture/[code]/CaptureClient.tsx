@@ -25,6 +25,7 @@ import { IngestProgress, type IngestStatus } from './IngestProgress';
 import { MaterialGate } from './MaterialGate';
 import { flagMaterials } from '@/lib/capture/flag-materials';
 import { FACULTY_ROSTER } from '@/lib/faculty';
+import type { RevisionMode } from '@/lib/capture/revision-copy';
 
 interface Props {
   course: CourseCatalogView;
@@ -46,6 +47,8 @@ interface Props {
   priorSnapshotInfo: { instructorName: string | null; createdAt: string } | null;
   /** Instructor stamped on the in-flight session (resumed audit). Null when no session or no instructor was stamped. */
   initialInstructor: string | null;
+  /** Revision mode stored for the resumed session (capture_sessions), if any. */
+  resumedMode?: RevisionMode | null;
   /** Distilled recap of prior sessions for the "Where we left off" card. Empty/omitted hides the card. */
   priorBriefings?: SessionBriefingView[];
   catalogSyncedAt: string | null;
@@ -87,6 +90,7 @@ export function CaptureClient({
   savedConversationAt,
   priorSnapshotInfo,
   initialInstructor,
+  resumedMode,
   defaultInstructor = null,
   priorBriefings,
   catalogSyncedAt,
@@ -184,9 +188,9 @@ export function CaptureClient({
       ? initialInstructor
       : defaultInstructor?.trim() || '',
   );
-  const [chooserMode, setChooserMode] = useState<'fresh' | 'continue'>(
-    priorSnapshotInfo ? 'continue' : 'fresh',
-  );
+  // Revision mode: chosen explicitly each time an approved course is reopened
+  // (no default); a resumed session keeps the mode stored for it.
+  const [chooserMode, setChooserMode] = useState<RevisionMode | null>(resumedMode ?? null);
   // Wizard sub-step: confirm materials (Step 1) → optional triage (Step 2, flag-gated)
   // → interview (Step 3). Reversible via the interview's "Back to materials" button.
   // A resumed conversation (messages already exist) starts on 'interview' so it
@@ -258,6 +262,8 @@ export function CaptureClient({
     }
     setMessages([]);
     setSessionId(null);
+    // A new session chooses its mode again.
+    setChooserMode(null);
   }, [courseCode, slug]);
 
   const [resetState, setResetState] = useState<'idle' | 'resetting' | 'error'>('idle');
@@ -554,6 +560,7 @@ export function CaptureClient({
             onInstructorChange={setChooserInstructor}
             chooserMode={chooserMode}
             onModeChange={setChooserMode}
+            modeRequired={priorSnapshotInfo != null}
             priorBriefings={priorBriefings}
           />
           </>

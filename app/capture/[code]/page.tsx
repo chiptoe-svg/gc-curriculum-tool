@@ -11,6 +11,7 @@ import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-quer
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { getLatestSnapshotByCourse, getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { getLatestSessionId, getSessionInstructor, getSessionMessages, listPriorSessionSummaries } from '@/lib/db/capture-messages-queries';
+import { getSessionMode } from '@/lib/db/capture-sessions-queries';
 import { checklistFromReplies, readinessFromStoredReply } from '@/lib/capture/interview-checklist';
 import { composeSessionBriefing } from '@/lib/ai/agent/session-briefing';
 import { sessionToExcludeFromRecap } from '@/lib/capture/session-recap';
@@ -95,6 +96,10 @@ export default async function CapturePage({ params, searchParams }: Props) {
   // pre-fill the always-visible "Auditor: X · change" badge on resume so
   // mid-session changes propagate without losing the prior selection.
   const currentSessionId = await getLatestSessionId(code);
+  // A resumed session keeps the revision mode stored for it (capture_sessions).
+  const resumedMode = savedConversation && currentSessionId
+    ? (await getSessionMode(currentSessionId))?.revisionMode ?? null
+    : null;
   const initialInstructor = currentSessionId
     ? await getSessionInstructor(code, currentSessionId)
     : null;
@@ -231,6 +236,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           initialChecklist={initialChecklist}
           savedConversationAt={savedConversation?.updatedAt ?? null}
           priorSnapshotInfo={priorSnapshotInfo}
+          resumedMode={resumedMode}
           hasSnapshot={latestSnapshot != null}
           initialInstructor={initialInstructor}
           defaultInstructor={viewerName}

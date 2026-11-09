@@ -38,6 +38,8 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { buildCourseContextBrief, renderCourseContextBrief, type CourseContextBrief } from '@/lib/capture/course-context-brief';
 import { renderPrerequisiteProfiles } from '@/lib/capture/prereq-profiles-block';
 import { isSentToAI } from '@/lib/capture/material-in-use';
+import type { RevisionMode } from '@/lib/capture/revision-copy';
+import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import {
   SEARCH_TOOLS,
   chunkIdsInToolResult,
@@ -72,6 +74,12 @@ export interface AuditAgentInput {
    * findings. Default true (current behavior).
    */
   includePriorSessions?: boolean;
+  /** Revision mode stored for this session (capture_sessions). `targeted`
+   *  adds the approved profile and asks the interviewer to start from what
+   *  changed (spec 2026-11-08-course-revision-modes-labels-design.md). */
+  revisionMode?: RevisionMode | null;
+  /** The approved snapshot this revision started from. */
+  baselineSnapshotId?: string | null;
   /**
    * How materials appear in the at-rest context. 'digests': every included
    * material's full digest. 'index': one line per material, so the agent must
@@ -136,6 +144,23 @@ export function renderMaterialIndex(materials: Array<{ id: string; fileName: str
   }).join('\n');
 }
 
+/** Targeted revision: the approved profile the interview starts from, one
+ *  short line per competency, plus how to steer the conversation. */
+export function renderApprovedProfileBlock(profile: { competencies: Array<{ statement: string; k_depth: number | null; u_depth: number | null; d_depth: number }> }): string {
+  const lines = profile.competencies.map(c => {
+    const depths = c.k_depth === null && c.u_depth === null
+      ? `D${c.d_depth}`
+      : `K${c.k_depth ?? '–'}/U${c.u_depth ?? '–'}/D${c.d_depth}`;
+    return `- ${c.statement} — ${depths}`;
+  });
+  return '\n\n# Approved profile (what this revision starts from)\n\n'
+    + 'The instructor reopened this approved course because a few specific things changed. '
+    + 'Ask what has changed since this version was approved, then keep your questions on those '
+    + 'changes and their knock-on effects on the ratings below. Do not re-audit parts of the '
+    + 'course the instructor says are unchanged.\n\n'
+    + lines.join('\n');
+}
+
 export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgentCall> {
   const { sessionId, courseCode, userMessage, auditMode, instructorName, includePriorSessions } = input;
 
@@ -166,11 +191,13 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
   // existing call sites).
   const wantPriorSessions = includePriorSessions !== false;
 
-  const [course, materials, priorSessions, briefBlock] = await Promise.all([
+  const wantApproved = input.revisionMode === 'targeted' && !!input.baselineSnapshotId;
+  const [course, materials, priorSessions, briefBlock, approvedSnapshot] = await Promise.all([
     getCourseByCode(courseCode),
     listMaterialsByCourse(courseCode),
     wantPriorSessions ? listPriorSessionSummaries(courseCode, sessionId, 3) : Promise.resolve([]),
     loadBriefBlock(courseCode),
+    wantApproved ? getSnapshotById(input.baselineSnapshotId!) : Promise.resolve(null),
   ]);
   if (!course) throw new Error(`course not found: ${courseCode}`);
 
@@ -203,11 +230,12 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
   const materialsHeading = materialsView === 'index' ? 'Material list' : 'Material digests';
 
   const priorSessionsBlock = renderBriefing(composeSessionBriefing(priorSessions));
+  const revisionBlock = approvedSnapshot ? renderApprovedProfileBlock(approvedSnapshot.profile) : '';
 
   const messages: Message[] = [
     {
       role: 'user',
-      content: `# Course catalog\n\n${catalogBlock}\n\n# ${materialsHeading}\n\n${digestBlock}\n\n# Prior audit sessions (most recent)\n\n${priorSessionsBlock}\n\n# Neighboring courses\n\n${briefBlock}`,
+      content: `# Course catalog\n\n${catalogBlock}\n\n# ${materialsHeading}\n\n${digestBlock}\n\n# Prior audit sessions (most recent)\n\n${priorSessionsBlock}\n\n# Neighboring courses\n\n${briefBlock}${revisionBlock}`,
     },
     ...history
       .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -243,7 +271,10 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
         + 'your one focused follow-up question in the `question` field ONLY — do '
         + 'NOT repeat it inside the `finding`, and do not end the `finding` with a '
         + 'question. Return the standard structured response shape (finding + '
-        + 'question + citations + readiness).',
+        + 'question + citations + readiness).'
+        + (revisionBlock
+          ? ' This is a revision of an approved course: the instructor said a few specific things changed. Your `question` asks what has changed in the course since the approved version.'
+          : ''),
     });
   }
 
