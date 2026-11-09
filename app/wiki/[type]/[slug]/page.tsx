@@ -9,10 +9,10 @@ import { readWikiPage } from '@/lib/wiki/git-ops';
 import { parseFrontmatter, resolveWikilinks } from '@/lib/wiki/markdown-helpers';
 import { loadWikiIndex, levelGroup, codeFromSlug, listFromFrontmatter } from '@/lib/wiki/index-data';
 import { FeedbackLink } from '@/app/FeedbackLink';
-import { CourseViewsPanel } from '../../CourseViewsPanel';
+import { CoursePageLayout } from '../../CoursePageLayout';
+import { captureFact, courseLevelLabel } from '@/lib/wiki/course-page';
 import { TermsHint, CAREER_TARGETS_BETA } from '../../HowToRead';
 import { loadCourseViews, loadTargetMap, loadRetiredCompetencyIds, type CourseViews } from '@/lib/wiki/course-views';
-import { ObjectiveGuidePanel } from '../../ObjectiveGuidePanel';
 import { loadObjectiveGuideSection, type ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
 import { isWikiServedType, type WikiServedType } from '@/lib/ai/wiki/schema';
 
@@ -29,10 +29,6 @@ const isAllowedType = isWikiServedType;
 /** Defensive slug check — alphanumeric + hyphen only, no slashes or dots. */
 function isValidWikiSlug(s: string): boolean {
   return /^[a-z0-9-]+$/.test(s);
-}
-function fmtDate(iso: string | null): string {
-  if (!iso) return '';
-  return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 /** The body repeats the title as its first H1; the page header owns that now. */
 function stripLeadingH1(md: string): string {
@@ -79,6 +75,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
 
   const related: RelatedGroup[] = [];
   let facts: string[] = [];
+  let prerequisites: string[] = [];
   // DB-backed structure (best-effort; the page still renders from the wiki alone).
   let views: CourseViews | null = null;
   let guideSection: ObjectiveGuideSection | null = null;
@@ -90,14 +87,14 @@ export default async function WikiPage({ params, searchParams }: Props) {
   if (type === 'courses') {
     const course = index.courses.find(c => c.slug === pageSlug);
     if (course) {
-      const g = levelGroup(course.level);
+      // Plain facts; the 3-Act group is a proposal, not policy, so it stays off
+      // the course page (owner 2026-11-08). Prerequisites render with the facts.
       facts = [
-        g.range ? `${g.range} course (${g.title.toLowerCase()})` : 'Course outside the GC sequence',
-        course.lastCaptured ? `captured ${fmtDate(course.lastCaptured)}` : 'not yet captured',
-        course.materialsSupported ? 'evidence supported by course materials' : 'evidence from the interview only',
+        levelGroup(course.level).range ? courseLevelLabel(codeFromSlug(pageSlug)) : 'Course outside the GC sequence',
+        captureFact(course.lastCaptured, course.materialsSupported),
       ];
     }
-    related.push({ heading: 'Prerequisites', type: 'courses', slugs: list('prerequisites') });
+    prerequisites = list('prerequisites');
     // Forward links from this page, plus reverse links from pages that cite it.
     const targets = new Set(list('contributes_to_targets'));
     const comps = new Set(list('develops_competencies'));
@@ -141,7 +138,17 @@ export default async function WikiPage({ params, searchParams }: Props) {
         <h1 className="wiki-index__title wiki-page__title">{title}</h1>
         {description && <p className="wiki-index__lede">{description}</p>}
         {facts.length > 0 && (
-          <p className="wiki-index__status">{facts.map((f, i) => (i === 0 ? f.charAt(0).toUpperCase() + f.slice(1) : f)).join('; ')}.</p>
+          <p className="wiki-index__status">
+            {facts.map((f, i) => (i === 0 ? f.charAt(0).toUpperCase() + f.slice(1) : f)).join(' · ')}
+            {prerequisites.length > 0 && (
+              <>
+                {' · Prerequisites: '}
+                {prerequisites.map((p, i) => (
+                  <span key={p}>{i > 0 && ', '}<Link href={`/wiki/courses/${p}${q}`}>{codeFromSlug(p)}</Link></span>
+                ))}
+              </>
+            )}
+          </p>
         )}
         {isRetiredCompetency && (
           <p className="wiki-beta"><strong>Retired.</strong> This competency is no longer part of any career target. The page is kept as history; its scores are not used in current coverage.</p>
@@ -157,9 +164,16 @@ export default async function WikiPage({ params, searchParams }: Props) {
         )}
       </header>
 
-      {type === 'courses' && views && <CourseViewsPanel views={views} q={q} />}
-      {type === 'courses' && guideSection && <ObjectiveGuidePanel section={guideSection} />}
-
+      {type === 'courses' ? (
+        <CoursePageLayout
+          body={processedBody}
+          views={views}
+          guide={guideSection}
+          buildsToward={related.find(r => r.heading === 'Builds toward')?.slugs.map(s => ({ href: `/wiki/targets/${s}${q}`, label: titleOf.get(s) ?? s })) ?? []}
+          develops={related.find(r => r.heading === 'Develops')?.slugs.map(s => ({ href: `/wiki/competencies/${s}${q}`, label: titleOf.get(s) ?? s })) ?? []}
+          q={q}
+        />
+      ) : (
       <div className="wiki-page__body">
         <article className="wiki-prose">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{processedBody}</ReactMarkdown>
@@ -179,6 +193,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
           </aside>
         )}
       </div>
+      )}
     </div>
   );
 }

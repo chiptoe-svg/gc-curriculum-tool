@@ -253,11 +253,15 @@ develops_competencies: [brand-strategy, creative-direction, client-communication
 ---
 ```
 
-Body sections in order:
+Body sections in order. The published page template reorders these sections for readers and shows
+some facts from live data (stated objectives, the competency score table, the assessment guide), so
+keep each section's heading exactly as written here; the curriculum chat still reads this markdown in
+full. Write content, never pipeline state: no "not yet run", "not yet captured", "provisional", or
+"not yet linked" notes.
 
 1. **H1** — `# GC 4800 — Senior Capstone`
 2. **Overview narrative** — 2–3 paragraphs from `profile.overview.narrative`. Drop audit voice. This is the published view. If `overview` is null (v1 legacy snapshot), write a single paragraph synthesized from the competencies and verification summary instead.
-3. **At a glance** — bulleted list from `profile.overview.at_a_glance` with em-dash leaders. If `overview` is null, synthesize 3–5 bullets from the profile.
+3. **At a glance** — bulleted list from `profile.overview.at_a_glance`, each bullet `- **Label:** text` (a plain list dash, no extra em-dash). If `overview` is null, synthesize 3–5 bullets from the profile.
 4. **Who it's for** — one short paragraph from `profile.overview.who_for`. If null, omit this section.
 5. **The arc** — semester trajectory from `profile.overview.arc`. If null, omit.
 6. **Competencies developed** — list with K/U/D depth chips. Group technical and foundational separately. For foundationals, show D-depth only.
@@ -265,15 +269,15 @@ Body sections in order:
    **Wikilink resolution (load-bearing — this is how the course page joins the competency pages):** Link a competency to `[[slug|statement]]` **only** when its statement matches an entry in `competencyLinks` (fuzzy-match the competency statement against `competencyLinks[].statement`; use that entry's `slug`). The `slug` values in `competencyLinks` are the ONLY valid competency page slugs. **Never slugify the statement text yourself** to build a link — that mints a slug with no page behind it (the cause of the broken-wikilink debt). If a competency has no match in `competencyLinks` (e.g. coverage scoring hasn't run yet — `competencyLinks` is empty), render its name as **plain text**, no `[[ ]]`. Plain text is always the safe fallback.
 
    **Evidence-band marker:** Append the band after each competency's depth chip, looked up from `competencyBands` by matching `statement`: ` ·claimed` (instructor claim only), ` ·materials` (backed by course-material chunk), or ` ·artifact` (backed by cited student work). Example: `[[color-management|Color management]] — K4/U3/D3 ·materials — <evidence excerpt>`. The marker is not optional — it is how a reader tells a claimed competency from a verified one; never drop it, and never upgrade a band beyond what `competencyBands` provides. If a competency has no matching entry in `competencyBands`, omit the marker for that line (do not invent one).
-7. **Audit notes** — surface the most reader-useful items from `audit_notes`: downstream connections, prereq gaps, productive-failure conditions if present, cross-source contradictions worth flagging. Do NOT dump the whole `audit_notes` object — pick what matters. Keep this section short (3–8 bullets or a short paragraph).
+7. **Where the syllabus and evidence differ** — heading `## Where the syllabus and evidence differ`: 1–5 bullets on where the stated course (catalog objectives, syllabus claims) and the evidence part ways, from `audit_notes.objective_misalignments` and the catalog-vs-evidence findings. Omit the section when there is nothing to say. Do not repeat these items under Limits.
+7b. **Limits of this capture** — heading `## Limits of this capture` (replaces the old "Audit notes"): the most reader-useful remaining items from `audit_notes` — prereq gaps, productive-failure conditions if present, evidence that could not be read or verified, cross-source contradictions worth flagging. Do NOT dump the whole `audit_notes` object — pick what matters. Keep it short (3–8 bullets or a short paragraph).
 8. **Class structure** (new — see §8a below)
 9. **Signature projects** (see §8b below)
 9b. **How the projects connect** — render from `projectTrail` when non-empty; omit the section otherwise. Heading `## How the projects connect`. Say each skill ONCE:
    - If the course has more than one project and a skill `statement` appears under every project, list it once under `### Across all projects` (first), and leave it out of the project subsections. A project left with no skills of its own gets the line `Builds on the skills above.`
    - Then one `### {project.title}` per project, listing that project's remaining skills.
-   - One bullet per skill: `- {skill.statement}`, then one indented sub-bullet per competency: `  - [[{competency.id}|{competency.name}]] (K{k}/U{u}/D{d}) — closest O*NET: "{onet[0].label}", "{onet[1].label}"`. Show at most two O*NET items. Link the competency only when its id is a `slug` in `competencyLinks`; otherwise write `{competency.name}` as plain text. Write a `null` K or U as a dash. Add ` (provisional)` after an O*NET item whose `provisional` is true. If `onet` is empty, end the sub-bullet after the depth.
-   - A skill whose `competencies` is empty: `- {skill.statement} — not yet linked to a catalog competency` (no sub-bullets).
-   End the section with one plain sentence: the competency link is the coverage scorer's match, the O*NET items are the closest items in that competency's O*NET bundle by meaning, and provisional items have not been reviewed by faculty.
+   - One bullet per skill: `- {skill.statement}`, then one indented sub-bullet per competency: `  - [[{competency.id}|{competency.name}]] (K{k}/U{u}/D{d})`. Link the competency only when its id is a `slug` in `competencyLinks`; otherwise write `{competency.name}` as plain text. Write a `null` K or U as a dash. Do not write the O*NET items on the course page (owner 2026-11-08: tool working data, not reader content; competency pages keep them).
+   - Leave out a skill whose `competencies` is empty, and a project left with no skills. No closing explanation sentence.
 10. **Syllabus** (new — see §8c below)
 11. **Source snapshots** — links to the JSON files in `raw/snapshots/<course-slug>/`. Most recent first. Use the provided `allSnapshotsForCourse` list. Rendered as: `- [2026-05-25 — Spring 2026](raw/snapshots/gc-4800/2026-05-25_def456.json)`.
 12. **Cross-references** — small "See also" section. Link outward to the targets this course contributes to, the concept pages that frame it, and any closely related courses.
@@ -333,8 +337,6 @@ Repeat the block for each project in `profile.major_projects`. The `## Signature
 ```markdown
 ## Signature projects
 
-*The following project list comes from the course sheet — not yet captured in a profile audit.*
-
 - {project title from snapshot.courseMajorProjects}
 ```
 
@@ -357,15 +359,12 @@ Render this section **only** when at least one of `snapshot.courseDescription`, 
 
 - {skill from snapshot.courseSkillsRequired}
 
-**Signature projects:** see [Signature projects](#signature-projects) above.
-
 **Links:** [Syllabus PDF]({syllabusUrl}) · [Course sheet]({sheetSourceUrl})
 ```
 
 Rules:
 - The **Learning objectives** sublist is omitted when `snapshot.courseLearningObjectives` is empty.
 - The **Skills students should arrive with** sublist is omitted when `snapshot.courseSkillsRequired` is empty.
-- The **Signature projects** cross-reference line is omitted when the Signature projects section (§8b) is also absent.
 - The **Links** line is omitted when both `snapshot.syllabusUrl` and `snapshot.sheetSourceUrl` are null.
 - When none of these conditions are met, omit the entire section.
 

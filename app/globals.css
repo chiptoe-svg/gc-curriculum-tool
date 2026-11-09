@@ -479,6 +479,25 @@
 .wiki-comp-groups h3 { font-size: 0.8125rem; font-weight: 600; margin: 0 0 0.35rem; color: var(--wiki-muted); }
 .wiki-comp-groups h3 a { color: var(--foreground); }
 
+/* Course page layout (owner 2026-11-08): one column in reader order, with an
+   "On this page" list; sections share the wiki's display headings. */
+.wiki-course { max-width: 46rem; margin-top: 1.5rem; }
+.wiki-course__toc { margin: 0 0 2rem; padding: 0.75rem 1rem; border: 1px solid var(--wiki-rule); border-radius: 4px; font-size: 0.875rem; }
+.wiki-course__toc p { margin: 0 0 0.35rem; font-weight: 600; color: var(--wiki-muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; }
+.wiki-course__toc ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.wiki-course__section { padding-top: 1.5rem; margin-top: 2rem; border-top: 1px solid var(--wiki-rule); scroll-margin-top: 1rem; }
+.wiki-course__section:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+.wiki-course__section > h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.5rem; letter-spacing: -0.01em; margin: 0 0 0.75rem; }
+.wiki-course__section h3 { font-size: 1rem; font-weight: 600; margin: 1.25rem 0 0.4rem; }
+.wiki-course__legend { margin: 0 0 0.75rem; font-size: 0.875rem; line-height: 1.5; color: var(--wiki-muted); }
+.wiki-course__scroll { overflow-x: auto; }
+.wiki-course__table { font-size: 0.875rem; }
+.wiki-course__fit { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0 2rem; }
+.wiki-course__fit ul { margin: 0; padding: 0; list-style: none; }
+.wiki-course__fit li { padding: 0.35rem 0; border-top: 1px solid var(--wiki-rule); line-height: 1.35; font-size: 0.9375rem; }
+.wiki-course__guide > summary { cursor: pointer; font-size: 0.9375rem; line-height: 1.5; padding: 0.5rem 0; }
+.wiki-assess--embedded { margin: 0.5rem 0 0; padding-top: 0; border-top: 0; }
+
 .wiki-views { margin: 2rem 0 2.5rem; padding-top: 1.25rem; border-top: 2px solid var(--wiki-accent); }
 .wiki-views > h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.5rem; margin: 0; letter-spacing: -0.01em; }
 .wiki-views__intro { margin: 0.35rem 0 0; font-size: 0.9rem; color: var(--wiki-muted); }

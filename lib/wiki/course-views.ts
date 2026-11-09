@@ -51,6 +51,8 @@ export interface PredictedTarget {
 
 export interface CourseViews {
   objectives: string[];
+  /** The course sheet's "skills students should arrive with" (courses.skills_required). */
+  arrivalSkills: string[];
   evidence: CourseEvidence | null;
   predicted: PredictedTarget[];
 }
@@ -105,7 +107,7 @@ export function summarizePredicted(
 export async function loadCourseViews(codeAnyCase: string): Promise<CourseViews | null> {
   // Wiki slugs upper-case letter suffixes ("GC 4900AP"); the DB stores "GC 4900ap".
   const [course] = await db
-    .select({ code: courses.code, objectives: courses.learningObjectives })
+    .select({ code: courses.code, objectives: courses.learningObjectives, skills: courses.skillsRequired })
     .from(courses)
     .where(sql`lower(${courses.code}) = lower(${codeAnyCase})`)
     .limit(1);
@@ -132,6 +134,7 @@ export async function loadCourseViews(codeAnyCase: string): Promise<CourseViews 
 
   return {
     objectives: (course.objectives ?? []).map(s => s.trim()).filter(Boolean),
+    arrivalSkills: ((course.skills ?? []) as string[]).map(s => s.trim()).filter(Boolean),
     evidence,
     predicted: summarizePredicted(predictedRows),
   };

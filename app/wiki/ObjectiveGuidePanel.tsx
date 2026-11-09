@@ -1,6 +1,7 @@
 import type { ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
 import { MEASURE_LABEL, CLASS_LEVEL_NOTE, formatEvidence } from '@/lib/objective-guide/render';
 import { CopyGuideButton } from './CopyGuideButton';
+import { decodeEntities } from '@/lib/wiki/course-page';
 
 function fmt(iso: string): string {
   return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -17,10 +18,10 @@ export const SET_ASIDE_NOTICE =
  * how well it is measured, where the evidence is in Canvas, and what to gather
  * at the end of the semester. Public, read-only, from course_objective_guides.
  */
-export function ObjectiveGuidePanel({ section }: { section: ObjectiveGuideSection }) {
+export function ObjectiveGuidePanel({ section, embedded = false }: { section: ObjectiveGuideSection; embedded?: boolean }) {
   return (
-    <section className="wiki-assess" aria-labelledby="assess-heading">
-      <h2 id="assess-heading">Assessing the course objectives</h2>
+    <section className={embedded ? 'wiki-assess wiki-assess--embedded' : 'wiki-assess'} aria-labelledby={embedded ? undefined : 'assess-heading'}>
+      {!embedded && <h2 id="assess-heading">Assessing the course objectives</h2>}
 
       {section.kind === 'no-syllabus' && <p className="wiki-assess__notice">{NO_SYLLABUS_NOTICE}</p>}
       {section.kind === 'syllabus-set-aside' && <p className="wiki-assess__notice">{SET_ASIDE_NOTICE}</p>}
@@ -38,17 +39,17 @@ export function ObjectiveGuidePanel({ section }: { section: ObjectiveGuideSectio
             <ol className="wiki-assess__list">
               {section.guide.objectives.map((o, i) => (
                 <li key={i} className="wiki-assess__item">
-                  <p className="wiki-assess__objective">{o.objective}</p>
+                  <p className="wiki-assess__objective">{decodeEntities(o.objective)}</p>
                   <p className={`wiki-assess__measure is-${o.measure}`}>{MEASURE_LABEL[o.measure]}</p>
                   <dl className="wiki-assess__facts">
                     <dt>Where the evidence is</dt>
                     <dd>{o.evidence.length > 0 ? o.evidence.map(formatEvidence).join('; ') : 'No graded item yet'}</dd>
                     <dt>What to gather</dt>
-                    <dd>{o.gather}</dd>
+                    <dd>{decodeEntities(o.gather)}</dd>
                     {o.suggestion && (
                       <>
                         <dt>Smallest change that would help</dt>
-                        <dd>{o.suggestion}</dd>
+                        <dd>{decodeEntities(o.suggestion)}</dd>
                       </>
                     )}
                   </dl>
