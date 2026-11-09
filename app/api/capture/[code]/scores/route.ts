@@ -13,7 +13,10 @@ import { generateCaptureProfileV2 } from '@/lib/ai/analyze/capture-scores';
 import { preserveAdoptOverlay } from '@/lib/capture/adopt-overlay';
 import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
-import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
+import { getLatestSnapshotByCourse, getSnapshotById } from '@/lib/db/capture-snapshots-queries';
+import { getSessionMode } from '@/lib/db/capture-sessions-queries';
+import { buildCitationClassifiers } from '@/lib/capture/revision-evidence';
+import { buildRevisionChanges } from '@/lib/capture/revision-changes';
 import { getLatestSessionId, getSessionMessages } from '@/lib/db/capture-messages-queries';
 import {
   captureProfileSchema,
@@ -79,11 +82,31 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     );
   }
 
-  const [builderProfile, materials, priorCapture] = await Promise.all([
+  const [builderProfile, materials, priorCapture, sessionId] = await Promise.all([
     getCourseProfile(courseCode),
     listMaterialsByCourse(courseCode),
     getCaptureProfileByCourse(courseCode),
+    getLatestSessionId(courseCode),
   ]);
+
+  // Revision mode chosen when an approved course was reopened (spec
+  // 2026-11-08-course-revision-modes-labels-design.md). No row = today's path.
+  const sessionMode = sessionId ? await getSessionMode(sessionId) : null;
+  const revisionMode = sessionMode?.revisionMode ?? null;
+  let baseline: Awaited<ReturnType<typeof getSnapshotById>> = null;
+  if (revisionMode === 'targeted' || revisionMode === 'recheck') {
+    baseline = sessionMode?.baselineSnapshotId ? await getSnapshotById(sessionMode.baselineSnapshotId) : null;
+    if (!baseline || baseline.retiredAt) {
+      return NextResponse.json(
+        { error: 'baseline_withdrawn', message: 'The approved version this revision started from was withdrawn. Start over to revise the current version.' },
+        { status: 409 },
+      );
+    }
+  }
+  // Re-check / targeted anchor on the approved snapshot; start over on nothing;
+  // no mode keeps today's anchor (the draft).
+  const priorProfile: CaptureProfile | null =
+    baseline ? baseline.profile : revisionMode === 'fresh' ? null : priorCapture?.profile ?? null;
 
   // Extraction-health guard (issue #4 follow-up): a profile synthesized from a
   // corpus where materials silently failed to extract is under-evidenced. Compute
@@ -143,7 +166,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         useDigest: m.useDigest,
         ignoredItems: m.ignoredItems,
       })),
-    priorCaptureProfile: priorCapture?.profile ?? null,
+    priorCaptureProfile: priorProfile,
     prerequisiteCaptureProfiles,
   };
 
@@ -151,7 +174,6 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // Synthesize from the append-only capture_messages transcript. The agent
     // persists each turn during the chat phase; here we hand the full session
     // log + materials/digests to the synthesis prompt. (v1 retired 2026-06-11.)
-    const sessionId = await getLatestSessionId(courseCode);
     const transcript = sessionId ? await getSessionMessages(courseCode, sessionId) : [];
     const { profile: rawProfile, telemetry, model } = await generateCaptureProfileV2({
       chatContext: context,
@@ -169,7 +191,26 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // Preserve the adopt overlay (intended_target + adopted_from_scenario_id)
     // from the existing draft onto this fresh score. No-op when the draft has
     // no overlay (priorCapture is null or was never adopted).
-    const profile = priorCapture ? preserveAdoptOverlay(priorCapture.profile, stampedProfile) : stampedProfile;
+    // Start over drops the overlay: as if the course were captured for the first time.
+    const overlaid = priorCapture && revisionMode !== 'fresh'
+      ? preserveAdoptOverlay(priorCapture.profile, stampedProfile)
+      : stampedProfile;
+
+    // Re-check / targeted: list every rating that moved against the approved
+    // snapshot, labeled by whether it cites new evidence.
+    let profile = overlaid;
+    if (baseline && sessionId && (revisionMode === 'targeted' || revisionMode === 'recheck')) {
+      const classifiers = await buildCitationClassifiers({
+        courseCode, sessionId, baseline, materials, course, scored: overlaid,
+      });
+      profile = buildRevisionChanges({
+        mode: revisionMode,
+        baselineSnapshotId: baseline.id,
+        baseline: baseline.profile,
+        scored: overlaid,
+        ...classifiers,
+      });
+    }
 
     // Clear the fork/drift baseline: a fresh AI re-score IS scored against the
     // current materials, so the "materials changed since the forked snapshot"
