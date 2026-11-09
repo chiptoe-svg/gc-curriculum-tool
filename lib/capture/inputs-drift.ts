@@ -1,5 +1,6 @@
 import type { InputsMeta } from '@/lib/db/capture-snapshots-queries';
 import type { CourseMaterialRow } from '@/lib/db/course-materials-queries';
+import { hashText } from '@/lib/capture/text-hash';
 
 export interface MaterialRef { id: string; fileName: string; }
 export interface MaterialChange { id: string; fileName: string; was: string; now: string; }
@@ -49,7 +50,11 @@ export function diffInputsVsSnapshot(
     if (!live) { removed.push({ id: f.id, fileName: f.fileName }); continue; }
     const was = describe(f);
     const now = describe(live);
+    // A frozen text fingerprint (snapshots since 2026-11-08) also catches an
+    // edit that kept the size; older snapshots compare status and size only.
+    const textChanged = f.textHash != null && hashText(live.extractedText) !== f.textHash;
     if (was !== now) changed.push({ id: f.id, fileName: f.fileName, was, now });
+    else if (textChanged) changed.push({ id: f.id, fileName: f.fileName, was, now: `${now}, text edited` });
   }
   const hasDrift = added.length > 0 || removed.length > 0 || changed.length > 0 || canvasChanged;
   return { available: true, added, removed, changed, canvasChanged, docsChanged, hasDrift };

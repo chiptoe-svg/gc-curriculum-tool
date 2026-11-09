@@ -18,6 +18,7 @@ import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { clearRawBlobsForCourse } from '@/lib/capture/clear-raw-blobs';
 import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
 import { resolveModelForFunction } from '@/lib/ai/function-settings';
+import { hashText } from '@/lib/capture/text-hash';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -92,6 +93,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       extractionStatus: m.extractionStatus,
       sizeBytes: m.sizeBytes,
       ignored: m.ignored,
+      textHash: hashText(m.extractedText),
     })),
     prereqSnapshotsUsed: prereqSnapshots.flatMap(p => p ? [p] : []),
     scanPasses: {

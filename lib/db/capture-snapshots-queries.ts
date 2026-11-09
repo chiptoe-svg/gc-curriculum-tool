@@ -24,6 +24,9 @@ export interface InputsMeta {
     extractionStatus: string;
     sizeBytes: number;
     ignored: boolean;
+    /** sha256 of extractedText at snapshot time (hashText); absent on snapshots
+     *  frozen before 2026-11-08. */
+    textHash?: string | null;
   }>;
   prereqSnapshotsUsed: Array<{
     courseCode: string;
