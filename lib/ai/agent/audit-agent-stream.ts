@@ -8,6 +8,8 @@
  */
 
 import { getProviderForFunction } from '@/lib/ai/provider';
+import { resolveInterviewLoop } from '@/lib/ai/function-settings';
+import { streamPiInterview } from './pi/stream';
 import type { StreamEvent } from '@/lib/ai/tool-use-types';
 import {
   AuditResponseSchema,
@@ -15,6 +17,7 @@ import {
   type AuditResponse,
 } from './audit-response-schema';
 import { AiCreditsExhaustedError } from '@/lib/ai/credit-status';
+import { parseInterviewReply } from './interview-controls';
 import { buildAgentCall, captureRetrievedChunks, checkTurnCitations, persistAssistantTurn, type AuditAgentInput } from './audit-agent';
 
 export type AuditStreamEvent =
@@ -37,7 +40,13 @@ export async function* streamAuditAgent(
     return;
   }
 
-  const provider = await getProviderForFunction('capture-chat-agent');
+  // The loop setting (Pi plan Task 5): Pi runs the turn itself; the current loop uses the provider.
+  if (await resolveInterviewLoop() === 'pi') {
+    yield* streamPiInterview(input, built);
+    return;
+  }
+
+  const provider = await getProviderForFunction('capture-chat-agent', { courseCode: input.courseCode });
   const capture = captureRetrievedChunks(built.tools);
 
   let finalValue: AuditResponse | null = null;
@@ -57,7 +66,7 @@ export async function* streamAuditAgent(
         ...(requireToolFirst ? { requireToolFirst } : {}),
         schemaName: 'audit_response',
         jsonSchema: AuditResponseJsonSchema,
-        validate: (raw) => AuditResponseSchema.parse(raw),
+        validate: (raw) => parseInterviewReply(raw, built.messages as Array<{ role: string; content: string | null }>),
         // Bumped 2→4 (2026-06-11): full-mode turns can now query course materials
         // AND program memory (wiki/graph) in the same turn.
         maxToolCalls: 4,

@@ -16,6 +16,7 @@
  */
 
 import { loadPrompt } from '@/lib/ai/prompts/load';
+import { resolveInterviewLoop } from '@/lib/ai/function-settings';
 import { getProviderForFunction } from '@/lib/ai/provider';
 import { AiCreditsExhaustedError } from '@/lib/ai/credit-status';
 import type { Message, ToolCall } from '@/lib/ai/tool-use-types';
@@ -45,6 +46,7 @@ import {
   chunkIdsInToolResult,
   citableFromHistory,
   keepValidCitations,
+  parseInterviewReply,
   needsMaterialSearch,
   previousQuestion,
 } from './interview-controls';
@@ -96,7 +98,7 @@ export interface AuditAgentResult {
   toolCallsUsed: number;
 }
 
-interface BuiltAgentCall {
+export interface BuiltAgentCall {
   systemPrompt: string;
   messages: Message[];
   tools: ReturnType<typeof buildAuditTools>;
@@ -104,6 +106,8 @@ interface BuiltAgentCall {
   userTurnIndex: number;
   /** Set when the exchange points at course files: the first step must search. */
   requireToolFirst?: string[];
+  /** Included course file names (the Pi loop's search trigger reads them). */
+  fileNames: string[];
 }
 
 // Interview-only (spec 2026-10-06): neighbors' expectations + projects as
@@ -294,6 +298,7 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
 
   return {
     systemPrompt, messages, tools, isOpeningTurn, userTurnIndex,
+    fileNames: includedMaterials.map(m => m.fileName),
     ...(search.required ? { requireToolFirst: SEARCH_TOOLS } : {}),
   };
 }
@@ -370,7 +375,16 @@ export async function persistAssistantTurn(input: PersistAssistantTurnInput): Pr
 
 export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentResult> {
   const built = await buildAgentCall(input);
-  const provider = await getProviderForFunction('capture-chat-agent');
+  if (await resolveInterviewLoop() === 'pi') {
+    const { runPiInterviewTurn } = await import('./pi/stream');
+    const { response, toolCallsUsed } = await runPiInterviewTurn(input, built);
+    await persistAssistantTurn({
+      sessionId: input.sessionId, courseCode: input.courseCode, isOpeningTurn: built.isOpeningTurn,
+      userTurnIndex: built.userTurnIndex, response, toolCallsUsed, instructorName: input.instructorName ?? null,
+    });
+    return { response, toolCallsUsed: toolCallsUsed.length };
+  }
+  const provider = await getProviderForFunction('capture-chat-agent', { courseCode: input.courseCode });
   const capture = captureRetrievedChunks(built.tools);
   const call = (requireToolFirst?: string[]) => provider.completeWithTools<AuditResponse>({
     systemPrompt: built.systemPrompt,
@@ -379,7 +393,7 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
     ...(requireToolFirst ? { requireToolFirst } : {}),
     schemaName: 'audit_response',
     jsonSchema: AuditResponseJsonSchema,
-    validate: (raw) => AuditResponseSchema.parse(raw),
+    validate: (raw) => parseInterviewReply(raw, built.messages as Array<{ role: string; content: string | null }>),
     // Bumped 2→4 (2026-06-11): full-mode turns can now query course materials
     // AND program memory (wiki/graph) in the same turn.
     maxToolCalls: 4,

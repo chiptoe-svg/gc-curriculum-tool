@@ -1,5 +1,5 @@
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { chunkLlmComplete } from '@/lib/ai/analyze/chunk-llm-provider';
+import { chunkLlmComplete, type ChunkLlmOptions } from '@/lib/ai/analyze/chunk-llm-provider';
 
 export interface DigestInput {
   fileName: string;
@@ -16,7 +16,7 @@ export interface DigestResult {
  * Stage 2a (not just long reference ones — that was the v1 reference-
  * compression flow, generalized here). Light-tier; one call per material.
  */
-export async function generateMaterialDigest(input: DigestInput, opts?: { noOpenAIFallback?: boolean }): Promise<DigestResult> {
+export async function generateMaterialDigest(input: DigestInput, opts: ChunkLlmOptions): Promise<DigestResult> {
   const systemPrompt = await loadPrompt('material-digest');
 
   const jsonSchema = {

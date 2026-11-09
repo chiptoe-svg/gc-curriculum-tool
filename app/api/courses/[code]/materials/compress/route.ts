@@ -56,7 +56,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       const { digest, model } = await generateMaterialDigest({
         fileName: m.fileName,
         extractedText: m.extractedText!,
-      });
+      }, { courseCode });
       await updateMaterialDigest({ id: m.id, digest, digestModel: model });
       summarized += 1;
       results.push({ id: m.id, fileName: m.fileName, status: 'summarized' });

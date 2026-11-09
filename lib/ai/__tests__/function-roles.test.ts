@@ -3,9 +3,9 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/lib/db/client', () => ({ db: {} }));
 
-import { AI_FUNCTION_IDS, DEFAULT_ROLES, resolveSetting } from '@/lib/ai/function-settings';
+import { AI_FUNCTION_IDS, DEFAULT_ROLES, resolveSetting, FUNCTION_PROVIDER_DEFAULTS } from '@/lib/ai/function-settings';
 
-const SOL = { model: 'gpt-6.1-sol', effort: 'low' };
+const SOL = { model: 'gpt-6.1-sol', effort: 'low', provider: 'openai' };
 const MINI = { model: 'gpt-5.4-mini', effort: undefined };
 
 // Spec: docs/superpowers/specs/2026-10-27-model-roles-design.md, "Function assignments".
@@ -29,12 +29,13 @@ describe('function roles', () => {
     expect(Object.keys(DEFAULT_ROLES).sort()).toEqual([...AI_FUNCTION_IDS].sort());
   });
 
-  it('compiled defaults keep today\'s model and effort, except parse-profile-fields and Converse (medium, owner 2026-10-27)', () => {
+  it('compiled defaults keep today\'s model and effort, except parse-profile-fields and Converse (medium, owner 2026-10-27) and the campus routes (Part 2)', () => {
     for (const id of AI_FUNCTION_IDS) {
+      if (FUNCTION_PROVIDER_DEFAULTS[id]) continue; // covered by function-routing.test.ts
       const expected = OLD_LIGHT.includes(id) || id === 'parse-profile-fields' ? MINI
         : SPEC_ROLES.converse.includes(id) ? { ...SOL, effort: 'medium' } : SOL;
       const { model, effort } = resolveSetting(id, null, null);
-      expect({ id, model, effort }).toEqual({ id, ...expected });
+      expect({ id, model, effort }).toEqual({ id, model: expected.model, effort: expected.effort });
     }
   });
 
@@ -55,7 +56,7 @@ describe('function roles', () => {
   });
 
   it('a custom model uses that model\'s own default effort (none for gpt-5.4)', () => {
-    expect(resolveSetting('jd-extract', 'custom', 'gpt-5.4')).toEqual({ role: 'custom', model: 'gpt-5.4', effort: undefined });
+    expect(resolveSetting('jd-extract', 'custom', 'gpt-5.4')).toEqual({ role: 'custom', model: 'gpt-5.4', effort: undefined, provider: 'openai' });
   });
 
   it('a role row resolves to that role', () => {

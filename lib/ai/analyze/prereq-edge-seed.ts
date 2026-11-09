@@ -114,7 +114,7 @@ export async function seedPrereqEdges(input: SeedPrereqEdgesInput): Promise<{
   durationMs: number;
 }> {
   const [provider, systemPrompt] = await Promise.all([
-    getProviderForFunction('prereq-edge-seed'),
+    getProviderForFunction('prereq-edge-seed', { courseCode: input.focalCourseCode }),
     loadPrompt('prereq-edge-seed'),
   ]);
 

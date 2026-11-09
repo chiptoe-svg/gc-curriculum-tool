@@ -26,7 +26,7 @@ import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb } from '@/scr
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Executor = Tx | typeof db;
-type Classify = (sig: { fileName: string; mimeType: string; sizeBytes: number; pageCount?: number; peekText?: string }) => Promise<Tier>;
+type Classify = (sig: { fileName: string; mimeType: string; sizeBytes: number; pageCount?: number; peekText?: string }, courseCode: string) => Promise<Tier>;
 
 export interface RetierRow { id: string; courseCode: string; fileName: string }
 
@@ -49,7 +49,7 @@ export async function planRetier(ex: Executor, classify: Classify = classifyFile
   const plan: RetierRow[] = [];
   for (const r of rows) {
     if (skip.some(s => r.fileName.includes(s))) continue;
-    const tier = await classify({ fileName: r.fileName, mimeType: r.mimeType, sizeBytes: r.sizeBytes, pageCount: r.pageCount ?? undefined, peekText: r.peek });
+    const tier = await classify({ fileName: r.fileName, mimeType: r.mimeType, sizeBytes: r.sizeBytes, pageCount: r.pageCount ?? undefined, peekText: r.peek }, r.courseCode);
     if (tier === 'high') plan.push({ id: r.id, courseCode: r.courseCode, fileName: r.fileName });
   }
   return plan;

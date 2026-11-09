@@ -33,7 +33,7 @@ describe('getProviderForFunction effort', () => {
   });
 
   it('lets an explicit override win', async () => {
-    const p = await getProviderForFunction('wiki-update', { model: 'gpt-5.4', reasoningEffort: 'low' });
+    const p = await getProviderForFunction('wiki-update', undefined, { model: 'gpt-5.4', reasoningEffort: 'low' });
     expect(p.model).toBe('gpt-5.4');
     expect(sentEffort(p)).toBe('low');
   });

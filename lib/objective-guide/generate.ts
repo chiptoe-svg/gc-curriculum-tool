@@ -104,7 +104,7 @@ export async function generateObjectiveGuide(input: GuideGenerationInput): Promi
   const known = parseCanvasAssignmentNames(input.assignmentsText);
   const syllabusText = input.syllabi.map((s) => s.text).join('\n\n');
   const [provider, systemPrompt] = await Promise.all([
-    getProviderForFunction('objective-evidence-guide'),
+    getProviderForFunction('objective-evidence-guide', { courseCode: input.courseCode }),
     loadPrompt('objective-evidence-guide'),
   ]);
   const baseMessage = buildGuideUserMessage(input, known);

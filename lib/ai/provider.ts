@@ -138,14 +138,93 @@ export function getProvider(): AIProvider {
  * (with TTL-cached resolution) before constructing the provider. Each AI
  * helper should call this with its functionId.
  */
+/**
+ * Functions that work on one course. Their calls must name the course
+ * (Part 2 Task 6) so the per-course "Only use local LLM models" switch
+ * (Part 2b, gated) can route them; program-wide functions take no course.
+ */
+export const COURSE_SCOPED_FUNCTIONS = [
+  'capture-chat-agent', 'capture-scores', 'capture-stress-test', 'materials-analysis', 'parse-profile-fields',
+  'decompose-prereq-gap', 'prereq-edge-seed', 'intended-skills-extract', 'extract-course-kud', 'reconcile-feedback',
+  'ingestion-checkin', 'material-classify', 'material-digest', 'chunk-contextualize', 'objective-evidence-guide',
+  'explore-local-delta', 'explore-agent', 'program-score-coverage',
+] as const satisfies readonly AIFunctionId[];
+export type CourseScopedFunctionId = (typeof COURSE_SCOPED_FUNCTIONS)[number];
+export type ProgramFunctionId = Exclude<AIFunctionId, CourseScopedFunctionId>;
+/** The course a course-scoped call works on (unused until the course switch ships). */
+export interface CourseContext { courseCode: string }
+type ProviderOverride = { model?: string; reasoningEffort?: string };
+
+export async function getProviderForFunction(functionId: CourseScopedFunctionId, ctx: CourseContext, override?: ProviderOverride): Promise<AIProvider>;
+export async function getProviderForFunction(functionId: ProgramFunctionId, ctx?: undefined, override?: ProviderOverride): Promise<AIProvider>;
 export async function getProviderForFunction(
   functionId: AIFunctionId,
-  override?: { model?: string; reasoningEffort?: string },
+  _ctx?: CourseContext,
+  override?: ProviderOverride,
 ): Promise<AIProvider> {
   if (override?.model) return buildProvider(override.model, override.reasoningEffort, true);
   const resolved = await resolveForFunction(functionId);
+  // A campus role runs on its campus model whatever AI_PROVIDER says; its
+  // effort is the campus reasoning level (Part 2, 2026-11-09).
+  if (resolved.provider === 'campus') {
+    const campus = buildCampusProvider(resolved.model, resolved.effort);
+    return resolved.fallback
+      ? new FallbackProvider(campus, buildProvider(resolved.fallback.model, functionEffort(resolved.fallback.effort)))
+      : campus;
+  }
   // The evaluation knob OPENAI_REASONING_EFFORT stays above the role's effort.
   return buildProvider(resolved.model, functionEffort(resolved.effort));
+}
+
+/**
+ * Campus first, OpenAI if the campus call fails (Part 2 Task 2). The one place
+ * the fallback lives; call sites never handle it. A stream falls back only if
+ * it fails before its first event, so a reader never sees two replies.
+ */
+export class FallbackProvider implements AIProvider {
+  /** The provider that served the most recent call: callers record `name`/`model` after a call (review I2). */
+  private served: AIProvider;
+  constructor(private primary: AIProvider, private secondary: AIProvider) {
+    this.served = primary;
+  }
+  get name(): AIProvider['name'] { return this.served.name; }
+  get model(): string { return this.served.model; }
+  private warn(op: string, err: unknown) {
+    this.served = this.secondary;
+    console.warn(`[ai-fallback] ${this.primary.name}:${this.primary.model} ${op} failed (${err instanceof Error ? err.message.slice(0, 160) : String(err)}); using ${this.secondary.name}:${this.secondary.model}`);
+  }
+  async complete<T>(args: Parameters<AIProvider['complete']>[0] & { validate: (raw: unknown) => T }) {
+    this.served = this.primary;
+    try { return await this.primary.complete<T>(args); } catch (e) { this.warn('complete', e); return this.secondary.complete<T>(args); }
+  }
+  async transcribeDocument(args: TranscribeDocumentArgs) {
+    this.served = this.primary;
+    try { return await this.primary.transcribeDocument(args); } catch (e) { this.warn('transcribeDocument', e); return this.secondary.transcribeDocument(args); }
+  }
+  async completeWithTools<T>(args: Parameters<AIProvider['completeWithTools']>[0] & { validate: (raw: unknown) => T }) {
+    this.served = this.primary;
+    try { return await this.primary.completeWithTools<T>(args); } catch (e) { this.warn('completeWithTools', e); return this.secondary.completeWithTools<T>(args); }
+  }
+  async *streamWithTools<T>(args: Parameters<AIProvider['streamWithTools']>[0] & { validate: (raw: unknown) => T }): AsyncIterable<StreamEvent<T>> {
+    let started = false;
+    this.served = this.primary;
+    try {
+      for await (const e of this.primary.streamWithTools<T>(args)) { started = true; yield e; }
+    } catch (e) {
+      if (started) throw e;
+      this.warn('streamWithTools', e);
+      yield* this.secondary.streamWithTools<T>(args);
+    }
+  }
+}
+
+/** A CampusProvider for an exact campus model and reasoning level. */
+function buildCampusProvider(model: string, reasoning: string | undefined): AIProvider {
+  const baseURL = process.env.CAMPUS_LLM_BASE_URL?.trim();
+  if (!baseURL) throw new Error('CAMPUS_LLM_BASE_URL not set');
+  const apiKey = process.env.CAMPUS_LLM_API_KEY?.trim();
+  if (!apiKey) throw new Error('CAMPUS_LLM_API_KEY not set');
+  return new CampusProvider(model, baseURL, apiKey, reasoning ? { reasoning: reasoning as CampusReasoning } : undefined);
 }
 
 /** `explicitEffort`: the effort came from an explicit caller override (an

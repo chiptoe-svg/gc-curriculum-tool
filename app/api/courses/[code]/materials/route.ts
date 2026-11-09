@@ -213,7 +213,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
           sizeBytes: probe.sizeBytes,
           pageCount: probe.pageCount,
           slideCount: probe.slideCount,
-        });
+        }, code);
         await updateMaterialTier(material.id, tier);
       } catch (err) {
         console.error('[materials upload] background tier classification failed (non-fatal):', err);

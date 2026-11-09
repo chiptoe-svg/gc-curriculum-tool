@@ -17,8 +17,8 @@ const functionIds = ['capture-chat', 'wiki-update'] as const;
 const baseProps = {
   slug: 's',
   initialSettings: [
-    { functionId: 'capture-chat' as const, tier: 'converse' as const, defaultRole: 'converse' as const, customModel: null, resolvedModel: 'gpt-x', resolvedEffort: 'low' },
-    { functionId: 'wiki-update' as const, tier: 'write' as const, defaultRole: 'write' as const, customModel: null, resolvedModel: 'gpt-x', resolvedEffort: 'low' },
+    { functionId: 'capture-chat' as const, tier: 'converse' as const, defaultRole: 'converse' as const, customModel: null, resolvedModel: 'gpt-x', resolvedEffort: 'low', resolvedProvider: 'openai' as const, resolvedFallback: null, hasOverride: false },
+    { functionId: 'wiki-update' as const, tier: 'write' as const, defaultRole: 'write' as const, customModel: null, resolvedModel: 'gpt-x', resolvedEffort: 'low', resolvedProvider: 'openai' as const, resolvedFallback: null, hasOverride: false },
   ],
   roles: ROLE_SETTINGS,
   defaults: DEFAULT_ROLES,

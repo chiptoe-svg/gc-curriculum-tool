@@ -1012,6 +1012,8 @@ export const aiFunctionSettings = pgTable('ai_function_settings', {
   functionId: text('function_id').primaryKey(),
   tier: text('tier').notNull(),              // 'judge' | 'converse' | 'write' | 'extract' | 'custom' (or a legacy tier name)
   customModel: text('custom_model'),          // populated when tier === 'custom'
+  /** Interview loop on the capture-chat-agent row: 'current' | 'pi'; null = current (migration 0065). */
+  loop: text('loop'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

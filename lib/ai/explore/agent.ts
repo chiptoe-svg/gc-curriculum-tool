@@ -96,7 +96,7 @@ export async function* streamExploreAgent(
     ...buildExploreTools(input.courseCode, e => emitted.push(e)),
   ];
 
-  const provider = await getProviderForFunction('explore-agent');
+  const provider = await getProviderForFunction('explore-agent', { courseCode: input.courseCode });
 
   let finalValue: ExploreAgentResponse | null = null;
   let finalToolCallsUsed = 0;

@@ -6,7 +6,7 @@ import type {
   StoredTier,
   FunctionSettingRow,
 } from '@/lib/ai/function-settings';
-import { DEFAULT_REASONING_EFFORT, MODEL_ROLES, type ModelRole, type RoleSetting } from '@/lib/ai/models';
+import { DEFAULT_REASONING_EFFORT, MODEL_ROLES, isCampusModel, type ModelRole, type RoleProvider, type RoleSetting } from '@/lib/ai/models';
 
 interface Props {
   slug: string;
@@ -20,6 +20,8 @@ interface Props {
   costHistory: Array<{ day: string; spentCents: number }>;
   /** Daily cap in 1/100-of-a-cent units (matches spentCents unit). */
   capCents: number;
+  /** Code-default campus routes (FUNCTION_PROVIDER_DEFAULTS), so Reset shows what the function returns to. */
+  routes?: Partial<Record<AIFunctionId, { provider: 'campus'; model: string; reasoning: string }>>;
   /** F1 (owner decision, 2026-10-07): changing AI model settings is
    *  admin-only — the server already enforces this (PUT/DELETE
    *  /api/settings/ai-models are admin-kind in lib/auth/authorize.ts
@@ -124,6 +126,7 @@ export function SettingsClient({
   costHistory,
   capCents,
   isAdmin,
+  routes,
 }: Props) {
   const [settings, setSettings] = useState<FunctionSettingRow[]>(initialSettings);
   const [busy, setBusy] = useState<AIFunctionId | null>(null);
@@ -150,13 +153,13 @@ export function SettingsClient({
 
   useEffect(() => { void loadAvailableModels(); }, [loadAvailableModels]);
 
-  function resolve(functionId: AIFunctionId, tier: StoredTier, customModel: string | null): { model: string; effort: string | undefined } {
+  function resolve(functionId: AIFunctionId, tier: StoredTier, customModel: string | null): ModelView {
     if (tier === 'custom' && customModel && customModel.trim()) {
       const model = customModel.trim();
-      return { model, effort: DEFAULT_REASONING_EFFORT[model] };
+      return { model, effort: DEFAULT_REASONING_EFFORT[model], provider: isCampusModel(model) ? 'campus' : 'openai', fallback: null };
     }
     const role = tier === 'custom' ? defaults[functionId] : tier;
-    return { model: roles[role].model, effort: roles[role].effort };
+    return { model: roles[role].model, effort: roles[role].effort, provider: roles[role].provider, fallback: null };
   }
 
   function findSetting(functionId: AIFunctionId): FunctionSettingRow {
@@ -179,10 +182,33 @@ export function SettingsClient({
       }
       const r = resolve(functionId, tier, customModel);
       setSettings(prev => prev.map(s => s.functionId === functionId
-        ? { ...s, tier, customModel: tier === 'custom' ? customModel : null, resolvedModel: r.model, resolvedEffort: r.effort }
+        ? { ...s, tier, customModel: tier === 'custom' ? customModel : null, resolvedModel: r.model, resolvedEffort: r.effort, resolvedProvider: r.provider, resolvedFallback: r.fallback ?? null, hasOverride: true }
         : s
       ));
       setMessage({ kind: 'ok', text: `${labels[functionId]} → ${describeModel(r)}` });
+    } catch (e) {
+      setMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Save failed' });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function setLoop(functionId: AIFunctionId, loop: 'current' | 'pi') {
+    setBusy(functionId);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/settings/ai-models?slug=${encodeURIComponent(slug)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ functionId, loop }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setMessage({ kind: 'error', text: (body as { error?: string }).error ?? 'Save failed' });
+        return;
+      }
+      setSettings(prev => prev.map(s => s.functionId === functionId ? { ...s, loop } : s));
+      setMessage({ kind: 'ok', text: `${labels[functionId]} → ${loop === 'pi' ? 'Pi loop' : 'current loop'}` });
     } catch (e) {
       setMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Save failed' });
     } finally {
@@ -203,9 +229,12 @@ export function SettingsClient({
         return;
       }
       const defaultRole = defaults[functionId];
-      const r = resolve(functionId, defaultRole, null);
+      const route = routes?.[functionId];
+      const r: ModelView = route
+        ? { model: route.model, effort: route.reasoning, provider: 'campus', fallback: roles[defaultRole].model }
+        : resolve(functionId, defaultRole, null);
       setSettings(prev => prev.map(s => s.functionId === functionId
-        ? { ...s, tier: defaultRole, customModel: null, resolvedModel: r.model, resolvedEffort: r.effort }
+        ? { ...s, tier: defaultRole, customModel: null, resolvedModel: r.model, resolvedEffort: r.effort, resolvedProvider: r.provider, resolvedFallback: r.fallback ?? null, hasOverride: false }
         : s
       ));
       setMessage({ kind: 'ok', text: `${labels[functionId]} → ${roles[defaultRole].label} (${describeModel(r)})` });
@@ -279,14 +308,15 @@ export function SettingsClient({
 
   function renderFunction(functionId: AIFunctionId) {
     const s = findSetting(functionId);
-    const isModified = s.tier !== defaults[functionId];
+    // A row naming the default role still overrides a code-default campus route, so Reset shows for any row.
+    const isModified = s.hasOverride || s.tier !== defaults[functionId];
     const isBusy = busy === functionId;
     return (
       <div key={functionId} className="rounded-md border bg-card px-4 py-3 space-y-2">
         <header>
           <div className="flex items-baseline justify-between gap-3">
             <h3 className="text-sm font-semibold">{labels[functionId]}</h3>
-            <span className="font-mono text-xs text-muted-foreground">{describeModel({ model: s.resolvedModel, effort: s.resolvedEffort })}</span>
+            <span className="font-mono text-xs text-muted-foreground">{describeModel({ model: s.resolvedModel, effort: s.resolvedEffort, provider: s.resolvedProvider, fallback: s.resolvedFallback })}</span>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">{descriptions[functionId]}</p>
         </header>
@@ -303,6 +333,21 @@ export function SettingsClient({
             disabled={isBusy || !isAdmin}
             onSet={(value) => setTier(functionId, 'custom', value)}
           />
+
+          {functionId === 'capture-chat-agent' && (
+            <label className="flex items-center gap-1 text-xs text-muted-foreground">
+              Interview loop
+              <select
+                className="rounded border bg-background px-1 py-0.5 text-xs"
+                value={s.loop === 'pi' ? 'pi' : 'current'}
+                disabled={isBusy || !isAdmin}
+                onChange={e => setLoop(functionId, e.target.value as 'current' | 'pi')}
+              >
+                <option value="current">Current</option>
+                <option value="pi">Pi</option>
+              </select>
+            </label>
+          )}
 
           {isModified && isAdmin && (
             <button
@@ -321,8 +366,14 @@ export function SettingsClient({
 }
 
 /** "gpt-6.1-sol · low effort", or just the model when no effort is set. */
-function describeModel({ model, effort }: { model: string; effort: string | undefined }): string {
-  return effort ? `${model} · ${effort} effort` : model;
+interface ModelView { model: string; effort: string | undefined; provider: RoleProvider; fallback?: string | null }
+
+function describeModel({ model, effort, provider, fallback }: ModelView): string {
+  if (provider === 'campus') {
+    const level = effort === 'off' ? 'thinking off' : effort ? `thinking ${effort}` : null;
+    return ['campus', model, level, fallback ? `OpenAI ${fallback} if campus fails` : null].filter(Boolean).join(' · ');
+  }
+  return ['OpenAI', model, effort ? `${effort} effort` : null].filter(Boolean).join(' · ');
 }
 
 function RoleButton({

@@ -13,7 +13,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { aiFunctionSettings } from '@/lib/db/schema';
-import { DEFAULT_REASONING_EFFORT, MODEL_ROLES, ROLE_SETTINGS, type ModelRole } from '@/lib/ai/models';
+import { DEFAULT_REASONING_EFFORT, MODEL_ROLES, ROLE_SETTINGS, isCampusModel, type ModelRole, type RoleProvider } from '@/lib/ai/models';
 
 export const AI_FUNCTION_IDS = [
   'capture-chat',
@@ -105,10 +105,25 @@ export interface ResolvedSetting {
   role: ModelRole | 'custom';
   model: string;
   effort: string | undefined;
+  provider: RoleProvider;
+  /** OpenAI model to use if the campus call fails (code-default campus routes only). */
+  fallback?: { model: string; effort: string | undefined };
 }
 
-const fromModel = (model: string): ResolvedSetting => ({ role: 'custom', model, effort: DEFAULT_REASONING_EFFORT[model] });
-const fromRole = (role: ModelRole): ResolvedSetting => ({ role, model: ROLE_SETTINGS[role].model, effort: ROLE_SETTINGS[role].effort });
+/**
+ * Code-default routes off a function's role (Part 2 Task 2, owner decision
+ * 2026-11-01): the Extract functions the benchmark cleared run on campus
+ * Qwen3.8 with thinking off. A settings row still wins. A campus failure falls
+ * back to the role's OpenAI model (no course switch yet; Part 2b).
+ */
+export const FUNCTION_PROVIDER_DEFAULTS: Partial<Record<AIFunctionId, { provider: 'campus'; model: string; reasoning: string }>> = {
+  'parse-profile-fields': { provider: 'campus', model: 'qwen3.8-27b-fp8', reasoning: 'off' },
+  'materials-analysis': { provider: 'campus', model: 'qwen3.8-27b-fp8', reasoning: 'off' },
+  'decompose-prereq-gap': { provider: 'campus', model: 'qwen3.8-27b-fp8', reasoning: 'off' },
+};
+
+const fromModel = (model: string): ResolvedSetting => ({ role: 'custom', model, effort: DEFAULT_REASONING_EFFORT[model], provider: isCampusModel(model) ? 'campus' : 'openai' });
+const fromRole = (role: ModelRole): ResolvedSetting => ({ role, model: ROLE_SETTINGS[role].model, effort: ROLE_SETTINGS[role].effort, provider: ROLE_SETTINGS[role].provider });
 
 /**
  * Resolve a settings row (or no row: tier null) to a role, model and effort.
@@ -122,6 +137,11 @@ export function resolveSetting(functionId: AIFunctionId, tier: string | null, cu
   if ((MODEL_ROLES as readonly string[]).includes(tier ?? '')) return fromRole(tier as ModelRole);
   if (tier === 'light') return fromRole('extract');
   if ((tier === 'default' || tier === 'heavy') && role === 'extract') return fromModel(LEGACY_DEFAULT_MODEL);
+  const route = tier === null ? FUNCTION_PROVIDER_DEFAULTS[functionId] : undefined;
+  if (route) {
+    const base = fromRole(role);
+    return { role, model: route.model, effort: route.reasoning, provider: 'campus', fallback: { model: base.model, effort: base.effort } };
+  }
   return fromRole(role);
 }
 
@@ -205,7 +225,7 @@ const settingsCache = new Map<AIFunctionId, CachedSetting>();
  * (a role, a custom model, or an old tier name), or its compiled-in role
  * when no row exists.
  */
-export async function resolveForFunction(functionId: AIFunctionId): Promise<{ model: string; effort: string | undefined }> {
+export async function resolveForFunction(functionId: AIFunctionId): Promise<{ model: string; effort: string | undefined; provider: RoleProvider; fallback?: ResolvedSetting['fallback'] }> {
   const now = Date.now();
   let cached = settingsCache.get(functionId);
   if (!cached || now - cached.fetchedAt >= SETTING_TTL_MS) {
@@ -224,8 +244,8 @@ export async function resolveForFunction(functionId: AIFunctionId): Promise<{ mo
     cached = { tier: row?.tier ?? null, customModel: row?.customModel ?? null, fetchedAt: now };
     settingsCache.set(functionId, cached);
   }
-  const { model, effort } = resolveSetting(functionId, cached.tier, cached.customModel);
-  return { model, effort };
+  const { model, effort, provider, fallback } = resolveSetting(functionId, cached.tier, cached.customModel);
+  return { model, effort, provider, fallback };
 }
 
 /** The model a function runs on (scripts that only need the name). */
@@ -239,6 +259,7 @@ export async function resolveModelForFunction(functionId: AIFunctionId): Promise
  * can invalidate without doing a DB roundtrip.
  */
 export function invalidateSettingsCache(functionId?: AIFunctionId): void {
+  loopCache = null;
   if (functionId) settingsCache.delete(functionId);
   else settingsCache.clear();
 }
@@ -250,6 +271,13 @@ export interface FunctionSettingRow {
   customModel: string | null;
   resolvedModel: string;
   resolvedEffort: string | undefined;
+  resolvedProvider: RoleProvider;
+  /** OpenAI model used if the campus call fails, for code-default campus routes. */
+  resolvedFallback: string | null;
+  /** A settings row exists (even one naming the default role): Reset removes it. */
+  hasOverride: boolean;
+  /** capture-chat-agent only: the interview loop (Pi plan Task 5). */
+  loop?: InterviewLoop | null;
   defaultRole: ModelRole;
 }
 
@@ -269,6 +297,7 @@ export async function listAllFunctionSettings(): Promise<FunctionSettingRow[]> {
     rows = [];
   }
   const byId = new Map(rows.map(r => [r.functionId, r]));
+  const interviewLoop = await resolveInterviewLoop();
 
   return AI_FUNCTION_IDS.map(functionId => {
     const stored = byId.get(functionId);
@@ -280,6 +309,10 @@ export async function listAllFunctionSettings(): Promise<FunctionSettingRow[]> {
       customModel: resolved.role === 'custom' ? customModel : null,
       resolvedModel: resolved.model,
       resolvedEffort: resolved.effort,
+      resolvedProvider: resolved.provider,
+      resolvedFallback: resolved.fallback?.model ?? null,
+      hasOverride: stored !== undefined,
+      loop: functionId === 'capture-chat-agent' ? interviewLoop : null,
       defaultRole: DEFAULT_ROLES[functionId],
     };
   });
@@ -322,3 +355,44 @@ export async function resetFunctionSetting(functionId: AIFunctionId): Promise<vo
   await db.delete(aiFunctionSettings).where(eq(aiFunctionSettings.functionId, functionId));
   invalidateSettingsCache(functionId);
 }
+
+/**
+ * Which loop runs the faculty interview (Pi plan Task 5): the `loop` column on
+ * the capture-chat-agent settings row; anything but 'pi' (no row, NULL, or a
+ * database without migration 0065) is the current loop. Cached like the
+ * function settings; invalidateSettingsCache() clears it.
+ */
+export type InterviewLoop = 'current' | 'pi';
+let loopCache: { value: InterviewLoop; fetchedAt: number } | null = null;
+export async function resolveInterviewLoop(): Promise<InterviewLoop> {
+  const now = Date.now();
+  if (loopCache && now - loopCache.fetchedAt < SETTING_TTL_MS) return loopCache.value;
+  let value: InterviewLoop = 'current';
+  try {
+    const rows = await db
+      .select({ loop: aiFunctionSettings.loop })
+      .from(aiFunctionSettings)
+      .where(eq(aiFunctionSettings.functionId, 'capture-chat-agent'))
+      .limit(1);
+    if (rows[0]?.loop === 'pi') value = 'pi';
+  } catch {
+    value = 'current';
+  }
+  loopCache = { value, fetchedAt: now };
+  return value;
+}
+
+/** Set the interview loop. Creates the capture-chat-agent row (at its default role) if none exists. */
+export async function setInterviewLoop(loop: InterviewLoop): Promise<void> {
+  const fn: AIFunctionId = 'capture-chat-agent';
+  const existing = await db.select({ functionId: aiFunctionSettings.functionId }).from(aiFunctionSettings)
+    .where(eq(aiFunctionSettings.functionId, fn)).limit(1);
+  const now = new Date();
+  if (existing.length === 0) {
+    await db.insert(aiFunctionSettings).values({ functionId: fn, tier: DEFAULT_ROLES[fn], customModel: null, loop, updatedAt: now });
+  } else {
+    await db.update(aiFunctionSettings).set({ loop, updatedAt: now }).where(eq(aiFunctionSettings.functionId, fn));
+  }
+  invalidateSettingsCache();
+}
+

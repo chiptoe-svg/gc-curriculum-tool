@@ -14,10 +14,19 @@
  *    instructor citation a real instructor message. A citation the model never
  *    saw is invented, so it is dropped before the turn is saved.
  */
-import type { AuditResponse } from '@/lib/ai/agent/audit-response-schema';
+import { AuditResponseSchema, type AuditResponse } from '@/lib/ai/agent/audit-response-schema';
 
 /** The tools a required search may use. */
 export const SEARCH_TOOLS = ['search_materials', 'fetch_material_section'];
+/** Tools that read course materials (a turn that used one has searched). */
+export const MATERIAL_TOOLS = new Set(['search_materials', 'fetch_material_section', 'list_materials']);
+/**
+ * Pi loop retry limits (Pi plan rulings, 2026-11-09): citation problems are
+ * sent back twice, then the bad citations are dropped; the search is forced on
+ * the first request instead of being sent back, so search retries are 0.
+ */
+export const MAX_CITATION_RETRIES = 2;
+export const MAX_SEARCH_RETRIES = 0;
 
 // Words for graded work and the documents that define it. Generic words such as
 // "project", "test" or "reading" fired on questions about teaching practice (2070-024).
@@ -125,3 +134,56 @@ export function keepValidCitations<T extends Pick<AuditResponse, 'citations'>>(
 ): T {
   return { ...response, citations: (response.citations ?? []).filter(c => checkCitations({ citations: [c] }, allowed).length === 0) };
 }
+
+const norm = (t: string) => t.toLowerCase().replace(/[“”"'‘’…]/g, '').replace(/\s+/g, ' ').trim();
+
+/** Trim an excerpt to 200 characters at a word boundary, with a closing ellipsis. */
+function trimExcerpt(e: string): string {
+  if (e.length <= 200) return e;
+  const cut = e.slice(0, 199);
+  const at = cut.lastIndexOf(' ');
+  return (at > 100 ? cut.slice(0, at) : cut).replace(/[\s,;:.]+$/, '') + '…';
+}
+
+/**
+ * Repair citations before they are validated or checked (Part 2 Task 5):
+ * - an instructor citation whose messageId is not a real message, but whose
+ *   excerpt (normalized, at least 12 characters) is inside exactly one
+ *   instructor answer, is re-pointed to that answer. Models often quote the
+ *   answer correctly and invent the id; dropping it lost a true quote.
+ * - an excerpt over 200 characters is trimmed at a word boundary with "…".
+ * Anything still invalid is dropped later by keepValidCitations. Works on a
+ * raw reply or a parsed one; applies to every provider.
+ */
+export function repairCitations<T>(response: T, messages: Array<{ role: string; content: string | null }>): T {
+  const r = response as unknown as { citations?: Array<Record<string, unknown>> };
+  if (!r || !Array.isArray(r.citations)) return response;
+  const answers = messages.flatMap(m => {
+    if (m.role !== 'user' || !m.content) return [];
+    const id = m.content.match(/^\[messageId=([^\]]+)\]/)?.[1];
+    return id ? [{ id, text: norm(m.content.replace(/^\[messageId=[^\]]+\]\n?/, '')) }] : [];
+  });
+  const known = new Set(answers.map(a => a.id));
+  const citations = r.citations.map(c => {
+    let out = { ...c };
+    if (typeof out.excerpt === 'string') out.excerpt = trimExcerpt(out.excerpt);
+    if (out.type === 'instructor' && typeof out.excerpt === 'string' && !(typeof out.messageId === 'string' && known.has(out.messageId))) {
+      const q = norm(out.excerpt.replace(/…$/, ''));
+      const hits = q.length >= 12 ? answers.filter(a => a.text.includes(q)) : [];
+      if (hits.length === 1) out = { ...out, messageId: hits[0]!.id };
+    }
+    return out;
+  });
+  return { ...(response as object), citations } as T;
+}
+
+/** Parse an interviewer reply with citations repaired first, so a long quote or an invented id doesn't fail the turn. */
+export function parseInterviewReply(raw: unknown, messages: Array<{ role: string; content: string | null }>): AuditResponse {
+  return AuditResponseSchema.parse(repairCitations(raw, messages));
+}
+
+/** The send-back message when a reply's citations fail checkCitations (Pi loop). */
+export function citationFollowUp(problems: string[]): string {
+  return `Your answer has citation problems:\n- ${problems.join('\n- ')}\nFix them and give your answer again.`;
+}
+

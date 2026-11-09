@@ -200,6 +200,14 @@ describe('POST /api/courses/[code]/analyze-materials', () => {
     expect(callArg?.documentBytes).toBeUndefined();
   });
 
+  it('routes the materials analysis with the decoded course code (review I4)', async () => {
+    listMaterialsByCourse.mockResolvedValue([fakeMaterialOk]);
+    analyzeMaterial.mockResolvedValue({ data: { materialType: 'rubric', competencies: [], skills: [], notes: '' }, telemetry: { costUsdCents: 1, cachedTokens: 0, uncachedPromptTokens: 1, completionTokens: 1 } });
+    synthesizeCourseProfile.mockResolvedValue({ data: fakeProfile, telemetry: { costUsdCents: 1, cachedTokens: 0, uncachedPromptTokens: 1, completionTokens: 1 } });
+    await POST(makeReq(), { params: Promise.resolve({ code: 'GC%204060' }) });
+    expect(getProvider).toHaveBeenCalledWith('materials-analysis', { courseCode: 'GC 4060' });
+  });
+
   it('returns runId and totalCostUsdCents in the 200 body', async () => {
     listMaterialsByCourse.mockResolvedValue([fakeMaterialOk]);
     analyzeMaterial.mockResolvedValue({

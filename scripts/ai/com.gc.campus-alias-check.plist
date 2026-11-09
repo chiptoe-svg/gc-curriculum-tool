@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.gc.campus-alias-check</string>
+  <!-- Daily 07:10 local: do the RCD aliases tiger/cub still serve the pinned campus models? Opens/closes a
+       `campus-alias` GitHub issue. Calendar time, never StartInterval (stopped firing machine-wide 2026-10-07).
+       Install (owner): cp to ~/Library/LaunchAgents/ and launchctl bootstrap gui/$(id -u) <path>. -->
+  <key>ProgramArguments</key>
+  <array><string>/opt/homebrew/bin/node</string><string>/Users/admin/projects/curriculum_developer/scripts/ai/campus-alias-check.mjs</string></array>
+  <key>WorkingDirectory</key><string>/Users/admin/projects/curriculum_developer</string>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string><key>HOME</key><string>/Users/admin</string></dict>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>10</integer></dict>
+  <key>StandardOutPath</key><string>/Users/admin/.local/state/gc-curriculum-tool/campus-alias.log</string>
+  <key>StandardErrorPath</key><string>/Users/admin/.local/state/gc-curriculum-tool/campus-alias.log</string>
+</dict>
+</plist>

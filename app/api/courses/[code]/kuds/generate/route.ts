@@ -38,6 +38,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 
   try {
     const { data, model, telemetry } = await generateCourseKud({
+      courseCode: course.code,
       title: course.title,
       description: course.description,
       learningObjectives: course.learningObjectives as string[],

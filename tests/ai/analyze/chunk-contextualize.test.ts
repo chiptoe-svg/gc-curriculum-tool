@@ -39,7 +39,7 @@ describe('contextualizeChunk', () => {
       materialDigest: '## What this is\nChapter 4 of a color-management textbook.',
       sectionTitle: 'ΔE perceptibility',
       chunkText: 'A ΔE value of 1 is the threshold of human perception.',
-    });
+    }, { courseCode: 'GC 1010' });
 
     expect(result.blurb).toMatch(/Chapter 4/);
     expect(result.model).toBe('test-model');
@@ -53,7 +53,7 @@ describe('contextualizeChunk', () => {
       materialDigest: 'DIGEST_MARKER',
       sectionTitle: 'SECTION_MARKER',
       chunkText: 'CHUNK_MARKER',
-    });
+    }, { courseCode: 'GC 1010' });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const arg = (stub.complete.mock.calls as any)[0][0];
@@ -70,7 +70,7 @@ describe('contextualizeChunk', () => {
       materialDigest: 'd',
       sectionTitle: '',
       chunkText: 'c',
-    });
+    }, { courseCode: 'GC 1010' });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const arg = (stub.complete.mock.calls as any)[0][0];
@@ -83,7 +83,7 @@ describe('contextualizeChunk', () => {
     vi.mocked(getProviderForFunction).mockResolvedValueOnce(stub as never);
 
     await expect(
-      contextualizeChunk({ materialDigest: 'd', sectionTitle: 's', chunkText: 'c' }),
+      contextualizeChunk({ materialDigest: 'd', sectionTitle: 's', chunkText: 'c' }, { courseCode: 'GC 1010' }),
     ).rejects.toThrow(/empty/i);
   });
 });

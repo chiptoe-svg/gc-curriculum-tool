@@ -61,7 +61,7 @@ describe('generateObjectiveGuide', () => {
   it('uses the objective-evidence-guide function and makes one call when the draft is clean', async () => {
     complete.mockResolvedValueOnce(reply(GOOD));
     const r = await generateObjectiveGuide(INPUT);
-    expect(getProviderForFunction).toHaveBeenCalledWith('objective-evidence-guide');
+    expect(getProviderForFunction).toHaveBeenCalledWith('objective-evidence-guide', { courseCode: 'MKT 4320' });
     expect(complete).toHaveBeenCalledTimes(1);
     expect(complete.mock.calls[0]![0]).toMatchObject({ systemPrompt: 'SYSTEM PROMPT', schemaName: 'objective_evidence_guide' });
     expect(r.attempts).toBe(1);

@@ -299,6 +299,7 @@ describe('POST /api/courses/[code]/materials', () => {
     expect(probeSize).toHaveBeenCalledOnce();
     expect(classifyManifestItem).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'file', mimeType: 'application/pdf', sizeBytes: 100_000 }),
+      expect.any(String),
     );
     expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'background');
   });
@@ -313,7 +314,7 @@ describe('POST /api/courses/[code]/materials', () => {
     await POST(req, ctx);
     await flushAfter();
 
-    expect(classifyManifestItem).toHaveBeenCalledWith(expect.objectContaining({ kind: 'syllabus' }));
+    expect(classifyManifestItem).toHaveBeenCalledWith(expect.objectContaining({ kind: 'syllabus' }), expect.any(String));
   });
 
   it('[triage ON] a background classifier error never fails the upload', async () => {

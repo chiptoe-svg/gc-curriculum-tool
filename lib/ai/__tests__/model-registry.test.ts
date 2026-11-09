@@ -29,6 +29,12 @@ describe('model registry', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('the registry guard rejects a campus alias (tiger, cub) in lib/', () => {
+    // The aliases move between models (Part 2 spec); code names exact ids.
+    const offenders = files.flatMap(f => [...f.text.matchAll(/['"`](tiger|cub)['"`]/g)].map(m => `${f.rel}: ${m[1]}`));
+    expect(offenders).toEqual([]);
+  });
+
   it('OPENAI_MODEL no longer chooses a model', () => {
     expect(files.filter(f => f.text.includes('process.env.OPENAI_MODEL')).map(f => f.rel)).toEqual([]);
   });

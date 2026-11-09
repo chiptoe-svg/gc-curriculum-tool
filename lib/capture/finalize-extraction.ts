@@ -132,7 +132,7 @@ export async function finalizeExtraction(input: FinalizeExtractionInput): Promis
     const { digest, model } = await generateMaterialDigest({
       fileName: stored.fileName,
       extractedText: stored.extractedText,
-    });
+    }, { courseCode: input.courseCode });
     await updateMaterialDigest({ id: stored.id, digest, digestModel: model });
   } catch (err) {
     console.error(`finalizeExtraction (legacy): digest failed for ${input.id} (${input.fileName})`, err);
@@ -188,7 +188,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
   let digestMs = 0;
   let digestText = '';
   try {
-    const { digest, model } = await generateMaterialDigest({ fileName, extractedText }, { noOpenAIFallback: input.noOpenAIFallback });
+    const { digest, model } = await generateMaterialDigest({ fileName, extractedText }, { courseCode: input.courseCode, noOpenAIFallback: input.noOpenAIFallback });
     digestMs = Date.now() - tDigest;
     digestText = digest;
     await updateMaterialDigest({
@@ -383,7 +383,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
           const summaries = await mapWithConcurrency(
             qualifying,
             4,
-            (s) => generateMaterialDigest({ fileName: `${fileName} — ${s.title}`, extractedText: s.text }, { noOpenAIFallback: input.noOpenAIFallback }),
+            (s) => generateMaterialDigest({ fileName: `${fileName} — ${s.title}`, extractedText: s.text }, { courseCode: input.courseCode, noOpenAIFallback: input.noOpenAIFallback }),
           );
 
           const vectors = await embedBatch(summaries.map(x => x.digest));
@@ -451,7 +451,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
         materialDigest: digestText,
         sectionTitle: d.sectionTitle,
         chunkText: d.text,
-      }, { noOpenAIFallback: input.noOpenAIFallback })),
+      }, { courseCode: input.courseCode, noOpenAIFallback: input.noOpenAIFallback })),
     );
     const ctxMs = Date.now() - tCtx;
 

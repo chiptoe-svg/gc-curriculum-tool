@@ -55,7 +55,7 @@ export async function synthesizeCourseProfile({
   findings,
 }: SynthesizeCourseProfileArgs): Promise<{ data: CourseProfileResult; telemetry: CallTelemetry }> {
   const systemPrompt = await loadPrompt('synthesize-course-profile');
-  const provider = await getProviderForFunction('materials-analysis');
+  const provider = await getProviderForFunction('materials-analysis', { courseCode: course.code });
 
   const userMessage = [
     `# Course context`,

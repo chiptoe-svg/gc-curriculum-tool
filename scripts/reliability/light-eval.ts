@@ -26,7 +26,7 @@ async function main() {
     .where(and(eq(courseMaterials.digestModel, 'gpt-5.4-mini'), isNull(courseMaterials.retiredAt), sql`length(${courseMaterials.extractedText}) between 800 and 40000`))
     .limit(N);
   const systemPrompt = await loadPrompt('material-digest');
-  const provider = await getProviderForFunction('material-digest', { model: 'gpt-6-luna', reasoningEffort: process.env.EFFORT ?? 'low' });
+  const provider = await getProviderForFunction('material-digest', { courseCode: 'light-eval (no course)' }, { model: 'gpt-6-luna', reasoningEffort: process.env.EFFORT ?? 'low' });
   const out = [];
   let cost = 0, failures = 0;
   for (const r of rows) {

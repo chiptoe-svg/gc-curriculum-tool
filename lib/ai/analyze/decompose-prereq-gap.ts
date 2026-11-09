@@ -26,7 +26,7 @@ export interface MergePrereqGapArgs {
  */
 export async function mergePrereqGapWithSkills(args: MergePrereqGapArgs): Promise<SkillsMerge> {
   const systemPrompt = await loadPrompt('decompose-prereq-gap');
-  const provider = await getProviderForFunction('decompose-prereq-gap');
+  const provider = await getProviderForFunction('decompose-prereq-gap', { courseCode: args.sourceCourseCode });
   const existingBlock = args.existingSkills.length > 0
     ? args.existingSkills.map((s, i) => `${i + 1}. ${s}`).join('\n')
     : '(no existing entries — list is empty)';

@@ -93,7 +93,7 @@ export async function estimateLocalDelta(
   neighbors: NeighborContext,
 ): Promise<EstimateLocalDeltaResult> {
   if (!changeProse.trim()) throw new Error('changeProse is required');
-  const provider = await getProviderForFunction('explore-local-delta');
+  const provider = await getProviderForFunction('explore-local-delta', { courseCode });
   const systemPrompt = await loadPrompt('explore-local-delta');
 
   const focalCompetencies = neighbors.focal.competencies

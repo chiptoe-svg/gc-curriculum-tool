@@ -8,9 +8,9 @@ export interface ParseProfileFieldsResult {
   costUsdCents: number;
 }
 
-export async function parseProfileFields(syllabusText: string): Promise<ParseProfileFieldsResult> {
+export async function parseProfileFields(syllabusText: string, courseCode: string): Promise<ParseProfileFieldsResult> {
   const systemPrompt = await loadPrompt('parse-profile-fields');
-  const provider = await getProviderForFunction('parse-profile-fields');
+  const provider = await getProviderForFunction('parse-profile-fields', { courseCode });
   const result = await provider.complete({
     systemPrompt,
     userMessage: `Syllabus text:\n${syllabusText}`,

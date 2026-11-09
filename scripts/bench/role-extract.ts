@@ -52,12 +52,12 @@ async function inBatches<T>(xs: T[], n: number, f: (x: T) => Promise<void>) {
 }
 
 /** Mirrors classifyFile's LLM path (lib/capture/material-tier.ts), which hides errors as 'background'. */
-async function classify(m: { fileName: string; mimeType: string; sizeBytes: number; pageCount: number | null; peek: string }) {
+async function classify(m: { courseCode: string; fileName: string; mimeType: string; sizeBytes: number; pageCount: number | null; peek: string }) {
   const lines = [`filename: ${m.fileName}`, `mime_type: ${m.mimeType}`, `size_bytes: ${m.sizeBytes}`];
   if (m.pageCount != null) lines.push(`page_count: ${m.pageCount}`);
   if (m.peek) lines.push('', 'peek_text (first ~500 chars):', m.peek.slice(0, 500));
   lines.push('', 'Return JSON: {"tier":"high"|"middle"|"background"}');
-  const provider = await getProviderForFunction('material-classify');
+  const provider = await getProviderForFunction('material-classify', { courseCode: m.courseCode });
   const { data } = await provider.complete<{ tier: string }>({
     systemPrompt: await loadPrompt('material-classify'), userMessage: lines.join('\n'), schemaName: 'material_classify',
     jsonSchema: { type: 'object', properties: { tier: { type: 'string', enum: ['high', 'middle', 'background'] } }, required: ['tier'], additionalProperties: false },
@@ -87,7 +87,7 @@ async function main() {
   console.log(`model ${process.env.CAMPUS_LLM_DEFAULT_MODEL} ${process.env.CAMPUS_LLM_REASONING ?? 'default'}: classify ${files.length}, analysis ${analyzed.length}, checkin ${checkinCourses.length}, parse ${syllabi.length}, decompose ${withGaps.length}`);
 
   await inBatches(files, 5, m => timed('material-classify', m.id, async () => ({
-    tier: await classify({ fileName: m.fileName, mimeType: m.mimeType, sizeBytes: m.sizeBytes, pageCount: m.pageCount, peek: m.extractedText ?? '' }),
+    tier: await classify({ courseCode: m.courseCode, fileName: m.fileName, mimeType: m.mimeType, sizeBytes: m.sizeBytes, pageCount: m.pageCount, peek: m.extractedText ?? '' }),
     storedTier: m.tier })));
   await inBatches(analyzed, 3, async m => {
     const c = (await db.select().from(courses).where(eq(courses.code, m.courseCode)))[0]!;
@@ -110,7 +110,7 @@ async function main() {
     };
     await timed('ingestion-checkin', code, async () => { const r = await generateIngestionCheckIn(input); return { message: r.message, highlights: r.highlights }; });
   });
-  await inBatches(syllabi, 3, m => timed('parse-profile-fields', m.id, async () => (await parseProfileFields(m.extractedText ?? '')) as unknown));
+  await inBatches(syllabi, 3, m => timed('parse-profile-fields', m.id, async () => (await parseProfileFields(m.extractedText ?? '', m.courseCode)) as unknown));
   await inBatches(withGaps, 3, async s => {
     const c = (await db.select().from(courses).where(eq(courses.code, s.courseCode)))[0]!;
     const gap = gapsOf(s)[0]!;
