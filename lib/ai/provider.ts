@@ -146,9 +146,50 @@ export async function getProviderForFunction(
   const resolved = await resolveForFunction(functionId);
   // A campus role runs on its campus model whatever AI_PROVIDER says; its
   // effort is the campus reasoning level (Part 2, 2026-11-09).
-  if (resolved.provider === 'campus') return buildCampusProvider(resolved.model, resolved.effort);
+  if (resolved.provider === 'campus') {
+    const campus = buildCampusProvider(resolved.model, resolved.effort);
+    return resolved.fallback
+      ? new FallbackProvider(campus, buildProvider(resolved.fallback.model, functionEffort(resolved.fallback.effort)))
+      : campus;
+  }
   // The evaluation knob OPENAI_REASONING_EFFORT stays above the role's effort.
   return buildProvider(resolved.model, functionEffort(resolved.effort));
+}
+
+/**
+ * Campus first, OpenAI if the campus call fails (Part 2 Task 2). The one place
+ * the fallback lives; call sites never handle it. A stream falls back only if
+ * it fails before its first event, so a reader never sees two replies.
+ */
+export class FallbackProvider implements AIProvider {
+  readonly name: AIProvider['name'];
+  readonly model: string;
+  constructor(private primary: AIProvider, private secondary: AIProvider) {
+    this.name = primary.name;
+    this.model = primary.model;
+  }
+  private warn(op: string, err: unknown) {
+    console.warn(`[ai-fallback] ${this.primary.name}:${this.primary.model} ${op} failed (${err instanceof Error ? err.message.slice(0, 160) : String(err)}); using ${this.secondary.name}:${this.secondary.model}`);
+  }
+  async complete<T>(args: Parameters<AIProvider['complete']>[0] & { validate: (raw: unknown) => T }) {
+    try { return await this.primary.complete<T>(args); } catch (e) { this.warn('complete', e); return this.secondary.complete<T>(args); }
+  }
+  async transcribeDocument(args: TranscribeDocumentArgs) {
+    try { return await this.primary.transcribeDocument(args); } catch (e) { this.warn('transcribeDocument', e); return this.secondary.transcribeDocument(args); }
+  }
+  async completeWithTools<T>(args: Parameters<AIProvider['completeWithTools']>[0] & { validate: (raw: unknown) => T }) {
+    try { return await this.primary.completeWithTools<T>(args); } catch (e) { this.warn('completeWithTools', e); return this.secondary.completeWithTools<T>(args); }
+  }
+  async *streamWithTools<T>(args: Parameters<AIProvider['streamWithTools']>[0] & { validate: (raw: unknown) => T }): AsyncIterable<StreamEvent<T>> {
+    let started = false;
+    try {
+      for await (const e of this.primary.streamWithTools<T>(args)) { started = true; yield e; }
+    } catch (e) {
+      if (started) throw e;
+      this.warn('streamWithTools', e);
+      yield* this.secondary.streamWithTools<T>(args);
+    }
+  }
 }
 
 /** A CampusProvider for an exact campus model and reasoning level. */

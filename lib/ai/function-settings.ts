@@ -106,7 +106,21 @@ export interface ResolvedSetting {
   model: string;
   effort: string | undefined;
   provider: RoleProvider;
+  /** OpenAI model to use if the campus call fails (code-default campus routes only). */
+  fallback?: { model: string; effort: string | undefined };
 }
+
+/**
+ * Code-default routes off a function's role (Part 2 Task 2, owner decision
+ * 2026-11-01): the Extract functions the benchmark cleared run on campus
+ * Qwen3.8 with thinking off. A settings row still wins. A campus failure falls
+ * back to the role's OpenAI model (no course switch yet; Part 2b).
+ */
+export const FUNCTION_PROVIDER_DEFAULTS: Partial<Record<AIFunctionId, { provider: 'campus'; model: string; reasoning: string }>> = {
+  'parse-profile-fields': { provider: 'campus', model: 'qwen3.8-27b-fp8', reasoning: 'off' },
+  'materials-analysis': { provider: 'campus', model: 'qwen3.8-27b-fp8', reasoning: 'off' },
+  'decompose-prereq-gap': { provider: 'campus', model: 'qwen3.8-27b-fp8', reasoning: 'off' },
+};
 
 const fromModel = (model: string): ResolvedSetting => ({ role: 'custom', model, effort: DEFAULT_REASONING_EFFORT[model], provider: isCampusModel(model) ? 'campus' : 'openai' });
 const fromRole = (role: ModelRole): ResolvedSetting => ({ role, model: ROLE_SETTINGS[role].model, effort: ROLE_SETTINGS[role].effort, provider: ROLE_SETTINGS[role].provider });
@@ -123,6 +137,11 @@ export function resolveSetting(functionId: AIFunctionId, tier: string | null, cu
   if ((MODEL_ROLES as readonly string[]).includes(tier ?? '')) return fromRole(tier as ModelRole);
   if (tier === 'light') return fromRole('extract');
   if ((tier === 'default' || tier === 'heavy') && role === 'extract') return fromModel(LEGACY_DEFAULT_MODEL);
+  const route = tier === null ? FUNCTION_PROVIDER_DEFAULTS[functionId] : undefined;
+  if (route) {
+    const base = fromRole(role);
+    return { role, model: route.model, effort: route.reasoning, provider: 'campus', fallback: { model: base.model, effort: base.effort } };
+  }
   return fromRole(role);
 }
 
@@ -206,7 +225,7 @@ const settingsCache = new Map<AIFunctionId, CachedSetting>();
  * (a role, a custom model, or an old tier name), or its compiled-in role
  * when no row exists.
  */
-export async function resolveForFunction(functionId: AIFunctionId): Promise<{ model: string; effort: string | undefined; provider: RoleProvider }> {
+export async function resolveForFunction(functionId: AIFunctionId): Promise<{ model: string; effort: string | undefined; provider: RoleProvider; fallback?: ResolvedSetting['fallback'] }> {
   const now = Date.now();
   let cached = settingsCache.get(functionId);
   if (!cached || now - cached.fetchedAt >= SETTING_TTL_MS) {
@@ -225,8 +244,8 @@ export async function resolveForFunction(functionId: AIFunctionId): Promise<{ mo
     cached = { tier: row?.tier ?? null, customModel: row?.customModel ?? null, fetchedAt: now };
     settingsCache.set(functionId, cached);
   }
-  const { model, effort, provider } = resolveSetting(functionId, cached.tier, cached.customModel);
-  return { model, effort, provider };
+  const { model, effort, provider, fallback } = resolveSetting(functionId, cached.tier, cached.customModel);
+  return { model, effort, provider, fallback };
 }
 
 /** The model a function runs on (scripts that only need the name). */
@@ -251,6 +270,9 @@ export interface FunctionSettingRow {
   customModel: string | null;
   resolvedModel: string;
   resolvedEffort: string | undefined;
+  resolvedProvider: RoleProvider;
+  /** OpenAI model used if the campus call fails, for code-default campus routes. */
+  resolvedFallback: string | null;
   defaultRole: ModelRole;
 }
 
@@ -281,6 +303,8 @@ export async function listAllFunctionSettings(): Promise<FunctionSettingRow[]> {
       customModel: resolved.role === 'custom' ? customModel : null,
       resolvedModel: resolved.model,
       resolvedEffort: resolved.effort,
+      resolvedProvider: resolved.provider,
+      resolvedFallback: resolved.fallback?.model ?? null,
       defaultRole: DEFAULT_ROLES[functionId],
     };
   });

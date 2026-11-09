@@ -7,6 +7,7 @@ import {
   FUNCTION_DESCRIPTIONS,
   FUNCTION_LABELS,
   listAllFunctionSettings,
+  FUNCTION_PROVIDER_DEFAULTS,
 } from '@/lib/ai/function-settings';
 import { ROLE_SETTINGS } from '@/lib/ai/models';
 import { getDailyCapCents, getDailyCostHistory } from '@/lib/rate-limit/daily-cap';
@@ -56,6 +57,7 @@ export default async function SettingsPage({ searchParams }: Props) {
           slug={slug}
           initialSettings={settings}
           roles={ROLE_SETTINGS}
+          routes={FUNCTION_PROVIDER_DEFAULTS}
           defaults={DEFAULT_ROLES}
           labels={FUNCTION_LABELS}
           descriptions={FUNCTION_DESCRIPTIONS}
