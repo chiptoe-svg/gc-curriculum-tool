@@ -119,7 +119,7 @@ export async function runStressTest(
   ctx: StressTestContext,
   override?: { model?: string; reasoningEffort?: string },
 ): Promise<StressTestRunResult> {
-  const provider = await getProviderForFunction('capture-stress-test', override);
+  const provider = await getProviderForFunction('capture-stress-test', { courseCode: ctx.chatContext.course.code }, override);
   const systemPrompt = await loadPrompt('capture-stress-test');
   const userMessage = buildStressTestUserMessage(ctx);
 

@@ -371,7 +371,7 @@ export async function persistAssistantTurn(input: PersistAssistantTurnInput): Pr
 
 export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentResult> {
   const built = await buildAgentCall(input);
-  const provider = await getProviderForFunction('capture-chat-agent');
+  const provider = await getProviderForFunction('capture-chat-agent', { courseCode: input.courseCode });
   const capture = captureRetrievedChunks(built.tools);
   const call = (requireToolFirst?: string[]) => provider.completeWithTools<AuditResponse>({
     systemPrompt: built.systemPrompt,

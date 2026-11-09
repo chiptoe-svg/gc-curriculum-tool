@@ -1,7 +1,9 @@
 import { CampusProvider } from '@/lib/ai/campus';
 import { getProviderForFunction, type AIProvider, type CompletionTelemetry } from '@/lib/ai/provider';
-import type { AIFunctionId } from '@/lib/ai/function-settings';
 
+/** The course the material belongs to (course-scoped AI call); noOpenAIFallback: local-only ingest. */
+export interface ChunkLlmOptions { courseCode: string; noOpenAIFallback?: boolean }
+type ChunkFunctionId = 'material-digest' | 'chunk-contextualize';
 type CompleteArgs<T> = Parameters<AIProvider['complete']>[0] & { validate: (raw: unknown) => T };
 
 /** Campus gpt-oss-120b provider, or null when campus isn't configured / is
@@ -27,9 +29,9 @@ function campusOss(): CampusProvider | null {
  * Returns the actually-used model so callers record the right provenance.
  */
 export async function chunkLlmComplete<T>(
-  funcId: AIFunctionId,
+  funcId: ChunkFunctionId,
   args: CompleteArgs<T>,
-  opts?: { noOpenAIFallback?: boolean },
+  opts: ChunkLlmOptions,
 ): Promise<{ data: T; model: string } & CompletionTelemetry> {
   // Campus and the OpenAI fallback share one gateway (llm.rcd.clemson.edu), so
   // a gateway blip fails both together (seen 2026-10-05: 502 on both within a
@@ -56,9 +58,9 @@ function isGatewayOutage(e: unknown): boolean {
 }
 
 async function chunkLlmAttempt<T>(
-  funcId: AIFunctionId,
+  funcId: ChunkFunctionId,
   args: CompleteArgs<T>,
-  opts?: { noOpenAIFallback?: boolean },
+  opts: ChunkLlmOptions,
 ): Promise<{ data: T; model: string } & CompletionTelemetry> {
   const campus = campusOss();
   if (campus) {
@@ -73,7 +75,7 @@ async function chunkLlmAttempt<T>(
     // Local-only mode with campus unconfigured/disabled has no free path — fail loudly.
     throw new Error('chunkLlmComplete: local-only mode but campus provider is unavailable');
   }
-  const provider = await getProviderForFunction(funcId);
+  const provider = await getProviderForFunction(funcId, { courseCode: opts.courseCode });
   const r = await provider.complete<T>(args);
   return { ...r, model: provider.model };
 }

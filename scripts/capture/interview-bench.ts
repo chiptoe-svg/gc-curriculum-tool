@@ -200,7 +200,7 @@ export async function main(argv: string[]): Promise<number> {
         console.log(`  ${c.id}: ≈ ${Math.round(chars / 4).toLocaleString('en-US')} tokens per call (dry run, no model call)`);
         return empty;
       }
-      const provider = await getProviderForFunction('capture-chat-agent', cfg.model ? { model: cfg.model, reasoningEffort: cfg.effort } : undefined);
+      const provider = await getProviderForFunction('capture-chat-agent', { courseCode: c.course }, cfg.model ? { model: cfg.model, reasoningEffort: cfg.effort } : undefined);
       const r = await provider.completeWithTools<AuditResponse>({
         systemPrompt: built.systemPrompt,
         messages: built.messages,

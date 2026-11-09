@@ -5,6 +5,8 @@ import type { CourseKudResult } from '@/lib/domain/types';
 import type { CallTelemetry } from './accum';
 
 export interface GenerateCourseKudArgs {
+  /** The course these KUDs are for (course-scoped AI call). */
+  courseCode: string;
   title: string;
   description: string;
   learningObjectives: string[];
@@ -56,7 +58,7 @@ export async function generateCourseKud(args: GenerateCourseKudArgs): Promise<{
   telemetry: CallTelemetry;
 }> {
   const systemPrompt = await loadPrompt('extract-course-kud');
-  const provider = await getProviderForFunction('extract-course-kud');
+  const provider = await getProviderForFunction('extract-course-kud', { courseCode: args.courseCode });
   const result = await provider.complete({
     systemPrompt,
     userMessage: formatInput(args),

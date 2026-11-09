@@ -56,7 +56,7 @@ export interface CheckInResult {
  * Light-tier; one call per page open.
  */
 export async function generateIngestionCheckIn(input: CheckInInput): Promise<CheckInResult> {
-  const provider = await getProviderForFunction('ingestion-checkin');
+  const provider = await getProviderForFunction('ingestion-checkin', { courseCode: input.catalog.code });
   const systemPrompt = await loadPrompt('ingestion-checkin');
 
   const jsonSchema = {

@@ -11,14 +11,14 @@ export interface ReconcileFeedbackArgs {
   section: ReconcileSection;
   items: unknown[];            // the section's current items (index-ordered)
   feedback: string;
-  courseContext?: { code?: string; title?: string };
+  courseContext: { code: string; title?: string };
 }
 
 export async function reconcileFeedback(
   args: ReconcileFeedbackArgs,
 ): Promise<ReconcileProposals & { costUsdCents: number; model: string }> {
   const systemPrompt = await loadPrompt('reconcile-feedback');
-  const provider = await getProviderForFunction('reconcile-feedback');
+  const provider = await getProviderForFunction('reconcile-feedback', { courseCode: args.courseContext.code });
   const userMessage = [
     args.courseContext?.code ? `Course: ${args.courseContext.code} — ${args.courseContext.title ?? ''}` : '',
     `Section: ${args.section}`,

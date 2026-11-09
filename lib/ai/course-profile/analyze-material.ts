@@ -29,7 +29,7 @@ export async function analyzeMaterial({
   documentMimeType,
 }: AnalyzeMaterialArgs): Promise<{ data: AnalysisFinding; telemetry: CallTelemetry }> {
   const systemPrompt = await loadPrompt('analyze-material');
-  const provider = await getProviderForFunction('materials-analysis');
+  const provider = await getProviderForFunction('materials-analysis', { courseCode: courseContext.code });
 
   const useNativeDoc = documentBytes !== undefined && documentBytes.length > 0 && !!documentMimeType;
 

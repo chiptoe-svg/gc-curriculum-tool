@@ -41,7 +41,7 @@ describe('generateMaterialDigest', () => {
     const result = await generateMaterialDigest({
       fileName: 'Canvas File: Ch4.pdf',
       extractedText: 'Chapter 4. Color reproduction...',
-    });
+    }, { courseCode: 'GC 1010' });
 
     expect(result.digest).toContain('What this material is');
     expect(result.model).toBe('test-model');
@@ -54,7 +54,7 @@ describe('generateMaterialDigest', () => {
     await generateMaterialDigest({
       fileName: 'Canvas File: textbook-ch4.pdf',
       extractedText: 'The ΔE threshold is approximately 1.0 under controlled viewing.',
-    });
+    }, { courseCode: 'GC 1010' });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const arg = (stub.complete.mock.calls as any)[0][0];
@@ -69,7 +69,7 @@ describe('generateMaterialDigest', () => {
     await generateMaterialDigest({
       fileName: 'x.md',
       extractedText: 'short',
-    });
+    }, { courseCode: 'GC 1010' });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const arg = (stub.complete.mock.calls as any)[0][0];
@@ -81,7 +81,7 @@ describe('generateMaterialDigest', () => {
     vi.mocked(getProviderForFunction).mockResolvedValueOnce(stub as never);
 
     await expect(
-      generateMaterialDigest({ fileName: 'x.md', extractedText: 'short' }),
+      generateMaterialDigest({ fileName: 'x.md', extractedText: 'short' }, { courseCode: 'GC 1010' }),
     ).rejects.toThrow(/empty/i);
   });
 });

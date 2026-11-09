@@ -67,7 +67,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
     return NextResponse.json({ error: 'could not extract text from this file' }, { status: 422 });
   }
 
-  const { fields, costUsdCents } = await parseProfileFields(extracted.text);
+  const { fields, costUsdCents } = await parseProfileFields(extracted.text, courseCode);
   await recordSpend(costUsdCents);
   return NextResponse.json(fields);
 }

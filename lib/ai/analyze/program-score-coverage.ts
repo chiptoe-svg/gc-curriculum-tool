@@ -105,6 +105,7 @@ export async function scoreSnapshotCompetencies(input: ScoreCompetenciesInput): 
   const direct = input.competencies.filter(c => c.scoring !== 'derived');
   const provider = await getProviderForFunction(
     'program-score-coverage',
+    { courseCode: input.courseCode },
     input.modelOverride ? { model: input.modelOverride, reasoningEffort: input.reasoningEffortOverride } : undefined,
   );
   if (direct.length === 0) {

@@ -63,7 +63,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   const cachedMaterials = readableMaterials.filter((m) => m.analysisFinding !== null);
 
   // 5. Resolve native document bytes for Anthropic provider (PDF only)
-  const provider = await getProviderForFunction('materials-analysis');
+  const provider = await getProviderForFunction('materials-analysis', { courseCode: code });
   const useNativePdf = provider.name === 'anthropic';
 
   const nativeBytes = new Map<string, { bytes: Buffer; mimeType: string }>();

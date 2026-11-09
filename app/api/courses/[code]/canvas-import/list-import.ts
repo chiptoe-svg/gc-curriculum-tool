@@ -173,7 +173,7 @@ export async function runListImport(
     const htmlKind = kindFromFileName(fileName);
     let htmlTier = 'background';
     try {
-      htmlTier = await classifyManifestItem({ kind: htmlKind });
+      htmlTier = await classifyManifestItem({ kind: htmlKind }, code);
     } catch { /* bias background on any error */ }
     await updateMaterialTier(matId, htmlTier).catch(() => { /* never fail the import */ });
     manifestRows.push({
@@ -292,7 +292,7 @@ export async function runListImport(
         sizeBytes: probe.sizeBytes,
         pageCount: probe.pageCount,
         slideCount: probe.slideCount,
-      });
+      }, code);
     } catch { /* bias background on any error */ }
     await updateMaterialTier(matId, fileTier).catch(() => { /* never fail the import */ });
     const row: ManifestRow = {

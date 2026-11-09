@@ -15,7 +15,7 @@ import { reconcileFeedback } from '@/lib/ai/analyze/reconcile-feedback';
 
 describe('reconcileFeedback', () => {
   it('returns validated proposals + flat cost/model telemetry', async () => {
-    const out = await reconcileFeedback({ section: 'outgoing', items: [{ statement: 'Color mgmt', k: 3, u: 3, d: 4 }], feedback: 'students cannot do this independently' });
+    const out = await reconcileFeedback({ section: 'outgoing', items: [{ statement: 'Color mgmt', k: 3, u: 3, d: 4 }], feedback: 'students cannot do this independently', courseContext: { code: 'GC 1010' } });
     expect(out.proposals[0]!.action).toBe('modify');
     expect(out.costUsdCents).toBe(1);
     expect(out.model).toBe('fake-model');

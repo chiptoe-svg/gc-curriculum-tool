@@ -520,7 +520,7 @@ export async function generateCaptureProfileV2(
   /** Evaluation use only (2026-10-05 model evaluation); production passes nothing. */
   override?: { model?: string; reasoningEffort?: string },
 ): Promise<GenerateCaptureProfileResult> {
-  const provider = await getProviderForFunction('capture-scores', override);
+  const provider = await getProviderForFunction('capture-scores', { courseCode: context.chatContext.course.code }, override);
   const systemPrompt = await loadPrompt('capture-synthesis');
   const userMessage = buildV2SynthesisUserMessage(context);
 

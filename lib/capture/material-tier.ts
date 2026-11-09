@@ -107,7 +107,7 @@ function validateClassifyResult(raw: unknown): { tier: Tier } {
  *   material: briefs, rubrics, student work) | 'middle' | 'background'.
  * - Any error (LLM unavailable, unexpected output) → 'background' (bias cheap).
  */
-export async function classifyFile(sig: FileSignals): Promise<Tier> {
+export async function classifyFile(sig: FileSignals, courseCode: string): Promise<Tier> {
   // Deterministic path: slide files
   if (isSlideFile(sig)) return 'middle';
 
@@ -127,7 +127,7 @@ export async function classifyFile(sig: FileSignals): Promise<Tier> {
     }
     userLines.push('', 'Return JSON: {"tier":"high"|"middle"|"background"}');
 
-    const provider = await getProviderForFunction('material-classify');
+    const provider = await getProviderForFunction('material-classify', { courseCode });
     const { data } = await provider.complete<{ tier: Tier }>({
       systemPrompt,
       userMessage: userLines.join('\n'),
@@ -152,6 +152,8 @@ export async function classifyFile(sig: FileSignals): Promise<Tier> {
  */
 export async function classifyManifestItem(
   item: { kind: ManifestKind } & Partial<FileSignals>,
+  /** The course the item belongs to (course-scoped AI call). */
+  courseCode: string,
 ): Promise<Tier> {
   const structural = classifyByKind(item.kind);
   if (structural !== null) return structural;
@@ -164,5 +166,5 @@ export async function classifyManifestItem(
     pageCount: item.pageCount,
     slideCount: item.slideCount,
     peekText: item.peekText,
-  });
+  }, courseCode);
 }

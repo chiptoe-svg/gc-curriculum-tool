@@ -1,5 +1,5 @@
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { chunkLlmComplete } from '@/lib/ai/analyze/chunk-llm-provider';
+import { chunkLlmComplete, type ChunkLlmOptions } from '@/lib/ai/analyze/chunk-llm-provider';
 
 export interface ContextualizeInput {
   materialDigest: string;
@@ -18,7 +18,7 @@ export interface ContextualizeResult {
  * embedding so the resulting vector encodes position + content (Anthropic
  * contextual-retrieval pattern). Light-tier; one call per detail chunk.
  */
-export async function contextualizeChunk(input: ContextualizeInput, opts?: { noOpenAIFallback?: boolean }): Promise<ContextualizeResult> {
+export async function contextualizeChunk(input: ContextualizeInput, opts: ChunkLlmOptions): Promise<ContextualizeResult> {
   const systemPrompt = await loadPrompt('chunk-contextualize');
 
   const jsonSchema = {

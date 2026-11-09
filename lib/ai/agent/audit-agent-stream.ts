@@ -38,7 +38,7 @@ export async function* streamAuditAgent(
     return;
   }
 
-  const provider = await getProviderForFunction('capture-chat-agent');
+  const provider = await getProviderForFunction('capture-chat-agent', { courseCode: input.courseCode });
   const capture = captureRetrievedChunks(built.tools);
 
   let finalValue: AuditResponse | null = null;

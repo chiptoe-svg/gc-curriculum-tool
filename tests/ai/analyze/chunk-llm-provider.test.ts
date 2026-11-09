@@ -77,7 +77,7 @@ describe('chunkLlmComplete', () => {
   it('uses campus gpt-oss-120b on success and returns its model', async () => {
     campusComplete.mockResolvedValueOnce({ data: { blurb: 'from-campus' }, ...telemetry });
 
-    const result = await chunkLlmComplete<{ blurb: string }>('chunk-contextualize', args);
+    const result = await chunkLlmComplete<{ blurb: string }>('chunk-contextualize', args, { courseCode: 'GC 1010' });
 
     expect(campusComplete).toHaveBeenCalledTimes(1);
     expect(getProviderForFunction).not.toHaveBeenCalled();
@@ -96,7 +96,7 @@ describe('chunkLlmComplete', () => {
     process.env.CHUNK_LLM_CAMPUS_MODEL = 'gptoss-20b';
     campusComplete.mockResolvedValueOnce({ data: { blurb: 'x' }, ...telemetry });
 
-    const result = await chunkLlmComplete<{ blurb: string }>('chunk-contextualize', args);
+    const result = await chunkLlmComplete<{ blurb: string }>('chunk-contextualize', args, { courseCode: 'GC 1010' });
 
     expect(result.model).toBe('gptoss-20b');
     expect(campusCtor).toHaveBeenCalledWith('gptoss-20b', expect.anything(), expect.anything(), expect.anything());
@@ -107,10 +107,10 @@ describe('chunkLlmComplete', () => {
     const openai = openaiProvider('gpt-5.4-mini');
     vi.mocked(getProviderForFunction).mockResolvedValueOnce(openai as never);
 
-    const result = await chunkLlmComplete<{ blurb: string }>('chunk-contextualize', args);
+    const result = await chunkLlmComplete<{ blurb: string }>('chunk-contextualize', args, { courseCode: 'GC 1010' });
 
     expect(campusComplete).toHaveBeenCalledTimes(1);
-    expect(getProviderForFunction).toHaveBeenCalledWith('chunk-contextualize');
+    expect(getProviderForFunction).toHaveBeenCalledWith('chunk-contextualize', { courseCode: 'GC 1010' });
     expect(openai.complete).toHaveBeenCalledTimes(1);
     expect(result.data.blurb).toBe('from-openai');
     expect(result.model).toBe('gpt-5.4-mini');
@@ -121,11 +121,11 @@ describe('chunkLlmComplete', () => {
     const openai = openaiProvider('gpt-5.4-mini');
     vi.mocked(getProviderForFunction).mockResolvedValueOnce(openai as never);
 
-    const result = await chunkLlmComplete<{ blurb: string }>('material-digest', args);
+    const result = await chunkLlmComplete<{ blurb: string }>('material-digest', args, { courseCode: 'GC 1010' });
 
     expect(campusCtor).not.toHaveBeenCalled();
     expect(campusComplete).not.toHaveBeenCalled();
-    expect(getProviderForFunction).toHaveBeenCalledWith('material-digest');
+    expect(getProviderForFunction).toHaveBeenCalledWith('material-digest', { courseCode: 'GC 1010' });
     expect(result.model).toBe('gpt-5.4-mini');
   });
 
@@ -135,7 +135,7 @@ describe('chunkLlmComplete', () => {
     const openai = openaiProvider('gpt-5.4-mini');
     vi.mocked(getProviderForFunction).mockResolvedValueOnce(openai as never);
 
-    await chunkLlmComplete<{ blurb: string }>('chunk-contextualize', args);
+    await chunkLlmComplete<{ blurb: string }>('chunk-contextualize', args, { courseCode: 'GC 1010' });
 
     expect(campusCtor).not.toHaveBeenCalled();
     expect(getProviderForFunction).toHaveBeenCalledTimes(1);

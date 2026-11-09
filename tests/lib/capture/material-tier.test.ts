@@ -44,7 +44,7 @@ beforeEach(() => vi.mocked(getProviderForFunction).mockReset());
 
 describe('classifyFile', () => {
   it('PPTX → middle, no LLM', async () => {
-    const t = await classifyFile({ fileName: 'wk1.pptx', mimeType: PPTX, sizeBytes: 1000 });
+    const t = await classifyFile({ fileName: 'wk1.pptx', mimeType: PPTX, sizeBytes: 1000 }, 'GC 1010');
     expect(t).toBe('middle');
     expect(getProviderForFunction).not.toHaveBeenCalled();
   });
@@ -52,7 +52,7 @@ describe('classifyFile', () => {
   it('PDF deck → middle via LLM', async () => {
     vi.mocked(getProviderForFunction).mockResolvedValueOnce(stub('middle') as never);
     expect(
-      await classifyFile({ fileName: 'lecture3.pdf', mimeType: 'application/pdf', sizeBytes: 9, pageCount: 30 }),
+      await classifyFile({ fileName: 'lecture3.pdf', mimeType: 'application/pdf', sizeBytes: 9, pageCount: 30 }, 'GC 1010'),
     ).toBe('middle');
   });
 
@@ -62,7 +62,7 @@ describe('classifyFile', () => {
     const p = stub('high');
     vi.mocked(getProviderForFunction).mockResolvedValueOnce(p as never);
     expect(
-      await classifyFile({ fileName: 'Final_Brand Playbook_Rubric_sp 26.pdf', mimeType: 'application/pdf', sizeBytes: 9 }),
+      await classifyFile({ fileName: 'Final_Brand Playbook_Rubric_sp 26.pdf', mimeType: 'application/pdf', sizeBytes: 9 }, 'GC 1010'),
     ).toBe('high');
     const schema = (p.complete.mock.calls[0]![0] as unknown as { jsonSchema: { properties: { tier: { enum: string[] } } } }).jsonSchema;
     expect(schema.properties.tier.enum).toEqual(['high', 'middle', 'background']);
@@ -78,7 +78,7 @@ describe('classifyFile', () => {
       completeWithTools: vi.fn(),
       transcribeDocument: vi.fn(),
     } as never);
-    expect(await classifyFile({ fileName: 'r.pdf', mimeType: 'application/pdf', sizeBytes: 9 })).toBe('background');
+    expect(await classifyFile({ fileName: 'r.pdf', mimeType: 'application/pdf', sizeBytes: 9 }, 'GC 1010')).toBe('background');
   });
 });
 
@@ -86,13 +86,13 @@ describe('classifyManifestItem', () => {
   it('structural kind wins over signals (no LLM call)', async () => {
     // A graded item that happens to carry a slideCount must still be 'high' —
     // structure beats file signals, and no classifier runs.
-    const t = await classifyManifestItem({ kind: 'assignments', mimeType: PPTX, sizeBytes: 1, slideCount: 5 });
+    const t = await classifyManifestItem({ kind: 'assignments', mimeType: PPTX, sizeBytes: 1, slideCount: 5 }, 'GC 1010');
     expect(t).toBe('high');
     expect(getProviderForFunction).not.toHaveBeenCalled();
   });
 
   it("delegates to the file classifier for kind 'file'", async () => {
-    const t = await classifyManifestItem({ kind: 'file', fileName: 'wk1.pptx', mimeType: PPTX, sizeBytes: 1 });
+    const t = await classifyManifestItem({ kind: 'file', fileName: 'wk1.pptx', mimeType: PPTX, sizeBytes: 1 }, 'GC 1010');
     expect(t).toBe('middle'); // PPTX → deterministic middle, still no LLM
     expect(getProviderForFunction).not.toHaveBeenCalled();
   });

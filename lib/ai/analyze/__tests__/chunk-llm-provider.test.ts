@@ -24,12 +24,12 @@ describe('chunkLlmComplete noOpenAIFallback', () => {
   });
 
   it('falls back to OpenAI by default', async () => {
-    await chunkLlmComplete('material-digest', args);
+    await chunkLlmComplete('material-digest', args, { courseCode: 'GC 1010' });
     expect(openaiComplete).toHaveBeenCalledOnce();
   });
 
   it('rethrows and never calls OpenAI when noOpenAIFallback is set', async () => {
-    await expect(chunkLlmComplete('material-digest', args, { noOpenAIFallback: true })).rejects.toThrow('campus down');
+    await expect(chunkLlmComplete('material-digest', args, { courseCode: 'GC 1010', noOpenAIFallback: true })).rejects.toThrow('campus down');
     expect(openaiComplete).not.toHaveBeenCalled();
   });
 });
@@ -47,7 +47,7 @@ describe('chunkLlmComplete gateway outage retry', () => {
   it('waits and retries the whole campus → OpenAI sequence once when both routes hit a gateway error', async () => {
     campusComplete.mockRejectedValueOnce(outage).mockResolvedValueOnce({ data: { ok: 'second' }, costUsdCents: 0, durationMs: 1, cachedTokens: 0, uncachedPromptTokens: 1, completionTokens: 1 });
     openaiComplete.mockRejectedValueOnce(outage);
-    const r = await chunkLlmComplete('material-digest', args);
+    const r = await chunkLlmComplete('material-digest', args, { courseCode: 'GC 1010' });
     expect(r.data).toEqual({ ok: 'second' });
     expect(campusComplete).toHaveBeenCalledTimes(2);
   });
@@ -55,7 +55,7 @@ describe('chunkLlmComplete gateway outage retry', () => {
   it('does not retry a non-gateway failure (e.g. a validation error)', async () => {
     campusComplete.mockRejectedValue(new Error('bad json'));
     openaiComplete.mockRejectedValueOnce(new Error('validate: missing digest'));
-    await expect(chunkLlmComplete('material-digest', args)).rejects.toThrow('validate: missing digest');
+    await expect(chunkLlmComplete('material-digest', args, { courseCode: 'GC 1010' })).rejects.toThrow('validate: missing digest');
     expect(campusComplete).toHaveBeenCalledTimes(1);
   });
 });

@@ -108,7 +108,7 @@ export async function extractIntendedSkills(input: ExtractIntendedSkillsInput): 
   durationMs: number;
 }> {
   const [provider, systemPrompt] = await Promise.all([
-    getProviderForFunction('intended-skills-extract'),
+    getProviderForFunction('intended-skills-extract', { courseCode: input.courseCode }),
     loadPrompt('intended-skills-extract'),
   ]);
 

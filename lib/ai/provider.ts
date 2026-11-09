@@ -138,9 +138,29 @@ export function getProvider(): AIProvider {
  * (with TTL-cached resolution) before constructing the provider. Each AI
  * helper should call this with its functionId.
  */
+/**
+ * Functions that work on one course. Their calls must name the course
+ * (Part 2 Task 6) so the per-course "Only use local LLM models" switch
+ * (Part 2b, gated) can route them; program-wide functions take no course.
+ */
+export const COURSE_SCOPED_FUNCTIONS = [
+  'capture-chat-agent', 'capture-scores', 'capture-stress-test', 'materials-analysis', 'parse-profile-fields',
+  'decompose-prereq-gap', 'prereq-edge-seed', 'intended-skills-extract', 'extract-course-kud', 'reconcile-feedback',
+  'ingestion-checkin', 'material-classify', 'material-digest', 'chunk-contextualize', 'objective-evidence-guide',
+  'explore-local-delta', 'explore-agent', 'program-score-coverage',
+] as const satisfies readonly AIFunctionId[];
+export type CourseScopedFunctionId = (typeof COURSE_SCOPED_FUNCTIONS)[number];
+export type ProgramFunctionId = Exclude<AIFunctionId, CourseScopedFunctionId>;
+/** The course a course-scoped call works on (unused until the course switch ships). */
+export interface CourseContext { courseCode: string }
+type ProviderOverride = { model?: string; reasoningEffort?: string };
+
+export async function getProviderForFunction(functionId: CourseScopedFunctionId, ctx: CourseContext, override?: ProviderOverride): Promise<AIProvider>;
+export async function getProviderForFunction(functionId: ProgramFunctionId, ctx?: undefined, override?: ProviderOverride): Promise<AIProvider>;
 export async function getProviderForFunction(
   functionId: AIFunctionId,
-  override?: { model?: string; reasoningEffort?: string },
+  _ctx?: CourseContext,
+  override?: ProviderOverride,
 ): Promise<AIProvider> {
   if (override?.model) return buildProvider(override.model, override.reasoningEffort, true);
   const resolved = await resolveForFunction(functionId);
