@@ -45,6 +45,7 @@ import {
   chunkIdsInToolResult,
   citableFromHistory,
   keepValidCitations,
+  parseInterviewReply,
   needsMaterialSearch,
   previousQuestion,
 } from './interview-controls';
@@ -379,7 +380,7 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
     ...(requireToolFirst ? { requireToolFirst } : {}),
     schemaName: 'audit_response',
     jsonSchema: AuditResponseJsonSchema,
-    validate: (raw) => AuditResponseSchema.parse(raw),
+    validate: (raw) => parseInterviewReply(raw, built.messages as Array<{ role: string; content: string | null }>),
     // Bumped 2→4 (2026-06-11): full-mode turns can now query course materials
     // AND program memory (wiki/graph) in the same turn.
     maxToolCalls: 4,

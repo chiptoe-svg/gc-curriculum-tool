@@ -67,3 +67,44 @@ describe('keepValidCitations', () => {
     expect(out.citations.map(c => c.chunkId)).toEqual(['ok']);
   });
 });
+
+describe('repairCitations (Part 2 Task 5)', () => {
+  const messages = [
+    { role: 'user', content: '[messageId=m-1]\nStudents present to the project client as well as the class.' },
+    { role: 'assistant', content: '{"question":"q"}' },
+    { role: 'user', content: '[messageId=m-2]\nThey revise the menu twice before the final submission.' },
+  ];
+  const allowed = (ids: string[]) => ({ retrievedThisTurn: new Set<string>(), history: { messageIds: new Set(ids), chunkIds: new Set<string>() } });
+
+  it('re-points an invented messageId when the quote matches one answer', async () => {
+    const { repairCitations } = await import('@/lib/ai/agent/interview-controls');
+    const out = repairCitations({ citations: [{ type: 'instructor', messageId: 'invented-9', chunkId: null, excerpt: 'revise the menu twice' }] }, messages);
+    expect(out.citations[0]!.messageId).toBe('m-2');
+  });
+
+  it('drops it when the quote matches none or several', async () => {
+    const { repairCitations, keepValidCitations } = await import('@/lib/ai/agent/interview-controls');
+    const dup = [...messages, { role: 'user', content: '[messageId=m-3]\nThey revise the menu twice, as before.' }];
+    const r = repairCitations({ citations: [
+      { type: 'instructor' as const, messageId: 'x1', chunkId: null, excerpt: 'never said anything like this' },
+      { type: 'instructor' as const, messageId: 'x2', chunkId: null, excerpt: 'revise the menu twice' },
+    ] }, dup);
+    expect((keepValidCitations(r as never, allowed(['m-1', 'm-2', 'm-3'])) as { citations: unknown[] }).citations).toEqual([]);
+  });
+
+  it('trims a long quote to 200 characters at a word boundary', async () => {
+    const { repairCitations } = await import('@/lib/ai/agent/interview-controls');
+    const long = 'word '.repeat(60).trim();
+    const out = repairCitations({ citations: [{ type: 'chunk', chunkId: 'c', messageId: null, excerpt: long }] }, messages);
+    const e = out.citations[0]!.excerpt as string;
+    expect(e.length).toBeLessThanOrEqual(200);
+    expect(e.endsWith('word…')).toBe(true);
+  });
+
+  it('a reply with a long quote parses instead of failing validation', async () => {
+    const { parseInterviewReply } = await import('@/lib/ai/agent/interview-controls');
+    const raw = { finding: 'f', question: 'q', citations: [{ type: 'instructor', messageId: 'invented', chunkId: null, excerpt: 'Students present to the project client as well as the class. ' + 'more '.repeat(50) }], readiness: { score: 40, covered: [], remaining: [], good_enough_to_generate: false } };
+    const parsed = parseInterviewReply(raw, messages);
+    expect(parsed.citations[0]!.excerpt.length).toBeLessThanOrEqual(200);
+  });
+});

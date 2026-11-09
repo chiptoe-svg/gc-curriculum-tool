@@ -15,6 +15,7 @@ import {
   type AuditResponse,
 } from './audit-response-schema';
 import { AiCreditsExhaustedError } from '@/lib/ai/credit-status';
+import { parseInterviewReply } from './interview-controls';
 import { buildAgentCall, captureRetrievedChunks, checkTurnCitations, persistAssistantTurn, type AuditAgentInput } from './audit-agent';
 
 export type AuditStreamEvent =
@@ -57,7 +58,7 @@ export async function* streamAuditAgent(
         ...(requireToolFirst ? { requireToolFirst } : {}),
         schemaName: 'audit_response',
         jsonSchema: AuditResponseJsonSchema,
-        validate: (raw) => AuditResponseSchema.parse(raw),
+        validate: (raw) => parseInterviewReply(raw, built.messages as Array<{ role: string; content: string | null }>),
         // Bumped 2→4 (2026-06-11): full-mode turns can now query course materials
         // AND program memory (wiki/graph) in the same turn.
         maxToolCalls: 4,
