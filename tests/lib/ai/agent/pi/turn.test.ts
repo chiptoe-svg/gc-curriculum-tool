@@ -141,3 +141,24 @@ describe('runPiTurn', () => {
     expect(events.some(e => e.kind === 'text-delta')).toBe(true);
   });
 });
+
+describe('model change across turns (Pi plan Task 4)', () => {
+  it('three turns on OpenAI, then campus, then OpenAI keep one session and the full history', async () => {
+    const openai = { baseUrl: 'http://gateway.test/v1', apiKey: 'k', model: 'gpt-6.1-terra', api: 'openai-completions' as const };
+    const campus = { baseUrl: 'http://campus.test/v1', apiKey: 'k', model: 'qwen3.8-27b-fp8', api: 'openai-completions' as const, campusReasoning: 'off' as const };
+    const history: Array<{ role: 'user' | 'assistant'; content: string }> = [{ role: 'user', content: '# Course catalog\nGC 1020' }];
+    const answers = ['[messageId=a1]\nThey design a logo first.', '[messageId=a2]\nThen a menu.', '[messageId=a3]\nThe menu is the final.'];
+    const endpoints = [openai, campus, openai];
+    for (let t = 0; t < 3; t++) {
+      history.push({ role: 'user', content: answers[t]! });
+      bodies = [];
+      script = [() => call('submit_turn', reply({ question: `Question ${t + 1}?`, citations: [] }))];
+      const r = await runPiTurn(input({ messages: [...history], userMessage: answers[t], fileNames: [], endpoint: endpoints[t]! }));
+      const sent = JSON.stringify(bodies[0]!.messages);
+      for (const a of answers.slice(0, t + 1)) expect(sent).toContain(a.split('\n')[1]!);
+      for (let k = 1; k <= t; k++) expect(sent).toContain(`Question ${k}?`);
+      history.push({ role: 'assistant', content: JSON.stringify(r.value) });
+    }
+  });
+});
+
