@@ -8,6 +8,7 @@ import {
   listAllFunctionSettings,
   upsertFunctionSetting,
   resetFunctionSetting,
+  setInterviewLoop,
   type AIFunctionId,
   type StoredTier,
 } from '@/lib/ai/function-settings';
@@ -57,6 +58,13 @@ export async function PUT(req: Request): Promise<Response> {
 
   if (!AI_FUNCTION_IDS.includes(functionId as AIFunctionId)) {
     return NextResponse.json({ error: `unknown functionId: ${functionId}` }, { status: 400 });
+  }
+  // The interview loop (Pi plan Task 5): { functionId: 'capture-chat-agent', loop }.
+  if (body.loop !== undefined) {
+    if (functionId !== 'capture-chat-agent') return NextResponse.json({ error: 'loop applies to capture-chat-agent only' }, { status: 400 });
+    if (body.loop !== 'current' && body.loop !== 'pi') return NextResponse.json({ error: `invalid loop: ${String(body.loop)}` }, { status: 400 });
+    await setInterviewLoop(body.loop);
+    return NextResponse.json({ ok: true });
   }
   // Old tier names (light/default/heavy) are read but no longer written.
   if (![...MODEL_ROLES, 'custom'].includes(tier)) {

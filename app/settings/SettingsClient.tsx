@@ -193,6 +193,29 @@ export function SettingsClient({
     }
   }
 
+  async function setLoop(functionId: AIFunctionId, loop: 'current' | 'pi') {
+    setBusy(functionId);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/settings/ai-models?slug=${encodeURIComponent(slug)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ functionId, loop }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setMessage({ kind: 'error', text: (body as { error?: string }).error ?? 'Save failed' });
+        return;
+      }
+      setSettings(prev => prev.map(s => s.functionId === functionId ? { ...s, loop } : s));
+      setMessage({ kind: 'ok', text: `${labels[functionId]} → ${loop === 'pi' ? 'Pi loop' : 'current loop'}` });
+    } catch (e) {
+      setMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Save failed' });
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function resetToDefault(functionId: AIFunctionId) {
     setBusy(functionId);
     setMessage(null);
@@ -310,6 +333,21 @@ export function SettingsClient({
             disabled={isBusy || !isAdmin}
             onSet={(value) => setTier(functionId, 'custom', value)}
           />
+
+          {functionId === 'capture-chat-agent' && (
+            <label className="flex items-center gap-1 text-xs text-muted-foreground">
+              Interview loop
+              <select
+                className="rounded border bg-background px-1 py-0.5 text-xs"
+                value={s.loop === 'pi' ? 'pi' : 'current'}
+                disabled={isBusy || !isAdmin}
+                onChange={e => setLoop(functionId, e.target.value as 'current' | 'pi')}
+              >
+                <option value="current">Current</option>
+                <option value="pi">Pi</option>
+              </select>
+            </label>
+          )}
 
           {isModified && isAdmin && (
             <button

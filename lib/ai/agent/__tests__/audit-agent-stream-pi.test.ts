@@ -82,4 +82,14 @@ describe('streamAuditAgent on Pi', () => {
     expect(warn.mock.calls.some(c => String(c[0]).includes('1 citation(s) dropped'))).toBe(true);
     warn.mockRestore();
   });
+
+  it('flipping mid-session uses the stored history', async () => {
+    loop.value = 'current';
+    await run();
+    loop.value = 'pi';
+    await run();
+    const sent = runPiTurn.mock.calls[0]![0] as { messages: Array<{ content: string }> };
+    expect(sent.messages.map(m => m.content)).toEqual(['context', '[messageId=u2]\nIt is graded on the rubric.']);
+  });
 });
+

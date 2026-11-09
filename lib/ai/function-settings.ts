@@ -259,6 +259,7 @@ export async function resolveModelForFunction(functionId: AIFunctionId): Promise
  * can invalidate without doing a DB roundtrip.
  */
 export function invalidateSettingsCache(functionId?: AIFunctionId): void {
+  loopCache = null;
   if (functionId) settingsCache.delete(functionId);
   else settingsCache.clear();
 }
@@ -275,6 +276,8 @@ export interface FunctionSettingRow {
   resolvedFallback: string | null;
   /** A settings row exists (even one naming the default role): Reset removes it. */
   hasOverride: boolean;
+  /** capture-chat-agent only: the interview loop (Pi plan Task 5). */
+  loop?: InterviewLoop | null;
   defaultRole: ModelRole;
 }
 
@@ -294,6 +297,7 @@ export async function listAllFunctionSettings(): Promise<FunctionSettingRow[]> {
     rows = [];
   }
   const byId = new Map(rows.map(r => [r.functionId, r]));
+  const interviewLoop = await resolveInterviewLoop();
 
   return AI_FUNCTION_IDS.map(functionId => {
     const stored = byId.get(functionId);
@@ -308,6 +312,7 @@ export async function listAllFunctionSettings(): Promise<FunctionSettingRow[]> {
       resolvedProvider: resolved.provider,
       resolvedFallback: resolved.fallback?.model ?? null,
       hasOverride: stored !== undefined,
+      loop: functionId === 'capture-chat-agent' ? interviewLoop : null,
       defaultRole: DEFAULT_ROLES[functionId],
     };
   });
@@ -351,9 +356,43 @@ export async function resetFunctionSetting(functionId: AIFunctionId): Promise<vo
   invalidateSettingsCache(functionId);
 }
 
-/** Which loop runs the faculty interview (Pi plan Task 5 reads the setting; default the current loop). */
+/**
+ * Which loop runs the faculty interview (Pi plan Task 5): the `loop` column on
+ * the capture-chat-agent settings row; anything but 'pi' (no row, NULL, or a
+ * database without migration 0065) is the current loop. Cached like the
+ * function settings; invalidateSettingsCache() clears it.
+ */
 export type InterviewLoop = 'current' | 'pi';
+let loopCache: { value: InterviewLoop; fetchedAt: number } | null = null;
 export async function resolveInterviewLoop(): Promise<InterviewLoop> {
-  return 'current';
+  const now = Date.now();
+  if (loopCache && now - loopCache.fetchedAt < SETTING_TTL_MS) return loopCache.value;
+  let value: InterviewLoop = 'current';
+  try {
+    const rows = await db
+      .select({ loop: aiFunctionSettings.loop })
+      .from(aiFunctionSettings)
+      .where(eq(aiFunctionSettings.functionId, 'capture-chat-agent'))
+      .limit(1);
+    if (rows[0]?.loop === 'pi') value = 'pi';
+  } catch {
+    value = 'current';
+  }
+  loopCache = { value, fetchedAt: now };
+  return value;
+}
+
+/** Set the interview loop. Creates the capture-chat-agent row (at its default role) if none exists. */
+export async function setInterviewLoop(loop: InterviewLoop): Promise<void> {
+  const fn: AIFunctionId = 'capture-chat-agent';
+  const existing = await db.select({ functionId: aiFunctionSettings.functionId }).from(aiFunctionSettings)
+    .where(eq(aiFunctionSettings.functionId, fn)).limit(1);
+  const now = new Date();
+  if (existing.length === 0) {
+    await db.insert(aiFunctionSettings).values({ functionId: fn, tier: DEFAULT_ROLES[fn], customModel: null, loop, updatedAt: now });
+  } else {
+    await db.update(aiFunctionSettings).set({ loop, updatedAt: now }).where(eq(aiFunctionSettings.functionId, fn));
+  }
+  invalidateSettingsCache();
 }
 
