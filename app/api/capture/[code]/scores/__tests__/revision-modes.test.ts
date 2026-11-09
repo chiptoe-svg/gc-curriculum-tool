@@ -40,6 +40,7 @@ vi.mock('@/lib/capture/revision-evidence', () => ({
 vi.mock('@/lib/ai/analyze/capture-scores', () => ({ generateCaptureProfileV2: (...a: unknown[]) => h.gen(...a) }));
 
 import { POST } from '@/app/api/capture/[code]/scores/route';
+import { apiErrorText } from '@/lib/ai/credit-client';
 
 function withComp(k: number, extra: Record<string, unknown> = {}): CaptureProfile {
   const p = validProfile();
@@ -108,7 +109,9 @@ describe('Generate with a stored revision mode', () => {
     h.snapshot = { ...h.snapshot!, retiredAt: new Date('2026-11-07') };
     const { status, body } = await generate();
     expect(status).toBe(409);
-    expect(body).toEqual({ error: 'baseline_withdrawn', message: 'The approved version this revision started from was withdrawn. Start over to revise the current version.' });
+    // Faculty see the sentence (apiErrorText shows `error`), not a code.
+    expect(apiErrorText(body, 'fallback')).toBe('The approved version this revision started from was withdrawn. Start over to revise the current version.');
+    expect(body.code).toBe('baseline_withdrawn');
     expect(h.gen).not.toHaveBeenCalled();
   });
 });

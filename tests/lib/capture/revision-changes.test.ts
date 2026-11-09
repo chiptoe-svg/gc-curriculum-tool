@@ -100,6 +100,17 @@ describe('buildRevisionChanges', () => {
   });
 });
 
+describe('legacy baseline citations', () => {
+  it('undoing to a baseline with an excerpt-only citation still leaves a valid profile', () => {
+    const legacy = { type: 'chunk', excerpt: 'from before chunk ids were required' } as CaptureProfileCitationType;
+    const before = comp('A', 2, 2, 3, [oldCite, legacy]);
+    const built = run('targeted', profile([before]), profile([comp('A', 2, 2, 1, [newCite])]));
+    const undone = applyRevisionDecision(built, 'A', 'undone');
+    expect(captureProfileSchema.safeParse(undone).success).toBe(true);
+    expect(undone.competencies[0]!.citations).toEqual([oldCite]);
+  });
+});
+
 describe('applyRevisionDecision and restoreSection', () => {
   it('undo then keep restores after', () => {
     const before = comp('A', 2, 2, 3);

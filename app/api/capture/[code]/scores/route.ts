@@ -98,7 +98,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     baseline = sessionMode?.baselineSnapshotId ? await getSnapshotById(sessionMode.baselineSnapshotId) : null;
     if (!baseline || baseline.retiredAt) {
       return NextResponse.json(
-        { error: 'baseline_withdrawn', message: 'The approved version this revision started from was withdrawn. Start over to revise the current version.' },
+        // `error` carries the sentence: the capture client shows `error` as is.
+        { error: 'The approved version this revision started from was withdrawn. Start over to revise the current version.', code: 'baseline_withdrawn' },
         { status: 409 },
       );
     }

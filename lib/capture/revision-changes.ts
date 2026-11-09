@@ -9,6 +9,7 @@
  * starts as undone (the approved rating is kept unless faculty keep the change);
  * every other change waits for faculty. Pure: no I/O.
  */
+import { CaptureProfileCitation } from '@/lib/ai/capture/schema';
 import type {
   CaptureProfile,
   CaptureCompetency,
@@ -35,6 +36,12 @@ export const REVISION_SECTIONS = [
 ] as const;
 
 const DIMS = ['k', 'u', 'd'] as const;
+
+function withValidCitations(c: CaptureCompetency): CaptureCompetency {
+  if (!c.citations) return c;
+  const valid = c.citations.filter(cit => CaptureProfileCitation.safeParse(cit).success);
+  return valid.length === c.citations.length ? c : { ...c, citations: valid };
+}
 const depth = (c: CaptureCompetency | null, dim: 'k' | 'u' | 'd'): number | null =>
   c ? (dim === 'k' ? c.k_depth : dim === 'u' ? c.u_depth : c.d_depth) : null;
 
@@ -66,7 +73,12 @@ export function buildRevisionChanges(input: {
   isNewCitation: (c: CaptureProfileCitationType) => boolean;
   isStaleCitation: (c: CaptureProfileCitationType) => boolean;
 }): CaptureProfile {
-  const { mode, baseline, isNewCitation, isStaleCitation } = input;
+  const { mode, isNewCitation, isStaleCitation } = input;
+  // Snapshots approved before the 2026-06-03 citation rule can hold citations
+  // today's schema rejects (excerpt-only file citations). They can't be traced
+  // to a file anyway; drop them from the copies a decision may put back, so an
+  // Undo never leaves a draft that can't be saved.
+  const baseline = { ...input.baseline, competencies: input.baseline.competencies.map(withValidCitations) };
   const baseByKey = new Map(baseline.competencies.map(c => [normalizeStatement(c.statement), c]));
   const wording = new Map([...baseByKey].map(([k, c]) => [k, c.statement]));
 
