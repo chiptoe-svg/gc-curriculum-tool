@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { captureProfileSchema, type CaptureProfile, type CaptureCompetency, type CaptureProfileCitationType } from '@/lib/ai/capture/schema';
-import { buildRevisionChanges, applyRevisionDecision, restoreSection, normalizeStatement, overrideReference } from '@/lib/capture/revision-changes';
+import { buildRevisionChanges, applyRevisionDecision, applyGroupDecision, restoreSection, normalizeStatement, overrideReference, remapIndices } from '@/lib/capture/revision-changes';
 import { validProfile } from '../../app/capture/fixtures/override-profile';
 
 const NEW_MSG = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -161,6 +161,38 @@ describe('overrideReference', () => {
     const built = run('recheck', profile([comp('Keep', 2, 2, 2), comp('Gone', 1, 1, 1)]), profile([comp('Keep', 2, 2, 2)]));
     const working = applyRevisionDecision(built, 'Gone', 'undone');
     expect(overrideReference(built, working).map(c => c.statement)).toEqual(['Keep', 'Gone']);
+  });
+});
+
+describe('review rough edges (final-review minors, 2026-11-08)', () => {
+  it('M-1: a renamed competency is still compared with its loaded version, so a raise needs a reason', () => {
+    const built = run('recheck', profile([comp('A', 2, 2, 2), comp('B', 1, 1, 1)]), profile([comp('A', 2, 2, 2), comp('B', 1, 1, 2, [newCite])]));
+    const working = { ...built, competencies: [built.competencies[0]!, { ...built.competencies[1]!, statement: 'B renamed', d_depth: 4 }] };
+    expect(overrideReference(built, working)[1]!.d_depth).toBe(2);
+  });
+
+  it('M-3: Keep or Undo after a rename replaces the renamed row instead of adding a duplicate', () => {
+    const built = run('recheck', profile([comp('A', 2, 2, 3)]), profile([comp('A', 2, 2, 1, [newCite])]));
+    const renamed = { ...built, competencies: [{ ...built.competencies[0]!, statement: 'A, reworded' }] };
+    const undone = applyRevisionDecision(renamed, 'A', 'undone');
+    expect(undone.competencies).toHaveLength(1);
+    expect(undone.competencies[0]!.d_depth).toBe(3);
+  });
+
+  it('M-4: the targeted group button leaves individually kept changes alone', () => {
+    const built = run('targeted', profile([comp('A', 2, 2, 3), comp('B', 2, 2, 3)]), profile([comp('A', 2, 2, 1), comp('B', 2, 2, 1)]));
+    const keptA = applyRevisionDecision(built, 'A', 'kept');
+    const grouped = applyGroupDecision(keptA, 'no_new_evidence', 'undone', { skipKept: true });
+    expect(grouped.revision!.changes.find(c => c.statement === 'A')!.decision).toBe('kept');
+    expect(grouped.competencies[0]!.d_depth).toBe(1);
+    const all = applyGroupDecision(keptA, 'no_new_evidence', 'undone');
+    expect(all.revision!.changes.every(c => c.decision === 'undone')).toBe(true);
+  });
+
+  it('M-2: remapIndices follows rows by statement when one is removed or appended', () => {
+    const before = [comp('A', 1, 1, 1), comp('B', 1, 1, 1), comp('C', 1, 1, 1)];
+    const after = [comp('A', 1, 1, 1), comp('C', 1, 1, 1), comp('D', 1, 1, 1)];
+    expect([...remapIndices(before, after)]).toEqual([[0, 0], [2, 1]]);
   });
 });
 

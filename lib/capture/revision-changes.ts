@@ -146,7 +146,13 @@ export function buildRevisionChanges(input: {
 function placeCompetency(profile: CaptureProfile, change: RevisionChange, side: 'kept' | 'undone'): CaptureProfile {
   const want = side === 'kept' ? change.after : change.before;
   const key = normalizeStatement(change.statement);
-  const idx = profile.competencies.findIndex(c => normalizeStatement(c.statement) === key);
+  let idx = profile.competencies.findIndex(c => normalizeStatement(c.statement) === key);
+  // Renamed by hand: find the row that is still one of the two versions apart
+  // from its wording, so a decision replaces it rather than adding a duplicate.
+  if (idx < 0) {
+    idx = profile.competencies.findIndex(c =>
+      [change.before, change.after].some(v => v !== null && sameExceptStatement(c, v)));
+  }
   const comps = [...profile.competencies];
   if (want === null) {
     if (idx >= 0) comps.splice(idx, 1);
@@ -156,6 +162,10 @@ function placeCompetency(profile: CaptureProfile, change: RevisionChange, side: 
     comps.push(want);
   }
   return { ...profile, competencies: comps };
+}
+
+function sameExceptStatement(a: CaptureCompetency, b: CaptureCompetency): boolean {
+  return JSON.stringify({ ...a, statement: '' }) === JSON.stringify({ ...b, statement: '' });
 }
 
 /** Faculty decision on one change: `kept` shows the re-scored version, `undone`
@@ -172,6 +182,30 @@ export function applyRevisionDecision(
   const placed = placeCompetency(profile, change, decision);
   const changes = revision.changes.map(c => (c === change ? { ...c, decision } : c));
   return { ...placed, revision: { ...revision, changes } as Revision };
+}
+
+/** One decision for every change with `label`. `skipKept` leaves changes the
+ *  faculty member kept one by one (the targeted "Keep all as set back"). */
+export function applyGroupDecision(
+  profile: CaptureProfile,
+  label: RevisionChange['label'],
+  decision: 'kept' | 'undone',
+  opts: { skipKept?: boolean } = {},
+): CaptureProfile {
+  return (profile.revision?.changes ?? [])
+    .filter(c => c.label === label && !(opts.skipKept && c.decision === 'kept'))
+    .reduce((acc, c) => applyRevisionDecision(acc, c.statement, decision), profile);
+}
+
+/** Old row index → new row index for competencies present in both lists,
+ *  matched by statement; used to carry row-keyed review state (reasons,
+ *  reviewed marks, triage) across a decision that adds or removes a row. */
+export function remapIndices(prev: CaptureCompetency[], next: CaptureCompetency[]): Map<number, number> {
+  const nextIdx = new Map<string, number>();
+  next.forEach((c, i) => { const k = normalizeStatement(c.statement); if (!nextIdx.has(k)) nextIdx.set(k, i); });
+  const out = new Map<number, number>();
+  prev.forEach((c, i) => { const j = nextIdx.get(normalizeStatement(c.statement)); if (j !== undefined) out.set(i, j); });
+  return out;
 }
 
 /** Put a changed section back to the approved version. */
@@ -204,10 +238,12 @@ export function overrideReference(loaded: CaptureProfile, working: CaptureProfil
   if (!revision) return loaded.competencies;
   const loadedByKey = new Map(loaded.competencies.map(c => [normalizeStatement(c.statement), c]));
   const changeByKey = new Map(revision.changes.map(c => [normalizeStatement(c.statement), c]));
-  return working.competencies.map(w => {
+  return working.competencies.map((w, i) => {
     const key = normalizeStatement(w.statement);
     const change = changeByKey.get(key);
     if (change) return (change.decision === 'undone' ? change.before : change.after) ?? w;
-    return loadedByKey.get(key) ?? w;
+    // A hand-renamed competency matches nothing by wording: compare it with the
+    // loaded row in the same position, as the index-based check always did.
+    return loadedByKey.get(key) ?? loaded.competencies[i] ?? w;
   });
 }

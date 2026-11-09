@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { getCourseProfile } from '@/lib/db/course-profile-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
-import { getCaptureProfileByCourse, setCaptureProfileStatus } from '@/lib/db/course-capture-profiles-queries';
+import { getCaptureProfileByCourse, setCaptureProfileStatus, upsertCaptureProfile } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { getLatestSessionId, getSessionInstructor } from '@/lib/db/capture-messages-queries';
 import { getLatestSnapshotByCourse, createSnapshot, listSnapshotsByCourse, type InputsMeta } from '@/lib/db/capture-snapshots-queries';
@@ -138,6 +138,16 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // Mark the working draft as confirmed (so edits since snapshot will move
   // it back to 'edited' and signal "you have unsnapshotted changes").
   await setCaptureProfileStatus(courseCode, 'confirmed');
+  // The approved draft no longer carries the revision change list: it compared
+  // against the previous approved version, which this snapshot now replaces.
+  if (draft.profile.revision) {
+    await upsertCaptureProfile({
+      courseCode,
+      profile: withoutRevision(draft.profile),
+      reviewerStatus: 'confirmed',
+      reviewerNote: draft.reviewerNote ?? null,
+    });
+  }
 
   // Reclaim disk: delete raw uploaded blobs now that extractedText + digest
   // are durable. Best-effort — a blob-delete failure must never fail the

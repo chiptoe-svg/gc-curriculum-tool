@@ -35,6 +35,8 @@ vi.mock('@/lib/db/courses-queries', () => ({
   }),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const upsertCaptureProfile = vi.fn(async (_arg?: any) => {});
 // ── capture-profile-queries ──────────────────────────────────────────────────
 vi.mock('@/lib/db/course-capture-profiles-queries', () => ({
   getCaptureProfileByCourse: async () => ({
@@ -42,6 +44,7 @@ vi.mock('@/lib/db/course-capture-profiles-queries', () => ({
     reviewerNote: null,
   }),
   setCaptureProfileStatus: vi.fn(async () => {}),
+  upsertCaptureProfile: (input: unknown) => upsertCaptureProfile(input),
 }));
 
 // ── capture-conversations-queries ────────────────────────────────────────────
@@ -156,5 +159,13 @@ describe('snapshots POST — revision change list', () => {
     const frozen = createSnapshot.mock.calls[0]![0] as { profile: Record<string, unknown> };
     expect(frozen.profile).not.toHaveProperty('revision');
     expect(frozen.profile.competencies).toEqual([{ statement: 'A' }]);
+  });
+
+  it('M-5: approval clears the change list from the draft too', async () => {
+    await callPost({ caption: 'v2' });
+    expect(upsertCaptureProfile).toHaveBeenCalledTimes(1);
+    const saved = upsertCaptureProfile.mock.calls[0]![0] as { profile: Record<string, unknown>; reviewerStatus: string };
+    expect(saved.profile).not.toHaveProperty('revision');
+    expect(saved.reviewerStatus).toBe('confirmed');
   });
 });

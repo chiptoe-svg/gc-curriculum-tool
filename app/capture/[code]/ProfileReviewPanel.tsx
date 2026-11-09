@@ -30,7 +30,7 @@ import { deriveEvidenceBand } from '@/lib/program/evidence-ladder';
 import { FlagDialog } from '@/components/FlagDialog';
 import { upwardBumps, assembleOverrides } from '@/lib/ai/capture/score-overrides';
 import { RevisionChanges, revisionBlocksApproval, REVISION_BLOCKED_MESSAGE } from './RevisionChanges';
-import { applyRevisionDecision, overrideReference, restoreSection } from '@/lib/capture/revision-changes';
+import { applyGroupDecision, applyRevisionDecision, overrideReference, remapIndices, restoreSection } from '@/lib/capture/revision-changes';
 
 /**
  * Returns true when NONE of the profile's findings carry a `source` flag.
@@ -1063,6 +1063,24 @@ export function ProfileReviewPanel({
     }
   }
 
+  // A revision decision can add or remove a competency row. Review state is
+  // keyed by row position, so carry it to the rows' new positions.
+  function applyRevisionStep(next: CaptureProfile) {
+    const map = remapIndices(working.competencies, next.competencies);
+    const moved = map.size !== working.competencies.length || [...map].some(([a, b]) => a !== b);
+    setWorking(next);
+    if (!moved) return;
+    const remapSet = (set: Set<number>) => new Set([...set].flatMap(i => (map.has(i) ? [map.get(i)!] : [])));
+    function remapMap<V>(m: Map<number, V>): Map<number, V> {
+      return new Map([...m].flatMap(([i, v]): Array<[number, V]> => (map.has(i) ? [[map.get(i)!, v]] : [])));
+    }
+    setReviewed(remapSet);
+    setExpanded(remapSet);
+    setOverrideReasons(remapMap);
+    setEvidencedRaises(remapMap);
+    setTriage(t => ({ needsReview: remapSet(t.needsReview), reasonOf: remapMap(t.reasonOf) }));
+  }
+
   function markReviewed(i: number) {
     setReviewed(prev => {
       const n = new Set(prev);
@@ -1352,10 +1370,11 @@ export function ProfileReviewPanel({
       {working.revision && (
         <RevisionChanges
           revision={working.revision}
-          onDecide={(statement, decision) => setWorking(w => applyRevisionDecision(w, statement, decision))}
-          onDecideGroup={decision => setWorking(w => (w.revision?.changes ?? [])
-            .filter(c => c.label === 'no_new_evidence')
-            .reduce((acc, c) => applyRevisionDecision(acc, c.statement, decision), w))}
+          onDecide={(statement, decision) => applyRevisionStep(applyRevisionDecision(working, statement, decision))}
+          onDecideGroup={decision => applyRevisionStep(applyGroupDecision(working, 'no_new_evidence', decision, {
+            // Targeted "Keep all as set back" leaves changes kept one by one.
+            skipKept: working.revision?.mode === 'targeted',
+          }))}
           onRestoreSection={section => setWorking(w => restoreSection(w, section))}
           onCitationClick={handleCitationClick}
         />

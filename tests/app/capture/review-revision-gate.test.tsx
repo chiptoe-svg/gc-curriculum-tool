@@ -83,4 +83,26 @@ describe('ProfileReviewPanel — revision change list', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Keep change' }));
     expect(screen.queryByText(/need a reason/i)).toBeNull();
   });
+
+  it('undoing an added competency keeps "Worth a look" on the same flagged row', () => {
+    const flagged = {
+      statement: 'Students analyze brand-color reproduction', type: 'technical' as const, k_depth: 4, u_depth: 4, d_depth: 3,
+      evidence_k: 'k', evidence_u: 'u', evidence_d: 'd', rationale: 'inferred', source: 'inferred' as const, citations: [],
+      k_says: null, u_says: null, d_says: null,
+    };
+    const added = competency(3);
+    const p = makeProfile();
+    const profile = {
+      ...p,
+      competencies: [added, flagged],
+      revision: { ...p.revision!, changes: [{ statement: STMT, kind: 'added', label: 'new_evidence', dims: [{ dim: 'd', from: null, to: 3 }], new_citations: [], before: null, after: added, decision: 'pending' }] },
+    } as unknown as CaptureProfile;
+    render(
+      <ProfileReviewPanel profile={profile} reviewerStatus="ai_drafted" initialReviewerNote={null} telemetry={null}
+        onSave={async () => {}} onResumeChat={() => {}} courseCode="GC 3460" courseTitle="Flexo" slug="s" onSnapshotCreated={() => {}} />,
+    );
+    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
+  });
 });
