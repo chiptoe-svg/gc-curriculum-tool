@@ -342,6 +342,37 @@ export const reviewerOverrideSchema = z.object({
 });
 export type ReviewerOverride = z.infer<typeof reviewerOverrideSchema>;
 
+/**
+ * The change list a revision re-score carries in the DRAFT (spec
+ * 2026-11-08-course-revision-modes-labels-design.md): every rating that moved
+ * against the approved snapshot, labeled by whether it cites new evidence, with
+ * the faculty decision. Never sent to the model; stripped before a snapshot.
+ */
+export const revisionChangeSchema = z.object({
+  statement: z.string(),
+  kind: z.enum(['moved', 'added', 'removed']),
+  label: z.enum(['new_evidence', 'no_new_evidence']),
+  dims: z.array(z.object({
+    dim: z.enum(['k', 'u', 'd']),
+    from: z.number().nullable(),
+    to: z.number().nullable(),
+  })),
+  new_citations: z.array(CaptureProfileCitation),
+  before: captureCompetencySchema.nullable(),
+  after: captureCompetencySchema.nullable(),
+  decision: z.enum(['pending', 'kept', 'undone']),
+});
+export type RevisionChange = z.infer<typeof revisionChangeSchema>;
+
+export const revisionSchema = z.object({
+  mode: z.enum(['targeted', 'recheck']),
+  baseline_snapshot_id: z.string(),
+  changes: z.array(revisionChangeSchema),
+  stale_evidence: z.array(z.string()),
+  changed_sections: z.array(z.object({ section: z.string(), before: z.unknown() })),
+});
+export type Revision = z.infer<typeof revisionSchema>;
+
 export const captureProfileSchema = z.object({
   course_code: z.string().min(1),
   scale_version: z.literal(captureScaleVersion),
@@ -392,6 +423,8 @@ export const captureProfileSchema = z.object({
    * Nullable/optional for backward-compat — existing snapshots have neither.
    */
   adopted_from_scenario_id: z.string().nullable().optional(),
+  /** Draft-only revision change list (see revisionSchema). */
+  revision: revisionSchema.nullable().optional(),
 });
 export type CaptureProfile = z.infer<typeof captureProfileSchema>;
 
