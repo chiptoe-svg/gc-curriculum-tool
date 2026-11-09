@@ -199,160 +199,200 @@ export class CampusProvider implements AIProvider {
     );
   }
 
-  async completeWithTools<T>(args: {
-    systemPrompt: string;
-    messages: Message[];
-    tools: ToolDefinition[];
-    schemaName: string;
-    jsonSchema: object;
-    validate: (raw: unknown) => T;
-    maxToolCalls?: number;
-  }): Promise<CompleteWithToolsResult<T>> {
-    if (!this.baseURL) throw new Error('CAMPUS_LLM_BASE_URL not set');
-    if (!this.apiKey) throw new Error('CAMPUS_LLM_API_KEY not set');
+  async completeWithTools<T>(args: ToolCallArgs<T>): Promise<CompleteWithToolsResult<T>> {
     const start = Date.now();
+    const loop = this.toolLoop(args);
+    let step = await loop.next();
+    while (!step.done) step = await loop.next(); // tool-start events are for the stream only
+    const { history, toolCallsUsed, promptTokens, completionTokens } = step.value;
 
-    // The campus model (qwen3.6) doesn't work reliably with the AI SDK's
-    // Output.object + tools combination — it either ignores schema field names
-    // or confuses tool-call JSON with the structured output step. Instead, use
-    // the OpenAI client directly for a manual tool-call loop, then a final
-    // json_object call for the structured response. Same pattern as `complete()`.
-
-    // --- Phase 1: tool-call loop ---
-    // Convert schema into OpenAI tool format (Zod → JSON Schema; see
-    // toOpenAiToolDefs). The OpenAI/Local providers avoid this conversion by
-    // handing inputSchema to the AI SDK, which converts internally; the campus
-    // path uses the raw OpenAI client and must do it here.
-    const oaiTools: ChatCompletionTool[] = toOpenAiToolDefs(args.tools);
-
-    // Convert our Message[] into OpenAI messages. The system prompt is
-    // passed separately.
-    const oaiMessages: ChatCompletionMessageParam[] = args.messages.map(m => {
-      if (m.role === 'tool') {
-        return {
-          role: 'tool' as const,
-          tool_call_id: m.toolCallId ?? '',
-          content: typeof m.result === 'string' ? m.result : JSON.stringify(m.result),
-        };
-      }
-      if (m.role === 'assistant' && m.toolCalls?.length) {
-        return {
-          role: 'assistant' as const,
-          content: m.content ?? null,
-          tool_calls: m.toolCalls.map(tc => ({
-            id: tc.id,
-            type: 'function' as const,
-            function: { name: tc.toolName, arguments: JSON.stringify(tc.args) },
-          })),
-        };
-      }
-      return {
-        role: m.role as 'system' | 'user' | 'assistant',
-        content: m.content ?? '',
-      };
-    });
-
-    const history: ChatCompletionMessageParam[] = [...oaiMessages];
-    const allToolCallsUsed: ToolCall[] = [];
-    let totalPromptTokens = 0;
-    let totalCompletionTokens = 0;
-    const maxSteps = (args.maxToolCalls ?? 2) + 1;
-
-    for (let step = 0; step < maxSteps; step++) {
-      const response = await this.guardedCreate({
-        model: this.model,
-        messages: [{ role: 'system', content: args.systemPrompt }, ...history],
-        tools: oaiTools.length > 0 ? oaiTools : undefined,
-        tool_choice: oaiTools.length > 0 ? 'auto' : undefined,
-        temperature: 0.2,
-      });
-      totalPromptTokens += response.usage?.prompt_tokens ?? 0;
-      totalCompletionTokens += response.usage?.completion_tokens ?? 0;
-
-      const msg = response.choices[0]?.message;
-      if (!msg) throw new Error('Campus model returned no message');
-
-      history.push(msg);
-
-      const toolCalls = msg.tool_calls ?? [];
-      if (toolCalls.length === 0) break; // model stopped calling tools
-
-      // Execute each tool call and append results. ChatCompletionMessageToolCall
-      // is a discriminated union (function / custom in the v5 SDK); narrow on
-      // type === 'function' so we can access the .function payload.
-      for (const tc of toolCalls) {
-        if (tc.type !== 'function') continue;
-        let result: unknown;
-        const toolDef = args.tools.find(t => t.name === tc.function.name);
-        if (toolDef) {
-          let parsedArgs: Record<string, unknown> = {};
-          try { parsedArgs = JSON.parse(tc.function.arguments); } catch { /* empty args */ }
-          result = await (toolDef.execute as (a: unknown) => Promise<unknown>)(parsedArgs);
-        } else {
-          result = { error: `Unknown tool: ${tc.function.name}` };
-        }
-        allToolCallsUsed.push({
-          id: tc.id,
-          toolName: tc.function.name,
-          args: JSON.parse(tc.function.arguments || '{}'),
-        });
-        history.push({
-          role: 'tool' as const,
-          tool_call_id: tc.id,
-          content: typeof result === 'string' ? result : JSON.stringify(result),
-        });
-      }
-    }
-
-    // --- Phase 2: structured final response ---
-    // Append the schema to the system prompt and call with json_object mode.
-    // Include the full tool-call history so the model can summarize it.
-    const systemWithSchema =
-      `${args.systemPrompt}\n\nRespond with valid JSON that matches this schema:\n` +
-      JSON.stringify(args.jsonSchema, null, 2);
-
+    // --- Phase 2: structured final response (json_object mode, full tool history) ---
     const finalResponse = await this.guardedCreate({
       model: this.model,
-      messages: [{ role: 'system', content: systemWithSchema }, ...history],
+      messages: [{ role: 'system', content: withSchema(args) }, ...history],
       response_format: { type: 'json_object' },
       temperature: 0.2,
     });
-    totalPromptTokens += finalResponse.usage?.prompt_tokens ?? 0;
-    totalCompletionTokens += finalResponse.usage?.completion_tokens ?? 0;
-
     const content = finalResponse.choices[0]?.message?.content ?? '';
-    let parsedRaw: unknown;
-    try {
-      parsedRaw = JSON.parse(content);
-    } catch {
-      throw new Error(`Campus model returned non-JSON in final step: ${content.slice(0, 300)}`);
-    }
-    const value = args.validate(parsedRaw);
-
     return {
       kind: 'response',
-      value,
-      toolCallsUsed: allToolCallsUsed,
+      value: parseFinal(content, args.validate),
+      toolCallsUsed,
       telemetry: {
         costUsdCents: 0,
         durationMs: Date.now() - start,
         cachedTokens: 0,
-        uncachedPromptTokens: totalPromptTokens,
-        completionTokens: totalCompletionTokens,
+        uncachedPromptTokens: promptTokens + (finalResponse.usage?.prompt_tokens ?? 0),
+        completionTokens: completionTokens + (finalResponse.usage?.completion_tokens ?? 0),
       },
     };
   }
 
-  // eslint-disable-next-line require-yield
-  async *streamWithTools<T>(_args: {
-    systemPrompt: string;
-    messages: Message[];
-    tools: ToolDefinition[];
-    schemaName: string;
-    jsonSchema: object;
-    validate: (raw: unknown) => T;
-    maxToolCalls?: number;
-  }): AsyncGenerator<StreamEvent<T>, void, unknown> {
-    throw new Error(`${this.name} provider does not implement streamWithTools yet`);
+  /**
+   * Streamed tool use (Part 2 Task 4), with the OpenAI provider's event order:
+   * a `tool-start` per tool call, `text-delta`s while the reply is written, then
+   * `final` (or `error`). The tool steps run as in completeWithTools; the final
+   * JSON reply streams. That request has the token cap and time limit but no
+   * thinking-off retry, since text has already reached the reader.
+   */
+  async *streamWithTools<T>(args: ToolCallArgs<T>): AsyncGenerator<StreamEvent<T>, void, unknown> {
+    const start = Date.now();
+    try {
+      const loop = this.toolLoop(args);
+      let step = await loop.next();
+      while (!step.done) { yield step.value; step = await loop.next(); }
+      const { history, toolCallsUsed, promptTokens, completionTokens } = step.value;
+
+      const stream = await this.client.chat.completions.create(
+        {
+          max_tokens: CAMPUS_MAX_TOKENS,
+          model: this.model,
+          messages: [{ role: 'system', content: withSchema(args) }, ...history],
+          response_format: { type: 'json_object' },
+          temperature: 0.2,
+          stream: true,
+          stream_options: { include_usage: true },
+          ...this.reasoningParams,
+        } as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming,
+        { timeout: CAMPUS_TIMEOUT_MS, maxRetries: 0 },
+      );
+      let content = '';
+      let usage: { prompt_tokens?: number; completion_tokens?: number } | undefined;
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content ?? '';
+        if (delta) { content += delta; yield { kind: 'text-delta', delta }; }
+        if (chunk.usage) usage = chunk.usage;
+      }
+      yield {
+        kind: 'final',
+        value: parseFinal(content, args.validate),
+        toolCallsUsed,
+        telemetry: {
+          costUsdCents: 0,
+          durationMs: Date.now() - start,
+          cachedTokens: 0,
+          uncachedPromptTokens: promptTokens + (usage?.prompt_tokens ?? 0),
+          completionTokens: completionTokens + (usage?.completion_tokens ?? 0),
+        },
+      };
+    } catch (err) {
+      yield { kind: 'error', message: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  /**
+   * The tool-call phase shared by completeWithTools and streamWithTools: the
+   * raw OpenAI client in a manual loop (the AI SDK's Output.object + tools
+   * combination is unreliable on campus models). Yields a `tool-start` per
+   * tool call; returns the history for the final structured step.
+   *
+   * requireToolFirst: the first request offers only those tools with
+   * tool_choice "required". If the endpoint answers 400 to that, the step is
+   * retried without forcing and a warning is logged once. Only a 400 does
+   * this: in the 2026-11 benchmark every "forced search rejected" was a
+   * reply failing validation (a quote over 200 characters), not a refusal.
+   */
+  private async *toolLoop<T>(args: ToolCallArgs<T>): AsyncGenerator<StreamEvent<T>, ToolLoopResult, unknown> {
+    if (!this.baseURL) throw new Error('CAMPUS_LLM_BASE_URL not set');
+    if (!this.apiKey) throw new Error('CAMPUS_LLM_API_KEY not set');
+    const oaiTools: ChatCompletionTool[] = toOpenAiToolDefs(args.tools);
+    const history: ChatCompletionMessageParam[] = args.messages.map(toOpenAiMessage);
+    const toolCallsUsed: ToolCall[] = [];
+    let promptTokens = 0;
+    let completionTokens = 0;
+    const maxSteps = (args.maxToolCalls ?? 2) + 1;
+    let forced = oaiTools.filter(t => t.type === 'function' && args.requireToolFirst?.includes(t.function.name));
+
+    for (let step = 0; step < maxSteps; step++) {
+      const base = { model: this.model, messages: [{ role: 'system', content: args.systemPrompt }, ...history], temperature: 0.2 };
+      const open = { tools: oaiTools.length > 0 ? oaiTools : undefined, tool_choice: oaiTools.length > 0 ? 'auto' : undefined };
+      let response: OpenAI.Chat.Completions.ChatCompletion;
+      if (step === 0 && forced.length > 0) {
+        try {
+          response = await this.guardedCreate({ ...base, tools: forced, tool_choice: 'required' });
+        } catch (e) {
+          if ((e as { status?: number }).status !== 400) throw e;
+          console.warn(`[campus] ${this.model}: forced tool choice rejected (400: ${(e as Error).message.slice(0, 160)}); retrying without it`);
+          forced = [];
+          response = await this.guardedCreate({ ...base, ...open });
+        }
+      } else {
+        response = await this.guardedCreate({ ...base, ...open });
+      }
+      promptTokens += response.usage?.prompt_tokens ?? 0;
+      completionTokens += response.usage?.completion_tokens ?? 0;
+
+      const msg = response.choices[0]?.message;
+      if (!msg) throw new Error('Campus model returned no message');
+      history.push(msg);
+
+      const calls = msg.tool_calls ?? [];
+      if (calls.length === 0) break; // model stopped calling tools
+
+      // ChatCompletionMessageToolCall is a union (function / custom); only function calls run.
+      for (const tc of calls) {
+        if (tc.type !== 'function') continue;
+        let parsedArgs: Record<string, unknown> = {};
+        try { parsedArgs = JSON.parse(tc.function.arguments || '{}'); } catch { /* empty args */ }
+        yield { kind: 'tool-start', toolName: tc.function.name, args: parsedArgs };
+        const toolDef = args.tools.find(t => t.name === tc.function.name);
+        const result = toolDef
+          ? await (toolDef.execute as (a: unknown) => Promise<unknown>)(parsedArgs)
+          : { error: `Unknown tool: ${tc.function.name}` };
+        toolCallsUsed.push({ id: tc.id, toolName: tc.function.name, args: parsedArgs });
+        history.push({ role: 'tool' as const, tool_call_id: tc.id, content: typeof result === 'string' ? result : JSON.stringify(result) });
+      }
+    }
+    return { history, toolCallsUsed, promptTokens, completionTokens };
   }
 }
+
+interface ToolCallArgs<T> {
+  systemPrompt: string;
+  messages: Message[];
+  tools: ToolDefinition[];
+  schemaName: string;
+  jsonSchema: object;
+  validate: (raw: unknown) => T;
+  maxToolCalls?: number;
+  /** Force one of these tools on the first request (the interview's search check). */
+  requireToolFirst?: string[];
+}
+
+interface ToolLoopResult {
+  history: ChatCompletionMessageParam[];
+  toolCallsUsed: ToolCall[];
+  promptTokens: number;
+  completionTokens: number;
+}
+
+/** The system prompt with the reply's JSON schema appended (json_object mode). */
+function withSchema(args: { systemPrompt: string; jsonSchema: object }): string {
+  return `${args.systemPrompt}\n\nRespond with valid JSON that matches this schema:\n` + JSON.stringify(args.jsonSchema, null, 2);
+}
+
+function parseFinal<T>(content: string, validate: (raw: unknown) => T): T {
+  let parsedRaw: unknown;
+  try {
+    parsedRaw = JSON.parse(content);
+  } catch {
+    throw new Error(`Campus model returned non-JSON in final step: ${content.slice(0, 300)}`);
+  }
+  return validate(parsedRaw);
+}
+
+/** Our Message → an OpenAI chat message (the system prompt is passed separately). */
+function toOpenAiMessage(m: Message): ChatCompletionMessageParam {
+  if (m.role === 'tool') {
+    return { role: 'tool' as const, tool_call_id: m.toolCallId ?? '', content: typeof m.result === 'string' ? m.result : JSON.stringify(m.result) };
+  }
+  if (m.role === 'assistant' && m.toolCalls?.length) {
+    return {
+      role: 'assistant' as const,
+      content: m.content ?? null,
+      tool_calls: m.toolCalls.map(tc => ({ id: tc.id, type: 'function' as const, function: { name: tc.toolName, arguments: JSON.stringify(tc.args) } })),
+    };
+  }
+  return { role: m.role as 'system' | 'user' | 'assistant', content: m.content ?? '' } as ChatCompletionMessageParam;
+}
+

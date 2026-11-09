@@ -10,7 +10,7 @@ const cut = { choices: [{ finish_reason: 'length', message: { content: '{"a":' }
 const args = { systemPrompt: 's', userMessage: 'u', schemaName: 'n', jsonSchema: {}, validate: (r: unknown) => r };
 
 describe('campus runaway guard', () => {
-  beforeEach(() => create.mockReset());
+  beforeEach(() => { create.mockReset(); });
 
   it('a response that stops at the length limit is retried once with thinking off', async () => {
     const { CampusProvider } = await import('../campus');
