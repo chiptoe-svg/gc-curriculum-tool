@@ -347,3 +347,10 @@ export async function resetFunctionSetting(functionId: AIFunctionId): Promise<vo
   await db.delete(aiFunctionSettings).where(eq(aiFunctionSettings.functionId, functionId));
   invalidateSettingsCache(functionId);
 }
+
+/** Which loop runs the faculty interview (Pi plan Task 5 reads the setting; default the current loop). */
+export type InterviewLoop = 'current' | 'pi';
+export async function resolveInterviewLoop(): Promise<InterviewLoop> {
+  return 'current';
+}
+

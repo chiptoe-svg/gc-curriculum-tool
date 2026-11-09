@@ -8,6 +8,8 @@
  */
 
 import { getProviderForFunction } from '@/lib/ai/provider';
+import { resolveInterviewLoop } from '@/lib/ai/function-settings';
+import { streamPiInterview } from './pi/stream';
 import type { StreamEvent } from '@/lib/ai/tool-use-types';
 import {
   AuditResponseSchema,
@@ -35,6 +37,12 @@ export async function* streamAuditAgent(
     built = await buildAgentCall(input);
   } catch (err) {
     yield { kind: 'error', message: err instanceof Error ? err.message : String(err) };
+    return;
+  }
+
+  // The loop setting (Pi plan Task 5): Pi runs the turn itself; the current loop uses the provider.
+  if (await resolveInterviewLoop() === 'pi') {
+    yield* streamPiInterview(input, built);
     return;
   }
 
