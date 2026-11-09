@@ -182,26 +182,32 @@ export async function getProviderForFunction(
  * it fails before its first event, so a reader never sees two replies.
  */
 export class FallbackProvider implements AIProvider {
-  readonly name: AIProvider['name'];
-  readonly model: string;
+  /** The provider that served the most recent call: callers record `name`/`model` after a call (review I2). */
+  private served: AIProvider;
   constructor(private primary: AIProvider, private secondary: AIProvider) {
-    this.name = primary.name;
-    this.model = primary.model;
+    this.served = primary;
   }
+  get name(): AIProvider['name'] { return this.served.name; }
+  get model(): string { return this.served.model; }
   private warn(op: string, err: unknown) {
+    this.served = this.secondary;
     console.warn(`[ai-fallback] ${this.primary.name}:${this.primary.model} ${op} failed (${err instanceof Error ? err.message.slice(0, 160) : String(err)}); using ${this.secondary.name}:${this.secondary.model}`);
   }
   async complete<T>(args: Parameters<AIProvider['complete']>[0] & { validate: (raw: unknown) => T }) {
+    this.served = this.primary;
     try { return await this.primary.complete<T>(args); } catch (e) { this.warn('complete', e); return this.secondary.complete<T>(args); }
   }
   async transcribeDocument(args: TranscribeDocumentArgs) {
+    this.served = this.primary;
     try { return await this.primary.transcribeDocument(args); } catch (e) { this.warn('transcribeDocument', e); return this.secondary.transcribeDocument(args); }
   }
   async completeWithTools<T>(args: Parameters<AIProvider['completeWithTools']>[0] & { validate: (raw: unknown) => T }) {
+    this.served = this.primary;
     try { return await this.primary.completeWithTools<T>(args); } catch (e) { this.warn('completeWithTools', e); return this.secondary.completeWithTools<T>(args); }
   }
   async *streamWithTools<T>(args: Parameters<AIProvider['streamWithTools']>[0] & { validate: (raw: unknown) => T }): AsyncIterable<StreamEvent<T>> {
     let started = false;
+    this.served = this.primary;
     try {
       for await (const e of this.primary.streamWithTools<T>(args)) { started = true; yield e; }
     } catch (e) {

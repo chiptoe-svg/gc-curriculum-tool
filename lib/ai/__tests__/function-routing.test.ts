@@ -52,3 +52,16 @@ describe('per-function routing', () => {
     expect(seen).toHaveLength(1);
   });
 });
+
+describe('FallbackProvider reports the model that served the call', () => {
+  it('names the fallback model after a fallback', async () => {
+    const p = new FallbackProvider(
+      fake('campus', async () => { throw new Error('campus 503'); }),
+      fake('openai', async () => ({ data: 'x' })),
+    );
+    expect(p.model).toBe('qwen3.8-27b-fp8');
+    await p.complete({} as never);
+    expect(p.model).toBe('gpt-5.4-mini');
+    expect(p.name).toBe('openai');
+  });
+});

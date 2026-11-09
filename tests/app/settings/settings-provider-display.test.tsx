@@ -9,8 +9,8 @@ const props = {
   slug: 's',
   isAdmin: true,
   initialSettings: [
-    { functionId: 'parse-profile-fields' as const, tier: 'extract' as const, defaultRole: 'extract' as const, customModel: null, resolvedModel: 'qwen3.8-27b-fp8', resolvedEffort: 'off', resolvedProvider: 'campus' as const, resolvedFallback: 'gpt-5.4-mini' },
-    { functionId: 'wiki-update' as const, tier: 'write' as const, defaultRole: 'write' as const, customModel: null, resolvedModel: 'gpt-x', resolvedEffort: 'low', resolvedProvider: 'openai' as const, resolvedFallback: null },
+    { functionId: 'parse-profile-fields' as const, tier: 'extract' as const, defaultRole: 'extract' as const, customModel: null, resolvedModel: 'qwen3.8-27b-fp8', resolvedEffort: 'off', resolvedProvider: 'campus' as const, resolvedFallback: 'gpt-5.4-mini', hasOverride: false },
+    { functionId: 'wiki-update' as const, tier: 'write' as const, defaultRole: 'write' as const, customModel: null, resolvedModel: 'gpt-x', resolvedEffort: 'low', resolvedProvider: 'openai' as const, resolvedFallback: null, hasOverride: false },
   ],
   roles: ROLE_SETTINGS, defaults: DEFAULT_ROLES, labels: FUNCTION_LABELS, descriptions: FUNCTION_DESCRIPTIONS,
   functionIds: ['parse-profile-fields' as const, 'wiki-update' as const],
@@ -29,5 +29,13 @@ describe('provider on /settings', () => {
   it('shows an OpenAI route as OpenAI', () => {
     render(<SettingsClient {...props} />);
     expect(screen.getByText('OpenAI · gpt-x · low effort')).toBeTruthy();
+  });
+});
+
+describe('reset on a campus route', () => {
+  it('shows Reset when a function has a settings row, even if it names its default role', () => {
+    const row = { ...props.initialSettings[0]!, resolvedModel: 'gpt-5.4-mini', resolvedEffort: undefined, resolvedProvider: 'openai' as const, resolvedFallback: null, hasOverride: true };
+    render(<SettingsClient {...props} initialSettings={[row, props.initialSettings[1]!]} />);
+    expect(screen.getAllByRole('button', { name: /reset/i }).length).toBeGreaterThan(0);
   });
 });

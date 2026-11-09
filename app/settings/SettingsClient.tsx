@@ -182,7 +182,7 @@ export function SettingsClient({
       }
       const r = resolve(functionId, tier, customModel);
       setSettings(prev => prev.map(s => s.functionId === functionId
-        ? { ...s, tier, customModel: tier === 'custom' ? customModel : null, resolvedModel: r.model, resolvedEffort: r.effort, resolvedProvider: r.provider, resolvedFallback: r.fallback ?? null }
+        ? { ...s, tier, customModel: tier === 'custom' ? customModel : null, resolvedModel: r.model, resolvedEffort: r.effort, resolvedProvider: r.provider, resolvedFallback: r.fallback ?? null, hasOverride: true }
         : s
       ));
       setMessage({ kind: 'ok', text: `${labels[functionId]} → ${describeModel(r)}` });
@@ -211,7 +211,7 @@ export function SettingsClient({
         ? { model: route.model, effort: route.reasoning, provider: 'campus', fallback: roles[defaultRole].model }
         : resolve(functionId, defaultRole, null);
       setSettings(prev => prev.map(s => s.functionId === functionId
-        ? { ...s, tier: defaultRole, customModel: null, resolvedModel: r.model, resolvedEffort: r.effort, resolvedProvider: r.provider, resolvedFallback: r.fallback ?? null }
+        ? { ...s, tier: defaultRole, customModel: null, resolvedModel: r.model, resolvedEffort: r.effort, resolvedProvider: r.provider, resolvedFallback: r.fallback ?? null, hasOverride: false }
         : s
       ));
       setMessage({ kind: 'ok', text: `${labels[functionId]} → ${roles[defaultRole].label} (${describeModel(r)})` });
@@ -285,7 +285,8 @@ export function SettingsClient({
 
   function renderFunction(functionId: AIFunctionId) {
     const s = findSetting(functionId);
-    const isModified = s.tier !== defaults[functionId];
+    // A row naming the default role still overrides a code-default campus route, so Reset shows for any row.
+    const isModified = s.hasOverride || s.tier !== defaults[functionId];
     const isBusy = busy === functionId;
     return (
       <div key={functionId} className="rounded-md border bg-card px-4 py-3 space-y-2">

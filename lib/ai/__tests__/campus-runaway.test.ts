@@ -39,3 +39,23 @@ describe('campus runaway guard', () => {
     expect(create.mock.calls[0]![1]).toMatchObject({ timeout: 90_000 });
   });
 });
+
+describe('campus runaway guard — review fixes', () => {
+  beforeEach(() => { create.mockReset(); });
+
+  it('retries gpt-oss at low, its lowest level, since it has no thinking off', async () => {
+    const { CampusProvider } = await import('../campus');
+    create.mockResolvedValueOnce(cut).mockResolvedValueOnce(ok);
+    const p = new CampusProvider('gptoss-120b', 'http://x', 'k', { reasoning: 'medium' });
+    await p.complete(args);
+    expect(create.mock.calls[1]![0].reasoning_effort).toBe('low');
+  });
+
+  it('retries a busy gateway (429 or 5xx) once, with the same settings, before giving up', async () => {
+    const { CampusProvider } = await import('../campus');
+    create.mockRejectedValueOnce(Object.assign(new Error('Too Many Requests'), { status: 429 })).mockResolvedValueOnce(ok);
+    const p = new CampusProvider('qwen3.8-27b-fp8', 'http://x', 'k', { reasoning: 'off' });
+    await expect(p.complete(args)).resolves.toMatchObject({ data: { a: 1 } });
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+});

@@ -87,6 +87,7 @@ export class CampusRunawayError extends Error {
 /** Per-request limits on campus calls (Part 2 spec): a token cap and a 90 s abort. */
 export const CAMPUS_MAX_TOKENS = 8000;
 export const CAMPUS_TIMEOUT_MS = 90_000;
+export const CAMPUS_TRANSIENT_RETRY_MS = Number(process.env.CAMPUS_TRANSIENT_RETRY_MS ?? 2_000);
 
 const isTimeout = (e: unknown) => e instanceof Error && /timeout|abort/i.test(`${e.name} ${e.message}`);
 
@@ -114,7 +115,11 @@ export class CampusProvider implements AIProvider {
 
   /** Reasoning fields for the runaway retry: thinking off where the family has it, else none. */
   private offParams(): Record<string, unknown> {
-    try { return campusReasoningParams(this.model, 'off'); } catch { return {}; }
+    // gpt-oss has no "off": its lowest level, low (review I1).
+    for (const level of ['off', 'low'] as const) {
+      try { return campusReasoningParams(this.model, level); } catch { /* next */ }
+    }
+    return {};
   }
 
   /**
@@ -125,12 +130,24 @@ export class CampusProvider implements AIProvider {
    */
   private async guardedCreate(body: Record<string, unknown>): Promise<OpenAI.Chat.Completions.ChatCompletion> {
     let cause = '';
+    const send = async (reasoning: Record<string, unknown>) => {
+      const req = () => this.client.chat.completions.create(
+        { max_tokens: CAMPUS_MAX_TOKENS, ...body, ...reasoning } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming,
+        { timeout: CAMPUS_TIMEOUT_MS, maxRetries: 0 },
+      );
+      // A busy gateway (429, 5xx, connection drop) gets one retry with the same
+      // settings, as the SDK's own retry did before the guard (review I1).
+      try { return await req(); } catch (e) {
+        const status = (e as { status?: number }).status;
+        const transient = status === 429 || (typeof status === 'number' && status >= 500) || (e as Error).name === 'APIConnectionError';
+        if (!transient) throw e;
+        await new Promise(r => setTimeout(r, CAMPUS_TRANSIENT_RETRY_MS));
+        return req();
+      }
+    };
     for (const reasoning of [this.reasoningParams, this.offParams()]) {
       try {
-        const res = await this.client.chat.completions.create(
-          { max_tokens: CAMPUS_MAX_TOKENS, ...body, ...reasoning } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming,
-          { timeout: CAMPUS_TIMEOUT_MS, maxRetries: 0 },
-        );
+        const res = await send(reasoning);
         if (res.choices[0]?.finish_reason !== 'length') return res;
         cause = 'token cap';
       } catch (e) {

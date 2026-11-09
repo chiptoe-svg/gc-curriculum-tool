@@ -273,6 +273,8 @@ export interface FunctionSettingRow {
   resolvedProvider: RoleProvider;
   /** OpenAI model used if the campus call fails, for code-default campus routes. */
   resolvedFallback: string | null;
+  /** A settings row exists (even one naming the default role): Reset removes it. */
+  hasOverride: boolean;
   defaultRole: ModelRole;
 }
 
@@ -305,6 +307,7 @@ export async function listAllFunctionSettings(): Promise<FunctionSettingRow[]> {
       resolvedEffort: resolved.effort,
       resolvedProvider: resolved.provider,
       resolvedFallback: resolved.fallback?.model ?? null,
+      hasOverride: stored !== undefined,
       defaultRole: DEFAULT_ROLES[functionId],
     };
   });
