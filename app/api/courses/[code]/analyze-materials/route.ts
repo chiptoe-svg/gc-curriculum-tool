@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
+import { isSentToAI } from '@/lib/capture/material-in-use';
 import { applyAnalyzeGuards } from '@/lib/ai/analyze/guards';
 import { analyzeMaterial } from '@/lib/ai/course-profile/analyze-material';
 import { synthesizeCourseProfile } from '@/lib/ai/course-profile/synthesize-course-profile';
@@ -42,7 +43,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
 
   // 4. Fetch all materials for the course
   const allMaterials = await listMaterialsByCourse(decoded);
-  const readableMaterials = (allMaterials ?? []).filter((m) => m.extractionStatus === 'ok');
+  const readableMaterials = (allMaterials ?? []).filter((m) => isSentToAI(m) && m.extractionStatus === 'ok');
   if (readableMaterials.length === 0) {
     return NextResponse.json(
       { error: 'no readable materials — upload files and wait for extraction to succeed before analyzing' },

@@ -155,6 +155,15 @@ describe('POST /api/courses/[code]/analyze-materials', () => {
     expect(res.status).toBe(400);
   });
 
+  it('400s when the only readable materials are retired or set aside from the AI', async () => {
+    listMaterialsByCourse.mockResolvedValue([
+      { ...fakeMaterialOk, id: 'm-retired', retiredAt: new Date('2026-10-01'), analysisFinding: null },
+      { ...fakeMaterialOk, id: 'm-ignored', ignored: true, analysisFinding: null },
+    ]);
+    const res = await POST(makeReq(), ctx);
+    expect(res.status).toBe(400);
+  });
+
   it('skips materials that already have a cached analysisFinding', async () => {
     listMaterialsByCourse.mockResolvedValue([fakeMaterialCached]);
     synthesizeCourseProfile.mockResolvedValue({

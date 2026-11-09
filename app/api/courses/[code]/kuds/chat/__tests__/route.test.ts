@@ -85,6 +85,27 @@ describe('POST /api/courses/[code]/kuds/chat', () => {
     expect(res.status).toBe(400);
   });
 
+  it('ignores a set-aside or retired Canvas: Assignments material', async () => {
+    mockListMaterials.mockResolvedValue([
+      { fileName: 'Canvas: Assignments', extractedText: 'OLD ASSIGNMENTS', ignored: true, retiredAt: null },
+      { fileName: 'Canvas: Assignments', extractedText: 'RETIRED ASSIGNMENTS', ignored: false, retiredAt: new Date('2026-10-01') },
+    ]);
+    const [req, ctx] = makeReq('valid-slug', { messages: [] });
+    await POST(req, ctx);
+    const profile = mockKudChatTurn.mock.calls[0]![0] as { assignmentsText?: string };
+    expect(profile.assignmentsText).toBeUndefined();
+  });
+
+  it('uses the in-use Canvas: Assignments material', async () => {
+    mockListMaterials.mockResolvedValue([
+      { fileName: 'Canvas: Assignments', extractedText: 'OLD', ignored: true, retiredAt: null },
+      { fileName: 'Canvas: Assignments', extractedText: 'CURRENT', ignored: false, retiredAt: null },
+    ]);
+    const [req, ctx] = makeReq('valid-slug', { messages: [] });
+    await POST(req, ctx);
+    expect((mockKudChatTurn.mock.calls[0]![0] as { assignmentsText?: string }).assignmentsText).toBe('CURRENT');
+  });
+
   it('returns 200 with reply on a valid request with messages: []', async () => {
     const [req, ctx] = makeReq('valid-slug', { messages: [] });
     const res = await POST(req, ctx);

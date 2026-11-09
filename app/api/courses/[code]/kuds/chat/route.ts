@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
+import { isSentToAI } from '@/lib/capture/material-in-use';
 import { kudChatTurn, ChatMessage } from '@/lib/ai/analyze/kud-chat';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
@@ -40,7 +41,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     .map((m) => ({ role: m.role, content: m.content }));
 
   const materials = await listMaterialsByCourse(courseCode);
-  const assignmentsMaterial = materials.find(m => m.fileName === 'Canvas: Assignments');
+  const assignmentsMaterial = materials.find(m => m.fileName === 'Canvas: Assignments' && isSentToAI(m));
 
   const profile = {
     title: course.title,
