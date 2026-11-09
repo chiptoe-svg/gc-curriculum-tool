@@ -1171,6 +1171,18 @@ export const courseCatalogEntries = pgTable('course_catalog_entries', {
   syncedAt: timestamp('synced_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// One row per capture session started on a course that already had an approved
+// snapshot: the revision mode chosen on the landing page and the snapshot the
+// revision started from. Written on the session's first turn, never updated.
+// Spec: docs/superpowers/specs/2026-11-08-course-revision-modes-labels-design.md
+export const captureSessions = pgTable('capture_sessions', {
+  sessionId: uuid('session_id').primaryKey(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  revisionMode: text('revision_mode').notNull().$type<'targeted' | 'recheck' | 'fresh'>(),
+  baselineSnapshotId: uuid('baseline_snapshot_id').references(() => courseCaptureSnapshots.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const courseCatalogPrereqs = pgTable('course_catalog_prereqs', {
   courseCode: text('course_code').notNull(),
   prereqCode: text('prereq_code').notNull(),
