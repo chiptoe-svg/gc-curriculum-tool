@@ -44,7 +44,7 @@ On the Oct 28 spike:
 
 ## Rollout
 
-1. Free: Qwen3.8 (thinking off) and DeepSeek Flash (low) on Pi, 9 cases. The original spec required campus candidates to run on both loops.
+1. Free: Qwen3.8 (thinking off), DeepSeek Flash (low) and GLM-5.3 (off and low) on Pi, 9 cases. The original spec required campus candidates to run on both loops. GLM is in because it searched and cited 9 of 9 on Pi on 2026-10-30; it failed Extract and Write on output format, which Pi's checks catch in the interview.
 2. Paid, owner yes per run: a one-case Terra low + Pi probe, reading back the real credits. Then Terra low + Pi on 9 cases, then Terra medium + Pi on 9, each with `--max-credits`.
 3. Blind Opus review of the questions across: stored Sol, Terra current loop (already run), Terra + Pi, and the campus models on Pi.
 4. The owner reads, then picks the interview's model and loop.
