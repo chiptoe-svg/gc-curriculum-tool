@@ -14,8 +14,10 @@
  *
  * Needs playwright-core (not a repo dependency) and a Playwright Chromium:
  *   mkdir /tmp/pw && cd /tmp/pw && npm i playwright-core@1.58
- *   NODE_PATH=/tmp/pw/node_modules node scripts/howto/screenshots.cjs <slug> [stop] 
- * Env: HOWTO_DATA (default ./howto-data), HOWTO_OUT (default public/howto).
+ *   NODE_PATH=/tmp/pw/node_modules node scripts/howto/screenshots.cjs [stop]
+ * Run from the repo root. Env: HOWTO_DATA (default ./howto-data), HOWTO_OUT
+ * (default public/howto), HOWTO_CHROME (a Chromium binary; default: the newest
+ * chromium-* under ~/Library/Caches/ms-playwright).
  * Sign-in: a personal access link's key in env HOWTO_KEY (the part after
  * `?key=`), exchanged for a session cookie on the first page load — no shared
  * department password (spec 2026-10-08). Use a link with capture rights on
@@ -28,12 +30,18 @@ const OUT = process.env.HOWTO_OUT || 'public/howto';
 const { chromium } = require('playwright-core');
 const ORIGIN = 'https://gcworkflow.clemson.edu:8443';
 
+function chromePath() {
+  if (process.env.HOWTO_CHROME) return process.env.HOWTO_CHROME;
+  const cache = path.join(process.env.HOME, 'Library/Caches/ms-playwright');
+  const dirs = fs.readdirSync(cache).filter(d => /^chromium-\d+$/.test(d)).sort((a, b) => +b.split('-')[1] - +a.split('-')[1]);
+  if (!dirs.length) throw new Error('No Playwright Chromium in ' + cache + ' (set HOWTO_CHROME)');
+  return path.join(cache, dirs[0], 'chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing');
+}
+
 async function open() {
   const key = (process.env.HOWTO_KEY || '').trim();
   if (!key) throw new Error('HOWTO_KEY is not set (a personal access link key)');
-  const browser = await chromium.launch({
-    executablePath: process.env.HOME + '/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing',
-  });
+  const browser = await chromium.launch({ executablePath: chromePath() });
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2,
   });
@@ -61,10 +69,9 @@ async function buttons(page) {
   return page.$$eval('button, a', els => els.filter(e => e.offsetParent !== null).map(e => e.textContent.trim().replace(/\s+/g, ' ')).filter(Boolean).slice(0, 60));
 }
 
-const STOP = process.argv[3] || 'end';
+const STOP = process.argv[2] || 'end';
 (async () => {
   const { browser, page, blocked, ORIGIN } = await open();
-  const slug = process.argv[2];
   const shot = async (name, locator) => {
     const opts = { path: path.join(OUT, `${name}.png`), animations: 'disabled' };
     if (locator) await locator.screenshot(opts); else await page.screenshot(opts);
@@ -72,13 +79,13 @@ const STOP = process.argv[3] || 'end';
   };
 
   // 01 course list — GC 1010's row
-  await page.goto(`${ORIGIN}/courses?slug=${slug}`, { waitUntil: 'networkidle' });
+  await page.goto(`${ORIGIN}/courses`, { waitUntil: 'networkidle' });
   const row = page.locator('a, li, div').filter({ hasText: /^GC 1010\s*Orientation/ }).last();
   await row.scrollIntoViewIfNeeded();
   await shot('01-course-list', row);
 
   // 02 materials
-  await page.goto(`${ORIGIN}/capture/GC%201010?slug=${slug}`, { waitUntil: 'networkidle' });
+  await page.goto(`${ORIGIN}/capture/GC%201010`, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: '← Back to the interview' }).first().click();
   await page.waitForTimeout(1000);
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -94,6 +101,10 @@ const STOP = process.argv[3] || 'end';
   // 04 interview start
   await page.getByRole('button', { name: /continue to interview|read files/i }).first().click();
   await page.waitForTimeout(2000);
+  // A course with an approved version asks what changed before the interview
+  // can start; pick the first answer so the screenshot shows a choice.
+  const firstMode = page.getByRole('radio', { name: /A few specific things changed/ });
+  if (await firstMode.count()) await firstMode.first().check();
   await page.evaluate(() => window.scrollTo(0, 0));
   await shot('04-interview-start');
 
