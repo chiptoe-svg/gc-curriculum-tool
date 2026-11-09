@@ -18,8 +18,14 @@
  */
 
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?/;
-const SOURCE_TAG_RE = /\s*\[Source: [^\]]+\]/g;
-const MAX_SOURCES_PER_CLAIM = 3;
+// Machine labels (hidden from readers by stripSourceTags):
+//   [Source: <raw path>]  the file a claim can be checked against (one per course)
+//   [Synthesis]           the claim generalizes across the sources that follow it
+//   [Catalog: <kind>]     catalog wording (course sheet, competency descriptor,
+//                         career target), not evidence of what is taught
+const SOURCE_TAG_RE = /\s*\[(?:Source: [^\]]+|Synthesis|Catalog: [^\]]+)\]/g;
+/** Sections that hold navigation, not claims. */
+const SKIP_SECTIONS = new Set(['cross-references', 'concepts', 'source snapshots', 'related']);
 
 export interface ProvenanceContext {
   /** Course slug → vault-relative path of its latest snapshot JSON. */
@@ -84,7 +90,7 @@ export function stripSourceTags(markdown: string): string {
 
 function sourcesForLine(line: string, type: string, ctx: ProvenanceContext): string[] {
   const slugs = linkedSlugs(line);
-  if (type === 'target') {
+  if (type === 'target' && /^\s*-\s/.test(line)) {
     const comp = slugs[0];
     const stated = line.match(/\(D(\d)\)/)?.[1];
     const rows = comp ? ctx.competencyCourses.get(comp) ?? [] : [];
@@ -97,25 +103,55 @@ function sourcesForLine(line: string, type: string, ctx: ProvenanceContext): str
   return slugs.map(s => ctx.courseSources.get(s)).filter((s): s is string => !!s);
 }
 
+/** Catalog label for a line, by page type and section; null when the line is not catalog text. */
+function catalogLabel(type: string, section: string, line: string): string | null {
+  if (type === 'course' && section === 'syllabus') {
+    if (/^\s*\*\*[^*]+:\*\*\s*$/.test(line) || /^\s*\*\*(Links|Signature projects):\*\*/.test(line)) return null;
+    return 'course sheet';
+  }
+  if (type === 'competency' && section === 'definition') return 'competency descriptor';
+  if (type === 'target' && section === 'what this person does') return 'career target';
+  return null;
+}
+
 /**
- * Stamp per-claim sources, a `sources:` list and a quoted `date:` onto a
- * competency, target or concept page. Other page types only get the date.
+ * Stamp provenance onto a page. Competency, target and concept pages get
+ * per-claim sources, [Synthesis] on program-wide prose and on lines naming
+ * several courses, a `sources:` list, and a quoted `date:`. Course pages get
+ * [Catalog: course sheet] on their Syllabus section and the date.
  */
 export function stampProvenance(content: string, ctx: ProvenanceContext): string {
   const type = frontmatterScalar(content, 'type') ?? '';
   let out = stampDate(content);
-  if (!['competency', 'target', 'concept'].includes(type)) return out;
+  const derived = ['competency', 'target', 'concept'].includes(type);
+  if (!derived && type !== 'course') return out;
 
   const fm = out.match(FRONTMATTER_RE)?.[0] ?? '';
-  const body = out.slice(fm.length);
+  const bareLines = out.slice(fm.length).split('\n').map(l => l.replace(SOURCE_TAG_RE, ''));
+  // Every course the page names, for program-wide prose that names none.
+  const pageSources = [...new Set(bareLines.flatMap(l => linkedSlugs(l).map(s => ctx.courseSources.get(s)).filter((x): x is string => !!x)))].sort();
+
   const all = new Set<string>();
-  const lines = body.split('\n').map(line => {
-    // Claims are list items and prose paragraphs; skip headings and blank lines.
-    if (!line.trim() || /^\s*#/.test(line)) return line;
-    const bare = line.replace(SOURCE_TAG_RE, '');
-    const srcs = [...new Set(sourcesForLine(bare, type, ctx))].slice(0, MAX_SOURCES_PER_CLAIM);
-    srcs.forEach(s => all.add(s));
-    return srcs.length ? `${bare.replace(/\s+$/, '')}${srcs.map(s => ` [Source: ${s}]`).join('')}` : bare;
+  let section = '';
+  const lines = bareLines.map(bare => {
+    const h = bare.match(/^##\s+(.+?)\s*$/);
+    if (h) { section = h[1]!.toLowerCase(); return bare; }
+    if (!bare.trim() || /^\s*#/.test(bare) || SKIP_SECTIONS.has(section)) return bare;
+    const end = bare.replace(/\s+$/, '');
+    const cat = catalogLabel(type, section, bare);
+    if (cat) return `${end} [Catalog: ${cat}]`;
+    if (!derived) return bare;
+    const isItem = /^\s*-\s/.test(bare);
+    let srcs = [...new Set(sourcesForLine(bare, type, ctx))];
+    const courseLinks = new Set(linkedSlugs(bare).filter(s => ctx.courseSources.has(s)));
+    let synthesis = courseLinks.size >= 2;
+    if (!isItem && !srcs.length && !(type === 'concept' && section === 'the idea')) {
+      srcs = pageSources;
+      synthesis = srcs.length > 0;
+    }
+    if (!srcs.length) return bare;
+    srcs.forEach(x => all.add(x));
+    return `${end}${synthesis ? ' [Synthesis]' : ''}${srcs.map(x => ` [Source: ${x}]`).join('')}`;
   });
   out = fm + lines.join('\n');
   if (all.size) out = setFrontmatterLine(out, 'sources', `[${[...all].sort().join(', ')}]`);

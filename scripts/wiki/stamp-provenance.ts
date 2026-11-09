@@ -12,8 +12,7 @@
 import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { buildProvenanceContext, stampProvenance } from '@/lib/wiki/provenance';
-
-const SECTIONS = ['courses', 'competencies', 'targets', 'concepts'];
+import { WIKI_PAGE_TYPES } from '@/lib/ai/wiki/schema';
 
 function main(argv: string[]): number {
   const repo = process.env.WIKI_REPO_PATH ?? '/Users/admin/projects/gc-curriculum-wiki';
@@ -26,7 +25,7 @@ function main(argv: string[]): number {
     if (!argv[outIdx + 1] || existsSync(root)) { console.error(`--out needs a new directory (${root} exists or is missing)`); return 2; }
     cpSync(repo, root, { recursive: true, filter: src => !src.split(path.sep).includes('.git') });
   }
-  const files = ['index.md', ...SECTIONS.flatMap(s => {
+  const files = ['index.md', ...WIKI_PAGE_TYPES.flatMap(s => {
     const dir = path.join(root, s);
     return existsSync(dir) ? readdirSync(dir).filter(f => f.endsWith('.md')).map(f => `${s}/${f}`) : [];
   })];
