@@ -13,7 +13,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { aiFunctionSettings } from '@/lib/db/schema';
-import { DEFAULT_REASONING_EFFORT, MODEL_ROLES, ROLE_SETTINGS, type ModelRole } from '@/lib/ai/models';
+import { DEFAULT_REASONING_EFFORT, MODEL_ROLES, ROLE_SETTINGS, isCampusModel, type ModelRole, type RoleProvider } from '@/lib/ai/models';
 
 export const AI_FUNCTION_IDS = [
   'capture-chat',
@@ -105,10 +105,11 @@ export interface ResolvedSetting {
   role: ModelRole | 'custom';
   model: string;
   effort: string | undefined;
+  provider: RoleProvider;
 }
 
-const fromModel = (model: string): ResolvedSetting => ({ role: 'custom', model, effort: DEFAULT_REASONING_EFFORT[model] });
-const fromRole = (role: ModelRole): ResolvedSetting => ({ role, model: ROLE_SETTINGS[role].model, effort: ROLE_SETTINGS[role].effort });
+const fromModel = (model: string): ResolvedSetting => ({ role: 'custom', model, effort: DEFAULT_REASONING_EFFORT[model], provider: isCampusModel(model) ? 'campus' : 'openai' });
+const fromRole = (role: ModelRole): ResolvedSetting => ({ role, model: ROLE_SETTINGS[role].model, effort: ROLE_SETTINGS[role].effort, provider: ROLE_SETTINGS[role].provider });
 
 /**
  * Resolve a settings row (or no row: tier null) to a role, model and effort.
@@ -205,7 +206,7 @@ const settingsCache = new Map<AIFunctionId, CachedSetting>();
  * (a role, a custom model, or an old tier name), or its compiled-in role
  * when no row exists.
  */
-export async function resolveForFunction(functionId: AIFunctionId): Promise<{ model: string; effort: string | undefined }> {
+export async function resolveForFunction(functionId: AIFunctionId): Promise<{ model: string; effort: string | undefined; provider: RoleProvider }> {
   const now = Date.now();
   let cached = settingsCache.get(functionId);
   if (!cached || now - cached.fetchedAt >= SETTING_TTL_MS) {
@@ -224,8 +225,8 @@ export async function resolveForFunction(functionId: AIFunctionId): Promise<{ mo
     cached = { tier: row?.tier ?? null, customModel: row?.customModel ?? null, fetchedAt: now };
     settingsCache.set(functionId, cached);
   }
-  const { model, effort } = resolveSetting(functionId, cached.tier, cached.customModel);
-  return { model, effort };
+  const { model, effort, provider } = resolveSetting(functionId, cached.tier, cached.customModel);
+  return { model, effort, provider };
 }
 
 /** The model a function runs on (scripts that only need the name). */

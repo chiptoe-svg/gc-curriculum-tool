@@ -144,8 +144,20 @@ export async function getProviderForFunction(
 ): Promise<AIProvider> {
   if (override?.model) return buildProvider(override.model, override.reasoningEffort, true);
   const resolved = await resolveForFunction(functionId);
+  // A campus role runs on its campus model whatever AI_PROVIDER says; its
+  // effort is the campus reasoning level (Part 2, 2026-11-09).
+  if (resolved.provider === 'campus') return buildCampusProvider(resolved.model, resolved.effort);
   // The evaluation knob OPENAI_REASONING_EFFORT stays above the role's effort.
   return buildProvider(resolved.model, functionEffort(resolved.effort));
+}
+
+/** A CampusProvider for an exact campus model and reasoning level. */
+function buildCampusProvider(model: string, reasoning: string | undefined): AIProvider {
+  const baseURL = process.env.CAMPUS_LLM_BASE_URL?.trim();
+  if (!baseURL) throw new Error('CAMPUS_LLM_BASE_URL not set');
+  const apiKey = process.env.CAMPUS_LLM_API_KEY?.trim();
+  if (!apiKey) throw new Error('CAMPUS_LLM_API_KEY not set');
+  return new CampusProvider(model, baseURL, apiKey, reasoning ? { reasoning: reasoning as CampusReasoning } : undefined);
 }
 
 /** `explicitEffort`: the effort came from an explicit caller override (an

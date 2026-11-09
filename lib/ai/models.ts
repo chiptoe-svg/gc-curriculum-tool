@@ -28,18 +28,33 @@ export type ModelRole = 'judge' | 'converse' | 'write' | 'extract';
 
 export const MODEL_ROLES: readonly ModelRole[] = ['judge', 'converse', 'write', 'extract'];
 
+/** Where a role's model runs: OpenAI (through the RCD gateway) or a campus RCD model. */
+export type RoleProvider = 'openai' | 'campus';
+
 export interface RoleSetting {
   model: string;
+  /** OpenAI reasoning effort, or the campus reasoning level when provider is 'campus'. */
   effort: string | undefined;
+  provider: RoleProvider;
   label: string;
   purpose: string;
 }
 
+/**
+ * Campus (RCD) models by exact id. Never the moving aliases (tiger, cub):
+ * they change model without notice (Part 2 spec, 2026-11-01).
+ */
+export const CAMPUS_MODELS = ['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017', 'glm-5.3', 'gptoss-120b'] as const;
+
+export function isCampusModel(id: string): boolean {
+  return (CAMPUS_MODELS as readonly string[]).includes(id);
+}
+
 export const ROLE_SETTINGS: Record<ModelRole, RoleSetting> = {
-  judge: { model: 'gpt-6.1-sol', effort: 'low', label: 'Judge', purpose: 'Produces a score or claim that becomes the stored record' },
-  converse: { model: 'gpt-6.1-sol', effort: 'medium', label: 'Converse', purpose: 'Faculty-facing chat, turn by turn, often with tools' },
-  write: { model: 'gpt-6.1-sol', effort: 'low', label: 'Write', purpose: 'Prose or proposals a person reads or approves' },
-  extract: { model: 'gpt-5.4-mini', effort: undefined, label: 'Extract', purpose: 'Bounded extraction, classification or summary, often in bulk' },
+  judge: { provider: 'openai', model: 'gpt-6.1-sol', effort: 'low', label: 'Judge', purpose: 'Produces a score or claim that becomes the stored record' },
+  converse: { provider: 'openai', model: 'gpt-6.1-sol', effort: 'medium', label: 'Converse', purpose: 'Faculty-facing chat, turn by turn, often with tools' },
+  write: { provider: 'openai', model: 'gpt-6.1-sol', effort: 'low', label: 'Write', purpose: 'Prose or proposals a person reads or approves' },
+  extract: { provider: 'openai', model: 'gpt-5.4-mini', effort: undefined, label: 'Extract', purpose: 'Bounded extraction, classification or summary, often in bulk' },
 };
 
 // Per-model pricing in USD per 1M tokens. Update from

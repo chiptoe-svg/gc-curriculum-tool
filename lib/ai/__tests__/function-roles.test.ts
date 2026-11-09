@@ -5,7 +5,7 @@ vi.mock('@/lib/db/client', () => ({ db: {} }));
 
 import { AI_FUNCTION_IDS, DEFAULT_ROLES, resolveSetting } from '@/lib/ai/function-settings';
 
-const SOL = { model: 'gpt-6.1-sol', effort: 'low' };
+const SOL = { model: 'gpt-6.1-sol', effort: 'low', provider: 'openai' };
 const MINI = { model: 'gpt-5.4-mini', effort: undefined };
 
 // Spec: docs/superpowers/specs/2026-10-27-model-roles-design.md, "Function assignments".
@@ -34,7 +34,7 @@ describe('function roles', () => {
       const expected = OLD_LIGHT.includes(id) || id === 'parse-profile-fields' ? MINI
         : SPEC_ROLES.converse.includes(id) ? { ...SOL, effort: 'medium' } : SOL;
       const { model, effort } = resolveSetting(id, null, null);
-      expect({ id, model, effort }).toEqual({ id, ...expected });
+      expect({ id, model, effort }).toEqual({ id, model: expected.model, effort: expected.effort });
     }
   });
 
@@ -55,7 +55,7 @@ describe('function roles', () => {
   });
 
   it('a custom model uses that model\'s own default effort (none for gpt-5.4)', () => {
-    expect(resolveSetting('jd-extract', 'custom', 'gpt-5.4')).toEqual({ role: 'custom', model: 'gpt-5.4', effort: undefined });
+    expect(resolveSetting('jd-extract', 'custom', 'gpt-5.4')).toEqual({ role: 'custom', model: 'gpt-5.4', effort: undefined, provider: 'openai' });
   });
 
   it('a role row resolves to that role', () => {
