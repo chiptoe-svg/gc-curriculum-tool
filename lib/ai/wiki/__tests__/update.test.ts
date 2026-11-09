@@ -828,6 +828,7 @@ describe('per-capture path is pinned', () => {
       'timestamp: 2026-05-25T14:00:00.000Z',
       'tags: [course]',
       'resource: https://gcworkflow.clemson.edu:8443/wiki/courses/gc-4800',
+      'date: "2026-05-25"',
       '---',
       '# GC 4800 — Senior Capstone',
       '',

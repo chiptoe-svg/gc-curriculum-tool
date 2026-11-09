@@ -4,6 +4,7 @@ import { publicCopyUrl, sendToPublicCopy } from '@/lib/wiki/public-copy';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { stripSourceTags } from '@/lib/wiki/provenance';
 import { isValidSlug } from '@/lib/slug';
 import { readWikiPage } from '@/lib/wiki/git-ops';
 import { parseFrontmatter, resolveWikilinks } from '@/lib/wiki/markdown-helpers';
@@ -69,7 +70,8 @@ export default async function WikiPage({ params, searchParams }: Props) {
   for (const c of index.competencies) titleOf.set(c.slug, c.title);
   for (const c of index.concepts) titleOf.set(c.slug, c.title);
   for (const r of index.research) titleOf.set(r.slug, r.title);
-  const processedBody = resolveWikilinks(stripLeadingH1(body), faculty ? slug : '', titleOf);
+  // [Source: …] tags are for citation checkers and agents (raw markdown); readers get the page's sources section.
+  const processedBody = resolveWikilinks(stripSourceTags(stripLeadingH1(body)), faculty ? slug : '', titleOf);
   const list = (k: string) => listFromFrontmatter(fm[k]).filter(s => titleOf.has(s));
   const fmOf = makeFmReader(); // per-request: the wiki regenerates, so never cache across requests
 

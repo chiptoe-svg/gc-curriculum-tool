@@ -43,6 +43,7 @@ import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
 import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { writeAndPush, readWikiPage, wikiRepoPath } from '@/lib/wiki/git-ops';
+import { buildProvenanceContext, stampProvenance } from '@/lib/wiki/provenance';
 import { deriveEvidenceBand, type EvidenceBand } from '@/lib/program/evidence-ladder';
 import { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
 export { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
@@ -1157,6 +1158,22 @@ async function generateStampedPages(args: {
       content = stampOkfFrontmatter(content, { slug, timestamp: timestampIso });
     }
     wiki.push({ path: p.path, content });
+  }
+
+  // Provenance (2026-11-09): per-claim [Source: raw/snapshots/…] on competency,
+  // target and concept pages, plus `sources:` and a quoted `date:` on every
+  // page. Built from the course and competency pages as they will stand after
+  // this write (repo pages overlaid with this batch).
+  {
+    const byPath = new Map<string, string>();
+    for (const rel of await listWikiPagesForHeal()) {
+      if (!rel.startsWith('courses/') && !rel.startsWith('competencies/')) continue;
+      const c = await readWikiPage(rel);
+      if (c !== null) byPath.set(rel, c);
+    }
+    for (const w of wiki) byPath.set(w.path, w.content);
+    const ctx = buildProvenanceContext([...byPath].map(([path, content]) => ({ path, content })));
+    for (const w of wiki) w.content = stampProvenance(w.content, ctx);
   }
 
   return { wiki, logEntries };
