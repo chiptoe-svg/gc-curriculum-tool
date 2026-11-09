@@ -189,14 +189,14 @@
   <div class="doc-meta">
     <span><strong>Audience</strong> faculty capturing their own courses</span>
     <span><strong>Time per course</strong> 20–45 minutes for a first capture</span>
-    <span><strong>Updated</strong> 2026-10-07</span>
+    <span><strong>Updated</strong> 2026-11-09</span>
   </div>
 </header>
 
 <section id="overview">
   <h2><span class="num">§ 1</span>Overview</h2>
 
-  <p><strong>CourseCapture</strong> builds an evidence-backed record of what a course actually develops in students. You check the course materials, an AI interviewer asks you about the course, and the tool drafts a <strong>Course Outcome Profile</strong>: the course's competencies, each scored for <em>Knowing</em>, <em>Reasoning</em> and <em>Doing</em> at a depth backed by student evidence, plus the five foundational habits (Agency, Attention to Detail, Resilience, Curiosity, Communication), scored for Doing only. You review the draft, adjust what is wrong, and approve it. Approval records a permanent, dated snapshot.</p>
+  <p><strong>CourseCapture</strong> builds an evidence-backed record of what a course actually develops in students. You check the course materials, an AI interviewer asks you about the course, and the tool drafts a <strong>Course Outcome Profile</strong>: the course's competencies, each scored for <em>Knowing</em>, <em>Reasoning</em> and <em>Doing</em> at a depth backed by student evidence, plus the six foundational habits (Agency, Attention to Detail, Resilience, Curiosity, Written Communication, Spoken Communication), scored for Doing only. You review the draft, adjust what is wrong, and approve it. Approval records a permanent, dated snapshot.</p>
 
   <p><strong>Explore</strong> is for thinking about changes to a course once it has been captured. See §9.</p>
 
@@ -237,10 +237,12 @@
   <ul>
     <li><strong>Canvas</strong> — assignments, quizzes, pages, modules, the Canvas syllabus and Canvas files. <em>Import from Canvas</em> / <em>Reimport</em> needs a Canvas API token. <em>Scan linked docs</em> follows Google Docs, Drive PDFs and YouTube links inside your Canvas content and pulls them in.</li>
     <li><strong>Syllabus &amp; course info</strong> — the syllabus (required) and, for courses that have one, the course's row on the GC course sheet. Upload a syllabus here if Canvas doesn't have one.</li>
-    <li><strong>Other materials</strong> — anything else: slides, rubrics, handouts, exemplars. PDF, Word, PowerPoint and Excel files are read; scanned PDFs are read with OCR.</li>
+    <li><strong>Other materials</strong> — anything else: slides, rubrics, handouts, exemplars. PDF, Word, PowerPoint, Excel, CSV (a Canvas rubric export, for example), web pages and images are read; scanned PDFs are read with OCR.</li>
   </ul>
 
   <p>Pick your name under <strong>I'm the instructor</strong> so the capture is attributed to you, then click <strong>Continue →</strong>. The step won't continue without a syllabus.</p>
+
+  <p>If the course has almost nothing to work from (a syllabus alone, or files that were never read), the interview opens with a warning: <em>This capture has very little to work from.</em> You can add materials first or click <strong>Continue anyway</strong>; the profile will be thin, and approving it later asks you to confirm that.</p>
 
   <div class="callout note">
     <div class="callout-title">Privacy</div>
@@ -264,13 +266,15 @@
 
   <p><strong>Why it matters:</strong> a score above the basics needs evidence that students actually did the work, so anything graded must be High or it can't count as evidence. Use ▲ ▼ to move a file, <em>ignore</em> to leave it out, <em>delete</em> to remove it. Moving a file that was already read re-reads it at the new level.</p>
 
+  <p>A file you leave out (it shows as <em>set aside</em>) or retire is never shown to the AI: not to the interviewer, its search, or the scoring. It stays on the list so you can bring it back.</p>
+
   <p>Click <strong>Read files &amp; continue</strong>. The estimate beside the button counts only files not yet read. When reading finishes you go on to the interview automatically; the step stops only if a file couldn't be read, so you can go back and replace it or continue without it.</p>
 </section>
 
 <section id="cc-interview">
   <h2><span class="num">§ 6</span>Step 3 · The interview</h2>
 
-  <p>Choose <strong>Build on prior capture</strong> (the interviewer starts from the last approved snapshot) or <strong>Fresh capture</strong> (it starts from the materials only), then <strong>Start the interview</strong>.</p>
+  <p>For a first capture, pick your name and click <strong>Start the interview</strong>. If the course already has an approved version, you are first asked <strong>What's changed in this course since it was approved?</strong> See <a href="#cc-snapshots">§8</a> for the three answers.</p>
 
   <h3>What the interviewer is doing</h3>
   <p>It has read your materials and can search them during the conversation. It also knows the profiles of the courses that feed into yours and the courses that build on it, from the Clemson catalog's prerequisites, so it can ask about hand-offs ("GC 4060 expects students to arrive able to … — does your course prepare them for that?"). Those neighboring courses are context for its questions, never evidence for your scores. It checks:</p>
@@ -282,10 +286,10 @@
   </ul>
 
   <h3>Answering</h3>
-  <p>Each turn ends with a highlighted <strong>Question for you</strong>. Type a reply (Enter sends, Shift+Enter adds a line) or click <strong>Voice</strong> to speak it; the first recording can take a few seconds to start. Specific answers ("students submit a press-ready PDF and I grade it against this preflight checklist") produce a much stronger profile than general ones. If a document the interviewer can't open (a video, an external tool) matters, describe what is in it.</p>
+  <p>Each turn ends with a highlighted <strong>Question for you</strong>. Type a reply (Enter sends, Shift+Enter adds a line) or click <strong>Voice</strong> to speak it; the first recording can take a few seconds to start. Specific answers ("students submit a press-ready PDF and I grade it against this preflight checklist") produce a much stronger profile than general ones. The reply box takes text only: to share a document mid-interview, paste its text into the reply, or add the file under Materials. If a document the interviewer can't open (a video, an external tool) matters, describe what is in it.</p>
 
-  <h3>The readiness bar</h3>
-  <p>Below the reply box, the readiness bar shows how much the interviewer thinks it has covered, with the topics covered so far and those still being probed. It is a guide, not a gate.</p>
+  <h3>The interview checklist</h3>
+  <p>Beside the chat, the <strong>Interview checklist</strong> shows what the interviewer still wants to cover (<em>Still to cover</em>) and what it has checked off so far (<em>Covered</em>, newest first, with the latest items highlighted). It updates after each turn and is kept when you come back. It is a guide, not a gate.</p>
 
   <h3>Stopping and resuming</h3>
   <p>Your answers are saved after each turn. Open the course again and you return to the conversation. <strong>Where we left off</strong> summarizes earlier sessions.</p>
@@ -315,11 +319,12 @@
     <li><strong>✓ Looks right</strong> if it is correct;</li>
     <li><strong>Needs adjusting</strong> to change a score: click <em>Change</em> beside Knowing, Reasoning or Doing, pick the description that fits, and <em>Save changes</em>. Raising a score asks you for the evidence, which is stored as the reason.</li>
   </ul>
-  <p>Tags on each card say where a reading came from: <em>From your interview</em>, <em>From course materials</em> or <em>AI's inference</em>. Click a citation to see the passage. <em>Flag this reading</em> records a disagreement that stays visible until someone resolves it. <em>Save draft</em> keeps your changes without approving.</p>
+  <p>Tags on each card say where a reading came from: <em>From your interview</em>, <em>From course materials</em>, <em>From your interview and course materials</em> (you said it and a course document backs it), or <em>AI's inference</em>. Click a citation to see the passage. <em>Flag this reading</em> records a disagreement that stays visible until someone resolves it. <em>Save draft</em> keeps your changes without approving.</p>
   <p>If the overview gets the course badly wrong (not just a score or two), use <strong>← Back to the interview</strong>, tell the interviewer what it missed, and generate again.</p>
+  <p>When you are revising a course that already has an approved version, the review page also lists what moved since that version (see <a href="#cc-snapshots">§8</a>).</p>
 
   <h3>Approving</h3>
-  <p>When every highlighted card is done, <strong>Approve the profile</strong> unlocks at the bottom of the page (it reads <strong>Approve update</strong> for a course that already has a snapshot). Add an optional caption and note. Approval records a permanent, dated snapshot; the green <strong>Captured</strong> card confirms it. The course's public profile, the program coverage matrix and the curriculum wiki update from it automatically.</p>
+  <p>When every highlighted card is done, <strong>Approve the profile</strong> unlocks at the bottom of the page (it reads <strong>Approve update</strong> for a course that already has a snapshot). Add an optional caption and note. If the capture had very little to work from, you also tick <em>Approve anyway</em> to confirm the profile rests on thin evidence. Approval records a permanent, dated snapshot; the green <strong>Captured</strong> card confirms it. The course's public profile, the program coverage matrix and the curriculum wiki update from it automatically.</p>
 </section>
 
 <section id="cc-snapshots">
@@ -334,7 +339,13 @@
   </ul>
 
   <h3>When to re-capture</h3>
-  <p>Re-capture after a substantive change: new or redesigned assignments, a change of instructor, a shift in what the course emphasizes. Open the course, choose <strong>Build on prior capture</strong>, and the interviewer starts from the last snapshot and asks what has changed.</p>
+  <p>Re-capture after a substantive change: new or redesigned assignments, a change of instructor, a shift in what the course emphasizes. Open the course and answer <strong>What's changed in this course since it was approved?</strong></p>
+  <ul>
+    <li><strong>A few specific things changed</strong>: tell the interviewer what changed. Every rating is checked again, but a rating that moves without new evidence is set back to the approved version for you.</li>
+    <li><strong>Re-check the whole course</strong>: the approved version is the starting point, and every rating is checked again against your current materials and the conversation.</li>
+    <li><strong>Start over</strong>: a new profile from your current materials and the catalog, as if for the first time.</li>
+  </ul>
+  <p>In every case the approved version stays in place until you approve the new one. For the first two, the review page shows <strong>what changed</strong>, split into changes with new evidence and changes without it (likely AI variation, which you can undo or keep). Decide on each before approving. Ratings that cite a file since retired or set aside are listed under <em>Evidence no longer in use</em> so you can check them.</p>
 </section>
 
 <section id="explore">
@@ -398,10 +409,11 @@
   <ul>
     <li><strong>Put graded work in High.</strong> It is the evidence the scores rest on.</li>
     <li><strong>Be concrete.</strong> "Students preflight their own files against a checklist and fix every error before submission" beats "students learn preflight."</li>
-    <li><strong>Don't pad the habits.</strong> A foundational habit (Agency, Attention to Detail, Resilience, Curiosity, Communication) at Doing "not yet" is a real finding: it shows where in the program the habit is and isn't developed.</li>
+    <li><strong>Don't pad the habits.</strong> A foundational habit (Agency, Attention to Detail, Resilience, Curiosity, Written or Spoken Communication) at Doing "not yet" is a real finding: it shows where in the program the habit is and isn't developed.</li>
     <li><strong>Describe what the tool can't open.</strong> Videos on Vimeo, Panopto, Kaltura or Canvas Studio, and external tools, are noted but not read. Tell the interviewer what is in them.</li>
     <li><strong>Use Voice for long explanations</strong> and typing for short corrections.</li>
     <li><strong>If a page acts strangely</strong> right after the tool was updated, reload it (Shift-Reload).</li>
+    <li><strong>If a notice says the AI is paused,</strong> Clemson's shared AI credits have run out. Your saved work is safe and the administrator has been told; try again later.</li>
   </ul>
 </section>
 
