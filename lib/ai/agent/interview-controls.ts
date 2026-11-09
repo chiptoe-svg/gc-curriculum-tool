@@ -18,6 +18,15 @@ import { AuditResponseSchema, type AuditResponse } from '@/lib/ai/agent/audit-re
 
 /** The tools a required search may use. */
 export const SEARCH_TOOLS = ['search_materials', 'fetch_material_section'];
+/** Tools that read course materials (a turn that used one has searched). */
+export const MATERIAL_TOOLS = new Set(['search_materials', 'fetch_material_section', 'list_materials']);
+/**
+ * Pi loop retry limits (Pi plan rulings, 2026-11-09): citation problems are
+ * sent back twice, then the bad citations are dropped; the search is forced on
+ * the first request instead of being sent back, so search retries are 0.
+ */
+export const MAX_CITATION_RETRIES = 2;
+export const MAX_SEARCH_RETRIES = 0;
 
 // Words for graded work and the documents that define it. Generic words such as
 // "project", "test" or "reading" fired on questions about teaching practice (2070-024).
@@ -171,5 +180,10 @@ export function repairCitations<T>(response: T, messages: Array<{ role: string; 
 /** Parse an interviewer reply with citations repaired first, so a long quote or an invented id doesn't fail the turn. */
 export function parseInterviewReply(raw: unknown, messages: Array<{ role: string; content: string | null }>): AuditResponse {
   return AuditResponseSchema.parse(repairCitations(raw, messages));
+}
+
+/** The send-back message when a reply's citations fail checkCitations (Pi loop). */
+export function citationFollowUp(problems: string[]): string {
+  return `Your answer has citation problems:\n- ${problems.join('\n- ')}\nFix them and give your answer again.`;
 }
 
