@@ -57,11 +57,14 @@ const STEPS: Step[] = [
   {
     title: 'Start the interview',
     img: '04-interview-start.png', w: 2560, h: 1800,
-    alt: 'The interview start screen with instructor and start mode',
+    alt: 'The interview start screen with the instructor picker',
     body: (
       <>
-        Check your name, and choose <strong>Build on prior capture</strong> (if the course was captured before) or{' '}
-        <strong>Fresh capture</strong>. Scroll down and click <strong>Start the interview</strong>.
+        Check your name. If the course was approved before, you are also asked{' '}
+        <strong>What&apos;s changed in this course since it was approved?</strong> Pick{' '}
+        <strong>A few specific things changed</strong>, <strong>Re-check the whole course</strong> or{' '}
+        <strong>Start over</strong>; the approved version stays in place until you approve the new one. Scroll down
+        and click <strong>Start the interview</strong>.
       </>
     ),
   },
@@ -73,8 +76,9 @@ const STEPS: Step[] = [
       <>
         Each turn ends with a <strong>Question for you</strong>. Type your answer, or click{' '}
         <strong>Voice</strong> to speak it, then <strong>Send</strong>. Be specific about what students actually
-        do and how it is graded. The readiness bar shows how much the interviewer has covered. Your answers are
-        saved as you go, so you can stop and come back any time.
+        do and how it is graded. To share a document, paste its text into your reply or add the file under
+        Materials. The <strong>Interview checklist</strong> beside the chat shows what is still to cover and what
+        has been covered. Your answers are saved as you go, so you can stop and come back any time.
       </>
     ),
   },
@@ -137,7 +141,8 @@ const STEPS: Step[] = [
     body: (
       <>
         When every card is done, click <strong>Approve the profile</strong> at the bottom of the page (it says{' '}
-        <strong>Approve update</strong> for a course captured before). Add a caption if you like, and confirm.
+        <strong>Approve update</strong> for a course captured before). Add a caption if you like, and confirm. If
+        you revised a course, first decide on each item in the list of what changed since the approved version.
       </>
     ),
   },
@@ -164,6 +169,19 @@ const TROUBLE: Array<{ q: string; a: React.ReactNode }> = [
         continue without it.
       </>
     ),
+  },
+  {
+    q: 'It says the capture has very little to work from',
+    a: (
+      <>
+        The tool found little more than a syllabus. Add assignment sheets, rubrics or slides under Materials, or
+        click <strong>Continue anyway</strong>; the profile will be thin.
+      </>
+    ),
+  },
+  {
+    q: 'A notice says the AI interview is paused',
+    a: "Clemson's shared AI credits have run out. Your saved work is safe and the administrator has been told; try again later.",
   },
   {
     q: 'I need to stop partway',
