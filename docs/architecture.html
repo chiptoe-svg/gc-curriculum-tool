@@ -191,6 +191,32 @@
   }
   .incode { font-size: 0.86em; color: var(--text-faint); }
   .incode code { font-size: 0.95em; }
+
+  /* §4 system diagram */
+  .sys-map { margin: 28px 0 32px; max-width: 920px; }
+  .sys-map-scroll { overflow-x: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 16px 12px 8px; }
+  .sys-map svg { display: block; width: 100%; min-width: 720px; height: auto; }
+  .sys-map figcaption { font-size: 13.5px; color: var(--text-muted); margin-top: 10px; line-height: 1.55; }
+  .sm-col { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; fill: var(--accent); }
+  .sm-q { font-family: var(--serif); font-style: italic; font-size: 12px; fill: var(--text-muted); }
+  .sm-box rect { fill: var(--bg-card); stroke: var(--border-strong); stroke-width: 1; }
+  .sm-box.sm-key rect { fill: var(--accent-light); stroke: var(--accent); }
+  .sm-box.sm-cat rect { fill: var(--bg-alt); stroke: var(--text-muted); stroke-width: 1.4; }
+  .sm-t { font-family: var(--serif); font-weight: 600; font-size: 14px; fill: var(--text); }
+  .sm-s { font-family: var(--serif); font-size: 11.5px; fill: var(--text-muted); }
+  .sm-c { font-family: var(--mono); font-size: 10px; fill: var(--text-faint); }
+  .sm-n { font-family: var(--mono); font-size: 9.5px; fill: var(--text-faint); }
+  .sm-l { stroke: var(--text-muted); stroke-width: 1.2; }
+  .sm-d { stroke: var(--text-muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .sm-a { stroke: var(--accent); stroke-width: 1.8; }
+  .sm-meet { fill: var(--accent-light); stroke: var(--accent); stroke-width: 1.4; }
+  .sm-mt { font-family: var(--display); font-size: 16px; fill: var(--text); }
+  .sm-tag-off { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; fill: var(--status-missing); }
+  .sm-trail { fill: none; stroke: var(--border-strong); stroke-dasharray: 4 3; }
+  .sm-tb { font-weight: 600; fill: var(--text); }
+  .sm-deck rect { fill: var(--bg-card); stroke: var(--border-strong); stroke-width: 1; }
+  .sm-deck rect:last-of-type { fill: var(--bg-alt); }
+  .sm-gap { stroke: var(--bg-card); stroke-width: 6; }
 </style>
 </head>
 <body>
@@ -399,6 +425,135 @@
   <h2><span class="num">§ 4</span>Courses and Careers on One Scale — Attainment &amp; Demand</h2>
 
   <p>The tool uses <strong>one scale to measure two different things.</strong> Every competency is scored on the same K/U/D depth scale (0–5). <strong>CourseCapture applies it to our courses</strong> and asks: "how deeply can we <em>show</em> that students can do this?" <strong>Position Capture applies the same scale to a job</strong>. Its scores answer "how deeply does a new hire need to do this on day one?", and it also records other information about the job, kept apart from those scores (described below). Because both sides use the same units, and both refer to the same competency in the shared catalog, the first question (Q1) becomes a subtraction: <em>what the job demands minus what the courses develop</em>. <span class="incode">In the code: both sides are linked by the catalog's <code>sub_competency_id</code>.</span></p>
+
+<figure class="sys-map" aria-labelledby="sys-map-cap">
+  <div class="sys-map-scroll">
+  <svg viewBox="0 0 960 690" role="img" aria-label="How courses and careers meet on the shared competency catalog">
+    <defs>
+      <marker id="sm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6B6860"/></marker>
+      <marker id="sm-arrow-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C8682A"/></marker>
+    </defs>
+
+    <!-- column headings -->
+    <text class="sm-col" x="160" y="26" text-anchor="middle">ATTAINMENT · OUR COURSES</text>
+    <text class="sm-col" x="480" y="26" text-anchor="middle">THE SHARED COMPETENCY CATALOG</text>
+    <text class="sm-col" x="800" y="26" text-anchor="middle">DEMAND · TARGET CAREERS</text>
+    <text class="sm-q" x="160" y="44" text-anchor="middle">How deeply can we show students do this?</text>
+    <text class="sm-q" x="480" y="44" text-anchor="middle">What does each skill look like at each depth?</text>
+    <text class="sm-q" x="800" y="44" text-anchor="middle">How deeply does a new hire need it on day one?</text>
+
+    <!-- LEFT column -->
+    <g class="sm-box"><rect x="20" y="62" width="280" height="58" rx="4"/>
+      <text class="sm-t" x="34" y="86">Course materials</text>
+      <text class="sm-s" x="34" y="106">syllabus · Canvas files · catalog entry</text></g>
+    <g class="sm-box sm-key"><rect x="20" y="146" width="280" height="64" rx="4"/>
+      <text class="sm-t" x="34" y="170">CourseCapture interview</text>
+      <text class="sm-s" x="34" y="190">AI interviewer + the instructor;</text>
+      <text class="sm-s" x="34" y="204">no score above its evidence</text></g>
+    <g class="sm-box sm-key"><rect x="20" y="236" width="280" height="64" rx="4"/>
+      <text class="sm-t" x="34" y="260">Course Outcome Profile</text>
+      <text class="sm-s" x="34" y="280">K/U/D per competency; approved as a</text>
+      <text class="sm-s" x="34" y="294">numbered snapshot that cannot change</text></g>
+    <g class="sm-box"><rect x="20" y="326" width="280" height="64" rx="4"/>
+      <text class="sm-t" x="34" y="350">Explore</text>
+      <text class="sm-s" x="34" y="370">"what if" changes, traced through the</text>
+      <text class="sm-s" x="34" y="384">neighboring courses and on to careers</text></g>
+    <g class="sm-box"><rect x="20" y="416" width="280" height="64" rx="4"/>
+      <text class="sm-t" x="34" y="440">Prerequisite gaps (Q2)</text>
+      <text class="sm-s" x="34" y="460">what this course expects students to bring</text>
+      <text class="sm-s" x="34" y="474">vs. what its prerequisites are shown to build</text></g>
+
+    <line class="sm-l" x1="160" y1="120" x2="160" y2="144" marker-end="url(#sm-arrow)"/>
+    <line class="sm-l" x1="160" y1="210" x2="160" y2="234" marker-end="url(#sm-arrow)"/>
+    <line class="sm-l" x1="160" y1="300" x2="160" y2="324" marker-end="url(#sm-arrow)"/>
+    <!-- Explore feeds back as intended targets -->
+    <path class="sm-d" d="M20,358 L8,358 L8,178 L18,178" fill="none" marker-end="url(#sm-arrow)"/>
+    <text class="sm-n" x="-268" y="5" transform="rotate(-90)" text-anchor="middle">adopted change → intended target</text>
+
+    <!-- MIDDLE column -->
+    <g class="sm-box sm-cat"><rect x="340" y="62" width="280" height="148" rx="4"/>
+      <text class="sm-t" x="354" y="84">One catalog, used by both sides</text>
+      <text class="sm-s" x="354" y="103">each competency listed once, with its own</text>
+      <text class="sm-s" x="354" y="117">Know / Understand / Do descriptions</text>
+      <text class="sm-s" x="354" y="136">same 0–5 depth scale on both sides</text>
+      <text class="sm-s" x="354" y="155"><tspan class="sm-tb">Bundle cards:</tspan> O*NET work activities and</text>
+      <text class="sm-s" x="354" y="169">tasks placed under each competency,</text>
+      <text class="sm-s" x="354" y="183">confirmed by faculty one by one</text>
+      <text class="sm-c" x="354" y="201">sub_competencies · bundle_cards</text></g>
+    <g class="sm-box"><rect x="340" y="236" width="280" height="64" rx="4"/>
+      <text class="sm-t" x="354" y="260">Coverage scoring</text>
+      <text class="sm-s" x="354" y="280">every snapshot × every competency → depth;</text>
+      <text class="sm-s" x="354" y="294">no career named, so a score means one thing</text></g>
+    <g class="sm-box"><rect x="340" y="326" width="280" height="64" rx="4"/>
+      <text class="sm-t" x="354" y="350">Program attainment</text>
+      <text class="sm-s" x="354" y="370">deepest level any course reached (levels are</text>
+      <text class="sm-s" x="354" y="384">ranks, never added) · heat map on /program</text></g>
+    
+
+    <line class="sm-l" x1="300" y1="268" x2="338" y2="268" marker-end="url(#sm-arrow)"/>
+    <line class="sm-l" x1="480" y1="210" x2="480" y2="234" marker-end="url(#sm-arrow)"/>
+    <line class="sm-l" x1="480" y1="300" x2="480" y2="324" marker-end="url(#sm-arrow)"/>
+
+
+    <!-- neighboring courses, read by Explore and the prerequisite gaps -->
+    <g class="sm-deck">
+      <rect x="352" y="420" width="168" height="66" rx="4"/>
+      <rect x="346" y="414" width="168" height="66" rx="4"/>
+      <rect x="340" y="408" width="168" height="66" rx="4"/>
+      <text class="sm-t" x="352" y="430">Neighboring courses</text>
+      <text class="sm-s" x="352" y="449">snapshots of the courses</text>
+      <text class="sm-s" x="352" y="463">before and after this one</text>
+    </g>
+    <text class="sm-n" x="340" y="500">Clemson catalog prerequisite map</text>
+    <path class="sm-l" d="M340,428 L320,428 L320,372 L302,372" fill="none" marker-end="url(#sm-arrow)"/>
+    <path class="sm-l" d="M340,462 L302,462" fill="none" marker-end="url(#sm-arrow)"/>
+
+    <!-- RIGHT column -->
+    <g class="sm-box"><rect x="660" y="62" width="280" height="58" rx="4"/>
+      <text class="sm-t" x="674" y="86">Where GC alumni work</text>
+      <text class="sm-s" x="674" y="106">jobs by federal SOC occupation code</text></g>
+    <g class="sm-box sm-key"><rect x="660" y="146" width="280" height="64" rx="4"/>
+      <text class="sm-t" x="674" y="170">Career targets</text>
+      <text class="sm-s" x="674" y="190">each one an occupation mix by stage:</text>
+      <text class="sm-s" x="674" y="204">entry and growth</text></g>
+    <g class="sm-box"><rect x="660" y="236" width="280" height="64" rx="4"/>
+      <text class="sm-t" x="674" y="260">O*NET 31.0</text>
+      <text class="sm-s" x="674" y="280">ratings for those occupations, matched</text>
+      <text class="sm-s" x="674" y="294">to competencies through the bundle cards</text></g>
+    <g class="sm-box"><rect x="660" y="326" width="280" height="64" rx="4"/>
+      <text class="sm-t" x="674" y="350">Importance weights 0–1</text>
+      <text class="sm-s" x="674" y="370">which competencies matter to each target:</text>
+      <text class="sm-s" x="674" y="384">faculty › AI draft › O*NET + employers</text></g>
+    <g class="sm-box sm-key"><rect x="660" y="416" width="280" height="64" rx="4"/>
+      <text class="sm-t" x="674" y="440">Position Capture</text>
+      <text class="sm-s" x="674" y="460">employer partners describe a real role →</text>
+      <text class="sm-s" x="674" y="474">day-one K/U/D, each with what they said</text></g>
+
+    <line class="sm-l" x1="800" y1="120" x2="800" y2="144" marker-end="url(#sm-arrow)"/>
+    <line class="sm-l" x1="800" y1="210" x2="800" y2="234" marker-end="url(#sm-arrow)"/>
+    <line class="sm-l" x1="800" y1="300" x2="800" y2="324" marker-end="url(#sm-arrow)"/>
+    <path class="sm-l" d="M660,262 L650,262 L650,190 L622,190" fill="none" marker-end="url(#sm-arrow)"/>
+    <path class="sm-l" d="M660,358 L636,358 L636,120 L622,120" fill="none" marker-end="url(#sm-arrow)"/>
+    <path class="sm-l" d="M940,178 L952,178 L952,448 L942,448" fill="none" marker-end="url(#sm-arrow)"/>
+
+    <!-- WHERE THEY MEET -->
+    <rect class="sm-meet" x="20" y="526" width="920" height="84" rx="4"/>
+    <text class="sm-mt" x="480" y="556" text-anchor="middle">Where the two sides meet — Q1: does the curriculum build what careers need?</text>
+    <text class="sm-s" x="480" y="578" text-anchor="middle">for each career target and competency: required day-one depth − deepest depth our courses evidence = the gap</text>
+    <text class="sm-tag-off" x="480" y="598" text-anchor="middle">BUILT · SWITCHED OFF UNTIL EMPLOYER DATA ARRIVES</text>
+
+    <line class="sm-a" x1="570" y1="390" x2="570" y2="524" marker-end="url(#sm-arrow-acc)"/>
+    <line class="sm-a" x1="800" y1="480" x2="800" y2="524" marker-end="url(#sm-arrow-acc)"/>
+    <text class="sm-n" x="576" y="508">evidenced depth</text>
+    <text class="sm-n" x="806" y="508">required depth</text>
+
+    <!-- project trail -->
+    <rect class="sm-trail" x="20" y="632" width="920" height="40" rx="4"/>
+    <text class="sm-s" x="480" y="657" text-anchor="middle"><tspan class="sm-tb">The wiki's project trail:</tspan> course project → skill it builds → catalog competency → closest O*NET items</text>
+  </svg>
+  </div>
+  <figcaption id="sys-map-cap">How the parts fit together. Courses (left) and careers (right) are scored on the same 0–5 Know / Understand / Do scale against one shared catalog (center), so the two can be compared competency by competency. Solid arrows carry data; dashed arrows feed something back. Highlighted boxes are where people supply the evidence.</figcaption>
+</figure>
 
   <h3>The attainment side — CourseCapture</h3>
 
