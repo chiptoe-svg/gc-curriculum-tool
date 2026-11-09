@@ -4,7 +4,7 @@
  * tool-start per tool call, text-delta while the reply streams, then final or
  * error. Stores the assistant turn exactly as the current loop does.
  */
-import { AiCreditsExhaustedError, isCreditsExhaustedError } from '@/lib/ai/credit-status';
+import { AiCreditsExhaustedError, isCreditsExhaustedError, markCreditsExhausted } from '@/lib/ai/credit-status';
 import { captureRetrievedChunks, checkTurnCitations, persistAssistantTurn, type AuditAgentInput, type BuiltAgentCall } from '@/lib/ai/agent/audit-agent';
 import type { AuditStreamEvent } from '@/lib/ai/agent/audit-agent-stream';
 import type { AuditResponse } from '@/lib/ai/agent/audit-response-schema';
@@ -19,17 +19,33 @@ export async function runPiInterviewTurn(
   onEvent?: (e: StreamEvent<AuditResponse>) => void,
 ): Promise<{ response: AuditResponse; toolCallsUsed: ToolCall[]; result: PiTurnResult }> {
   const capture = captureRetrievedChunks(built.tools);
-  const result = await runPiTurn({
+  const endpoint = await piEndpointFor();
+  const turn = (requireSearchFirst: boolean) => runPiTurn({
     systemPrompt: built.systemPrompt,
     messages: built.messages,
     tools: capture.tools,
     userMessage: input.userMessage,
     fileNames: built.fileNames,
     courseCode: input.courseCode,
-    endpoint: await piEndpointFor(),
+    endpoint,
+    requireSearchFirst,
     maxToolCalls: 4,
     onEvent,
   });
+  let result: PiTurnResult;
+  try {
+    result = await turn(Boolean(built.requireToolFirst));
+  } catch (err) {
+    if (isPiCreditsError(err)) {
+      // Same as the current loop: record it (banner + owner alert) and show the friendly message (review I3).
+      await markCreditsExhausted('request', String(err).slice(0, 300)).catch(() => {});
+      throw new AiCreditsExhaustedError(undefined, { cause: err });
+    }
+    // A forced search the endpoint rejects must not cost the turn: retry once without it (review I2).
+    if (!built.requireToolFirst || !/\b400\b/.test(String(err))) throw err;
+    console.warn(`[audit-agent] ${input.courseCode}: forced search rejected (${String(err).slice(0, 200)}); retrying without it`);
+    result = await turn(false);
+  }
   if (result.controlEvents.length) console.warn(`[audit-agent] ${input.courseCode}: pi controls: ${result.controlEvents.join(' | ')}`);
   const response = checkTurnCitations(result.value, built.messages, capture.retrieved, input.courseCode);
   return { response, toolCallsUsed: result.toolCallsUsed, result };
@@ -57,7 +73,7 @@ export async function* streamPiInterview(input: AuditAgentInput, built: BuiltAge
 
   if (failure || !outcome) {
     const err = failure ?? new Error('Pi turn ended without a reply');
-    const credits = err instanceof AiCreditsExhaustedError || isCreditsExhaustedError(err) || /quota_denied|credits are exhausted/i.test(String(err));
+    const credits = err instanceof AiCreditsExhaustedError;
     yield { kind: 'error', message: err instanceof Error ? err.message : String(err), ...(credits ? { code: 'ai_credits_exhausted' as const } : {}) };
     return;
   }
@@ -78,3 +94,9 @@ export async function* streamPiInterview(input: AuditAgentInput, built: BuiltAge
   }
   yield { kind: 'final', response, toolCallsUsed: toolCallsUsed.length };
 }
+
+/** Pi reports a gateway quota error as text in its error message. */
+function isPiCreditsError(err: unknown): boolean {
+  return err instanceof AiCreditsExhaustedError || isCreditsExhaustedError(err) || /quota_denied|credits are exhausted/i.test(String(err));
+}
+

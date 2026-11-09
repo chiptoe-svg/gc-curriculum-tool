@@ -58,6 +58,12 @@ export interface PiTurnInput {
   fileNames: string[];
   courseCode: string;
   endpoint: PiEndpoint;
+  /**
+   * Force search_materials on the first request. The app passes the current
+   * loop's decision (BuiltAgentCall.requireToolFirst); undefined recomputes it
+   * from the exchange (benchmarks). Never forced when no search tool is offered.
+   */
+  requireSearchFirst?: boolean;
   /** Tool calls allowed before submit_turn is forced (default 4). */
   maxToolCalls?: number;
   /** Stream events for the chat screen: tool-start per tool call, text-delta while the reply streams. */
@@ -132,6 +138,9 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
   const msgs = input.messages as Array<{ role: string; content: string | null }>;
   const history = citableFromHistory(msgs);
   const searchRule = needsMaterialSearch(input.userMessage, input.fileNames, previousQuestion(msgs));
+  const forceSearchFirst = (input.requireSearchFirst ?? searchRule.required) && input.tools.some(t => t.name === 'search_materials');
+  // Temperature only for campus models: OpenAI's gpt-6 reasoning models reject it (review I1).
+  const temperature = ep.campusReasoning !== undefined || isCampusModel(ep.model) ? PI_TEMPERATURE : undefined;
   let citeRetries = 0;
   let final: AuditResponse | undefined;
   let requests = 0;
@@ -213,16 +222,16 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
     streamFn: (m, ctx, opts) => {
       requests++;
       if (toolCallsUsed.length >= maxToolCalls) forceSubmit = true;
-      const forceSearch = requests === 1 && searchRule.required && !forceSubmit;
-      if (forceSearch) controlEvents.push(`search required (${searchRule.reason}); forced on the first request`);
+      const forceSearch = requests === 1 && forceSearchFirst && !forceSubmit;
+      if (forceSearch) controlEvents.push(`search required (${searchRule.reason ?? 'the exchange points at course files'}); forced on the first request`);
       const samplingParams = {
         ...(opts?.samplingParams ?? {}),
         ...reasoningSetup.samplingParams,
-        temperature: PI_TEMPERATURE,
+        ...(temperature !== undefined ? { temperature } : {}),
         tool_choice: toolChoice(forceSubmit ? 'submit_turn' : forceSearch ? 'search_materials' : undefined),
         parallel_tool_calls: false,
       };
-      return models.streamSimple(m, ctx, { ...opts, maxTokens: PI_MAX_TOKENS, temperature: PI_TEMPERATURE, samplingParams } as never);
+      return models.streamSimple(m, ctx, { ...opts, maxTokens: PI_MAX_TOKENS, ...(temperature !== undefined ? { temperature } : {}), samplingParams } as never);
     },
     finishTurn: async ({ message }) => {
       trace.push(`req${requests}: ${message.stopReason}${message.errorMessage ? ' ' + message.errorMessage.slice(0, 160) : ''}`);

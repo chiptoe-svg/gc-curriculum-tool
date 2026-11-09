@@ -91,5 +91,26 @@ describe('streamAuditAgent on Pi', () => {
     const sent = runPiTurn.mock.calls[0]![0] as { messages: Array<{ content: string }> };
     expect(sent.messages.map(m => m.content)).toEqual(['context', '[messageId=u2]\nIt is graded on the rubric.']);
   });
+
+  it('a rejected forced search is retried once without it and logged (review I2)', async () => {
+    loop.value = 'pi';
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    runPiTurn.mockRejectedValueOnce(new Error('pi: 400 tool_choice not supported | req1: error'));
+    const ev = await run();
+    expect(ev.at(-1)!.kind).toBe('final');
+    expect(runPiTurn).toHaveBeenCalledTimes(2);
+    expect((runPiTurn.mock.calls[1]![0] as { requireSearchFirst?: boolean }).requireSearchFirst).toBe(false);
+    expect(warn.mock.calls.some(c => String(c[0]).includes('forced search rejected'))).toBe(true);
+    warn.mockRestore();
+  });
+
+  it('credits running out shows the friendly message with its code (review I3)', async () => {
+    loop.value = 'pi';
+    runPiTurn.mockRejectedValueOnce(new Error('pi: rcd API error (403) {"error":{"code":"quota_denied","message":"released OpenAI shared credits are exhausted"}} | req1: error'));
+    const ev = await run() as Array<{ kind: string; message?: string; code?: string }>;
+    const err = ev.find(e => e.kind === 'error')!;
+    expect(err.code).toBe('ai_credits_exhausted');
+    expect(err.message).not.toMatch(/req1|rcd API error/);
+  });
 });
 

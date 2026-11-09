@@ -162,3 +162,23 @@ describe('model change across turns (Pi plan Task 4)', () => {
   });
 });
 
+describe('review fixes', () => {
+  it('sends temperature only to campus models (OpenAI gpt-6 rejects it)', async () => {
+    script = [() => call('search_materials', { query: 'q' }), () => call('submit_turn', reply())];
+    await runPiTurn(input({ endpoint: { baseUrl: 'http://gateway.test/v1', apiKey: 'k', model: 'gpt-6.1-terra', api: 'openai-completions', reasoning: 'medium' } }));
+    for (const b of bodies) expect(b.temperature).toBeUndefined();
+  });
+
+  it('never forces a search tool the request does not offer', async () => {
+    script = [() => call('submit_turn', reply({ citations: [] }))];
+    await runPiTurn(input({ tools: [] as never }));
+    expect(bodies[0]!.tool_choice).toBe('required');
+  });
+
+  it('forces the search only when the caller says the exchange needs one', async () => {
+    script = [() => call('search_materials', { query: 'q' }), () => call('submit_turn', reply())];
+    await runPiTurn(input({ requireSearchFirst: false }));
+    expect(bodies[0]!.tool_choice).toBe('required');
+  });
+});
+
