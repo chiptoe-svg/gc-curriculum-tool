@@ -19,6 +19,7 @@ import { clearRawBlobsForCourse } from '@/lib/capture/clear-raw-blobs';
 import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
 import { resolveModelForFunction } from '@/lib/ai/function-settings';
 import { hashText } from '@/lib/capture/text-hash';
+import { withoutRevision } from '@/lib/capture/revision-changes';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -116,7 +117,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 
   const snapshot = await createSnapshot({
     courseCode,
-    profile: draft.profile,
+    // The revision change list is draft-only; an approved snapshot never carries it.
+    profile: withoutRevision(draft.profile),
     inputsMeta,
     transcript: conversation?.messages ?? [],
     caption,

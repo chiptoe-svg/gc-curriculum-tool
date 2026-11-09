@@ -29,6 +29,8 @@ import { plainDepth, plainDepthPhrase, plainScores, plainScoresShort, DIM_WORD }
 import { deriveEvidenceBand } from '@/lib/program/evidence-ladder';
 import { FlagDialog } from '@/components/FlagDialog';
 import { upwardBumps, assembleOverrides } from '@/lib/ai/capture/score-overrides';
+import { RevisionChanges, revisionBlocksApproval, REVISION_BLOCKED_MESSAGE } from './RevisionChanges';
+import { applyRevisionDecision, overrideReference, restoreSection } from '@/lib/capture/revision-changes';
 
 /**
  * Returns true when NONE of the profile's findings carry a `source` flag.
@@ -1006,7 +1008,7 @@ export function ProfileReviewPanel({
     try {
       // Save any pending edits first so the snapshot reflects current state.
       if (dirty) {
-        const toSave = { ...working, reviewer_overrides: assembleOverrides(profile.competencies, working.competencies, overrideReasons) };
+        const toSave = { ...working, reviewer_overrides: assembleOverrides(overrideReference(profile, working), working.competencies, overrideReasons) };
         await onSave(toSave, 'edited', reviewerNote.trim() || null);
       }
       const res = await fetch(
@@ -1155,14 +1157,17 @@ export function ProfileReviewPanel({
   const allWorthLookReviewed = needsReview.size === 0 || [...needsReview].every(i => reviewed.has(i));
   const noteSubstantive = reviewerNote.replace(/\s/g, '').length >= 20;
   const bumps = useMemo(
-    () => upwardBumps(profile.competencies, working.competencies),
-    [profile.competencies, working.competencies],
+    // Compared with the version each revision decision selects, so Keep/Undo
+    // on a revision change is never mistaken for a faculty raise.
+    () => upwardBumps(overrideReference(profile, working), working.competencies),
+    [profile, working],
   );
   const bumpByIndex = useMemo(() => new Map(bumps.map(b => [b.index, b])), [bumps]);
   const unjustifiedBumpCount = bumps.filter(b => (overrideReasons.get(b.index) ?? '').trim().length === 0).length;
   const allUpwardBumpsJustified = unjustifiedBumpCount === 0;
-  const approveUnlocked = (dirty || allWorthLookReviewed || noteSubstantive) && allUpwardBumpsJustified;
-  const approveLockTitle = `Before ${approveQuoted}: for each 'Worth a look' card, mark ✓ Looks right or use 'Needs adjusting' to correct it, or add a departmental-context note. (Approving is a judgment, not a click-through.)`;
+  const revisionBlocked = revisionBlocksApproval(working.revision);
+  const approveUnlocked = (dirty || allWorthLookReviewed || noteSubstantive) && allUpwardBumpsJustified && !revisionBlocked;
+  const approveLockTitle = revisionBlocked ? REVISION_BLOCKED_MESSAGE : `Before ${approveQuoted}: for each 'Worth a look' card, mark ✓ Looks right or use 'Needs adjusting' to correct it, or add a departmental-context note. (Approving is a judgment, not a click-through.)`;
 
   async function persist(status: 'confirmed' | 'edited') {
     if (validationError) {
@@ -1172,7 +1177,7 @@ export function ProfileReviewPanel({
     setSaving(true);
     setSaveError(null);
     try {
-      const toSave = { ...working, reviewer_overrides: assembleOverrides(profile.competencies, working.competencies, overrideReasons) };
+      const toSave = { ...working, reviewer_overrides: assembleOverrides(overrideReference(profile, working), working.competencies, overrideReasons) };
       await onSave(toSave, status, reviewerNote.trim() || null);
       setLastSavedStatus(status);
     } catch (e) {
@@ -1341,6 +1346,20 @@ export function ProfileReviewPanel({
           </div>
         </div>
       </div>
+
+      {/* ── REVISION CHANGES — every rating that moved against the approved
+          version (re-check / targeted revisions only). ── */}
+      {working.revision && (
+        <RevisionChanges
+          revision={working.revision}
+          onDecide={(statement, decision) => setWorking(w => applyRevisionDecision(w, statement, decision))}
+          onDecideGroup={decision => setWorking(w => (w.revision?.changes ?? [])
+            .filter(c => c.label === 'no_new_evidence')
+            .reduce((acc, c) => applyRevisionDecision(acc, c.statement, decision), w))}
+          onRestoreSection={section => setWorking(w => restoreSection(w, section))}
+          onCitationClick={handleCitationClick}
+        />
+      )}
 
       {/* ── 1. VERIFICATION SUMMARY — the orienting question, first in content ── */}
       {working.verification_summary && (
@@ -1786,7 +1805,9 @@ export function ProfileReviewPanel({
                 says exactly what is left, instead of a hover-only hint. */}
             {!approveUnlocked && (
               <span className="text-sm text-muted-foreground" title={approveLockTitle}>
-                {unjustifiedBumpCount > 0
+                {revisionBlocked
+                  ? REVISION_BLOCKED_MESSAGE
+                  : unjustifiedBumpCount > 0
                   ? `${unjustifiedBumpCount} raised score${unjustifiedBumpCount === 1 ? '' : 's'} need a reason before ${approveQuoted}.`
                   : `${unreviewedCount} card${unreviewedCount === 1 ? '' : 's'} left to review — confirm or adjust each to unlock ${approveQuoted}`}
               </span>

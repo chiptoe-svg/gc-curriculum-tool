@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { captureProfileSchema, type CaptureProfile, type CaptureCompetency, type CaptureProfileCitationType } from '@/lib/ai/capture/schema';
-import { buildRevisionChanges, applyRevisionDecision, restoreSection, normalizeStatement } from '@/lib/capture/revision-changes';
+import { buildRevisionChanges, applyRevisionDecision, restoreSection, normalizeStatement, overrideReference } from '@/lib/capture/revision-changes';
 import { validProfile } from '../../app/capture/fixtures/override-profile';
 
 const NEW_MSG = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -130,6 +130,26 @@ describe('applyRevisionDecision and restoreSection', () => {
 
   it('normalizeStatement trims, lowercases and collapses spaces', () => {
     expect(normalizeStatement('  Color   Management ')).toBe('color management');
+  });
+});
+
+describe('overrideReference', () => {
+  it('without a revision it is the loaded competencies', () => {
+    const p = profile([comp('A', 2, 2, 2)]);
+    expect(overrideReference(p, p)).toEqual(p.competencies);
+  });
+
+  it('a kept change is compared with its re-scored version, so keeping it is not a raise', () => {
+    const built = run('targeted', profile([comp('A', 2, 2, 1)]), profile([comp('A', 2, 2, 3, [newCite])]));
+    const loaded = applyRevisionDecision(built, 'A', 'undone');
+    const working = applyRevisionDecision(loaded, 'A', 'kept');
+    expect(overrideReference(loaded, working)[0]!.d_depth).toBe(3);
+  });
+
+  it('aligns by statement after a removal is undone (appended at the end)', () => {
+    const built = run('recheck', profile([comp('Keep', 2, 2, 2), comp('Gone', 1, 1, 1)]), profile([comp('Keep', 2, 2, 2)]));
+    const working = applyRevisionDecision(built, 'Gone', 'undone');
+    expect(overrideReference(built, working).map(c => c.statement)).toEqual(['Keep', 'Gone']);
   });
 });
 

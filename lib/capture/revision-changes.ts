@@ -173,3 +173,29 @@ export function restoreSection(profile: CaptureProfile, section: string): Captur
     revision: { ...revision, changed_sections: revision.changed_sections.filter(s => s !== entry) },
   } as CaptureProfile;
 }
+
+/** The profile as it may be frozen into a snapshot: no revision block. */
+export function withoutRevision(profile: CaptureProfile): CaptureProfile {
+  if (!('revision' in profile)) return profile;
+  const rest = { ...profile };
+  delete rest.revision;
+  return rest;
+}
+
+/** What each working competency is compared with to detect a faculty upward
+ *  override (upwardBumps, index-aligned with `working`). A competency with a
+ *  revision change is compared with the version its decision selects (before
+ *  when undone, otherwise after), so a Keep/Undo decision is never a raise;
+ *  hand edits on top still are. Without a revision: the loaded competencies. */
+export function overrideReference(loaded: CaptureProfile, working: CaptureProfile): CaptureCompetency[] {
+  const revision = working.revision;
+  if (!revision) return loaded.competencies;
+  const loadedByKey = new Map(loaded.competencies.map(c => [normalizeStatement(c.statement), c]));
+  const changeByKey = new Map(revision.changes.map(c => [normalizeStatement(c.statement), c]));
+  return working.competencies.map(w => {
+    const key = normalizeStatement(w.statement);
+    const change = changeByKey.get(key);
+    if (change) return (change.decision === 'undone' ? change.before : change.after) ?? w;
+    return loadedByKey.get(key) ?? w;
+  });
+}
