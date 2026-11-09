@@ -76,6 +76,20 @@ export function campusReasoningParams(model: string, level: CampusReasoning | un
  * but concurrency is shared (GLM=128, DeepSeek=48). Don't blast it with
  * parallel batch jobs without coordination.
  */
+/** A campus call hit the token cap or the time limit twice (Part 2 Task 3). */
+export class CampusRunawayError extends Error {
+  constructor(model: string, cause: string) {
+    super(`Campus model ${model} ran away twice (${cause}); not retrying`);
+    this.name = 'CampusRunawayError';
+  }
+}
+
+/** Per-request limits on campus calls (Part 2 spec): a token cap and a 90 s abort. */
+export const CAMPUS_MAX_TOKENS = 8000;
+export const CAMPUS_TIMEOUT_MS = 90_000;
+
+const isTimeout = (e: unknown) => e instanceof Error && /timeout|abort/i.test(`${e.name} ${e.message}`);
+
 export class CampusProvider implements AIProvider {
   readonly name = 'campus' as const;
   readonly model: string;
@@ -98,6 +112,36 @@ export class CampusProvider implements AIProvider {
     this.client = new OpenAI({ apiKey, baseURL });
   }
 
+  /** Reasoning fields for the runaway retry: thinking off where the family has it, else none. */
+  private offParams(): Record<string, unknown> {
+    try { return campusReasoningParams(this.model, 'off'); } catch { return {}; }
+  }
+
+  /**
+   * One non-streaming request with the runaway guard: capped at
+   * CAMPUS_MAX_TOKENS and CAMPUS_TIMEOUT_MS. A response cut at the cap
+   * (finish_reason 'length') or a timeout is retried once with thinking off;
+   * a second runaway throws CampusRunawayError. Never switches provider.
+   */
+  private async guardedCreate(body: Record<string, unknown>): Promise<OpenAI.Chat.Completions.ChatCompletion> {
+    let cause = '';
+    for (const reasoning of [this.reasoningParams, this.offParams()]) {
+      try {
+        const res = await this.client.chat.completions.create(
+          { max_tokens: CAMPUS_MAX_TOKENS, ...body, ...reasoning } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming,
+          { timeout: CAMPUS_TIMEOUT_MS, maxRetries: 0 },
+        );
+        if (res.choices[0]?.finish_reason !== 'length') return res;
+        cause = 'token cap';
+      } catch (e) {
+        if (!isTimeout(e)) throw e;
+        cause = 'time limit';
+      }
+      console.warn(`[campus] ${this.model} hit the ${cause}; retrying once with thinking off`);
+    }
+    throw new CampusRunawayError(this.model, cause);
+  }
+
   async complete<T>(args: {
     systemPrompt: string;
     userMessage: string;
@@ -112,7 +156,7 @@ export class CampusProvider implements AIProvider {
       `${args.systemPrompt}\n\nRespond with valid JSON that matches this schema:\n` +
       JSON.stringify(args.jsonSchema, null, 2);
 
-    const response = await this.client.chat.completions.create({
+    const response = await this.guardedCreate({
       model: this.model,
       messages: [
         { role: 'system', content: systemWithSchema },
@@ -120,9 +164,7 @@ export class CampusProvider implements AIProvider {
       ],
       response_format: { type: 'json_object' },
       temperature: 0.2,
-      // Cast because the SDK type doesn't include chat_template_kwargs.
-      ...this.reasoningParams,
-    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
+    });
     const durationMs = Date.now() - started;
 
     const content = response.choices[0]?.message?.content ?? '';
@@ -217,14 +259,13 @@ export class CampusProvider implements AIProvider {
     const maxSteps = (args.maxToolCalls ?? 2) + 1;
 
     for (let step = 0; step < maxSteps; step++) {
-      const response = await this.client.chat.completions.create({
+      const response = await this.guardedCreate({
         model: this.model,
         messages: [{ role: 'system', content: args.systemPrompt }, ...history],
         tools: oaiTools.length > 0 ? oaiTools : undefined,
         tool_choice: oaiTools.length > 0 ? 'auto' : undefined,
         temperature: 0.2,
-        ...this.reasoningParams,
-      } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
+      });
       totalPromptTokens += response.usage?.prompt_tokens ?? 0;
       totalCompletionTokens += response.usage?.completion_tokens ?? 0;
 
@@ -270,13 +311,12 @@ export class CampusProvider implements AIProvider {
       `${args.systemPrompt}\n\nRespond with valid JSON that matches this schema:\n` +
       JSON.stringify(args.jsonSchema, null, 2);
 
-    const finalResponse = await this.client.chat.completions.create({
+    const finalResponse = await this.guardedCreate({
       model: this.model,
       messages: [{ role: 'system', content: systemWithSchema }, ...history],
       response_format: { type: 'json_object' },
       temperature: 0.2,
-      ...this.reasoningParams,
-    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
+    });
     totalPromptTokens += finalResponse.usage?.prompt_tokens ?? 0;
     totalCompletionTokens += finalResponse.usage?.completion_tokens ?? 0;
 
