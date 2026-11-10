@@ -82,3 +82,27 @@ The campus docling (`DOCLING_URL`, Spark) now runs docling-serve 1.38.2 / doclin
 - **Measured on :5001** (scene_change, 2 cuts per minute, Qwen with a tight prompt: "state what is being done on screen: tool, panel, values; no menu bars; a person or title card in under ten words"): 16 frames, 431 words of description against 2,143 transcript words, 22 s in all. Each description names the tool and the values on screen (e.g. "Hue/Saturation… Reds channel… Hue 151"). The figures have not yet been checked against the frames; that is the blind check, still the first task.
 - `created_by` reads "not-implemented" for API-described pictures (expected, per rag-core); the reader records the model name from its own request.
 - So Task 1 uses these field names and this prompt as its starting point. It sends videos to `:5001` until the Spark has the fields, then to the Spark first.
+
+## Blind check results, 2026-11-10 (the first task)
+
+**Setup.** Six course tutorials (Photoshop color, spot-color screen-print separation, Illustrator separation, simulated-process separation, PostScript paths, sketching basics), run through `:5001` with `scene_change` at 2.0 cuts/min ("high") and 0.4 ("middle"), described by RCD qwen3.6-35b-a3b-fp8 with the tight prompt, 183 frames in all. Each video got a fresh Sonnet reviewer who opened every frame and judged it against the description and the transcript ±45 s, without knowing which sampling it came from. The whole check was run twice: once on 360p downloads and once on 1080p.
+
+| | 360p | 1080p |
+|---|---|---|
+| Wrong (main point or a value not what the frame shows) | 82 (45%) | 32 (17%) |
+| Accurate or minor error | 99 | 151 |
+| Stated values that were wrong | 40 | 8 |
+| Accurate, adds something the transcript lacks, not a repeat | 18 | 47 |
+
+**Findings.**
+1. **Resolution is decisive.** At 360p the model invents panel values it cannot read: the Camera Raw frame at 3:01 was described as "exposure +1.20", where the screen shows 0.00. At 1080p the same model read "Vibrance +33, Saturation +19" exactly. A direct call with the 360p frame invented values too, so this is the model and the frame size, not docling pairing descriptions with the wrong frames. **The reader downloads 1080p (or the best available ≤1080p), not 360p.** Task 1's "360p mp4" is superseded.
+2. **The remaining errors are mostly invented actions.** 17 of the 32 wrong are in one video (spot-color separation in Illustrator): "using the Pen Tool", "making a clipping mask", "Pathfinder merge", none of which a still frame shows. The prompt asked what "is being done", which invites a story. Next: a prompt limited to what is visible (active tool, open panel or dialog, values shown; never what the user is doing or about to do), re-checked on that video.
+3. **Middle-tier frames add as often as high-tier ones:** 12 of 43 usable (28%) against 35 of 140 (25%). The decision rule above ("if middle frames rarely add anything, drop them") does not trigger. Keep frames for middle.
+4. **Most frames don't add much.** Only 55 of 183 added something the nearby transcript lacked, because tutorial narrators usually say what they click. Descriptions stay short so they don't crowd the transcript out of search.
+5. **Videos without small text did well at either size.** The sketching talk had 1 wrong at 360p and 1 at 1080p.
+
+**Sampling by kind of video (rag-core, 2026-11-10).** Screen recordings use `video_cuts_per_minute=2.0`. Slide decks use `video_scene_change_prominence=0.005` with no cuts setting (one frame per slide on a synthetic deck; not yet tried on real lecture footage). If the kind is unknown, use fixed interval. An empty description means the vision call failed, even when the response reports success, so the reader treats it as a failure. Use the async endpoints, since sync requests return 504 after 120 s.
+
+**The Spark has the `video_*` fields since 2026-11-10 12:48Z** (rag-core, owner approved), so the reader sends videos to the Spark first, with `:5001` as the fallback.
+
+Raw data (not committed): the session scratchpad `blind/` directory (packets, verdicts, key, aggregation script).
