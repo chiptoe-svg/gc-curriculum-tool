@@ -51,3 +51,18 @@
 Why: tutorials teach on screen (menus, panels, values), and most course videos are middle. But a frame every 10 s gave 67 descriptions (~4,000 words) for 11 minutes, mostly repeats that would crowd out the spoken words in search.
 
 **New first task (before Task 1):** a free check on 5–6 course tutorials. Run both samplings, then have a blind reviewer judge each description: does it add something the transcript lacks, repeat what the transcript or an earlier frame already says, or state something not on screen? If middle-tier frames rarely add anything, drop them and describe frames for high videos only.
+
+## Folded in, 2026-11-09 (owner: "fold in 1-3")
+
+**A. Recover the "inaccessible" YouTube rows.** 16 live rows say `YouTube: <id> (inaccessible)`. Checked today with yt-dlp (metadata only): 10 are public and have captions (3–11 min), so their earlier failure was transient. 6 are private or removed and can't be recovered. The reader's backfill (Task 5) re-tries the 10 through the reader. A row that succeeds gets its title and text and goes through `tierLinkedMaterial`. The 6 stay as they are, and the materials panel says "private or removed".
+
+**B. One transcription route.** `lib/youtube/transcribe-audio.ts` runs `mlx_whisper` locally with `whisper-large-v3-turbo`, the same model OMLX serves, so moving it gains no accuracy. (A claim to the owner earlier today that it would was wrong.) What moving it does gain:
+- timestamps (today it returns plain text);
+- the 30-minute chunking for long recordings;
+- one transcription path to maintain instead of two.
+
+Once the reader works, the no-captions Whisper fallback becomes "download → :5001". Keep `mlx_whisper` as the fallback only while :5001's fork is unmerged upstream; the health check (Task 4) decides which one runs.
+
+**C. Videos the app skips.**
+- **Drive videos:** `lib/google-drive/fetch-pdf.ts` records any non-PDF Drive file as "unsupported" (1 live row today). A Drive file whose MIME type is `video/*` goes to the reader instead (download through the same public-export URL).
+- **Lecture-capture platforms (Kaltura, Panopto, Mediasite, Vimeo):** no handling exists. yt-dlp supports most of them when the video is public, but Clemson's are usually behind a login. Step 1 is detection only: find these links in course text and list them on the materials panel as "linked lecture recording, not read". Reading them waits for a supported way in (an exported file or a Canvas media API), and for the consent rule when students appear.
