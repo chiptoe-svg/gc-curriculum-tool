@@ -70,3 +70,7 @@ Once the reader works, the no-captions Whisper fallback becomes "download → :5
 ## Note, 2026-11-09 (rag-core upgraded :5001 to docling 2.149)
 
 :5001 now returns DoclingDocument 1.11.0 JSON by default; image data is left out unless `image_export_mode=embedded`. The reader (Task 1) reads JSON for the timed items, so it sends `Accept-Docling-Document-Version: 1.10.0`, or its parser and fixture target 1.11 explicitly. It needs no images. The app's existing docling calls are Markdown only and are unaffected.
+
+## Note, 2026-11-10 (the campus Spark docling now reads video)
+
+The campus docling (`DOCLING_URL`, Spark) now runs docling-serve 1.38.2 / docling 2.149.0 and accepts `.mp4` on `/v1/convert/file/async`. On the same 22 MB Photoshop tutorial it returned 2,315 words in 13 s, with 129 timed items (`source[{kind:"track",start_time,end_time}]`) and 67 sampled frames, in DoclingDocument 1.11.0. The Mac's :5001 gave 2,288 words. This replaces "The campus docling cannot do this" above: the reader can send videos to the Spark first and use `:5001` as the fallback, which takes video load off the shared OMLX. Still untested on the Spark: frame descriptions (`do_picture_description` with `picture_description_api`), recordings longer than 30 minutes, and which speech model it runs. Markdown output carries one `<!-- image -->` line per sampled frame, so the reader parses JSON rather than Markdown.
