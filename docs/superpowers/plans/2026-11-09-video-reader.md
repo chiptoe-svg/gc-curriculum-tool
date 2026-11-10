@@ -36,3 +36,18 @@
 **Open for the owner:**
 - Whether a video's transcript should be quotable as exact words. Whisper and auto-captions are machine transcriptions, and rag-core labels them "not verbatim". The interview could attribute ("the video explains…") rather than quote.
 - Frame descriptions cost about 3× the time. High-tier videos only, as decided, or also middle videos with few chapters?
+
+---
+
+## Owner decisions, 2026-11-09 (answers the two open questions above)
+
+**Quoting video transcripts:** quotes are allowed, always with the timestamp and a "(transcribed)" marker, e.g. *the video, at 5:53 (transcribed): "set the underbase to 80 percent"*. The existing citation check still requires the quote to match the stored transcript. Text from frame descriptions is never put in quotation marks; it is paraphrased as what the video shows ("at 6:10 the video shows the Separations panel with…"). Why: a quote is checkable and the timestamp lets anyone hear it in seconds; an attribution-only rule can't be checked, so the model could misstate a video with nothing to catch it.
+
+**Frame descriptions:** all three tiers sample by scene change, never at the 10-second default.
+- **high:** about 2 frames per minute (`frame_sampling_mode=scene_change`, `cuts_per_minute=2.0`).
+- **middle:** one frame at each chapter start plus large scene changes, at most about one per 2–3 minutes.
+- **background:** none.
+
+Why: tutorials teach on screen (menus, panels, values), and most course videos are middle. But a frame every 10 s gave 67 descriptions (~4,000 words) for 11 minutes, mostly repeats that would crowd out the spoken words in search.
+
+**New first task (before Task 1):** a free check on 5–6 course tutorials. Run both samplings, then have a blind reviewer judge each description: does it add something the transcript lacks, repeat what the transcript or an earlier frame already says, or state something not on screen? If middle-tier frames rarely add anything, drop them and describe frames for high videos only.
