@@ -66,3 +66,7 @@ Once the reader works, the no-captions Whisper fallback becomes "download → :5
 **C. Videos the app skips.**
 - **Drive videos:** `lib/google-drive/fetch-pdf.ts` records any non-PDF Drive file as "unsupported" (1 live row today). A Drive file whose MIME type is `video/*` goes to the reader instead (download through the same public-export URL).
 - **Lecture-capture platforms (Kaltura, Panopto, Mediasite, Vimeo):** no handling exists. yt-dlp supports most of them when the video is public, but Clemson's are usually behind a login. Step 1 is detection only: find these links in course text and list them on the materials panel as "linked lecture recording, not read". Reading them waits for a supported way in (an exported file or a Canvas media API), and for the consent rule when students appear.
+
+## Note, 2026-11-09 (rag-core upgraded :5001 to docling 2.149)
+
+:5001 now returns DoclingDocument 1.11.0 JSON by default; image data is left out unless `image_export_mode=embedded`. The reader (Task 1) reads JSON for the timed items, so it sends `Accept-Docling-Document-Version: 1.10.0`, or its parser and fixture target 1.11 explicitly. It needs no images. The app's existing docling calls are Markdown only and are unaffected.
