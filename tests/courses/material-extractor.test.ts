@@ -221,6 +221,63 @@ describe('DoclingExtractor', () => {
       delete process.env.DOCLING_FALLBACK_URL;
     }
   });
+  describe('picture descriptions on the Spark (2026-11-10: localhost:3000 is unreachable from the Spark container)', () => {
+    const PRIMARY = 'http://130.127.162.68:5001';
+    const LOCAL = 'http://127.0.0.1:5001';
+    const ok = (pictures: Array<{ meta?: { description?: { text: string } } }>) => ({
+      ok: true,
+      json: async () => ({ status: 'success', document: { md_content: '## ok', json_content: { pictures } } }),
+    });
+    const vlmOf = (init: unknown) =>
+      JSON.parse(String((init as { body: FormData }).body.get('picture_description_custom_config')));
+    beforeEach(() => {
+      process.env.DOCLING_VLM_ENABLED = 'true';
+      process.env.DOCLING_VLM_URL = 'http://localhost:3000/api/vision-proxy';
+      process.env.DOCLING_VLM_API_KEY = 'proxy-secret';
+      process.env.DOCLING_PRIMARY_VLM_URL = 'http://host.docker.internal:5020/v1/chat/completions';
+      process.env.DOCLING_FALLBACK_URL = LOCAL;
+    });
+    afterEach(() => {
+      for (const k of ['DOCLING_VLM_ENABLED', 'DOCLING_VLM_URL', 'DOCLING_VLM_API_KEY', 'DOCLING_PRIMARY_VLM_URL', 'DOCLING_FALLBACK_URL']) delete process.env[k];
+    });
+
+    it('sends the primary its own description URL with no Authorization, and asks for json to count pictures', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(ok([{ meta: { description: { text: 'a box net' } } }]));
+      await new DoclingExtractor(PRIMARY).extract({ fileBytes: Buffer.from('x'), mimeType: PPTX, fileName: 'a.pptx' });
+      const [url, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
+      expect(String(url)).toContain('130.127.162.68');
+      const cfg = vlmOf(init);
+      expect(cfg.engine_options.url).toBe('http://host.docker.internal:5020/v1/chat/completions');
+      expect(cfg.engine_options.headers).toEqual({ 'X-Client': 'curriculum-vision' });
+      expect((init as { body: FormData }).body.getAll('to_formats')).toEqual(['md', 'json']);
+    });
+
+    it('retries on the local docling when the primary returns a picture with a blank description', async () => {
+      let call = 0;
+      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async () => {
+        call += 1;
+        return call === 1 ? ok([{ meta: { description: { text: 'fine' } } }, { meta: { description: { text: '' } } }]) : ok([{ meta: { description: { text: 'fine' } } }]);
+      });
+      const r = await new DoclingExtractor(PRIMARY).extract({ fileBytes: Buffer.from('x'), mimeType: PPTX, fileName: 'a.pptx' });
+      expect(r.text).toContain('## ok');
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls).toHaveLength(2);
+      expect(String(calls[1]![0])).toContain('127.0.0.1');
+      // the local docling keeps the in-app proxy (reachable from the Mac) with its bearer
+      const cfg = vlmOf(calls[1]![1]);
+      expect(cfg.engine_options.url).toBe('http://localhost:3000/api/vision-proxy');
+      expect(cfg.engine_options.headers).toEqual({ Authorization: 'Bearer proxy-secret' });
+    });
+
+    it('keeps the text and warns when the last docling also leaves a description blank', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(ok([{ meta: { description: { text: '' } } }]));
+      const r = await new DoclingExtractor(LOCAL).extract({ fileBytes: Buffer.from('x'), mimeType: PPTX, fileName: 'a.pptx' });
+      expect(r.text).toContain('## ok');
+      expect(warn.mock.calls.some(c => String(c[0]).includes('1 of 1 picture description(s) blank'))).toBe(true);
+      warn.mockRestore();
+    });
+  });
   it('throws when docling returns status=failure inside a 200 envelope', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,

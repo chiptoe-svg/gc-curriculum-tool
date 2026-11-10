@@ -168,11 +168,15 @@ class DoclingExtractor implements MaterialExtractor {
     // audit-relevant — the agent cares about cell content, not the graphics.
     const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     // Built fresh per attempt so the primary→fallback retry below has an unconsumed body.
-    const buildForm = (): FormData => {
+    const describePictures = !skipPictureDescription && !!process.env.DOCLING_VLM_ENABLED && process.env.DOCLING_VLM_ENABLED !== 'false';
+    const buildForm = (base: string): FormData => {
       const form = new FormData();
       const blob = new Blob([new Uint8Array(fileBytes)], { type: mimeType });
       form.append('files', blob, fileName);
       form.append('to_formats', 'md');
+      // json only to count blank picture descriptions (countBlankDescriptions);
+      // its images are placeholders too, so it adds text, not base64.
+      if (describePictures) form.append('to_formats', 'json');
       // OCR is kept ON (Docling default): it extracts real content from chart/table/
       // diagram IMAGES — axis values, labels, numbers — that the text layer lacks and
       // describeSlides summarizes but doesn't transcribe (do_ocr=false dropped
@@ -187,8 +191,14 @@ class DoclingExtractor implements MaterialExtractor {
       // remote-services/custom-picture-config flags). Skipped for middle-tier slide
       // decks (skipPictureDescription) — describeSlides already runs vision per slide,
       // so captioning every embedded image is a redundant ~5-7s/page second pass.
-      if (!skipPictureDescription && process.env.DOCLING_VLM_ENABLED && process.env.DOCLING_VLM_ENABLED !== 'false') {
+      if (describePictures) {
         form.append('do_picture_description', 'true');
+        // The docling-serve container calls this URL itself, so it must be reachable
+        // from wherever that docling runs. The primary (Spark) gets
+        // DOCLING_PRIMARY_VLM_URL: the Spark's own description service (RCD qwen,
+        // then the Spark's qwen), which holds its key, so no Authorization is sent.
+        // The local docling keeps DOCLING_VLM_URL (the in-app vision proxy).
+        const sparkVlmUrl = base === this.baseUrl ? process.env.DOCLING_PRIMARY_VLM_URL?.trim() : undefined;
         const vlmConfig = {
           model_spec: {
             name: visionModel('docPicture').model,
@@ -200,10 +210,12 @@ class DoclingExtractor implements MaterialExtractor {
           },
           engine_options: {
             engine_type: 'api',
-            url: process.env.DOCLING_VLM_URL ?? 'http://localhost:8000/v1/chat/completions',
-            headers: process.env.DOCLING_VLM_API_KEY
-              ? { Authorization: `Bearer ${process.env.DOCLING_VLM_API_KEY}` }
-              : {},
+            url: sparkVlmUrl || (process.env.DOCLING_VLM_URL ?? 'http://localhost:8000/v1/chat/completions'),
+            headers: sparkVlmUrl
+              ? { 'X-Client': 'curriculum-vision' }
+              : process.env.DOCLING_VLM_API_KEY
+                ? { Authorization: `Bearer ${process.env.DOCLING_VLM_API_KEY}` }
+                : {},
             params: { model: visionModel('docPicture').model },
             timeout: 120,
           },
@@ -223,9 +235,9 @@ class DoclingExtractor implements MaterialExtractor {
       // endpoint's DOCLING_SERVE_MAX_SYNC_WAIT (120s, which 504s). Route those
       // through the async submit/poll/result API instead; born-digital PDFs (the
       // overwhelming majority) stay on the fast sync path, unchanged.
-      if (forceOcr) return convertAsync(url, buildForm());
+      if (forceOcr) return convertAsync(url, buildForm(base));
       const res = await withDoclingSlot(() =>
-        fetch(`${url}/v1/convert/file`, { method: 'POST', body: buildForm() }),
+        fetch(`${url}/v1/convert/file`, { method: 'POST', body: buildForm(base) }),
       );
       if (!res.ok) {
         const body = await res.text().catch(() => '');
@@ -233,13 +245,25 @@ class DoclingExtractor implements MaterialExtractor {
       }
       return (await res.json()) as DoclingResponse;
     };
+    const hasFallback = !!fallbackUrl && fallbackUrl !== this.baseUrl;
+    // A blank picture description is a failure: retry on the fallback when there is
+    // one; on the last docling keep the text (descriptions are extra) and warn.
+    const checkDescriptions = (data: DoclingResponse, base: string, last: boolean): DoclingResponse => {
+      if (!describePictures) return data;
+      const { blank, total } = countBlankDescriptions(data);
+      if (blank === 0) return data;
+      const msg = `${blank} of ${total} picture description(s) blank from ${base} for ${fileName}`;
+      if (!last) throw new Error(msg);
+      console.warn(`[docling] ${msg}; keeping the text without them`);
+      return data;
+    };
     let data: DoclingResponse;
     try {
-      data = await post(this.baseUrl);
+      data = checkDescriptions(await post(this.baseUrl), this.baseUrl, !hasFallback);
     } catch (err) {
-      if (!fallbackUrl || fallbackUrl === this.baseUrl) throw err;
+      if (!hasFallback) throw err;
       console.warn(`[docling] primary ${this.baseUrl} failed (${err instanceof Error ? err.message : err}); falling back to ${fallbackUrl}`);
-      data = await post(fallbackUrl);
+      data = checkDescriptions(await post(fallbackUrl!), fallbackUrl!, true);
     }
     // 'partial_success' (the async path's ConversionStatus can return it — e.g. a
     // forced-OCR job that completed with some pages degraded) is accepted here too:
@@ -360,7 +384,19 @@ interface DoclingResponse {
   document?: {
     md_content?: string | null;
     text_content?: string | null;
+    /** Requested only when describing pictures, to count blank descriptions. */
+    json_content?: { pictures?: Array<{ meta?: { description?: { text?: string | null } | null } | null }> } | null;
   };
+}
+
+/**
+ * Pictures docling left without a description. docling-serve reports a failed
+ * description call as text "" while the conversion still says success with no
+ * errors (seen 2026-10-28: the Spark's docling could not reach localhost:3000).
+ */
+function countBlankDescriptions(data: DoclingResponse): { blank: number; total: number } {
+  const pictures = data.document?.json_content?.pictures ?? [];
+  return { blank: pictures.filter(p => !p.meta?.description?.text?.trim()).length, total: pictures.length };
 }
 
 interface TaskStatusResponse {
