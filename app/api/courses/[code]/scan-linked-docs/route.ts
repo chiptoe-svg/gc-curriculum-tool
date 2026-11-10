@@ -8,6 +8,7 @@ import {
   updateIndexingStatus,
 } from '@/lib/db/course-materials-queries';
 import { enqueue } from '@/lib/capture/ingest-queue';
+import { tierLinkedMaterial } from '@/lib/capture/material-tier';
 import {
   extractGoogleWorkspaceReferences,
   type GoogleWorkspaceKind,
@@ -110,6 +111,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractionMethod: 'text',
         extractedText: fetched.text,
       });
+      await tierLinkedMaterial(row.id, { fileName, mimeType: 'text/plain', sizeBytes: Buffer.byteLength(fetched.text, 'utf8'), text: fetched.text }, courseCode);
       await enqueue(row.id);
       results.push({ kind: ref.kind, fileId: ref.fileId, status: 'ok', fileName });
     } else {
@@ -211,6 +213,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractionMethod: 'text',
         extractedText: text,
       });
+      await tierLinkedMaterial(row.id, { fileName, mimeType: 'text/plain', sizeBytes: Buffer.byteLength(text, 'utf8'), text }, courseCode);
       await enqueue(row.id);
       youtubeResults.push({ videoId, status: 'ok', source, fileName });
     } else {
@@ -279,6 +282,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractionMethod: 'text',
         extractedText: fetched.text,
       });
+      await tierLinkedMaterial(row.id, { fileName, mimeType: 'application/pdf', sizeBytes: Buffer.byteLength(fetched.text, 'utf8'), text: fetched.text }, courseCode);
       await enqueue(row.id);
       driveResults.push({ fileId, status: 'ok', fileName });
     } else {

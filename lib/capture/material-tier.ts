@@ -14,6 +14,7 @@
 
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction } from '@/lib/ai/provider';
+import { updateMaterialTier } from '@/lib/db/course-materials-queries';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -110,35 +111,60 @@ function validateClassifyResult(raw: unknown): { tier: Tier } {
 export async function classifyFile(sig: FileSignals, courseCode: string): Promise<Tier> {
   // Deterministic path: slide files
   if (isSlideFile(sig)) return 'middle';
-
-  // LLM path for everything else
   try {
-    const systemPrompt = await loadPrompt('material-classify');
-
-    const userLines: string[] = [
-      `filename: ${sig.fileName}`,
-      `mime_type: ${sig.mimeType}`,
-      `size_bytes: ${sig.sizeBytes}`,
-    ];
-    if (sig.pageCount !== undefined) userLines.push(`page_count: ${sig.pageCount}`);
-    if (sig.slideCount !== undefined) userLines.push(`slide_count: ${sig.slideCount}`);
-    if (sig.peekText) {
-      userLines.push('', 'peek_text (first ~500 chars):', sig.peekText.slice(0, 500));
-    }
-    userLines.push('', 'Return JSON: {"tier":"high"|"middle"|"background"}');
-
-    const provider = await getProviderForFunction('material-classify', { courseCode });
-    const { data } = await provider.complete<{ tier: Tier }>({
-      systemPrompt,
-      userMessage: userLines.join('\n'),
-      schemaName: 'material_classify',
-      jsonSchema: CLASSIFY_JSON_SCHEMA,
-      validate: validateClassifyResult,
-    });
-
-    return data.tier;
+    return await classifyWithModel(sig, courseCode);
   } catch {
     return 'background';
+  }
+}
+
+/** The 'material-classify' LLM call; throws on any failure. */
+async function classifyWithModel(sig: FileSignals, courseCode: string): Promise<Tier> {
+  const systemPrompt = await loadPrompt('material-classify');
+
+  const userLines: string[] = [
+    `filename: ${sig.fileName}`,
+    `mime_type: ${sig.mimeType}`,
+    `size_bytes: ${sig.sizeBytes}`,
+  ];
+  if (sig.pageCount !== undefined) userLines.push(`page_count: ${sig.pageCount}`);
+  if (sig.slideCount !== undefined) userLines.push(`slide_count: ${sig.slideCount}`);
+  if (sig.peekText) {
+    userLines.push('', 'peek_text (first ~500 chars):', sig.peekText.slice(0, 500));
+  }
+  userLines.push('', 'Return JSON: {"tier":"high"|"middle"|"background"}');
+
+  const provider = await getProviderForFunction('material-classify', { courseCode });
+  const { data } = await provider.complete<{ tier: Tier }>({
+    systemPrompt,
+    userMessage: userLines.join('\n'),
+    schemaName: 'material_classify',
+    jsonSchema: CLASSIFY_JSON_SCHEMA,
+    validate: validateClassifyResult,
+  });
+
+  return data.tier;
+}
+
+/**
+ * Tiers a linked video or document (YouTube transcript, Google Doc/Sheet/Slides,
+ * Drive PDF) found by the linked-doc scan, using its opening text. Call before
+ * the row is queued. Owner, 2026-11-09: these were saved with no tier and so
+ * were all read in full. On a classifier failure the tier stays unset, which
+ * still reads the material in full, rather than dropping it to background.
+ */
+export async function tierLinkedMaterial(
+  id: string,
+  m: { fileName: string; mimeType: string; sizeBytes: number; text: string },
+  courseCode: string,
+): Promise<Tier | null> {
+  try {
+    const tier = await classifyWithModel({ fileName: m.fileName, mimeType: m.mimeType, sizeBytes: m.sizeBytes, peekText: m.text }, courseCode);
+    await updateMaterialTier(id, tier);
+    return tier;
+  } catch (err) {
+    console.error(`[linked tier] ${courseCode} "${m.fileName}": classification failed, left unset (read in full)`, err);
+    return null;
   }
 }
 

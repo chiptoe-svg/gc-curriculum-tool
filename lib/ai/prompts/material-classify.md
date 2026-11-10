@@ -23,6 +23,10 @@ These files are the evidence of what students actually do, so they must be read 
 - The peek text shows flowing prose with full sentences and paragraphs.
 - You cannot determine the nature of the file from the signals provided.
 
+**Linked materials.** A filename starting `YouTube:` is a video transcript; `Google Doc:`, `Google Sheet:`, `Google Slides:` and `Drive PDF:` are documents the instructor linked, and you will see their opening text. Judge them by what they are:
+- A video is `high` when it walks students through a specific assignment, shows student work, or demonstrates exactly what students must produce. A substantive teaching video (a tutorial, a demonstration of a technique the course teaches, a lecture recording) is `middle`. A passing reference, news clip, promotional or entertainment video is `background`.
+- A linked document follows the file rules above: graded material is `high`, slides or a lecture deck are `middle`, and readings, references, rosters, team lists and schedules are `background`.
+
 **When unsure between `middle` and `background`, choose `background`.** The cost of under-investing in a reading is much lower than over-investing in one. But when a file looks like graded or assessed material, choose `high`: missing it costs the profile its evidence.
 
 Output strict JSON with a single key:

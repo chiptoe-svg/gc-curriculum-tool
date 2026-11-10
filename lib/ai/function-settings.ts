@@ -113,13 +113,17 @@ export interface ResolvedSetting {
 /**
  * Code-default routes off a function's role (Part 2 Task 2, owner decision
  * 2026-11-01): the Extract functions the benchmark cleared run on campus
- * Qwen3.8 with thinking off. A settings row still wins. A campus failure falls
+ * Qwen3.8 with thinking off (material-classify: DeepSeek Flash, 2026-11-09). A settings row still wins. A campus failure falls
  * back to the role's OpenAI model (no course switch yet; Part 2b).
  */
 export const FUNCTION_PROVIDER_DEFAULTS: Partial<Record<AIFunctionId, { provider: 'campus'; model: string; reasoning: string }>> = {
   'parse-profile-fields': { provider: 'campus', model: 'qwen3.8-27b-fp8', reasoning: 'off' },
   'materials-analysis': { provider: 'campus', model: 'qwen3.8-27b-fp8', reasoning: 'off' },
   'decompose-prereq-gap': { provider: 'campus', model: 'qwen3.8-27b-fp8', reasoning: 'off' },
+  // 2026-11-09 (owner): on what the live app sends (names only), DeepSeek Flash
+  // off matched or beat gpt-5.4-mini; on linked videos and documents with their
+  // opening text it beat Qwen3.8 (137 vs 110 of 155). scripts/bench/classify-holdout.ts.
+  'material-classify': { provider: 'campus', model: 'deepseek-v4.1-flash-1017', reasoning: 'off' },
 };
 
 const fromModel = (model: string): ResolvedSetting => ({ role: 'custom', model, effort: DEFAULT_REASONING_EFFORT[model], provider: isCampusModel(model) ? 'campus' : 'openai' });

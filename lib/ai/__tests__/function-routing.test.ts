@@ -23,8 +23,17 @@ describe('per-function routing', () => {
     }
   });
 
-  it('material-classify, ingestion-checkin and jd-extract stay on OpenAI', () => {
-    for (const id of ['material-classify', 'ingestion-checkin', 'jd-extract'] as const) {
+  // 2026-11-09: on what the live app sends (names only, 135 files, blind labels)
+  // DeepSeek Flash off agreed 116/124 vs gpt-5.4-mini 114 and filed 2 graded
+  // files as background vs 4 (scripts/bench/classify-holdout.ts).
+  it('material-classify resolves to campus DeepSeek Flash off with the OpenAI fallback', () => {
+    const r = resolveSetting('material-classify', null, null);
+    expect({ provider: r.provider, model: r.model, effort: r.effort }).toEqual({ provider: 'campus', model: 'deepseek-v4.1-flash-1017', effort: 'off' });
+    expect(r.fallback?.model).toBe('gpt-5.4-mini');
+  });
+
+  it('ingestion-checkin and jd-extract stay on OpenAI', () => {
+    for (const id of ['ingestion-checkin', 'jd-extract'] as const) {
       expect(resolveSetting(id, null, null).provider).toBe('openai');
     }
   });
