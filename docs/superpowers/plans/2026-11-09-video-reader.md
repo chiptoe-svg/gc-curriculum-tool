@@ -106,3 +106,22 @@ The campus docling (`DOCLING_URL`, Spark) now runs docling-serve 1.38.2 / doclin
 **The Spark has the `video_*` fields since 2026-11-10 12:48Z** (rag-core, owner approved), so the reader sends videos to the Spark first, with `:5001` as the fallback.
 
 Raw data (not committed): the session scratchpad `blind/` directory (packets, verdicts, key, aggregation script).
+
+## Note (2026-11-10): the "only what's visible" prompt
+
+Re-ran the Illustrator video (9z7hEv7arP8, the worst in the blind check) at 1080p with a new prompt, same path (Mac docling, RCD qwen3.6-35b-a3b-fp8), same 42 frames (scene-change times identical), same blind Sonnet reviewer brief.
+
+| | Old prompt ("what is being done") | New prompt ("only what's visible") |
+|---|---|---|
+| Wrong | 17 | 3 |
+| Minor error | 8 | 14 |
+| Accurate | 17 | 25 |
+| Adds something the transcript doesn't | 6 | 17 |
+| Usable (accurate or minor, adds, not a repeat) | 6 | 15 |
+| Average words per frame | 25 | 48 |
+
+The invented actions are gone. What's left: misread on-screen text (the school name read as Escondido, Corredo, Escabeido), panels misnamed (Layers when Libraries is active, Swatches for Separations Preview), and one frame called InDesign. The reader uses this prompt:
+
+> This is a frame from a software tutorial video. In one or two sentences, describe only what is visible in this frame. Name the application only if its name or logo is visible. Name the panel, dialog or menu that is open, and the tool only if it is visibly highlighted. Copy numbers, settings and on-screen text exactly as shown, and leave out any you cannot read clearly. Do not say what is being done, intended or about to happen, and do not guess. Skip menu bars, toolbars and generic interface elements unless a menu is open. If the frame shows only a person or a title card, say so in under ten words.
+
+One video only; the other five were not re-run. Descriptions are about twice as long, so `max_tokens` 200 stays sufficient but the per-video text grows.
