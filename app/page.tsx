@@ -72,6 +72,11 @@ export default async function HomePage() {
   const askHref = slug
     ? `/ask?slug=${encodeURIComponent(slug)}`
     : null;
+  // Program coverage map (faculty surface, same gate as /ask). Kept subtle: the
+  // page title itself links there rather than adding another button.
+  const programHref = slug
+    ? `/program?slug=${encodeURIComponent(slug)}`
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,7 +87,15 @@ export default async function HomePage() {
               Clemson · Graphic Communications
             </p>
             <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">
-              Curriculum
+              {programHref ? (
+                <a
+                  href={programHref}
+                  className="hover:underline"
+                  title="Program coverage map: every course against the career targets (requires login)"
+                >
+                  Curriculum
+                </a>
+              ) : 'Curriculum'}
             </h1>
           </div>
           <div className="flex shrink-0 items-center gap-2">
