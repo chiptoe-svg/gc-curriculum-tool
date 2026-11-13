@@ -125,3 +125,19 @@ The invented actions are gone. What's left: misread on-screen text (the school n
 > This is a frame from a software tutorial video. In one or two sentences, describe only what is visible in this frame. Name the application only if its name or logo is visible. Name the panel, dialog or menu that is open, and the tool only if it is visibly highlighted. Copy numbers, settings and on-screen text exactly as shown, and leave out any you cannot read clearly. Do not say what is being done, intended or about to happen, and do not guess. Skip menu bars, toolbars and generic interface elements unless a menu is open. If the frame shows only a person or a title card, say so in under ten words.
 
 One video only; the other five were not re-run. Descriptions are about twice as long, so `max_tokens` 200 stays sufficient but the per-video text grows.
+
+## Note (2026-11-12): DeepSeek Flash instead of Qwen for frame descriptions
+
+Same video (9z7hEv7arP8), same 42 frames (scene-change times identical), same "only what's visible" prompt and `enable_thinking: false`, same blind Sonnet reviewer brief; only the model changed, to RCD `deepseek-v4.1-flash-1017` (it accepts images and honors the same no-thinking switch).
+
+| | Qwen3.6-35B-A3B | DeepSeek V4.1 Flash |
+|---|---|---|
+| Wrong | 3 | 4 |
+| Minor error | 14 | 22 |
+| Accurate | 25 | 16 |
+| Stated values wrong | 2 | 5 |
+| Adds something the transcript doesn't | 17 | 4 |
+| Usable (accurate or minor, adds, not a repeat) | 15 | 3 |
+| Average words per frame | 48 | 40 |
+
+DeepSeek misreads on-screen text more often (the school name ESCOBEDO read as Escondido, Isobelo, Escaped, Screwed, Doge Chow; "3 Layers" for 7; 66% zoom for 100%; Photoshop for Illustrator once). Its descriptions are more generic, which is why so few add anything. The "adds" gap (17 vs 4) comes from two separate reviewer runs and may be partly reviewer strictness; the accuracy gap points the same way. **Decision: frame descriptions stay on Qwen3.6-35B-A3B.** One video only.
