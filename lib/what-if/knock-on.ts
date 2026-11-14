@@ -91,13 +91,18 @@ export async function resolveWhatIfDepths(
     }
   }
 
-  // Unchanged statements still deliver their sub-competency, at the coverage
-  // row's depth: they join the maximum of an entry that exists, but never
-  // create one of their own.
-  for (const r of profile.ratings.filter(x => x.status === 'approved')) {
-    for (const c of covByStatement.get(normalizeCompetencyKey(r.statement)) ?? []) {
-      if (bySub.has(c.id)) fold(c.id, c);
-    }
+  // Every base coverage row that does not belong to a moved statement still
+  // delivers its sub-competency, at its own depth: an unchanged statement's
+  // row, and also a row whose matched text is empty or a paraphrase that
+  // matches no statement ("before" counts all of them). Looked up by
+  // sub-competency id; such rows join the maximum of an entry that exists,
+  // but never create one of their own.
+  const movedKeys = new Set(
+    profile.ratings.filter(r => r.status === 'moved').map(r => normalizeCompetencyKey(r.statement)));
+  for (const row of rows) {
+    if (!bySub.has(row.subCompetencyId)) continue;
+    if (row.matchedCompetency && movedKeys.has(normalizeCompetencyKey(row.matchedCompetency))) continue;
+    fold(row.subCompetencyId, { k: row.kDepth, u: row.uDepth, d: row.dDepth });
   }
   return { resolved: [...bySub.values()], notComputed };
 }

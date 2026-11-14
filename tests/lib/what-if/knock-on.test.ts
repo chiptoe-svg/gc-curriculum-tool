@@ -204,6 +204,26 @@ describe('resolveWhatIfDepths', () => {
     ]));
     expect(r.resolved.map(e => e.subCompetencyId)).toEqual(['color-management']);
   });
+  it('a coverage row with no matched statement still delivers its sub-competency (null match D3 + new linked D1 -> d 3)', async () => {
+    coverageRows = [{ subCompetencyId: 'color-management', matchedCompetency: null, kDepth: null, uDepth: null, dDepth: 3 }];
+    const r = await resolveWhatIfDepths('snap-1', profile([newLinked(1)]));
+    expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: null, u: null, d: 3 }]);
+  });
+  it('a paraphrased coverage row (text matching no statement) still delivers its sub-competency', async () => {
+    coverageRows = [cov('color-management', 'Applies ICC profiles to a press workflow', null, null, 3)];
+    const r = await resolveWhatIfDepths('snap-1', profile([
+      rating({ status: 'approved', statement: 'Manage color', kud: { k: null, u: null, d: 3 }, before: { k: null, u: null, d: 3 } }),
+      newLinked(1),
+    ]));
+    expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: null, u: null, d: 3 }]);
+  });
+  it('the moved statement\'s own coverage row does not join the maximum', async () => {
+    coverageRows = [cov('color-management', 'Manage color', null, null, 3)];
+    const r = await resolveWhatIfDepths('snap-1', profile([
+      rating({ kud: { k: null, u: null, d: 1 }, before: { k: null, u: null, d: 3 } }),
+    ]));
+    expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: null, u: null, d: 1 }]);
+  });
   it('does not resolve approved ratings', async () => {
     coverageRows = [cov('color-management', 'Manage color', 2, 2, 3)];
     const r = await resolveWhatIfDepths('snap-1', profile([rating({ status: 'approved' })]));
