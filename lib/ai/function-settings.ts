@@ -45,6 +45,7 @@ export const AI_FUNCTION_IDS = [
   'bundle-card-draft',
   'bundle-map-onet',
   'kud-chat',
+  'what-if-estimate',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -67,6 +68,7 @@ export const DEFAULT_ROLES: Record<AIFunctionId, ModelRole> = {
   'program-score-coverage': 'judge',
   'capture-scores': 'judge',
   'capture-stress-test': 'judge',
+  'what-if-estimate': 'judge',
   'intended-skills-extract': 'judge',
   'prereq-edge-seed': 'judge',
   'bundle-map-onet': 'judge',
@@ -154,6 +156,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'capture-scores': 'Capture scoring (Generate Profile)',
   'materials-analysis': 'Materials AI analysis (per-file)',
   'explore-local-delta': 'Explore — local delta (change object + predicted KUD deltas)',
+  'what-if-estimate': 'What-if estimate (predicted rating moves for a proposed course change)',
   'program-score-coverage': 'Program coverage scoring',
   'decompose-prereq-gap': 'Decompose prereq gap into competencies (copy-as-KUD)',
   'material-digest': 'Material digest (every material, audit at-rest context)',
@@ -185,6 +188,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'capture-chat': "The auditor's per-turn replies during a capture conversation.",
   'capture-scores': 'Producing the structured Course Outcome Profile from the audit transcript.',
   'materials-analysis': 'AI analysis of an uploaded PDF / DOCX during the materials phase.',
+  'what-if-estimate': 'Predicting how a proposed course change would move the course K/U/D ratings, add new competencies and change incoming expectations. Code, not the model, supplies the approved before values.',
   'explore-local-delta': 'Translating a proposed course change into a structured ChangeObject (activity, artifact, touched competencies, rubric criteria, new incoming demands) + PredictedDelta[] (before→after KUD shift per competency, with confidence and rationale).',
   'program-score-coverage': 'Scoring each captured snapshot against each career target\'s sub-competencies for the program coverage matrix.',
   'decompose-prereq-gap': 'Decomposing one free-form prereq-gap finding into a structured list of competencies with K/U/D depths, for the copy-as-KUD button in the review panel.',

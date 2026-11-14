@@ -45,7 +45,8 @@ type PromptName =
   | 'explore-agent'
   | 'objective-evidence-guide'
   | 'bundle-card-draft'
-  | 'bundle-map-onet';
+  | 'bundle-map-onet'
+  | 'what-if-estimate';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

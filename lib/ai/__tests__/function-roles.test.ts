@@ -10,7 +10,7 @@ const MINI = { model: 'gpt-5.4-mini', effort: undefined };
 
 // Spec: docs/superpowers/specs/2026-10-27-model-roles-design.md, "Function assignments".
 const SPEC_ROLES = {
-  judge: ['program-score-coverage', 'capture-scores', 'capture-stress-test', 'intended-skills-extract', 'prereq-edge-seed', 'bundle-map-onet', 'extract-course-kud'],
+  judge: ['program-score-coverage', 'capture-scores', 'capture-stress-test', 'intended-skills-extract', 'prereq-edge-seed', 'bundle-map-onet', 'extract-course-kud', 'what-if-estimate'],
   converse: ['capture-chat-agent', 'capture-chat', 'curriculum-chat', 'explore-agent', 'position-interview-agent', 'kud-chat'],
   write: ['wiki-update', 'objective-evidence-guide', 'bundle-card-draft', 'position-synthesis', 'synthesize-target', 'reconcile-feedback', 'explore-local-delta', 'position-rated-items'],
   extract: ['material-digest', 'chunk-contextualize', 'material-classify', 'materials-analysis', 'ingestion-checkin', 'jd-extract', 'parse-profile-fields', 'decompose-prereq-gap'],
