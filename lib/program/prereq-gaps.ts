@@ -244,13 +244,10 @@ export interface PrereqGapResult {
 }
 
 /**
- * Compute prerequisite gaps for a focal course.
+ * Load the attainment each prerequisite course delivers for the given
+ * (prereqCourseCode, subCompetencyId) pairs.
  *
- * Steps:
- *  1. Fetch all confirmed edges for the focal course (direct edges only —
- *     chain traversal for program-wide diagnostics is deferred to the
- *     scaffolding-analysis increment).
- *  2. For each distinct (prereqCourseCode, subCompetencyId) pair:
+ *  1. For each distinct pair:
  *     a. Confirm the competency exists in the catalog (`sub_competencies`).
  *     b. Find the prereq course's latest non-retired `courseCaptureSnapshots`
  *        row (ordered by createdAt DESC).
@@ -259,41 +256,24 @@ export interface PrereqGapResult {
  *        not per (snapshot, target, competency).
  *     d. If found → DeliveredAttainment{ basis: 'measured', k/u/d from depths }.
  *        If not found → contributes nothing (will surface as no_data).
- *  3. INTENDED-BASIS SEAM (wired):
+ *  2. INTENDED-BASIS SEAM (wired):
  *     `course_intended_coverage` rows are batch-loaded for all distinct
  *     prereq courses and pushed as `basis:'intended'` DeliveredAttainment
  *     entries alongside any measured rows. The pure engine applies per-prereq
  *     measured-beats-intended logic; no precedence code is needed here.
- *  4. Call computeGapsFromInputs(edges, delivered) and return.
  */
-export async function computePrereqGaps(
-  focalCourseCode: string,
-): Promise<PrereqGapResult> {
-  // Step 1 — confirmed direct edges only
-  const allEdges = await listEdgesForFocal(focalCourseCode);
-  const confirmedEdges = allEdges.filter((e) => e.confirmed);
-  const relyEdges: RelyEdge[] = confirmedEdges.map((e) => ({
-    prereqCourseCode: e.prereqCourseCode,
-    subCompetencyId: e.subCompetencyId,
-    expectedK: e.expectedK,
-    expectedU: e.expectedU,
-    expectedD: e.expectedD,
-  }));
-
-  if (relyEdges.length === 0) {
-    return { focalCourseCode, gaps: [] };
-  }
-
-  // Step 2 — collect measured attainment for each distinct (prereq, subComp) pair
+export async function loadDelivered(
+  pairsIn: Array<{ prereqCourseCode: string; subCompetencyId: string }>,
+): Promise<DeliveredAttainment[]> {
   const pairs = Array.from(
     new Map(
-      relyEdges.map((e) => [`${e.prereqCourseCode}::${e.subCompetencyId}`, e]),
+      pairsIn.map((e) => [`${e.prereqCourseCode}::${e.subCompetencyId}`, e]),
     ).values(),
   );
 
   // INTENDED-BASIS SEAM — batch-load intended coverage for all distinct prereq courses
   const distinctPrereqCodes = Array.from(
-    new Set(relyEdges.map((e) => e.prereqCourseCode)),
+    new Set(pairs.map((e) => e.prereqCourseCode)),
   );
   const intendedRows = await getIntendedCoverageForCourses(distinctPrereqCodes);
   // Build lookup: `${courseCode}::${subCompetencyId}` → IntendedCoverageRow
@@ -406,9 +386,39 @@ export async function computePrereqGaps(
     }
   }
 
-  // Step 4 — delegate to pure engine
-  return {
-    focalCourseCode,
-    gaps: computeGapsFromInputs(relyEdges, deliveredAttainments),
-  };
+  return deliveredAttainments;
+}
+
+/**
+ * Load the inputs the gap engine needs for a focal course: its confirmed
+ * direct edges (chain traversal for program-wide diagnostics is deferred to
+ * the scaffolding-analysis increment) and what those prerequisites deliver.
+ */
+export async function loadPrereqGapInputs(
+  focalCourseCode: string,
+): Promise<{ edges: RelyEdge[]; delivered: DeliveredAttainment[] }> {
+  const allEdges = await listEdgesForFocal(focalCourseCode);
+  const edges: RelyEdge[] = allEdges
+    .filter((e) => e.confirmed)
+    .map((e) => ({
+      prereqCourseCode: e.prereqCourseCode,
+      subCompetencyId: e.subCompetencyId,
+      expectedK: e.expectedK,
+      expectedU: e.expectedU,
+      expectedD: e.expectedD,
+    }));
+  if (edges.length === 0) return { edges, delivered: [] };
+  return { edges, delivered: await loadDelivered(edges) };
+}
+
+/**
+ * Compute prerequisite gaps for a focal course: load the inputs, then call
+ * the pure engine.
+ */
+export async function computePrereqGaps(
+  focalCourseCode: string,
+): Promise<PrereqGapResult> {
+  const { edges, delivered } = await loadPrereqGapInputs(focalCourseCode);
+  if (edges.length === 0) return { focalCourseCode, gaps: [] };
+  return { focalCourseCode, gaps: computeGapsFromInputs(edges, delivered) };
 }

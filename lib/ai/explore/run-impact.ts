@@ -408,7 +408,7 @@ export async function runImpact(
 // Private helpers
 // ---------------------------------------------------------------------------
 
-function snapshotToNeighborProfile(courseCode: string, profile: CaptureProfile): NeighborProfile {
+export function snapshotToNeighborProfile(courseCode: string, profile: CaptureProfile): NeighborProfile {
   const competencies = (profile.competencies ?? []).map(c => ({
     statement: c.statement,
     type: c.type,
