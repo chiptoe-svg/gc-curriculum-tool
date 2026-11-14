@@ -12,6 +12,7 @@
  */
 
 import { InstructorSelect } from './InstructorSelect';
+import { StartWhatIf } from '@/app/explore/[code]/StartWhatIf';
 import { REVISION_HEADING, REVISION_MODES, REVISION_MODE_COPY, type RevisionMode } from '@/lib/capture/revision-copy';
 
 export function CaptureHero({
@@ -23,6 +24,8 @@ export function CaptureHero({
   mode,
   onModeChange,
   priorSnapshotInfo,
+  slug = '',
+  defaultName = null,
 }: {
   courseCode: string;
   courseTitle: string;
@@ -33,6 +36,10 @@ export function CaptureHero({
   mode: RevisionMode | null;
   onModeChange: (v: RevisionMode) => void;
   priorSnapshotInfo: { instructorName: string | null; createdAt: string } | null;
+  /** The faculty access slug; empty for an external tester, who gets no what-if control. */
+  slug?: string;
+  /** The name on the viewer's personal link; null under the department login. */
+  defaultName?: string | null;
 }) {
   const ready = materialsCount > 0;
   return (
@@ -111,6 +118,14 @@ export function CaptureHero({
           </fieldset>
         )}
       </div>
+
+      {/* Set apart from the three revision choices above: those answer "what has
+          changed"; a what-if is about something that has not happened. */}
+      {priorSnapshotInfo && slug !== '' && (
+        <div className="mt-5 border-t pt-4">
+          <StartWhatIf courseCode={courseCode} slug={slug} defaultName={defaultName} />
+        </div>
+      )}
 
       <p className="mt-4 text-xs text-muted-foreground">Start the interview just below ↓</p>
     </section>

@@ -15,14 +15,14 @@ const mk = (over: Record<string, unknown> = {}) => ({
 }) as never;
 
 describe('CourseRow verbs', () => {
-  it('captured course: Edit Course, View Course, Explore Changes, N versions', () => {
+  it('captured course: Edit Course, View Course, What-ifs, N versions', () => {
     render(<CourseRow row={mk({ status: 'captured' })} slug="s" index={0} pairedCodes={[]} versionCount={3} />);
     // scope to the row via a testid you add on the row wrapper: data-testid={`course-row-${row.code}`}
     const rowEl = screen.getByTestId('course-row-GC 3460');
     expect(within(rowEl).getByText(/edit course/i)).toBeInTheDocument();
     const view = within(rowEl).getByRole('link', { name: /view course/i });
     expect(view).toHaveAttribute('href', expect.stringContaining('/view/GC%203460'));
-    expect(within(rowEl).getByText(/explore changes/i)).toBeInTheDocument();
+    expect(within(rowEl).getByRole('link', { name: 'What-ifs' })).toBeInTheDocument();
     expect(within(rowEl).getByText(/3 versions/i)).toBeInTheDocument();
   });
   it('not-started course: Capture Course, no View, no versions', () => {

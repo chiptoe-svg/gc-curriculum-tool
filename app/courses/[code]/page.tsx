@@ -15,6 +15,8 @@ import { listEdgesForFocal } from '@/lib/db/prerequisite-edge-queries';
 import { listTargets } from '@/lib/db/career-targets-queries';
 import { isSubCompetencyDefinition } from '@/lib/domain/types';
 import { computePrereqGaps } from '@/lib/program/prereq-gaps';
+import { countWhatIfsByCourse } from '@/lib/db/what-if-queries';
+import { WHAT_IF_COPY } from '@/lib/what-if/copy';
 import type { SubCompetencyGap } from '@/lib/program/prereq-gaps';
 import { depthBand } from '@/lib/program/depth-band';
 import { PrereqEdgesClient } from './PrereqEdgesClient';
@@ -209,11 +211,13 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
   if (!course) notFound();
 
   // Load edges, sub-competencies, and gap result in parallel
-  const [edges, targets, gapResult] = await Promise.all([
+  const [edges, targets, gapResult, whatIfCounts] = await Promise.all([
     listEdgesForFocal(code),
     listTargets(),
     computePrereqGaps(code),
+    countWhatIfsByCourse(),
   ]);
+  const whatIfCount = whatIfCounts.get(code) ?? 0;
 
   // Inline unknown-prereq detection (mirrors GET handler logic)
   const edgeCodes = [...new Set(edges.map((e) => e.prereqCourseCode))];
@@ -262,7 +266,7 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
               href={`/explore/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
-              Explore →
+              {WHAT_IF_COPY.linkLabel(whatIfCount)} →
             </Link>
             <Link
               href={`/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}

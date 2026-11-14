@@ -1,9 +1,15 @@
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
+import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
+import { listWhatIfsForCourse } from '@/lib/db/what-if-queries';
+import { getRequestGrant, personalName } from '@/lib/auth/viewer';
+import { ownerOf } from '@/lib/what-if/ownership';
 import { AskTab } from '@/components/AskTab';
 import { FeedbackLink } from '@/app/FeedbackLink';
+import { WhatIfList } from './WhatIfList';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +36,22 @@ export default async function ExplorePage({ params, searchParams }: Props) {
 
   const course = await getCourseByCode(code);
   if (!course) notFound();
+
+  // The list shows every what-if with a page, plus the caller's own unfinished ones.
+  const grant = await getRequestGrant(await headers());
+  const me = grant ? ownerOf(grant) : null;
+  const [latestSnapshot, rows] = await Promise.all([getLatestSnapshotByCourse(code), listWhatIfsForCourse(code)]);
+  const whatIfs = rows
+    .map(w => ({
+      id: w.id,
+      title: w.title,
+      authorName: w.authorName,
+      summary: w.summary,
+      pageCreatedAt: w.pageCreatedAt ? w.pageCreatedAt.toISOString() : null,
+      createdAt: w.createdAt.toISOString(),
+      mine: me !== null && w.ownerKind === me.ownerKind && w.ownerGrantId === me.ownerGrantId,
+    }))
+    .filter(w => w.pageCreatedAt !== null || w.mine);
 
   return (
     <div className="min-h-screen bg-background">
@@ -62,7 +84,14 @@ export default async function ExplorePage({ params, searchParams }: Props) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-6">
+      <main className="mx-auto max-w-5xl space-y-10 px-6 py-6">
+        <WhatIfList
+          courseCode={course.code}
+          slug={slug}
+          whatIfs={whatIfs}
+          canStart={latestSnapshot !== null}
+          defaultName={personalName(grant)}
+        />
         <AskTab courseCode={course.code} courseTitle={course.title} slug={slug} />
       </main>
     </div>

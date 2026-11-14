@@ -10,6 +10,8 @@ import { readWikiPage } from '@/lib/wiki/git-ops';
 import { parseFrontmatter, resolveWikilinks } from '@/lib/wiki/markdown-helpers';
 import { loadWikiIndex, levelGroup, codeFromSlug, listFromFrontmatter } from '@/lib/wiki/index-data';
 import { FeedbackLink } from '@/app/FeedbackLink';
+import { countWhatIfsByCourse } from '@/lib/db/what-if-queries';
+import { WHAT_IF_COPY } from '@/lib/what-if/copy';
 import { CoursePageLayout } from '../../CoursePageLayout';
 import { captureFact, courseLevelLabel } from '@/lib/wiki/course-page';
 import { TermsHint, CAREER_TARGETS_BETA } from '../../HowToRead';
@@ -75,6 +77,11 @@ export default async function WikiPage({ params, searchParams }: Props) {
   const list = (k: string) => listFromFrontmatter(fm[k]).filter(s => titleOf.has(s));
   const fmOf = makeFmReader(); // per-request: the wiki regenerates, so never cache across requests
 
+  // Faculty view of a course page only: the what-if list link (public pages and the public copy never show it).
+  const whatIfCount = faculty && type === 'courses'
+    ? ((await countWhatIfsByCourse().catch(() => new Map<string, number>())).get(codeFromSlug(pageSlug)) ?? 0)
+    : 0;
+
   const related: RelatedGroup[] = [];
   let facts: string[] = [];
   let prerequisites: string[] = [];
@@ -132,6 +139,11 @@ export default async function WikiPage({ params, searchParams }: Props) {
           </nav>
           <nav className="wiki-index__nav">
             {faculty && <Link href={`/ask${q}`} title="Ask the curriculum chat about this">Ask</Link>}
+            {faculty && type === 'courses' && (
+              <Link href={`/explore/${encodeURIComponent(codeFromSlug(pageSlug))}${q}`} title={WHAT_IF_COPY.linkTitle}>
+                {WHAT_IF_COPY.linkLabel(whatIfCount)}
+              </Link>
+            )}
             <Link href={`/${q}`}>Hub</Link>
             {faculty && <FeedbackLink />}
           </nav>

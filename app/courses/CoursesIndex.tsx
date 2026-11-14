@@ -6,6 +6,7 @@ import type { CourseRosterRow, CourseDataState } from '@/lib/db/courses-queries'
 import { formatCourseLabel } from '@/lib/courses/parse-course-code';
 import { partitionRosterRows } from '@/lib/courses/group-by-scope-status';
 import { CourseClassControls } from './CourseClassControls';
+import { WHAT_IF_COPY } from '@/lib/what-if/copy';
 
 interface Props {
   rows: CourseStatusRow[];
@@ -13,6 +14,8 @@ interface Props {
   slug: string;
   pairedByCode: Record<string, Array<{ pairedCode: string }>>;
   snapshotCountByCode: Map<string, number>;
+  /** What-ifs with a page, per course code. */
+  whatIfCountByCode?: Map<string, number>;
 }
 
 // ─── Status pill config ────────────────────────────────────────────────────
@@ -143,6 +146,7 @@ export function CourseRow({
   dataState,
   pairedCodes,
   versionCount = 0,
+  whatIfCount = 0,
 }: {
   row: CourseStatusRow;
   slug: string;
@@ -150,9 +154,10 @@ export function CourseRow({
   dataState?: CourseDataState;
   pairedCodes: Array<{ pairedCode: string }>;
   versionCount?: number;
+  whatIfCount?: number;
 }) {
   const captureHref = `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
-  const askHref = `/explore/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}&tab=ask`;
+  const whatIfsHref = `/explore/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
   const viewHref = `/view/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
   const historyHref = `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}&panel=history`;
   // Task 8 will build the course detail page — link target is /courses/[code]
@@ -213,13 +218,13 @@ export function CourseRow({
         </Link>
       )}
 
-      {/* Explore Changes — replaces "💬 Ask", keeps askHref */}
+      {/* What-ifs: the course's list of sketched changes, with a count when there are any */}
       <Link
-        href={askHref}
+        href={whatIfsHref}
         className="shrink-0 text-xs text-muted-foreground/70 transition-colors hover:text-foreground"
-        title="Explore changes to this course with the thinking-partner (grounded here, but ranges across the whole program)"
+        title={WHAT_IF_COPY.linkTitle}
       >
-        Explore Changes
+        {WHAT_IF_COPY.linkLabel(whatIfCount)}
       </Link>
 
       {/* N versions — only when snapshots exist */}
@@ -262,6 +267,7 @@ function LevelGroup({
   dataStateByCode,
   pairedByCode,
   snapshotCountByCode,
+  whatIfCountByCode,
 }: {
   level: number | null;
   rows: CourseStatusRow[];
@@ -270,6 +276,7 @@ function LevelGroup({
   dataStateByCode: Map<string, CourseDataState>;
   pairedByCode: Record<string, Array<{ pairedCode: string }>>;
   snapshotCountByCode: Map<string, number>;
+  whatIfCountByCode?: Map<string, number>;
 }) {
   return (
     <div className="mb-6">
@@ -295,6 +302,7 @@ function LevelGroup({
             dataState={dataStateByCode.get(row.code)}
             pairedCodes={pairedByCode[row.code] ?? []}
             versionCount={snapshotCountByCode.get(row.code) ?? 0}
+            whatIfCount={whatIfCountByCode?.get(row.code) ?? 0}
           />
         ))}
       </div>
@@ -304,7 +312,7 @@ function LevelGroup({
 
 // ─── Main component ───────────────────────────────────────────────────────
 
-export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCountByCode }: Props) {
+export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCountByCode, whatIfCountByCode }: Props) {
   // Build a lookup map: code → dataState from the roster query
   const dataStateByCode = new Map<string, CourseDataState>(
     rosterRows.map((r) => [r.code, r.dataState]),
@@ -358,6 +366,7 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCou
             dataStateByCode={dataStateByCode}
             pairedByCode={pairedByCode}
             snapshotCountByCode={snapshotCountByCode}
+            whatIfCountByCode={whatIfCountByCode}
           />
         );
       })}
@@ -378,6 +387,7 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCou
               dataState={dataStateByCode.get(row.code)}
               pairedCodes={pairedByCode[row.code] ?? []}
               versionCount={snapshotCountByCode.get(row.code) ?? 0}
+            whatIfCount={whatIfCountByCode?.get(row.code) ?? 0}
             />
           ))}
         </section>
@@ -396,6 +406,7 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCou
               dataState={dataStateByCode.get(row.code)}
               pairedCodes={pairedByCode[row.code] ?? []}
               versionCount={snapshotCountByCode.get(row.code) ?? 0}
+            whatIfCount={whatIfCountByCode?.get(row.code) ?? 0}
             />
           ))}
         </section>

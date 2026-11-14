@@ -509,6 +509,8 @@ export function CaptureClient({
               mode={chooserMode}
               onModeChange={setChooserMode}
               priorSnapshotInfo={priorSnapshotInfo}
+              slug={slug}
+              defaultName={defaultInstructor?.trim() || null}
             />
           )}
           {savedConversationAt && initialMessages.length > 0 && (
