@@ -7,6 +7,7 @@ export interface Grant { id: string; label: string; scope: string[]; can: Capabi
 export type Kind =
   | { kind: 'read' }
   | { kind: 'course-write'; code: string }
+  | { kind: 'what-if-write' }
   | { kind: 'create' }
   | { kind: 'admin' };
 export type Decision =
@@ -72,6 +73,11 @@ export function isAdminSurface(path: string): boolean {
   return test(path) || test(decoded);
 }
 
+// What-if writes (POST/PATCH/DELETE under /api/explore/<code>/what-ifs…). Matched on
+// the raw path (the code segment may be percent-encoded); the segment must still be a
+// strictly-shaped course code, so a non-code segment falls through to admin as before.
+const WHAT_IF_WRITE = /^\/api\/explore\/[^/]+\/what-ifs(?:\/[^/]+(?:\/(?:chat|attachments|page))?)?$/;
+
 export function classify(method: string, pathname: string): Kind {
   const m = method.toUpperCase();
   const path = pathname.replace(/\/+$/, '') || '/';
@@ -91,6 +97,7 @@ export function classify(method: string, pathname: string): Kind {
   }
   if (CREATE_PATHS.has(path)) return { kind: 'create' };
   if (path.startsWith(ROSTER_BULK + '/')) return { kind: 'admin' };
+  if (WHAT_IF_WRITE.test(path) && courseOf(path)) return { kind: 'what-if-write' };
   const code = courseOf(path);
   if (code) return { kind: 'course-write', code };
   return { kind: 'admin' };
@@ -107,6 +114,10 @@ export function authorize(grant: Grant, method: string, pathname: string): Decis
     case 'course-write':
       if (!grant.can.includes('capture')) return { ok: false, reason: 'needs-capture', code: k.code };
       return inScope(grant, k.code) ? { ok: true } : { ok: false, reason: 'out-of-scope', code: k.code };
+    case 'what-if-write':
+      // Anyone who can capture at least one course may start a what-if on any course:
+      // a what-if never writes to the real course, so the course is not checked against scope.
+      return grant.can.includes('capture') && grant.scope.length > 0 ? { ok: true } : { ok: false, reason: 'needs-capture' };
     case 'create':
       return grant.can.includes('create') ? { ok: true } : { ok: false, reason: 'needs-create' };
     case 'admin':

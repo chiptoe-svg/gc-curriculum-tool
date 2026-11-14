@@ -146,3 +146,20 @@ describe('I3a — /ask, flags, feedback are interaction endpoints readable by an
     ['POST', '/api/flagsx'],
   ])('%s %s stays admin-kind', (m, p) => expect(classify(m, p)).toEqual({ kind: 'admin' }));
 });
+
+describe('what-if writes', () => {
+  const noCourses: Grant = { id: 'p2', label: 'x', scope: [], can: ['capture'] };
+  const W = '/api/explore/GC%203730/what-ifs';
+  const ID = `${W}/8b1f0c2e-0000-4000-8000-000000000001`;
+  it.each([['POST', W], ['PATCH', ID], ['DELETE', ID], ['POST', `${ID}/chat`], ['POST', `${ID}/attachments`], ['POST', `${ID}/page`]])(
+    '%s %s is a what-if write', (m, p) => expect(classify(m, p)).toEqual({ kind: 'what-if-write' }));
+  it.each([['GET', W], ['GET', ID], ['GET', `${ID}/messages`]])('%s %s is a read', (m, p) => expect(classify(m, p)).toEqual({ kind: 'read' }));
+  it('a login scoped to one course may start a what-if on another', () =>
+    expect(authorize(scoped, 'POST', '/api/explore/GC%204400/what-ifs')).toEqual({ ok: true }));
+  it.each([creator, noCourses])('a create-only or no-course login is refused', g =>
+    expect(authorize(g, 'POST', W)).toEqual({ ok: false, reason: 'needs-capture' }));
+  it.each([['POST', '/api/explore/GC%203730/chat'], ['POST', `${ID}/anything-else`], ['POST', `${W}x`]])(
+    '%s %s keeps the course-write rule', (m, p) => expect(classify(m, p)).toEqual({ kind: 'course-write', code: 'GC 3730' }));
+  it('a non-course segment under /api/explore/ stays admin-kind', () =>
+    expect(classify('POST', '/api/explore/intended-skills/what-ifs')).toEqual({ kind: 'admin' }));
+});
