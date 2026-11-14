@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 import type { ObjectiveGuide } from '@/lib/objective-guide/schema';
+import type { OwnerKind, WhatIfEstimate, WhatIfProfile, KnockOn, WhatIfProse, WhatIfUsage } from '@/lib/what-if/types';
 
 export const careerTargets = pgTable('career_targets', {
   id: text('id').primaryKey(),               // stable slug like 'production-operations'
@@ -1312,4 +1313,59 @@ export const courseExploreScenarios = pgTable('course_explore_scenarios', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => ({
   courseIdx: index('idx_course_explore_scenarios_course').on(t.courseCode),
+}));
+
+/**
+ * What-ifs: a faculty member's sketch of a change to a course, and the page
+ * that predicts its effects. Stored apart from the real course; never writes
+ * to snapshots, the working draft or course materials. Migration 0066.
+ */
+export const courseWhatIfs = pgTable('course_what_ifs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  baseSnapshotId: uuid('base_snapshot_id').references(() => courseCaptureSnapshots.id, { onDelete: 'set null' }),
+  ownerGrantId: text('owner_grant_id').notNull(),
+  ownerKind: text('owner_kind').$type<OwnerKind>().notNull(),
+  authorName: text('author_name').notNull(),
+  title: text('title'),
+  summary: text('summary'),
+  estimate: jsonb('estimate').$type<WhatIfEstimate>(),
+  profile: jsonb('profile').$type<WhatIfProfile>(),
+  knockOn: jsonb('knock_on').$type<KnockOn>(),
+  prose: jsonb('prose').$type<WhatIfProse>(),
+  usage: jsonb('usage').$type<WhatIfUsage>().notNull().default(sql`'{}'::jsonb`),
+  pageCreatedAt: timestamp('page_created_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  courseIdx: index('idx_course_what_ifs_course').on(t.courseCode),
+  ownerKindCheck: check('course_what_ifs_owner_kind_check', sql`${t.ownerKind} IN ('personal', 'department')`),
+}));
+
+export const courseWhatIfMessages = pgTable('course_what_if_messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  whatIfId: uuid('what_if_id').notNull().references(() => courseWhatIfs.id, { onDelete: 'cascade' }),
+  role: text('role').$type<'user' | 'assistant'>().notNull(),
+  content: text('content').notNull(),
+  meta: jsonb('meta').$type<Record<string, unknown>>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  whatIfIdx: index('idx_course_what_if_messages_what_if').on(t.whatIfId, t.createdAt),
+  roleCheck: check('course_what_if_messages_role_check', sql`${t.role} IN ('user', 'assistant')`),
+}));
+
+export const courseWhatIfAttachments = pgTable('course_what_if_attachments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  whatIfId: uuid('what_if_id').notNull().references(() => courseWhatIfs.id, { onDelete: 'cascade' }),
+  fileName: text('file_name').notNull(),
+  mimeType: text('mime_type').notNull(),
+  sizeBytes: integer('size_bytes').notNull(),
+  blobUrl: text('blob_url').notNull(),
+  status: text('status').$type<'ok' | 'failed' | 'held_back'>().notNull(),
+  heldBackReason: text('held_back_reason'),
+  ferpaRisk: text('ferpa_risk'),
+  extractedText: text('extracted_text'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  statusCheck: check('course_what_if_attachments_status_check', sql`${t.status} IN ('ok', 'failed', 'held_back')`),
 }));
