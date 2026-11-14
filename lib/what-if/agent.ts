@@ -21,6 +21,7 @@ import { AiCreditsExhaustedError } from '@/lib/ai/credit-status';
 import { readWikiPage } from '@/lib/wiki/git-ops';
 import type { WhatIfRow } from '@/lib/db/what-if-queries';
 import type { attachmentsForAi } from './attachments';
+import { CUT_LINE, estimateAttachments } from './estimate-attachments';
 import { buildWhatIfTools, type QuickEstimate } from './agent-tools';
 import {
   whatIfAgentResponseSchema,
@@ -38,7 +39,6 @@ export type WhatIfAgentStreamEvent =
 
 type AiAttachment = Awaited<ReturnType<typeof attachmentsForAi>>[number];
 
-const CUT_LINE = 'The rest of this file was cut at the 120,000-character limit.';
 const MATERIAL_TOOLS = ['list_materials', 'fetch_material_section', 'search_materials'];
 const fmt = (v: number | null) => (v === null ? '-' : String(v));
 
@@ -98,10 +98,6 @@ export async function* streamWhatIfAgent(input: {
     i === 0 ? { role: t.role, content: `${context}\n\n---\n\n${t.content}` } : t);
 
   const emitted: QuickEstimate[] = [];
-  const estimateAttachments = input.attachments.flatMap(a =>
-    a.status === 'ok' && a.text !== null
-      ? [{ fileName: a.fileName, text: a.truncated ? `${a.text}\n\n${CUT_LINE}` : a.text }]
-      : []);
 
   const tools = [
     ...buildCurriculumChatTools(),
@@ -112,7 +108,7 @@ export async function* streamWhatIfAgent(input: {
       whatIf,
       approved: input.approved,
       conversation: turns,
-      attachments: estimateAttachments,
+      attachments: estimateAttachments(input.attachments),
       onEstimate: async (q, telemetry) => {
         emitted.push(q);
         await input.onEstimate(q, telemetry);

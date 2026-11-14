@@ -47,6 +47,7 @@ export const AI_FUNCTION_IDS = [
   'kud-chat',
   'what-if-estimate',
   'what-if-agent',
+  'what-if-page',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -71,6 +72,7 @@ export const DEFAULT_ROLES: Record<AIFunctionId, ModelRole> = {
   'capture-stress-test': 'judge',
   'what-if-estimate': 'judge',
   'what-if-agent': 'converse',
+  'what-if-page': 'write',
   'intended-skills-extract': 'judge',
   'prereq-edge-seed': 'judge',
   'bundle-map-onet': 'judge',
@@ -160,6 +162,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'explore-local-delta': 'Explore — local delta (change object + predicted KUD deltas)',
   'what-if-estimate': 'What-if estimate (predicted rating moves for a proposed course change)',
   'what-if-agent': 'What-if assistant (helps a faculty member pin down a proposed course change)',
+  'what-if-page': 'What-if page text (course description, what changes, neighbors, questions for discussion)',
   'program-score-coverage': 'Program coverage scoring',
   'decompose-prereq-gap': 'Decompose prereq gap into competencies (copy-as-KUD)',
   'material-digest': 'Material digest (every material, audit at-rest context)',
@@ -192,6 +195,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'capture-scores': 'Producing the structured Course Outcome Profile from the audit transcript.',
   'materials-analysis': 'AI analysis of an uploaded PDF / DOCX during the materials phase.',
   'what-if-agent': 'Tool-using assistant for the what-if conversation about one course. Offers candidate changes, asks one question at a time until the change is pinned down, and runs a quick estimate on request. Never writes to the real course\'s conversation; numbers come only from the quick estimate.',
+  'what-if-page': 'Writing the prose of a what-if page: the rewritten course description, what changes, what it means for neighboring courses and career targets, and questions for discussion. Never states a rating; every number on the page comes from the stored record.',
   'what-if-estimate': 'Predicting how a proposed course change would move the course K/U/D ratings, add new competencies and change incoming expectations. Code, not the model, supplies the approved before values.',
   'explore-local-delta': 'Translating a proposed course change into a structured ChangeObject (activity, artifact, touched competencies, rubric criteria, new incoming demands) + PredictedDelta[] (before→after KUD shift per competency, with confidence and rationale).',
   'program-score-coverage': 'Scoring each captured snapshot against each career target\'s sub-competencies for the program coverage matrix.',
