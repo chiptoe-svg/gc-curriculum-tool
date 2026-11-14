@@ -3,7 +3,8 @@ import type { DeliveredAttainment, RelyEdge } from '@/lib/program/prereq-gaps';
 import type { MatrixData } from '@/lib/db/program-coverage-queries';
 import type { WhatIfProfile, WhatIfRating } from '@/lib/what-if/types';
 
-let coverageRows: Array<{ subCompetencyId: string; matchedCompetency: string | null }> = [];
+type CoverageRow = { subCompetencyId: string; matchedCompetency: string | null; kDepth: number | null; uDepth: number | null; dDepth: number | null };
+let coverageRows: CoverageRow[] = [];
 vi.mock('@/lib/db/client', () => ({
   db: { select: () => ({ from: () => ({ where: async () => coverageRows }) }) },
 }));
@@ -140,9 +141,13 @@ describe('resolveWhatIfDepths', () => {
   const profile = (ratings: WhatIfRating[]): WhatIfProfile => ({ ratings, incomingChanges: [] });
 
   beforeEach(() => { coverageRows = []; });
+  const cov = (subCompetencyId: string, matchedCompetency: string, kDepth: number | null, uDepth: number | null, dDepth: number | null): CoverageRow =>
+    ({ subCompetencyId, matchedCompetency, kDepth, uDepth, dDepth });
+  const newLinked = (d: number, sub = 'color-management') =>
+    rating({ status: 'new', before: null, statement: 'Brand new', kud: { k: null, u: null, d }, subCompetencyId: sub, linked: true });
 
   it('resolves a moved rating through the base snapshot coverage rows', async () => {
-    coverageRows = [{ subCompetencyId: 'color-management', matchedCompetency: '  manage   COLOR ' }];
+    coverageRows = [cov('color-management', '  manage   COLOR ', 2, 2, 3)];
     const r = await resolveWhatIfDepths('snap-1', profile([rating({})]));
     expect(r).toEqual({ resolved: [{ subCompetencyId: 'color-management', k: 2, u: 2, d: 4 }], notComputed: [] });
   });
@@ -157,49 +162,50 @@ describe('resolveWhatIfDepths', () => {
     ]));
     expect(r).toEqual({ resolved: [], notComputed: ['No coverage', 'Unlinked new'] });
   });
-  it('gives one entry with the per-dimension maximum for two statements on one sub-competency', async () => {
-    coverageRows = [
-      { subCompetencyId: 'color-management', matchedCompetency: 'Manage color' },
-      { subCompetencyId: 'color-management', matchedCompetency: 'Profile devices' },
-    ];
+  it('gives one entry with the per-dimension maximum for a moved and a new rating on one sub-competency', async () => {
+    coverageRows = [cov('color-management', 'Manage color', 1, null, 3)];
     const r = await resolveWhatIfDepths('snap-1', profile([
-      rating({ kud: { k: 1, u: null, d: 4 } }),
-      rating({ statement: 'Profile devices', kud: { k: 3, u: 2, d: 2 } }),
+      rating({ kud: { k: 1, u: null, d: 2 }, before: { k: 1, u: null, d: 3 } }),
+      rating({ status: 'new', before: null, statement: 'Brand new', kud: { k: 3, u: 2, d: 1 }, subCompetencyId: 'color-management', linked: true }),
     ]));
-    expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: 3, u: 2, d: 4 }]);
+    expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: 3, u: 2, d: 2 }]);
   });
-  it('keeps an unchanged statement on the same sub-competency in the maximum (new linked rating)', async () => {
-    coverageRows = [{ subCompetencyId: 'color-management', matchedCompetency: 'Manage color' }];
+  it('an approved statement counts at the coverage row depth, not its own (statement D2, coverage D3)', async () => {
+    coverageRows = [cov('color-management', 'Manage color', null, null, 3)];
     const r = await resolveWhatIfDepths('snap-1', profile([
-      rating({ status: 'approved', kud: { k: null, u: null, d: 3 }, before: { k: null, u: null, d: 3 } }),
-      rating({ status: 'new', before: null, statement: 'Brand new', kud: { k: null, u: null, d: 1 }, subCompetencyId: 'color-management', linked: true }),
+      rating({ status: 'approved', kud: { k: null, u: null, d: 2 }, before: { k: null, u: null, d: 2 } }),
+      newLinked(1),
     ]));
     expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: null, u: null, d: 3 }]);
   });
-  it('keeps an unchanged statement in the maximum when another statement is lowered', async () => {
-    coverageRows = [
-      { subCompetencyId: 'color-management', matchedCompetency: 'Manage color' },
-      { subCompetencyId: 'color-management', matchedCompetency: 'Profile devices' },
-    ];
+  it('an approved statement counts at the coverage row depth, not its own (statement D4, coverage D3)', async () => {
+    coverageRows = [cov('color-management', 'Manage color', null, null, 3)];
     const r = await resolveWhatIfDepths('snap-1', profile([
-      rating({ kud: { k: null, u: null, d: 1 } }),
-      rating({ status: 'approved', statement: 'Profile devices', kud: { k: null, u: null, d: 3 }, before: { k: null, u: null, d: 3 } }),
+      rating({ status: 'approved', kud: { k: null, u: null, d: 4 }, before: { k: null, u: null, d: 4 } }),
+      newLinked(1),
     ]));
     expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: null, u: null, d: 3 }]);
+  });
+  it('a moved statement keeps the coverage value on the dimensions it did not change', async () => {
+    coverageRows = [cov('color-management', 'Manage color', 2, 2, 3)];
+    const r = await resolveWhatIfDepths('snap-1', profile([
+      rating({ kud: { k: 3, u: 3, d: 1 }, before: { k: 3, u: 3, d: 3 } }),
+    ]));
+    expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: 2, u: 2, d: 1 }]);
   });
   it('gives an approved statement alone no entry of its own', async () => {
     coverageRows = [
-      { subCompetencyId: 'color-management', matchedCompetency: 'Manage color' },
-      { subCompetencyId: 'other-sub', matchedCompetency: 'Other thing' },
+      cov('color-management', 'Manage color', null, null, 3),
+      cov('other-sub', 'Other thing', null, null, 3),
     ];
     const r = await resolveWhatIfDepths('snap-1', profile([
       rating({ status: 'approved', statement: 'Other thing' }),
-      rating({ status: 'new', before: null, statement: 'Brand new', subCompetencyId: 'color-management', linked: true }),
+      newLinked(1),
     ]));
     expect(r.resolved.map(e => e.subCompetencyId)).toEqual(['color-management']);
   });
   it('does not resolve approved ratings', async () => {
-    coverageRows = [{ subCompetencyId: 'color-management', matchedCompetency: 'Manage color' }];
+    coverageRows = [cov('color-management', 'Manage color', 2, 2, 3)];
     const r = await resolveWhatIfDepths('snap-1', profile([rating({ status: 'approved' })]));
     expect(r).toEqual({ resolved: [], notComputed: [] });
   });

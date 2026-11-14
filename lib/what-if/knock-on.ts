@@ -20,7 +20,7 @@ import {
   type DeliveredAttainment, type GapStatus, type RelyEdge,
 } from '@/lib/program/prereq-gaps';
 import { buildBaselineDelivered, normalizeCompetencyKey } from '@/lib/ai/explore/run-impact';
-import type { KnockOn, PredictedSubCompDepth, WhatIfProfile } from './types';
+import type { Kud, KnockOn, PredictedSubCompDepth, WhatIfProfile } from './types';
 
 const maxN = (a: number | null, b: number | null): number | null =>
   a == null ? b : b == null ? a : Math.max(a, b);
@@ -39,54 +39,64 @@ export async function resolveWhatIfDepths(
   const changed = profile.ratings.filter(r => r.status !== 'approved');
   if (changed.length === 0) return { resolved: [], notComputed: [] };
 
-  const idsByStatement = new Map<string, Set<string>>();
-  {
-    const rows = await db
-      .select({
-        subCompetencyId: snapshotCompetencyCoverage.competencyId,
-        matchedCompetency: snapshotCompetencyCoverage.matchedCompetency,
-      })
-      .from(snapshotCompetencyCoverage)
-      .where(eq(snapshotCompetencyCoverage.snapshotId, baseSnapshotId));
-    for (const row of rows) {
-      if (!row.matchedCompetency) continue;
-      const key = normalizeCompetencyKey(row.matchedCompetency);
-      const set = idsByStatement.get(key) ?? new Set<string>();
-      set.add(row.subCompetencyId);
-      idsByStatement.set(key, set);
-    }
+  // The base snapshot's coverage rows (one per sub-competency), by statement.
+  // "Before" (buildBaselineDelivered) reads these same depths.
+  type Cov = { id: string; k: number | null; u: number | null; d: number | null };
+  const rows = await db
+    .select({
+      subCompetencyId: snapshotCompetencyCoverage.competencyId,
+      matchedCompetency: snapshotCompetencyCoverage.matchedCompetency,
+      kDepth: snapshotCompetencyCoverage.kDepth,
+      uDepth: snapshotCompetencyCoverage.uDepth,
+      dDepth: snapshotCompetencyCoverage.dDepth,
+    })
+    .from(snapshotCompetencyCoverage)
+    .where(eq(snapshotCompetencyCoverage.snapshotId, baseSnapshotId));
+  const covByStatement = new Map<string, Cov[]>();
+  for (const row of rows) {
+    if (!row.matchedCompetency) continue;
+    const key = normalizeCompetencyKey(row.matchedCompetency);
+    const list = covByStatement.get(key) ?? [];
+    list.push({ id: row.subCompetencyId, k: row.kDepth, u: row.uDepth, d: row.dDepth });
+    covByStatement.set(key, list);
   }
 
   const bySub = new Map<string, PredictedSubCompDepth>();
+  const fold = (id: string, v: Kud) => {
+    const prev = bySub.get(id);
+    bySub.set(id, {
+      subCompetencyId: id,
+      k: maxN(prev?.k ?? null, v.k),
+      u: maxN(prev?.u ?? null, v.u),
+      d: maxN(prev?.d ?? null, v.d),
+    });
+  };
+  // On a dimension the what-if did not change, the coverage row's own value
+  // stands; only a changed dimension takes the predicted value.
+  const dim = (after: number | null, before: number | null, covered: number | null) =>
+    after === before ? covered : after;
+
   const notComputed: string[] = [];
   for (const r of changed) {
-    const ids = r.status === 'new'
-      ? (r.linked && r.subCompetencyId ? [r.subCompetencyId] : [])
-      : [...(idsByStatement.get(normalizeCompetencyKey(r.statement)) ?? [])];
-    if (ids.length === 0) { notComputed.push(r.statement); continue; }
-    for (const id of ids) {
-      const prev = bySub.get(id);
-      bySub.set(id, {
-        subCompetencyId: id,
-        k: maxN(prev?.k ?? null, r.kud.k),
-        u: maxN(prev?.u ?? null, r.kud.u),
-        d: maxN(prev?.d ?? null, r.kud.d),
-      });
+    if (r.status === 'new') {
+      if (r.linked && r.subCompetencyId) fold(r.subCompetencyId, r.kud);
+      else notComputed.push(r.statement);
+      continue;
+    }
+    const covs = covByStatement.get(normalizeCompetencyKey(r.statement)) ?? [];
+    if (covs.length === 0) { notComputed.push(r.statement); continue; }
+    const before = r.before ?? { k: null, u: null, d: null };
+    for (const c of covs) {
+      fold(c.id, { k: dim(r.kud.k, before.k, c.k), u: dim(r.kud.u, before.u, c.u), d: dim(r.kud.d, before.d, c.d) });
     }
   }
 
-  // Unchanged statements still deliver their sub-competency: they join the
-  // maximum of an entry that exists, but never create one of their own.
+  // Unchanged statements still deliver their sub-competency, at the coverage
+  // row's depth: they join the maximum of an entry that exists, but never
+  // create one of their own.
   for (const r of profile.ratings.filter(x => x.status === 'approved')) {
-    for (const id of idsByStatement.get(normalizeCompetencyKey(r.statement)) ?? []) {
-      const prev = bySub.get(id);
-      if (!prev) continue;
-      bySub.set(id, {
-        subCompetencyId: id,
-        k: maxN(prev.k, r.kud.k),
-        u: maxN(prev.u, r.kud.u),
-        d: maxN(prev.d, r.kud.d),
-      });
+    for (const c of covByStatement.get(normalizeCompetencyKey(r.statement)) ?? []) {
+      if (bySub.has(c.id)) fold(c.id, c);
     }
   }
   return { resolved: [...bySub.values()], notComputed };
