@@ -3,8 +3,8 @@ import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction, type CompletionTelemetry } from '@/lib/ai/provider';
 import type { Kud, KnockOn, WhatIfEstimate, WhatIfProfile, WhatIfProse } from './types';
 
-/** A rating written out in prose: K, U or D followed by a 0-5 digit. The page shows ratings from the record only. */
-export const RATING_IN_PROSE = /\b[KUD]\s?[0-5]\b/;
+import { RATING_IN_PROSE } from './rating-pattern';
+export { RATING_IN_PROSE };
 
 const noRating = (s: string) => !RATING_IN_PROSE.test(s);
 const text = z.string().min(1).refine(noRating, 'Do not state a rating in the text.');

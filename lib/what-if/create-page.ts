@@ -12,6 +12,8 @@ import { readWikiPage } from '@/lib/wiki/git-ops';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { AiCreditsExhaustedError } from '@/lib/ai/credit-status';
 import type { CompletionTelemetry } from '@/lib/ai/provider';
+import { parseFrontmatter } from '@/lib/wiki/markdown-helpers';
+import { RATING_IN_PROSE } from './rating-pattern';
 import { attachmentsForAi } from './attachments';
 import { estimateAttachments } from './estimate-attachments';
 import { estimateWhatIf } from './estimate';
@@ -27,6 +29,19 @@ const usageOf = (t: CompletionTelemetry) => ({
   promptTokens: t.cachedTokens + t.uncachedPromptTokens,
   completionTokens: t.completionTokens,
 });
+
+/**
+ * The text the page rewrites: the wiki course page's one-sentence description (the whole page carries
+ * rating chips the model must never see), else the approved overview narrative. Text that still states
+ * a rating is replaced by the narrative; a narrative that does is sent with those tokens removed.
+ */
+function pickCurrentDescription(wikiPage: string | null, narrative: string): string {
+  const raw = wikiPage ? parseFrontmatter(wikiPage).frontmatter.description : null;
+  const fromWiki = typeof raw === 'string' ? raw.trim() : '';
+  if (fromWiki && !RATING_IN_PROSE.test(fromWiki)) return fromWiki;
+  if (!RATING_IN_PROSE.test(narrative)) return narrative;
+  return narrative.replace(new RegExp(RATING_IN_PROSE.source, 'g'), '').replace(/\s{2,}/g, ' ').trim();
+}
 
 export async function createWhatIfPage(whatIf: WhatIfRow): Promise<CreatePageResult> {
   // The base version must still exist and still be the approved one, before any AI call.
@@ -63,8 +78,10 @@ export async function createWhatIfPage(whatIf: WhatIfRow): Promise<CreatePageRes
   if (!(await checkDailyCap()).ok) return { ok: false, reason: 'daily_cap' };
 
   const slug = whatIf.courseCode.toLowerCase().replace(/\s+/g, '-');
-  const wikiPage = await readWikiPage(`courses/${slug}.md`);
-  const currentDescription = wikiPage ?? approved.overview?.narrative ?? '';
+  const currentDescription = pickCurrentDescription(
+    await readWikiPage(`courses/${slug}.md`),
+    approved.overview?.narrative ?? '',
+  );
   const course = await getCourseByCode(whatIf.courseCode);
 
   let written: Awaited<ReturnType<typeof writeWhatIfProse>>;

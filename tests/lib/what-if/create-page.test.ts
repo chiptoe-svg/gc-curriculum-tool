@@ -39,6 +39,7 @@ vi.mock('@/lib/rate-limit/daily-cap', () => ({
 }));
 
 import { createWhatIfPage } from '@/lib/what-if/create-page';
+import { RATING_IN_PROSE } from '@/lib/what-if/rating-pattern';
 
 const approved = {
   competencies: [{ statement: 'Prepare print-ready files', type: 'technical', k_depth: 3, u_depth: 2, d_depth: 3 }],
@@ -51,6 +52,8 @@ const t1 = { costUsdCents: 3, durationMs: 1, cachedTokens: 0, uncachedPromptToke
 const t2 = { costUsdCents: 2, durationMs: 1, cachedTokens: 1, uncachedPromptTokens: 7, completionTokens: 8 };
 const prose = { description: 'd', whatChanges: 'w', neighbors: 'n', questions: ['a', 'b', 'c'] };
 const knockOn = { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [] };
+const wikiPage = (description: string | null) =>
+  `---\ntitle: Prepress\n${description === null ? '' : `description: "${description}"\n`}---\n\n- Prepare files (K4/U3/D3)\n`;
 const ok = { ok: true, spentCents: 0, overCap: false };
 
 beforeEach(() => {
@@ -59,7 +62,7 @@ beforeEach(() => {
     estimateWhatIf, computeKnockOn, writeWhatIfProse, checkDailyCap, recordSpend].forEach(m => m.mockClear());
   getSnapshotById.mockResolvedValue({ id: 'snap-1', profile: approved, retiredAt: null });
   getCourseByCode.mockResolvedValue({ code: 'GC 3460', title: 'Prepress Technology' });
-  readWikiPage.mockResolvedValue('# Wiki page\nThe wiki description.');
+  readWikiPage.mockResolvedValue(wikiPage('One sentence about the course.'));
   q.listWhatIfMessages.mockResolvedValue([{ role: 'user', content: 'Add a lab', meta: { x: 1 } }, { role: 'assistant', content: 'Ok' }]);
   q.listActiveSubCompetencies.mockResolvedValue([{ id: 'cm', name: 'Color management' }]);
   attachmentsForAi.mockResolvedValue([
@@ -151,13 +154,42 @@ describe('createWhatIfPage', () => {
     expect(writeWhatIfProse.mock.calls[0]![0]).toMatchObject({ needsTitle: true });
   });
 
-  it('writes from the wiki page when there is one, else from the approved description', async () => {
+  it('writes from the wiki description, not the whole page, so the model never sees a rating', async () => {
     await createWhatIfPage(whatIf);
-    expect(writeWhatIfProse.mock.calls[0]![0].currentDescription).toContain('The wiki description.');
+    const d = writeWhatIfProse.mock.calls[0]![0].currentDescription as string;
+    expect(d).toBe('One sentence about the course.');
+    expect(RATING_IN_PROSE.test(d)).toBe(false);
     expect(readWikiPage).toHaveBeenCalledWith('courses/gc-3460.md');
+  });
+
+  it('falls back to the approved description when there is no wiki page', async () => {
     readWikiPage.mockResolvedValue(null);
     await createWhatIfPage(whatIf);
-    expect(writeWhatIfProse.mock.calls[1]![0].currentDescription).toBe(approved.overview.narrative);
+    expect(writeWhatIfProse.mock.calls[0]![0].currentDescription).toBe(approved.overview.narrative);
+  });
+
+  it('falls back to the approved description when the wiki page has no description', async () => {
+    readWikiPage.mockResolvedValue(wikiPage(null));
+    await createWhatIfPage(whatIf);
+    expect(writeWhatIfProse.mock.calls[0]![0].currentDescription).toBe(approved.overview.narrative);
+  });
+
+  it('falls back to the approved description when the wiki description states a rating', async () => {
+    readWikiPage.mockResolvedValue(wikiPage('Students reach D3 in proofing.'));
+    await createWhatIfPage(whatIf);
+    expect(writeWhatIfProse.mock.calls[0]![0].currentDescription).toBe(approved.overview.narrative);
+  });
+
+  it('removes rating tokens from the approved description when it has them too', async () => {
+    getSnapshotById.mockResolvedValue({
+      id: 'snap-1', retiredAt: null,
+      profile: { ...approved, overview: { narrative: 'Students reach D3 in proofing.' } },
+    });
+    readWikiPage.mockResolvedValue(null);
+    await createWhatIfPage(whatIf);
+    const d = writeWhatIfProse.mock.calls[0]![0].currentDescription as string;
+    expect(RATING_IN_PROSE.test(d)).toBe(false);
+    expect(d).toContain('Students reach');
   });
 
   it('feeds the estimate the stored conversation and the usable attachments', async () => {
@@ -175,7 +207,7 @@ describe('createWhatIfPage', () => {
       const src = readFileSync(f, 'utf8');
       const gitOps = [...src.matchAll(/import\s*\{([^}]*)\}\s*from\s*'@\/lib\/wiki\/git-ops'/g)].flatMap(m => m[1]!.split(',').map(s => s.trim()));
       expect(gitOps.filter(n => n && n !== 'readWikiPage'), f).toEqual([]);
-      expect(src).not.toMatch(/lib\/wiki\/(?!git-ops)/);
+      expect(src).not.toMatch(/lib\/wiki\/(?!git-ops|markdown-helpers)/);
     }
   });
 });
