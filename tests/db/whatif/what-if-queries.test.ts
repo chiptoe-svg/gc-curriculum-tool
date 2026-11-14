@@ -37,7 +37,7 @@ async function inRolledBackTx(fn: (tx: Tx, baseSnapshotId: string) => Promise<vo
 const input = (baseSnapshotId: string) => ({ courseCode, baseSnapshotId, ownerGrantId: 'g1', ownerKind: 'personal' as const, authorName: 'A' });
 const ESTIMATE: WhatIfEstimate = { changeItems: [], movedRatings: [], newCompetencies: [], incomingChanges: [] };
 const PROFILE: WhatIfProfile = { ratings: [], incomingChanges: [] };
-const KNOCK_ON: KnockOn = { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [] };
+const KNOCK_ON: KnockOn = { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [], careerNotComputed: false };
 const PROSE: WhatIfProse = { description: 'd', whatChanges: 'w', neighbors: 'n', questions: ['q'] };
 const PAGE = { title: 'T', summary: 's', estimate: ESTIMATE, profile: PROFILE, knockOn: KNOCK_ON, prose: PROSE };
 

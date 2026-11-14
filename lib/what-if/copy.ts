@@ -92,6 +92,8 @@ export const WHAT_IF_COPY = {
   neighborsNone: 'No effects on other courses were found.',
   effectsNote: 'Only confirmed prerequisite links are checked.',
   notComputed: 'No effects on other courses could be computed for:',
+  careerNotComputed:
+    'Effects on career targets could not be computed: the program view has no career ratings for the version this what-if started from.',
   questionsNone: 'No open questions were recorded.',
   basisNone: 'No files were attached.',
   basisHeldBack: 'held back',

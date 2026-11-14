@@ -6,11 +6,25 @@ import type { WhatIfProfile, WhatIfRating } from '@/lib/what-if/types';
 type CoverageRow = { subCompetencyId: string; matchedCompetency: string | null; kDepth: number | null; uDepth: number | null; dDepth: number | null };
 let coverageRows: CoverageRow[] = [];
 vi.mock('@/lib/db/client', () => ({
-  db: { select: () => ({ from: () => ({ where: async () => coverageRows }) }) },
+  db: { select: () => ({ from: () => Object.assign(Promise.resolve([]), { where: async () => coverageRows }) }) },
+}));
+
+let matrixData: MatrixData;
+vi.mock('@/lib/db/capture-snapshots-queries', () => ({ getSnapshotById: async (id: string) => ({ id }) }));
+vi.mock('@/lib/db/prerequisite-edge-queries', () => ({ listConfirmedEdgePairs: async () => [] }));
+vi.mock('@/lib/db/program-coverage-queries', () => ({ getMatrixData: async () => matrixData }));
+vi.mock('@/lib/what-if/neighbor-helpers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/what-if/neighbor-helpers')>()),
+  buildBaselineDelivered: async () => [],
+}));
+vi.mock('@/lib/program/prereq-gaps', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/program/prereq-gaps')>()),
+  loadDelivered: async () => [],
+  loadPrereqGapInputs: async () => ({ edges: [], delivered: [] }),
 }));
 
 import {
-  resolveWhatIfDepths, laterCourseLines, earlierCourseLines, careerLines,
+  resolveWhatIfDepths, laterCourseLines, earlierCourseLines, careerLines, computeKnockOn,
 } from '@/lib/what-if/knock-on';
 
 const label = (id: string) => `label:${id}`;
@@ -228,5 +242,32 @@ describe('resolveWhatIfDepths', () => {
     coverageRows = [cov('color-management', 'Manage color', 2, 2, 3)];
     const r = await resolveWhatIfDepths('snap-1', profile([rating({ status: 'approved' })]));
     expect(r).toEqual({ resolved: [], notComputed: [] });
+  });
+});
+
+describe('computeKnockOn: career targets', () => {
+  const newLinked: WhatIfRating = {
+    statement: 'Brand new', type: 'technical', status: 'new', kud: { k: null, u: null, d: 1 },
+    before: null, confidence: 'low', reason: 'r', subCompetencyId: 'color-management', linked: true,
+  };
+  const profile: WhatIfProfile = { ratings: [newLinked], incomingChanges: [] };
+  const matrixWith = (snapshotId: string): MatrixData => ({
+    targets: [{ id: 't1', name: 'Prepress Lead', displayOrder: 0 }],
+    subCompetencies: [{ id: 'color-management', name: 'Color management' }],
+    cells: [{ snapshotId, careerTargetId: 't1', subCompetencyId: 'color-management', dDepth: 4 }],
+  } as unknown as MatrixData);
+  beforeEach(() => { coverageRows = []; });
+
+  it('records that career effects could not be computed when the matrix has no cells for the base snapshot', async () => {
+    matrixData = matrixWith('newer-snap');
+    const k = await computeKnockOn({ courseCode: 'GC 3400', baseSnapshotId: 'snap-1' }, profile);
+    expect(k.careerTargets).toEqual([]);
+    expect(k.careerNotComputed).toBe(true);
+  });
+  it('computes career effects, with no marker, when the base snapshot has cells', async () => {
+    matrixData = matrixWith('snap-1');
+    const k = await computeKnockOn({ courseCode: 'GC 3400', baseSnapshotId: 'snap-1' }, profile);
+    expect(k.careerTargets.map(c => c.direction)).toEqual(['down']);
+    expect(k.careerNotComputed).toBe(false);
   });
 });

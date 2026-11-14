@@ -119,7 +119,7 @@ describe('WhatIfChatPanel', () => {
         { statement: 'Prepare print-ready files', type: 'technical', status: 'moved', kud: { k: 3, u: 3, d: 2 }, before: { k: 3, u: 3, d: 3 }, confidence: 'medium', reason: 'Less handoff time', subCompetencyId: null, linked: true },
         { statement: 'Untouched rating', type: 'technical', status: 'approved', kud: { k: 1, u: 1, d: 1 }, before: { k: 1, u: 1, d: 1 }, confidence: null, reason: null, subCompetencyId: null, linked: true },
       ] },
-      knockOn: { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [] },
+      knockOn: { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [], careerNotComputed: false },
     } };
     mockFetch({ chat: () => ndjson([estimateEvent, FINAL]) });
     renderPanel();
@@ -140,7 +140,7 @@ describe('WhatIfChatPanel', () => {
         profile: { incomingChanges: [], ratings: [
           { statement: 'Soft proofing', type: 'technical', status: 'new', kud: { k: 1, u: 1, d: 1 }, before: null, confidence: 'low', reason: 'New lab', subCompetencyId: null, linked: false },
         ] },
-        knockOn: { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [] },
+        knockOn: { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [], careerNotComputed: false },
       }] } },
     ] }) });
     renderPanel();

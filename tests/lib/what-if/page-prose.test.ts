@@ -35,6 +35,7 @@ const knockOn: KnockOn = {
   earlierCourses: [{ statement: 'Basic color theory', label: 'Color theory', status: 'not_met', deliveredBy: [] }],
   careerTargets: [{ targetName: 'Prepress Specialist', label: 'Color management', before: 'D2', after: 'D4', direction: 'up' }],
   notComputed: [],
+  careerNotComputed: false,
 };
 const input = {
   courseCode: 'GC 3460', courseTitle: 'Prepress Technology', currentDescription: 'Students learn prepress workflows.',
@@ -87,6 +88,13 @@ describe('what-if page prose', () => {
     expect(msg).toContain('A calibrated proofing lab in week 5');
     expect(msg).toContain('Prepress Technology');
     expect(msg).toContain('Prepress Specialist');
+  });
+
+  it('tells the model when career effects could not be computed', async () => {
+    await writeWhatIfProse({ ...input, knockOn: { ...knockOn, careerTargets: [], careerNotComputed: true } });
+    const msg = complete.mock.calls.at(-1)![0].userMessage as string;
+    expect(msg).toContain('Career targets: effects could not be computed');
+    expect(msg).not.toContain('(no effect on neighboring courses or career targets)');
   });
 
   it('gives ratings in words, never as K/U/D numbers', async () => {

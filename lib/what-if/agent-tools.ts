@@ -40,6 +40,9 @@ function summarize(q: QuickEstimate) {
       `${e.statement}${e.label ? ` (${e.label})` : ''}: ${e.status.replace('_', ' ')}${e.deliveredBy.length ? `; delivered by ${e.deliveredBy.join(', ')}` : ''}`),
     careerTargets: q.knockOn.careerTargets.map(c => `${c.targetName}: ${c.label} ${c.before} to ${c.after} (${c.direction})`),
     notComputed: q.knockOn.notComputed,
+    careerNotComputed: q.knockOn.careerNotComputed
+      ? 'Career-target effects could not be computed: no career ratings for the version this started from. Do not say there is no effect.'
+      : null,
   };
 }
 

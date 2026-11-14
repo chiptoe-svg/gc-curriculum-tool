@@ -67,7 +67,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
   const moved = profile.ratings.filter(r => r.status !== 'approved');
   const hasFoundational = profile.ratings.some(r => r.type === 'foundational');
   const neighborsEmpty = knockOn.laterCourses.length === 0 && knockOn.earlierCourses.length === 0
-    && knockOn.careerTargets.length === 0 && knockOn.notComputed.length === 0;
+    && knockOn.careerTargets.length === 0 && knockOn.notComputed.length === 0 && !knockOn.careerNotComputed;
   const canUpdate = base.state === 'ok' || base.state === 'newer';
   const title = view.title ?? WHAT_IF_COPY.untitled;
 
@@ -204,6 +204,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
           {knockOn.notComputed.length > 0 && (
             <p>{WHAT_IF_COPY.notComputed} {knockOn.notComputed.join('; ')}.</p>
           )}
+          {knockOn.careerNotComputed && <p>{WHAT_IF_COPY.careerNotComputed}</p>}
           {neighborsEmpty && <p>{WHAT_IF_COPY.neighborsNone}</p>}
           <p className="text-sm">{WHAT_IF_COPY.effectsNote}</p>
 

@@ -68,6 +68,7 @@ function neighborLines(k: KnockOn): string {
     return `- Expected of incoming students: ${c.statement}; it ${state}`;
   });
   const careers = k.careerTargets.map(c => `- ${c.targetName}, ${c.label}: ${c.direction === 'up' ? 'goes up' : 'goes down'}`);
+  if (k.careerNotComputed) careers.push('- Career targets: effects could not be computed (no career ratings for the version this started from); do not say there is no effect');
   return [...later, ...earlier, ...careers].join('\n') || '(no effect on neighboring courses or career targets)';
 }
 

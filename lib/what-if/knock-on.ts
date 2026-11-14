@@ -255,11 +255,15 @@ export async function computeKnockOn(
   );
 
   const matrix = await getMatrixData();
+  // No career cell for the base version: career effects cannot be computed.
+  // Say so rather than report "no effect", and never read another version.
+  const careerNotComputed = !matrix.cells.some(c => c.snapshotId === w.baseSnapshotId);
 
   return {
     laterCourses: laterCourseLines({ focalCourseCode: w.courseCode, focalBaseline, predicted: resolved, perCourse, label }),
     earlierCourses: earlierCourseLines({ incomingChanges: profile.incomingChanges, prereqCodes: earlierCodes, delivered: earlierDelivered, label }),
     careerTargets: careerLines({ focalSnapshotId: w.baseSnapshotId, predicted: resolved, matrix }),
     notComputed,
+    careerNotComputed,
   };
 }

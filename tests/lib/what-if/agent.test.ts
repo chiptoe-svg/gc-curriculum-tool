@@ -18,7 +18,7 @@ const estimateWhatIf = vi.fn();
 vi.mock('@/lib/what-if/estimate', () => ({ estimateWhatIf: (...a: unknown[]) => estimateWhatIf(...a) }));
 vi.mock('@/lib/what-if/neighbors', () => ({ loadWhatIfNeighborContext: async () => ({ focal: {}, upstream: [], downstream: [] }) }));
 vi.mock('@/lib/what-if/knock-on', () => ({
-  computeKnockOn: async () => ({ laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [] }),
+  computeKnockOn: async () => ({ laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [], careerNotComputed: false }),
 }));
 vi.mock('@/lib/db/what-if-queries', () => ({ listActiveSubCompetencies: async () => [] }));
 

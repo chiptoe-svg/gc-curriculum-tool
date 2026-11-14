@@ -51,7 +51,7 @@ const estimate = { changeItems: [], movedRatings: [], newCompetencies: [], incom
 const t1 = { costUsdCents: 3, durationMs: 1, cachedTokens: 0, uncachedPromptTokens: 5, completionTokens: 6 };
 const t2 = { costUsdCents: 2, durationMs: 1, cachedTokens: 1, uncachedPromptTokens: 7, completionTokens: 8 };
 const prose = { description: 'd', whatChanges: 'w', neighbors: 'n', questions: ['a', 'b', 'c'] };
-const knockOn = { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [] };
+const knockOn = { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [], careerNotComputed: false };
 const wikiPage = (description: string | null) =>
   `---\ntitle: Prepress\n${description === null ? '' : `description: "${description}"\n`}---\n\n- Prepare files (K4/U3/D3)\n`;
 const ok = { ok: true, spentCents: 0, overCap: false };

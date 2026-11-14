@@ -35,6 +35,7 @@ export interface KnockOn {
     status: 'met' | 'not_met' | 'not_known'; deliveredBy: string[] }>;
   careerTargets: Array<{ targetName: string; label: string; before: string; after: string; direction: 'up' | 'down' }>;
   notComputed: string[];           // statements for which no effects could be computed
+  careerNotComputed: boolean;      // true when the program view has no career ratings for the base version
 }
 export interface WhatIfProse { description: string; whatChanges: string; neighbors: string; questions: string[] }
 

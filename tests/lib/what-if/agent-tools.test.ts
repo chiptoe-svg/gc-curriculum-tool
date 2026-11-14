@@ -32,7 +32,7 @@ const estimate: WhatIfEstimate = {
 };
 const knockOn: KnockOn = {
   laterCourses: [{ courseCode: 'GC 4060', subCompetencyId: 'color-management', label: 'Color management', effect: 'closed' }],
-  earlierCourses: [], careerTargets: [], notComputed: [],
+  earlierCourses: [], careerTargets: [], notComputed: [], careerNotComputed: false,
 };
 
 beforeEach(() => {

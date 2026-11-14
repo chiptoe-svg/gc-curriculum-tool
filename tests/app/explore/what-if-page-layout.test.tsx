@@ -44,6 +44,7 @@ const knockOn: KnockOn = {
   earlierCourses: [{ statement: 'Color management basics', label: null, status: 'not_met', deliveredBy: [] }],
   careerTargets: [],
   notComputed: ['Soft proofing'],
+  careerNotComputed: false,
 };
 const prose: WhatIfProse = {
   description: 'This course would now run a weekly preflight lab.',
@@ -83,6 +84,12 @@ describe('WhatIfPageLayout', () => {
     renderIt();
     expect(screen.getByText(/no effects on other courses could be computed/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'GC 4400' })).toHaveAttribute('href', expect.stringContaining('/wiki/courses/gc-4400'));
+  });
+
+  it('says career effects could not be computed, not "no effects found", when the marker is set', () => {
+    renderIt(view({ knockOn: { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [], careerNotComputed: true } }));
+    expect(screen.getByText(/effects on career targets could not be computed/i)).toBeInTheDocument();
+    expect(screen.queryByText(WHAT_IF_COPY.neighborsNone)).toBeNull();
   });
 
   it('puts the banner first, then the five sections in the spec order', () => {

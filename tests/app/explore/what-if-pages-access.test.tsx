@@ -43,7 +43,7 @@ const finished = {
   authorName: 'Pat', title: 'Weekly lab', pageCreatedAt: new Date('2026-11-10T12:00:00Z'),
   estimate: { changeItems: [], movedRatings: [], newCompetencies: [], incomingChanges: [] },
   profile: { ratings: [], incomingChanges: [] },
-  knockOn: { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [] },
+  knockOn: { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [], careerNotComputed: false },
   prose: { description: 'D', whatChanges: 'W', neighbors: 'N', questions: [] },
 };
 const props = (code = 'GC%203460', slug = SLUG) =>
