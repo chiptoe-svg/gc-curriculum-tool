@@ -101,7 +101,10 @@ export async function appendWhatIfMessage(
   meta?: Record<string, unknown>,
   ex: Tx | typeof db = db,
 ): Promise<WhatIfMessageRow> {
-  const [row] = await ex.insert(courseWhatIfMessages).values({ whatIfId, role, content, meta: meta ?? null }).returning();
+  const [row] = await ex.insert(courseWhatIfMessages).values({
+    whatIfId, role, content, meta: meta ?? null,
+    createdAt: sql`clock_timestamp()`, // not now(): rows written in one transaction must keep their order
+  }).returning();
   return row!;
 }
 
@@ -115,7 +118,10 @@ export async function insertWhatIfAttachment(
   row: Omit<WhatIfAttachmentRow, 'id' | 'createdAt'>,
   ex: Tx | typeof db = db,
 ): Promise<WhatIfAttachmentRow> {
-  const [created] = await ex.insert(courseWhatIfAttachments).values(row).returning();
+  const [created] = await ex.insert(courseWhatIfAttachments).values({
+    ...row,
+    createdAt: sql`clock_timestamp()`, // not now(): rows written in one transaction must keep their order
+  }).returning();
   return created!;
 }
 

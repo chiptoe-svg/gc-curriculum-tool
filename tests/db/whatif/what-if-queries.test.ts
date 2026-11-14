@@ -84,16 +84,20 @@ describe.runIf(isWhatIfScratchDb())('what-if queries (scratch DB)', () => {
 
   it('messages list oldest first; attachments store their fields', () => inRolledBackTx(async (tx, baseSnapshotId) => {
     const w = await createWhatIf(input(baseSnapshotId), tx);
-    await appendWhatIfMessage(w.id, 'user', 'first', undefined, tx);
-    await appendWhatIfMessage(w.id, 'assistant', 'second', { k: 1 }, tx);
-    expect((await listWhatIfMessages(w.id, tx)).map((m) => [m.role, m.content, m.meta])).toEqual([
-      ['user', 'first', null], ['assistant', 'second', { k: 1 }],
-    ]);
-    const a = await insertWhatIfAttachment({
-      whatIfId: w.id, fileName: 'a.pdf', mimeType: 'application/pdf', sizeBytes: 10, blobUrl: 'blob://a',
-      status: 'held_back', heldBackReason: 'looks like a roster', ferpaRisk: 'high', extractedText: null,
-    }, tx);
-    expect((await listWhatIfAttachments(w.id, tx)).map((r) => r.id)).toEqual([a.id]);
+    // Several rows in one transaction: they must read back in the order written.
+    for (let i = 0; i < 6; i++) {
+      await appendWhatIfMessage(w.id, i % 2 === 0 ? 'user' : 'assistant', `m${i}`, i === 1 ? { k: 1 } : undefined, tx);
+    }
+    const msgs = await listWhatIfMessages(w.id, tx);
+    expect(msgs.map((m) => m.content)).toEqual(['m0', 'm1', 'm2', 'm3', 'm4', 'm5']);
+    expect([msgs[0]!.role, msgs[0]!.meta, msgs[1]!.role, msgs[1]!.meta]).toEqual(['user', null, 'assistant', { k: 1 }]);
+    for (let i = 0; i < 4; i++) {
+      await insertWhatIfAttachment({
+        whatIfId: w.id, fileName: `f${i}.pdf`, mimeType: 'application/pdf', sizeBytes: 10, blobUrl: `blob://${i}`,
+        status: 'held_back', heldBackReason: 'looks like a roster', ferpaRisk: 'high', extractedText: null,
+      }, tx);
+    }
+    expect((await listWhatIfAttachments(w.id, tx)).map((r) => r.fileName)).toEqual(['f0.pdf', 'f1.pdf', 'f2.pdf', 'f3.pdf']);
   }));
 
   it('deleteWhatIf removes messages and attachments and returns the attachment rows', () => inRolledBackTx(async (tx, baseSnapshotId) => {
