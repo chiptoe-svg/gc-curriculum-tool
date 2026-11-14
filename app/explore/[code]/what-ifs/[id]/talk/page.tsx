@@ -9,6 +9,7 @@ import { canManageWhatIf } from '@/lib/what-if/ownership';
 import { WHAT_IF_COPY } from '@/lib/what-if/copy';
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { WhatIfChatPanel } from './WhatIfChatPanel';
+import { DeleteWhatIf } from '../DeleteWhatIf';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,9 @@ export default async function WhatIfTalkPage({ params, searchParams }: Props) {
           hasPage={whatIf.pageCreatedAt !== null}
           initialAttachments={attachments}
         />
+        <div className="mt-6 border-t pt-4">
+          <DeleteWhatIf courseCode={code} whatIfId={id} slug={slug} />
+        </div>
       </main>
     </div>
   );
