@@ -168,6 +168,36 @@ describe('resolveWhatIfDepths', () => {
     ]));
     expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: 3, u: 2, d: 4 }]);
   });
+  it('keeps an unchanged statement on the same sub-competency in the maximum (new linked rating)', async () => {
+    coverageRows = [{ subCompetencyId: 'color-management', matchedCompetency: 'Manage color' }];
+    const r = await resolveWhatIfDepths('snap-1', profile([
+      rating({ status: 'approved', kud: { k: null, u: null, d: 3 }, before: { k: null, u: null, d: 3 } }),
+      rating({ status: 'new', before: null, statement: 'Brand new', kud: { k: null, u: null, d: 1 }, subCompetencyId: 'color-management', linked: true }),
+    ]));
+    expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: null, u: null, d: 3 }]);
+  });
+  it('keeps an unchanged statement in the maximum when another statement is lowered', async () => {
+    coverageRows = [
+      { subCompetencyId: 'color-management', matchedCompetency: 'Manage color' },
+      { subCompetencyId: 'color-management', matchedCompetency: 'Profile devices' },
+    ];
+    const r = await resolveWhatIfDepths('snap-1', profile([
+      rating({ kud: { k: null, u: null, d: 1 } }),
+      rating({ status: 'approved', statement: 'Profile devices', kud: { k: null, u: null, d: 3 }, before: { k: null, u: null, d: 3 } }),
+    ]));
+    expect(r.resolved).toEqual([{ subCompetencyId: 'color-management', k: null, u: null, d: 3 }]);
+  });
+  it('gives an approved statement alone no entry of its own', async () => {
+    coverageRows = [
+      { subCompetencyId: 'color-management', matchedCompetency: 'Manage color' },
+      { subCompetencyId: 'other-sub', matchedCompetency: 'Other thing' },
+    ];
+    const r = await resolveWhatIfDepths('snap-1', profile([
+      rating({ status: 'approved', statement: 'Other thing' }),
+      rating({ status: 'new', before: null, statement: 'Brand new', subCompetencyId: 'color-management', linked: true }),
+    ]));
+    expect(r.resolved.map(e => e.subCompetencyId)).toEqual(['color-management']);
+  });
   it('does not resolve approved ratings', async () => {
     coverageRows = [{ subCompetencyId: 'color-management', matchedCompetency: 'Manage color' }];
     const r = await resolveWhatIfDepths('snap-1', profile([rating({ status: 'approved' })]));

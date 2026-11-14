@@ -40,7 +40,7 @@ export async function resolveWhatIfDepths(
   if (changed.length === 0) return { resolved: [], notComputed: [] };
 
   const idsByStatement = new Map<string, Set<string>>();
-  if (changed.some(r => r.status === 'moved')) {
+  {
     const rows = await db
       .select({
         subCompetencyId: snapshotCompetencyCoverage.competencyId,
@@ -71,6 +71,21 @@ export async function resolveWhatIfDepths(
         k: maxN(prev?.k ?? null, r.kud.k),
         u: maxN(prev?.u ?? null, r.kud.u),
         d: maxN(prev?.d ?? null, r.kud.d),
+      });
+    }
+  }
+
+  // Unchanged statements still deliver their sub-competency: they join the
+  // maximum of an entry that exists, but never create one of their own.
+  for (const r of profile.ratings.filter(x => x.status === 'approved')) {
+    for (const id of idsByStatement.get(normalizeCompetencyKey(r.statement)) ?? []) {
+      const prev = bySub.get(id);
+      if (!prev) continue;
+      bySub.set(id, {
+        subCompetencyId: id,
+        k: maxN(prev.k, r.kud.k),
+        u: maxN(prev.u, r.kud.u),
+        d: maxN(prev.d, r.kud.d),
       });
     }
   }
