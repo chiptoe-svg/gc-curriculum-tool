@@ -50,9 +50,14 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   let final: WhatIfAgentResponse | null = null;
 
   const encoder = new TextEncoder();
+  let closed = false; // the reader went away; the turn still runs to the end so it is stored and paid for
   const stream = new ReadableStream<Uint8Array>({
+    cancel() { closed = true; },
     async start(controller) {
-      const send = (ev: unknown) => controller.enqueue(encoder.encode(JSON.stringify(ev) + '\n'));
+      const send = (ev: unknown) => {
+        if (closed) return;
+        try { controller.enqueue(encoder.encode(JSON.stringify(ev) + '\n')); } catch { closed = true; }
+      };
       try {
         const gen = streamWhatIfAgent({
           whatIf, approved, history, message, attachments,
@@ -81,7 +86,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
           ? { kind: 'error', code: 'ai_credits_exhausted', message: CREDITS_EXHAUSTED_MESSAGE(creditsContact()) }
           : { kind: 'error', message: err instanceof Error ? err.message : String(err) });
       } finally {
-        controller.close();
+        if (!closed) { try { controller.close(); } catch { /* already closed */ } }
       }
     },
   });

@@ -149,6 +149,31 @@ describe('POST what-ifs/[id]/chat', () => {
     expect(q.appendWhatIfMessage).not.toHaveBeenCalled();
   });
 
+  it('a reader that cancels mid-stream still gets the turn stored and its cost recorded', async () => {
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    let release!: () => void;
+    const gate = new Promise<void>(r => { release = r; });
+    streamWhatIfAgent.mockImplementation(async function* (input: { onChatTelemetry: (t: unknown) => void }) {
+      input.onChatTelemetry(telemetry);
+      yield { kind: 'text-delta', delta: 'hi' };
+      await gate; // the client cancels while the turn is still running
+      yield finalEvent;
+    });
+    const res = await POST(post(), ctx());
+    const reader = res.body!.getReader();
+    await reader.read();
+    await reader.cancel();
+    release();
+    await vi.waitFor(() => expect(q.appendWhatIfMessage).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(q.addWhatIfUsage).toHaveBeenCalledWith(ID, 'chat', { costUsdCents: 2, promptTokens: 3, completionTokens: 4 }));
+    expect(recordSpend).toHaveBeenCalledWith(2);
+    expect(q.appendWhatIfMessage.mock.calls.map(c => c[1])).toEqual(['user', 'assistant']);
+    await new Promise(r => setTimeout(r, 20));
+    process.off('unhandledRejection', unhandled);
+    expect(unhandled).not.toHaveBeenCalled();
+  });
+
   it('never touches the real course conversation', () => {
     const src = readFileSync('app/api/explore/[code]/what-ifs/[id]/chat/route.ts', 'utf8');
     expect(src).not.toContain('saveTurn');
