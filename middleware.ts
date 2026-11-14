@@ -293,7 +293,7 @@ export const config = {
   // api/vision-proxy EXCLUDED: the Docling caption proxy self-authenticates
   // (Bearer DOCLING_VLM_API_KEY) and forwards an image payload — keep it off the
   // Node-runtime middleware body buffering, same rationale as api/transcribe.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/vision-proxy|api/transcribe|api/courses/[^/]+/imscc-import|api/courses/[^/]+/materials(?!/)).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/vision-proxy|api/transcribe|api/courses/[^/]+/imscc-import|api/courses/[^/]+/materials(?!/)|api/explore/[^/]+/what-ifs/[^/]+/attachments).*)'],
   // Run in Node runtime so we can import lib/db/client (node-postgres).
   // Edge runtime lacks Node builtins that `pg` needs.
   runtime: 'nodejs',
