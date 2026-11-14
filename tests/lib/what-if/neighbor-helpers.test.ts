@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assembleNeighborContext } from '@/lib/ai/explore/neighbor-context';
+import { assembleNeighborContext, normalizeCompetencyKey } from '@/lib/what-if/neighbor-helpers';
 
 const focal = { courseCode: 'GC 3460', competencies: [{ statement: 'prepress preparation', type: 'technical' as const, k_depth: 2, u_depth: 2, d_depth: 3 }], incoming_expectations: [] };
 const gc4440 = { courseCode: 'GC 4440', competencies: [{ statement: 'imposition', type: 'technical' as const, k_depth: 3, u_depth: 3, d_depth: 4 }], incoming_expectations: [{ statement: 'trapping', expected_depth: { k: null, u: null, d: 4 } }] };
@@ -19,5 +19,14 @@ describe('assembleNeighborContext', () => {
     expect(ctx.downstream.map(c => c.courseCode)).toEqual(['GC 4440']);
     expect(ctx.focal.courseCode).toBe('GC 3460');
     expect(ctx.focal.competencies[0]!.type).toBe('technical');
+  });
+});
+
+describe('normalizeCompetencyKey', () => {
+  it('collapses case + whitespace so near-identical statements match', () => {
+    expect(normalizeCompetencyKey('  Prepress   Preparation ')).toBe(normalizeCompetencyKey('prepress preparation'));
+  });
+  it('distinguishes genuinely different statements', () => {
+    expect(normalizeCompetencyKey('Trapping')).not.toBe(normalizeCompetencyKey('Imposition'));
   });
 });

@@ -1,7 +1,7 @@
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction, type CompletionTelemetry } from '@/lib/ai/provider';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
-import type { NeighborContext, NeighborProfile } from '@/lib/ai/explore/neighbor-context';
+import type { NeighborContext, NeighborProfile } from '@/lib/what-if/neighbor-helpers';
 import type { WhatIfEstimate } from './types';
 import { whatIfEstimateSchema, WHAT_IF_ESTIMATE_JSON_SCHEMA } from './estimate-schema';
 

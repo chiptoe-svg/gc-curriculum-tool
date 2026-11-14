@@ -3,8 +3,8 @@
  * Deterministic: no AI call, no write. Every line comes from the what-if's
  * stored ratings and the program's stored coverage and prerequisite data.
  *
- * Not an edit of lib/ai/explore/ripple.ts or career-fit.ts (those stay green
- * until Explore is retired), because two things differ here: each later course
+ * Replaces the retired Explore ripple and career-fit engines, because two things
+ * differ here: each later course
  * is checked with ALL of its confirmed prerequisites, and career-target moves
  * are reported in both directions.
  */
@@ -19,7 +19,7 @@ import {
   computeGapsFromInputs, loadDelivered, loadPrereqGapInputs,
   type DeliveredAttainment, type GapStatus, type RelyEdge,
 } from '@/lib/program/prereq-gaps';
-import { buildBaselineDelivered, normalizeCompetencyKey } from '@/lib/ai/explore/run-impact';
+import { buildBaselineDelivered, normalizeCompetencyKey } from '@/lib/what-if/neighbor-helpers';
 import type { Kud, KnockOn, PredictedSubCompDepth, WhatIfProfile } from './types';
 
 const maxN = (a: number | null, b: number | null): number | null =>

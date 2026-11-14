@@ -7,7 +7,6 @@ import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { listWhatIfsForCourse } from '@/lib/db/what-if-queries';
 import { getRequestGrant, personalName } from '@/lib/auth/viewer';
 import { ownerOf } from '@/lib/what-if/ownership';
-import { AskTab } from '@/components/AskTab';
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { WhatIfList } from './WhatIfList';
 
@@ -58,7 +57,7 @@ export default async function ExplorePage({ params, searchParams }: Props) {
       <header className="border-b">
         <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Explore · Curriculum chat</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Explore · What-ifs</p>
             <h1 className="mt-0.5 text-xl font-semibold">
               {course.code} <span className="text-muted-foreground">— {course.title}</span>
             </h1>
@@ -92,7 +91,6 @@ export default async function ExplorePage({ params, searchParams }: Props) {
           canStart={latestSnapshot !== null}
           defaultName={personalName(grant)}
         />
-        <AskTab courseCode={course.code} courseTitle={course.title} slug={slug} />
       </main>
     </div>
   );

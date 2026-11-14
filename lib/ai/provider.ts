@@ -147,7 +147,7 @@ export const COURSE_SCOPED_FUNCTIONS = [
   'capture-chat-agent', 'capture-scores', 'capture-stress-test', 'materials-analysis', 'parse-profile-fields',
   'decompose-prereq-gap', 'prereq-edge-seed', 'intended-skills-extract', 'extract-course-kud', 'reconcile-feedback',
   'ingestion-checkin', 'material-classify', 'material-digest', 'chunk-contextualize', 'objective-evidence-guide',
-  'explore-local-delta', 'explore-agent', 'program-score-coverage', 'what-if-estimate', 'what-if-agent', 'what-if-page',
+  'program-score-coverage', 'what-if-estimate', 'what-if-agent', 'what-if-page',
 ] as const satisfies readonly AIFunctionId[];
 export type CourseScopedFunctionId = (typeof COURSE_SCOPED_FUNCTIONS)[number];
 export type ProgramFunctionId = Exclude<AIFunctionId, CourseScopedFunctionId>;

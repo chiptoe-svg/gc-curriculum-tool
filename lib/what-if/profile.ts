@@ -1,5 +1,5 @@
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
-import { normalizeCompetencyKey } from '@/lib/ai/explore/run-impact';
+import { normalizeCompetencyKey } from '@/lib/what-if/neighbor-helpers';
 import type { Kud, WhatIfEstimate, WhatIfProfile, WhatIfRating } from './types';
 
 const sameKud = (a: Kud, b: Kud) => a.k === b.k && a.u === b.u && a.d === b.d;

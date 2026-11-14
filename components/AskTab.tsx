@@ -1,10 +1,9 @@
 'use client';
 
 /**
- * Curriculum-chat panel. Shared across three surfaces:
- *   - Explore "Ask" tab — course-anchored, hits /api/explore/[code]/chat
- *   - /ask standalone — no anchor, hits /api/ask/chat
- *   - /wiki index — no anchor (same as /ask)
+ * Curriculum-chat panel. Shared across two surfaces:
+ *   - /ask standalone — hits /api/ask/chat
+ *   - /wiki index — same as /ask
  *
  * Local state only — the chat transcript lives in component state and
  * is discarded on unmount / route change. No DB persistence (yet);
@@ -17,10 +16,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CurriculumChatCitation } from '@/lib/ai/wiki/response-schema';
-import { ScenarioCard } from '@/app/explore/[code]/ScenarioCard';
-import { ComparisonCard } from '@/app/explore/[code]/ComparisonCard';
-import type { Scenario } from '@/lib/ai/explore/scenario';
-import type { ScenarioComparison } from '@/lib/ai/explore/compare';
 
 /**
  * Strip inline citation markers like [courses/gc-3460.md] from assistant
@@ -37,25 +32,11 @@ interface AskMessage {
   citations?: CurriculumChatCitation[];
   /** Tool calls the agent made on this turn (for the "tool trail" disclosure). */
   toolCalls?: Array<{ toolName: string; args: Record<string, unknown> }>;
-  /** Scenario cards streamed inline from the Explore agent. */
-  scenarios?: Scenario[];
-  /** Comparison cards streamed inline from the Explore agent. */
-  comparisons?: Array<{ aCaption: string; bCaption: string; diff: ScenarioComparison }>;
 }
 
 interface Props {
-  /**
-   * When set, the panel header reads "Asking about <courseCode>" and the
-   * empty-state suggestions are course-anchored. When undefined, the panel
-   * runs in standalone mode (program-level chat).
-   */
-  courseCode?: string;
-  courseTitle?: string;
   slug: string;
-  /**
-   * Override the chat endpoint. Defaults to /api/explore/[courseCode]/chat
-   * when `courseCode` is set, /api/ask/chat otherwise.
-   */
+  /** Override the chat endpoint. Defaults to /api/ask/chat. */
   endpoint?: string;
 }
 
@@ -89,13 +70,6 @@ async function readNdjson(
   }
 }
 
-const COURSE_SUGGESTIONS = [
-  'What does this course set up for downstream courses?',
-  'Which career targets does this course support best?',
-  'What concepts are anchored in this course?',
-  'How does this compare to its prerequisites?',
-];
-
 const STANDALONE_SUGGESTIONS = [
   'What career paths is the program structured around?',
   'Where in the program do students develop problem-solving?',
@@ -103,14 +77,9 @@ const STANDALONE_SUGGESTIONS = [
   'Are there gaps in Act 2 (mid-program integration)?',
 ];
 
-export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
-  const isCourseAnchored = Boolean(courseCode);
-  const suggestions = isCourseAnchored ? COURSE_SUGGESTIONS : STANDALONE_SUGGESTIONS;
-  const resolvedEndpoint =
-    endpoint
-    ?? (courseCode
-      ? `/api/explore/${encodeURIComponent(courseCode)}/chat?slug=${encodeURIComponent(slug)}`
-      : `/api/ask/chat?slug=${encodeURIComponent(slug)}`);
+export function AskTab({ slug, endpoint }: Props) {
+  const suggestions = STANDALONE_SUGGESTIONS;
+  const resolvedEndpoint = endpoint ?? `/api/ask/chat?slug=${encodeURIComponent(slug)}`;
   const [messages, setMessages] = useState<AskMessage[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -154,8 +123,6 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
 
       let assistantText = '';
       const toolCalls: AskMessage['toolCalls'] = [];
-      const scenarios: Scenario[] = [];
-      const comparisons: Array<{ aCaption: string; bCaption: string; diff: ScenarioComparison }> = [];
 
       await readNdjson(res, ev => {
         const kind = ev.kind as string | undefined;
@@ -182,24 +149,6 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
               citations: response.citations,
             }];
           });
-        } else if (kind === 'scenario') {
-          scenarios.push(ev.scenario as Scenario);
-          setMessages(m => {
-            const last = m[m.length - 1]!;
-            return [...m.slice(0, -1), { ...last, scenarios: [...scenarios] }];
-          });
-        } else if (kind === 'comparison') {
-          const a = ev.a as Scenario;
-          const b = ev.b as Scenario;
-          comparisons.push({
-            aCaption: (a.caption ?? a.change.activity),
-            bCaption: (b.caption ?? b.change.activity),
-            diff: ev.diff as ScenarioComparison,
-          });
-          setMessages(m => {
-            const last = m[m.length - 1]!;
-            return [...m.slice(0, -1), { ...last, comparisons: [...comparisons] }];
-          });
         } else if (kind === 'error') {
           setError((ev.message as string) ?? 'Stream error');
         }
@@ -217,51 +166,13 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
     }
   }
 
-  async function handleSave(id: string) {
-    const caption = window.prompt('Name this scenario:');
-    if (!caption || !courseCode) return;
-    try {
-      const res = await fetch(`/api/explore/${encodeURIComponent(courseCode)}/scenarios/${id}?slug=${encodeURIComponent(slug)}`, {
-        method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ caption }),
-      });
-      if (!res.ok) throw new Error(`save failed (${res.status})`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save scenario');
-    }
-  }
-
-  function handleCompare(id: string) {
-    void send(`Compare scenario ${id} with another saved one for this course — list my saved scenarios first if needed, then compare.`);
-  }
-
-  async function handleAdopt(id: string) {
-    if (!courseCode) return;
-    if (!window.confirm(`Adopt this scenario as ${courseCode}'s next planned version? This replaces your current working draft with the scenario's intended targets + revised design (snapshots are not affected).`)) return;
-    try {
-      const res = await fetch(`/api/explore/${encodeURIComponent(courseCode)}/scenarios/${id}/adopt?slug=${encodeURIComponent(slug)}`, { method: 'POST' });
-      if (!res.ok) throw new Error(`adopt failed (${res.status})`);
-      void send('I adopted that scenario — what changed in the plan, and what should I gather evidence for when I teach it?');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Adopt failed');
-    }
-  }
-
   return (
     <section className="flex flex-col rounded-md border bg-card">
       <header className="border-b px-4 py-3">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">Ask · Curriculum chat</p>
         <h3 className="mt-0.5 text-sm font-semibold">
-          {isCourseAnchored ? (
-            <>
-              Asking about {courseCode}
-              <span className="ml-2 font-normal text-muted-foreground">— anchored to this course, but you can ask about the whole program.</span>
-            </>
-          ) : (
-            <>
-              Asking about the curriculum
-              <span className="ml-2 font-normal text-muted-foreground">— program-level questions across courses, competencies, career targets, and concepts.</span>
-            </>
-          )}
+          Asking about the curriculum
+          <span className="ml-2 font-normal text-muted-foreground">— program-level questions across courses, competencies, career targets, and concepts.</span>
         </h3>
       </header>
 
@@ -271,11 +182,7 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
       >
         {messages.length === 0 ? (
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              {isCourseAnchored
-                ? `Ask a question about ${courseTitle}, or anything else in the program. Some starting points:`
-                : 'Ask a question about the GC curriculum. Some starting points:'}
-            </p>
+            <p>Ask a question about the GC curriculum. Some starting points:</p>
             <ul className="space-y-1">
               {suggestions.map(s => (
                 <li key={s}>
@@ -292,14 +199,7 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
           </div>
         ) : (
           messages.map((m, i) => (
-            <MessageBubble
-              key={i}
-              message={m}
-              slug={slug}
-              onSave={handleSave}
-              onCompare={handleCompare}
-              onAdopt={handleAdopt}
-            />
+            <MessageBubble key={i} message={m} slug={slug} />
           ))
         )}
         {error && (
@@ -318,7 +218,7 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
           type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder={isCourseAnchored ? 'Ask about this course or anything in the program…' : 'Ask about the curriculum…'}
+          placeholder="Ask about the curriculum…"
           disabled={busy}
           className="flex-1 rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
         />
@@ -344,19 +244,7 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
   );
 }
 
-function MessageBubble({
-  message,
-  slug,
-  onSave,
-  onCompare,
-  onAdopt,
-}: {
-  message: AskMessage;
-  slug: string;
-  onSave: (id: string) => void;
-  onCompare: (id: string) => void;
-  onAdopt: (id: string) => void;
-}) {
+function MessageBubble({ message, slug }: { message: AskMessage; slug: string }) {
   const isUser = message.role === 'user';
   return (
     <div className={isUser ? 'pl-4' : ''}>
@@ -393,20 +281,6 @@ function MessageBubble({
             </li>
           ))}
         </ul>
-      )}
-      {!isUser && (message.scenarios?.length ?? 0) > 0 && (
-        <div className="mt-2 space-y-2" data-testid="scenario-cards">
-          {message.scenarios!.map(s => (
-            <ScenarioCard key={s.id} scenario={s} onSave={onSave} onCompare={onCompare} onAdopt={onAdopt} />
-          ))}
-        </div>
-      )}
-      {!isUser && (message.comparisons?.length ?? 0) > 0 && (
-        <div className="mt-2 space-y-2" data-testid="comparison-cards">
-          {message.comparisons!.map((c, i) => (
-            <ComparisonCard key={i} aCaption={c.aCaption} bCaption={c.bCaption} diff={c.diff} />
-          ))}
-        </div>
       )}
     </div>
   );

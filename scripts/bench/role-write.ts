@@ -9,8 +9,6 @@
  *   - objective-evidence-guide: courses with a stored Sol guide, from that guide's snapshot
  *   - wiki-update: course pages whose wiki copy was written from the latest snapshot
  *   - bundle-card-draft: competencies with a confirmed card
- *   - explore-local-delta: stored Explore scenarios (their stored output predates
- *     today's profiles, so these are checked for acceptability only)
  * reconcile-feedback (no stored feedback), synthesize-target (no partner
  * submissions) and the position functions (no positions) have no inputs here.
  * One model per process, pinned with CAMPUS_LLM_DEFAULT_MODEL and
@@ -22,7 +20,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { bundleCards, courseExploreScenarios, courseObjectiveGuides } from '@/lib/db/schema';
+import { bundleCards, courseObjectiveGuides } from '@/lib/db/schema';
 import { getSnapshotById, getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
@@ -31,8 +29,6 @@ import { generateObjectiveGuide } from '@/lib/objective-guide/generate';
 import { pickSyllabus, usableAssignmentsText } from '@/lib/objective-guide/inputs';
 import { updateWikiForSnapshot, courseCodeToSlug } from '@/lib/ai/wiki/update';
 import { draftBundleCard } from '@/lib/ai/catalog/draft-bundle-card';
-import { estimateLocalDelta } from '@/lib/ai/analyze/explore-local-delta';
-import { loadNeighborContext } from '@/lib/ai/explore/run-impact';
 
 if (process.env.OPENAI_API_KEY) throw new Error('Unset OPENAI_API_KEY: this benchmark must not reach a paid model');
 if (process.env.AI_PROVIDER !== 'campus') throw new Error('Set AI_PROVIDER=campus');
@@ -103,16 +99,6 @@ async function main() {
     const bundle = catalog.find(b => b.id === card.competencyId);
     if (!bundle) continue;
     await timed('bundle-card-draft', card.competencyId, card, async () => (await draftBundleCard(bundle, catalog)).card);
-  }
-
-  // 4. explore-local-delta on the stored scenarios' change text.
-  const scenarios = await db.select().from(courseExploreScenarios).orderBy(asc(courseExploreScenarios.createdAt)).limit(2);
-  for (const s of scenarios) {
-    const prose = (s.change as { prose?: string }).prose ?? '';
-    await timed('explore-local-delta', `${s.courseCode}: ${prose.slice(0, 60)}`, { change: s.change, predictedDeltas: s.predictedDeltas }, async () => {
-      const { context } = await loadNeighborContext(s.courseCode);
-      return (await estimateLocalDelta(s.courseCode, prose, context)).result;
-    });
   }
 
   const byFn: Record<string, unknown> = {};

@@ -1,5 +1,5 @@
 import type { CaptureProfile, CaptureCompetency } from '@/lib/ai/capture/schema';
-import { normalizeCompetencyKey } from '@/lib/ai/explore/run-impact';
+import { normalizeCompetencyKey } from '@/lib/what-if/neighbor-helpers';
 
 /**
  * Carry the ADOPT overlay (per-competency `intended_target` + profile-level

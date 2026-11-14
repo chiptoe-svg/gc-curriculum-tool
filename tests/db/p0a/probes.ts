@@ -27,7 +27,7 @@ import {
   loadTargetSubstrate,
 } from '@/lib/ai/wiki/update';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
-import { buildBaselineDelivered, resolveSubCompetencyDepths } from '@/lib/ai/explore/run-impact';
+import { buildBaselineDelivered, resolveSubCompetencyDepths } from '@/lib/what-if/neighbor-helpers';
 
 /** JSON-safe canonical form: Date → ISO string, Map → key-sorted entries, Set → sorted array, object keys sorted. */
 export function canon(v: unknown): unknown {

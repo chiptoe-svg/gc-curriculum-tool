@@ -163,10 +163,7 @@ export async function getAllCells(ex: Tx | typeof db = db): Promise<CoverageCell
  *     - lib/program/sufficiency-read.ts (getTargetSufficiency) — reads getMatrixData's
  *       cells directly (`matrix.cells.filter(c => c.careerTargetId === targetId)`,
  *       no course cross-reference of its own); inherits the fix.
- *     - lib/ai/explore/run-impact.ts (runImpact → computeCareerFit)        — reads
- *       getMatrixData; inherits the fix.
- *     - lib/ai/explore/career-fit.ts (computeCareerFit)  — pure, reads matrix.cells
- *       passed in by run-impact; inherits the fix transitively.
+ *     - lib/what-if/knock-on.ts (careerLines) — reads getMatrixData; inherits the fix.
  *     - lib/db/scaffolding-queries.ts (loadScaffoldingTarget) — already filtered
  *       scope='gc' AND status='offered' (program-visible) before Task 8b; a
  *       builds_to_career condition added in Task 8b (commit fd0daf0) is
@@ -191,7 +188,7 @@ export async function getAllCells(ex: Tx | typeof db = db): Promise<CoverageCell
  *       can never reach a competency page.
  *     - lib/ai/wiki/update.ts (loadCompetencyLinksForSnapshot) — per-snapshot
  *       (course page's competency links). Correct as-is.
- *     - lib/ai/explore/run-impact.ts (resolveSubCompetencyDepths,
+ *     - lib/what-if/neighbor-helpers.ts (resolveSubCompetencyDepths,
  *       buildBaselineDelivered) — per focal-course snapshot, whatever course
  *       that is (on-path or not). Correct as-is.
  *     - lib/program/prereq-gaps.ts — per prereq course, per competency.

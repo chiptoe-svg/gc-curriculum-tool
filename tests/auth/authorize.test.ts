@@ -22,7 +22,6 @@ describe('classify', () => {
     ['POST', '/api/capture/GC%203730/chat', 'GC 3730'],
     ['DELETE', '/api/capture/GC%203730/messages/abc', 'GC 3730'],
     ['PUT', '/api/courses/GC%203730/materials/1', 'GC 3730'],
-    ['POST', '/api/explore/GC%203730/scenarios/9/adopt', 'GC 3730'],
     ['PATCH', '/api/admin/courses/GC%203730/prereq-edges', 'GC 3730'],
     ['POST', '/api/courses/GC%204900ap/canvas-import', 'GC 4900AP'],
     ['POST', '/api/capture/GC%201010L/chat', 'GC 1010L'],

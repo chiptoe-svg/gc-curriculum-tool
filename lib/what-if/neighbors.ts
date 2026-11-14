@@ -1,7 +1,11 @@
 import { getLatestSnapshotByCourse, getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { listConfirmedEdgePairs } from '@/lib/db/prerequisite-edge-queries';
-import { assembleNeighborContext, type NeighborContext, type NeighborProfile } from '@/lib/ai/explore/neighbor-context';
-import { snapshotToNeighborProfile } from '@/lib/ai/explore/run-impact';
+import {
+  assembleNeighborContext,
+  snapshotToNeighborProfile,
+  type NeighborContext,
+  type NeighborProfile,
+} from '@/lib/what-if/neighbor-helpers';
 
 /**
  * The course's neighbors as they are now, with the focal course taken from the

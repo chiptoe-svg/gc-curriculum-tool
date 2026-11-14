@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
-import type { NeighborContext } from '@/lib/ai/explore/neighbor-context';
+import type { NeighborContext } from '@/lib/what-if/neighbor-helpers';
 import { baseProfile, foundationalRow } from '../../helpers/capture-profile-fixture';
 
 const complete = vi.fn();
