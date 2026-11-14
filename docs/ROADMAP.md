@@ -39,6 +39,7 @@ understand / do; the wiki and the program views make the result readable to anyo
 
 ## Possible (worth keeping; not scheduled)
 
+- **What-if later phases** (spec `2026-11-13-what-if-course-changes-design.md`, in rough order of likely value): compare a what-if's predictions with the next real capture of the course; "make this the plan" (turn a finished what-if into the course's working draft, the successor to Explore's retired Adopt); faculty comments on a what-if; a what-if overlay in the program matrix; what-ifs for proposed and not-yet-captured courses. Why not yet: the first version ships without them, and the first live what-if decides which is worth building.
 - **CSP for the web apps** — the last header CCIT flagged; needs app-side nonces. Why not yet: breaks inline scripts in the capture flow and the advisor until done carefully.
 - **Backup monitor also runs `wiki:lint`** and reports a change in broken-link count. Cheap; low urgency because links self-heal as courses are captured.
 - **Department-wide dashboard index across projects** (curriculum, gcdept agents, alumni, advising MCPs, hosting). The per-project pages exist first.

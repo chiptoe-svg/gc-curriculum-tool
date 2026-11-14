@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Using CourseCapture &amp; Explore — Detailed Guide</title>
+<title>Using CourseCapture &amp; What-ifs — Detailed Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
@@ -165,7 +165,7 @@
     <a class="nav-link" href="#cc-generate">4 · Generate, review, approve</a>
     <a class="nav-link" href="#cc-snapshots">Snapshots &amp; re-capturing</a>
     <div class="nav-group-label" style="margin-top: 10px;">Beyond the capture</div>
-    <a class="nav-link" href="#explore">Explore</a>
+    <a class="nav-link" href="#explore">What-ifs</a>
     <a class="nav-link" href="#roster">Course list &amp; prerequisites</a>
     <a class="nav-link" href="#readonly">The public profile</a>
     <div class="nav-group-label" style="margin-top: 10px;">Reference</div>
@@ -184,12 +184,12 @@
 
 <header class="doc-head">
   <div class="doc-eyebrow">Detailed Guide</div>
-  <h1 class="doc-title">Using CourseCapture &amp; Explore</h1>
-  <p class="doc-subtitle">What each step of capturing a course does and why, and how Explore, the course list and the public profile fit around it. For the screen-by-screen steps, use the <a href="https://gcworkflow.clemson.edu:8443/curriculum/howto">how-to</a>.</p>
+  <h1 class="doc-title">Using CourseCapture &amp; What-ifs</h1>
+  <p class="doc-subtitle">What each step of capturing a course does and why, and how what-ifs, the course list and the public profile fit around it. For the screen-by-screen steps, use the <a href="https://gcworkflow.clemson.edu:8443/curriculum/howto">how-to</a>.</p>
   <div class="doc-meta">
     <span><strong>Audience</strong> faculty capturing their own courses</span>
     <span><strong>Time per course</strong> 20–45 minutes for a first capture</span>
-    <span><strong>Updated</strong> 2026-11-09</span>
+    <span><strong>Updated</strong> 2026-11-14</span>
   </div>
 </header>
 
@@ -198,7 +198,7 @@
 
   <p><strong>CourseCapture</strong> builds an evidence-backed record of what a course actually develops in students. You check the course materials, an AI interviewer asks you about the course, and the tool drafts a <strong>Course Outcome Profile</strong>: the course's competencies, each scored for <em>Knowing</em>, <em>Reasoning</em> and <em>Doing</em> at a depth backed by student evidence, plus the six foundational habits (Agency, Attention to Detail, Resilience, Curiosity, Written Communication, Spoken Communication), scored for Doing only. You review the draft, adjust what is wrong, and approve it. Approval records a permanent, dated snapshot.</p>
 
-  <p><strong>Explore</strong> is for thinking about changes to a course once it has been captured. See §9.</p>
+  <p><strong>What-ifs</strong> are for trying out a change to a course once it has an approved version, without changing the course. See §9.</p>
 
   <div class="callout tip">
     <div class="callout-title">Just want the steps?</div>
@@ -213,7 +213,7 @@
 
   <ul>
     <li><strong>Home page:</strong> <code>https://gcworkflow.clemson.edu:8443/</code> lists every course with its capture status. Anyone on the network can browse it and open a course's read-only public profile.</li>
-    <li><strong>Faculty pages</strong> (CourseCapture, Explore, the course list, the program matrix) need a login. GC faculty use the shared faculty username and password, asked once per browser. Faculty who edit only their own course get a <strong>personal link</strong> from the administrator: clicking it signs them in on that browser for 30 days at a time, and they can change only the courses it lists. Don't share a personal link.</li>
+    <li><strong>Faculty pages</strong> (CourseCapture, what-ifs, the course list, the program matrix) need a login. GC faculty use the shared faculty username and password, asked once per browser. Faculty who edit only their own course get a <strong>personal link</strong> from the administrator: clicking it signs them in on that browser for 30 days at a time, and they can change only the courses it lists. Don't share a personal link.</li>
     <li><strong>Voice input</strong> works on the <code>https://…:8443</code> address. Browsers block the microphone on plain <code>http://</code> pages, so if the Voice button is refused, check that the address starts with <code>https</code>.</li>
   </ul>
 </section>
@@ -349,29 +349,48 @@
 </section>
 
 <section id="explore">
-  <h2><span class="num">§ 9</span>Explore · thinking through a change</h2>
+  <h2><span class="num">§ 9</span>What-ifs · trying out a change</h2>
 
-  <p><strong>Explore</strong> (<code>/explore/&lt;course-code&gt;</code>, the <em>Explore Changes</em> link on the course list) is a conversation about a course that has been captured. It is anchored to the course but can draw on the whole program record. Starter questions include:</p>
-  <ul>
-    <li>What does this course set up for downstream courses?</li>
-    <li>Which career targets does this course support best?</li>
-    <li>What concepts are anchored in this course?</li>
-    <li>How does this compare to its prerequisites?</li>
-  </ul>
-  <p>Type or use <strong>Voice</strong>, then <strong>Send</strong>. Answers cite the curriculum wiki pages they draw on.</p>
+  <p>A <strong>what-if</strong> lets you sketch a change to a course and see what it would mean before anyone commits to it: "what if GC 3400 added a packaging project and dropped the second poster?" You describe the change in a conversation, and the tool writes a page that reads like the course's wiki page, with the change in place and its likely effect on neighboring courses and career targets. It is meant as a starting point for a conversation with the people who teach the courses before and after.</p>
 
-  <h3>Trying a change</h3>
-  <p>Once the course has been captured, describe a change ("What if the capstone required a written rationale for every design decision?") and Explore predicts its effect against the course's latest snapshot: which competencies would move, and the ripple on downstream courses and career fit. Each prediction appears as a <strong>scenario card</strong> with three buttons:</p>
-  <ul>
-    <li><strong>Save</strong> names the scenario so you can come back to it;</li>
-    <li><strong>Compare</strong> asks Explore to compare your saved scenarios;</li>
-    <li><strong>Adopt</strong> makes the scenario the course's next planned version: it <em>replaces the current working draft</em> with the scenario's intended targets and revised design. Measured scores and snapshots are not changed.</li>
-  </ul>
-
-  <div class="callout warn">
-    <div class="callout-title">After adopting</div>
-    <p>The capture page doesn't yet mark a draft as adopted from a scenario. If you adopt one, you'll see the changed targets in the draft but no note explaining where they came from. Adopt only when you mean to plan the next version from it.</p>
+  <div class="callout tip">
+    <div class="callout-title">Nothing in the course changes</div>
+    <p>A what-if is kept apart from the real course. Its conversation, files and page are stored on their own and never reach the course's draft, its approved versions, its materials, the program views or the public wiki. Someone revising the course for real at the same time sees no difference.</p>
   </div>
+
+  <h3>Starting one</h3>
+  <p>A what-if starts from the course's current approved version, so the course needs one. There are two ways in:</p>
+  <ul>
+    <li>on the course's interview page, <strong>Try a what-if instead</strong>, set apart from the three re-capture choices;</li>
+    <li>on the course's what-if list (<strong>What-ifs</strong> on the course list, or the faculty view of the course's wiki page), the same control.</li>
+  </ul>
+  <p>Under the shared department login you pick your name first, so the page can say who wrote it. You can start a what-if on any course, not only your own: the instructor of the next course is often the one asking "what if the course before mine added this?"</p>
+
+  <h3>The conversation</h3>
+  <p>The assistant asks what you want to change, or what result you are after. If you know the result but not the change ("students should arrive in my course able to soft-proof"), it suggests a few possible changes, says what each would push out, and can give a quick predicted effect for one you want to weigh. It does not pick for you. Once there is a direction, it asks one question at a time until it knows what is added, what comes out to make room, what students would need walking in, and what they would leave with. Its statements about other courses come from the curriculum record, not from general knowledge.</p>
+  <p>Type or use <strong>Voice</strong>. <strong>Attach files</strong> to add a draft assignment, a rubric or a screenshot: pick files, drop them in, or paste an image. Attachments are read the same way as course materials, including the screening for student information, and are used only by this what-if. A file that cannot be read is marked in the conversation.</p>
+
+  <h3>The page</h3>
+  <p>When you are ready, <strong>Create the what-if page</strong>. This takes a minute or two. The page has a banner saying it is a what-if, then:</p>
+  <ul>
+    <li><strong>What changes</strong>: what is added and removed, what students would newly need walking in, and the ratings that would move, before and after, each with a confidence and a reason. If removals never came up, it says "Removed: not discussed" rather than implying nothing comes out.</li>
+    <li><strong>The course as it would be</strong>: the course description rewritten with the change, and the full table of ratings.</li>
+    <li><strong>For neighboring courses</strong>: whether earlier courses deliver what this would newly ask of them, prerequisite gaps that later courses would gain or lose, and career targets that would move. Only confirmed prerequisite links are checked. Where an effect could not be worked out, the page says so instead of reporting no effect.</li>
+    <li><strong>Questions for discussion</strong> and <strong>what it is based on</strong> (the attached files).</li>
+  </ul>
+  <p>You can go back to the conversation, say more or attach more, and <strong>Update the page</strong>. Updating replaces the page. You can also rename or delete the what-if; deleting removes the page, the conversation and the files, and cannot be undone.</p>
+
+  <h3>What "predicted" means</h3>
+  <p>Ratings the change does not touch keep their approved values exactly. Ratings it would move, and any new ones, are marked <strong>predicted</strong>: they are estimates of what the course would develop once the change is taught, not measurements. The evidence rule for approved ratings does not apply to them, because nothing has been taught yet. A full capture after the change is taught is what records it for real. The AI writes the page's wording only; every rating and effect on the page comes from the stored estimate.</p>
+
+  <h3>Who can see and change it</h3>
+  <ul>
+    <li>Once it has a page, a what-if is listed for the course and anyone signed in can read it. Share it by passing on its link.</li>
+    <li>Until then, and for its conversation, only the person who started it (and an administrator) can see it.</li>
+    <li>Only the person who started it, or an administrator, can continue, update, rename or delete it. Under the shared department login, the login is the owner, so anyone using that login can do these things.</li>
+  </ul>
+  <p>If a newer version of the course is approved later, the page says so and can still be updated against the version it started from. If that version is withdrawn, the page stays readable but can no longer be updated.</p>
+  <p>Each what-if calls the AI and counts toward the department's daily AI spending limit, like the interview.</p>
 </section>
 
 <section id="roster">
@@ -383,7 +402,7 @@
     <li>a <strong>data badge</strong>: <em>Measured</em> (captured from evidence), <em>Syllabus</em> or <em>No data</em>;</li>
     <li>a <strong>status</strong>: Captured, Reviewed, AI drafted, In audit or Not started, and the last capture date;</li>
     <li>the main action: <strong>Capture Course</strong> if not started, <strong>Edit Course</strong> otherwise;</li>
-    <li><strong>View Course</strong> (the public profile), <strong>Explore Changes</strong>, <strong>N versions</strong> (the Snapshots panel) and <strong>Prereqs</strong>.</li>
+    <li><strong>View Course</strong> (the public profile), <strong>What-ifs</strong> (with a count when there are any), <strong>N versions</strong> (the Snapshots panel) and <strong>Prereqs</strong>.</li>
   </ul>
   <p><strong>+ Add a course</strong> adds one course (code, title, level, track, catalog URL). <strong>Preload courses</strong> adds many at once, one per line.</p>
 
@@ -421,7 +440,7 @@
   <h2><span class="num">§ 13</span>What these tools don't do</h2>
   <ul>
     <li><strong>Not an evaluation</strong> of any instructor or student. Scores describe what the course's work requires and evidences.</li>
-    <li><strong>Not automatic redesign.</strong> Explore predicts and suggests; faculty decide, and a re-capture records the change.</li>
+    <li><strong>Not automatic redesign.</strong> A what-if predicts and suggests; faculty decide, and a re-capture records the change once it is taught.</li>
     <li><strong>Not a replacement for your judgment.</strong> The AI drafts; you confirm. Every score is editable.</li>
     <li><strong>No snapshot comparison yet.</strong> You can read snapshots one at a time, but there is no side-by-side view of what changed.</li>
   </ul>
