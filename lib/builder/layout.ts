@@ -12,10 +12,10 @@
 import { TERMS_PER_ACT, type Act, type Placement, type Slot } from './types';
 
 /** Every card is the same size, in map pixels (set on the card, so it does not follow the root font size). */
-export const CARD_W = 176;
-export const CARD_H = 50;
-export const COL_W = 190;    // card plus gap, for the automatic layout
-export const ROW_H = 64;     // the least height of one term row
+export const CARD_W = 184;
+export const CARD_H = 56;
+export const COL_W = 198;    // card plus gap, for the automatic layout
+export const ROW_H = 74;     // the least height of one term row
 
 export interface Pos { slot: Slot; x: number }
 

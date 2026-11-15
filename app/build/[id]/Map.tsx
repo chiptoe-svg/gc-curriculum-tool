@@ -13,12 +13,12 @@ import { CARD_H, CARD_W, COL_W, ROW_H, slotAt, type Pos } from '@/lib/builder/la
 import { ACTS, TERMS_PER_ACT, termOf, type Act, type Branch, type Library, type PlanState, type Slot } from '@/lib/builder/types';
 import { TONE_VAR, dimNote, dimsOf, stratumName, stratumRank, toneOfCheckpoint, trunkLevel, type Tone } from './ui';
 
-const COL = 40;          // one trunk
+const COL = 44;          // one trunk
 const GROUP_GAP = 18;    // between strata
 const PAD = 22;
 const CROWN_H = 168;
-const ROOTS_H = 214;
-const NOTE_LINE = 15;
+const ROOTS_H = 250;
+const NOTE_LINE = 17;
 
 const HEAD_W = 208;      // act heading plus lane padding, left of the cards
 const DROP_OFFSET_X = 24; // where a card from the library is held, when dragged in
@@ -359,7 +359,7 @@ export function CurriculumMap(props: {
           fill={selectedObjective === o.competency.id ? 'var(--cb-select)' : 'transparent'} />
         {parts}
         <text transform={`translate(${cx + 4},${rootsY + 12}) rotate(-52)`} textAnchor="end" className={`cb-rootname${o.status === 'untouched' ? ' is-untouched' : ''}`}>
-          {o.competency.name.length > 28 ? `${o.competency.name.slice(0, 27)}…` : o.competency.name}
+          {o.competency.name.length > 34 ? `${o.competency.name.slice(0, 33)}…` : o.competency.name}
           <title>{o.competency.name}</title>
         </text>
       </g>
