@@ -100,7 +100,7 @@ Data gaps found while building (2026-11-15), neither fixed here:
 3. The engine is pure and shared by tests and browser; the server does no analysis.
 4. Access follows the what-if rule (any capture right).
 5. Starting target values, as above.
-6. The model-judged competency-relation pass was **not** run, although the owner approved it: the 2026-11-15 handoff reports the July measurement (LLM skill-identity judgments 46–59% wrong, cosine ranges overlapping), so its output would have been unmeasured. See Deferred below.
+6. The model-judged competency-relation pass was **not** run, although the owner approved it: the 2026-11-15 handoff reports the July measurement (LLM skill-identity judgments 58–92% wrong at baseline depending on the judge, the 58% coming from the lenient same-family judge, and still about 66–84% wrong with the improved prompt and newer models, cosine ranges overlapping), so its output would have been unmeasured. See Deferred below.
 
 ## Where the literature pushes against this design
 

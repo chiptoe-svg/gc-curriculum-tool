@@ -84,6 +84,11 @@ drizzle/meta/
 /docs/references/_pdfs/*.md
 !/docs/references/_pdfs/README.md
 
+# Held reference datasets and code that cited papers rest on (owner, 2026-11-15). Local only,
+# like the PDFs: third-party data stays off this public repo. A README in the folder records
+# each item's source, license, date, size and checksum.
+/docs/references/_data/
+
 # Published by the ai_career session (owner, 2026-11-03); its publish_papers.py
 # keeps a working copy here. Not tracked so this repo never overwrites the live papers.
 /docs/ai-careers/

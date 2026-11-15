@@ -318,6 +318,18 @@
       "ref-duguid-2005": {
         "file": "pdfs:duguid-2005-art-of-knowing-manuscript.pdf",
         "note": "author's manuscript; venue confirmed via Crossref 10.1080/01972240590925311"
+      },
+      "ref-le-2026": {
+        "file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+        "note": "arXiv:2605.28483v1, acquired 2026-11-15 from arXiv"
+      },
+      "ref-turaev-2026": {
+        "file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+        "note": "arXiv:2608.12356v1, acquired 2026-11-15 from arXiv"
+      },
+      "ref-veys-2026": {
+        "file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
+        "note": "arXiv:2611.03525v1, acquired 2026-11-15 from arXiv"
       }
     },
     "measurement-hypotheses-deep-dive.html": {
@@ -506,7 +518,9 @@
       "ref-frej-2024": { "file": "pdfs:frej-2024-course-recommenders-job-market.pdf" },
       "ref-gibbs-2014": { "file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf" },
       "ref-heileman-2018": { "file": "pdfs:heileman-2018-curricular-analytics.pdf", "note": "arXiv:1811.09676v1, acquired 2026-11-15" },
+      "ref-javadian-sabet-2024": { "file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf", "note": "published Scientific Data version; same file background.html uses" },
       "ref-jayalath-2025": { "file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf" },
+      "ref-le-2026": { "file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf", "note": "arXiv:2605.28483v1, acquired 2026-11-15 from arXiv" },
       "ref-jayalath-2026": { "file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf" },
       "ref-nelson-2026": { "file": "pdfs:web/nelson-2026-the-curriculum-mapping.html" },
       "ref-perkins-salomon-1992": { "file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf" },
@@ -514,6 +528,8 @@
       "ref-rawle-2017": { "file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf", "note": "CC BY 4.0, acquired 2026-11-15 from celt.uwindsor.ca" },
       "ref-sato-2017": { "file": "pdfs:web/sato-2017-whats-in-a-prerequisite.html" },
       "ref-timss-2011": { "file": "pdfs:timss-2011-frameworks-introduction.pdf", "note": "acquired 2026-11-15 from timssandpirls.bc.edu" },
+      "ref-turaev-2026": { "file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf", "note": "arXiv:2608.12356v1, acquired 2026-11-15 from arXiv" },
+      "ref-veys-2026": { "file": "pdfs:veys-2026-workrb-grading-unannotated.pdf", "note": "arXiv:2611.03525v1, acquired 2026-11-15 from arXiv" },
       "ref-wiggins-2005": { "file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf" }
     }
   }
