@@ -4,7 +4,7 @@
  */
 export const WHAT_IF_COPY = {
   // The start control (interview page and the what-if list).
-  startButton: 'Try a what-if instead',
+  startButton: 'Start a what-if',
   startLine: 'Sketch a change and see what it would mean. Nothing here changes the course.',
   startNameLabel: 'Your name',
   startNameNeeded: 'Pick your name to start.',
@@ -44,7 +44,7 @@ export const WHAT_IF_COPY = {
   predictedLabel: 'predicted',
   predictedExplain:
     '"Predicted" marks a rating this change would move or add. It is an estimate, not a measurement. Ratings without the label are the approved ones.',
-  writtenBy: (author: string, date: string) => `Written by ${author} on ${date}.`,
+  lastUpdatedBy: (author: string, date: string) => `Last updated by ${author} on ${date}.`,
   basedOn: (who: string, date: string) => `Starts from the version approved by ${who} on ${date}.`,
   basedOnUnknown: (date: string) => `Starts from the version approved on ${date}.`,
   newerVersion: 'A newer version has been approved since this was written. It can still be updated against the version it started from.',
@@ -61,7 +61,7 @@ export const WHAT_IF_COPY = {
   changed: 'Changed',
   nothingAdded: 'Nothing was added.',
   nothingChanged: 'Nothing else was changed.',
-  removedFallback: 'Removed: not discussed',
+  removedFallback: 'Removed: nothing was said about what this replaces',
   newlyNeeded: 'What students would newly need walking in',
   incomingNew: 'new',
   incomingRaised: 'raised',
@@ -97,6 +97,7 @@ export const WHAT_IF_COPY = {
   questionsNone: 'No open questions were recorded.',
   basisNone: 'No files were attached.',
   basisHeldBack: 'held back',
+  basisHeldBackWhy: (reason: string) => `held back: ${reason}`,
   basisFailed: 'could not be read',
   pageDate: (date: string) => `Page last created ${date}.`,
   noPageYet: 'This what-if has no page yet.',

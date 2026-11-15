@@ -80,6 +80,41 @@ describe('WhatIfPageLayout', () => {
     expect(within(row('Attention to detail')).queryByText('predicted')).toBeNull();
   });
 
+  it("gives a moved rating's reason once (under Ratings that would move), and only numbers plus predicted in the table", () => {
+    renderIt();
+    expect(screen.getAllByText(/Less time on file handoff/)).toHaveLength(1);
+    expect(within(row('Prepare print-ready files')).queryByText(/Less time on file handoff/)).toBeNull();
+    expect(within(row('Prepare print-ready files')).queryByText(/confidence/)).toBeNull();
+    expect(within(row('Soft proofing')).queryByText(/A new lab introduces it/)).toBeNull();
+    expect(within(row('Soft proofing')).getByText('predicted')).toBeInTheDocument();
+  });
+
+  it('career lines show no visible (up) or (down); direction stays for screen readers', () => {
+    renderIt(view({ knockOn: { ...knockOn, careerTargets: [{ targetName: 'Production Manager', label: 'Press', before: 'Developing', after: 'Established', direction: 'up' }] } }));
+    const li = screen.getByText(/Production Manager/).closest('li') as HTMLElement;
+    expect(li.textContent).toContain('Developing → Established');
+    const sr = li.querySelector('.sr-only') as HTMLElement;
+    expect(sr.textContent).toContain(WHAT_IF_COPY.careerUp);
+    expect(li.textContent?.replace(sr.textContent ?? '', '')).not.toMatch(/\(up\)/);
+  });
+
+  it('shows why a held-back attachment was held back', () => {
+    renderIt(view({ attachments: [{ fileName: 'roster.xlsx', status: 'held_back', heldBackReason: 'Looks like a student roster.' }] }));
+    expect((screen.getByText('roster.xlsx').closest('li') as HTMLElement).textContent)
+      .toBe('roster.xlsx — held back: Looks like a student roster.');
+  });
+
+  it('puts the effects note directly under the Later courses heading', () => {
+    renderIt();
+    const note = screen.getByText(WHAT_IF_COPY.effectsNote);
+    expect(screen.getByRole('heading', { name: WHAT_IF_COPY.laterHeading }).nextElementSibling).toBe(note);
+  });
+
+  it('says who last updated the page', () => {
+    renderIt();
+    expect(screen.getByText(/Last updated by Pat Faculty on/)).toBeInTheDocument();
+  });
+
   it('says plainly when effects could not be computed, and links each named course to its wiki page', () => {
     renderIt();
     expect(screen.getByText(/no effects on other courses could be computed/i)).toBeInTheDocument();

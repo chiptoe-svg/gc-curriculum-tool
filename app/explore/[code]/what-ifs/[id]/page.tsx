@@ -62,7 +62,7 @@ export default async function WhatIfPage({ params, searchParams }: Props) {
     };
   }
 
-  const attachments = (await listWhatIfAttachments(id)).map(a => ({ fileName: a.fileName, status: a.status }));
+  const attachments = (await listWhatIfAttachments(id)).map(a => ({ fileName: a.fileName, status: a.status, heldBackReason: a.heldBackReason }));
 
   return (
     <WhatIfPageLayout

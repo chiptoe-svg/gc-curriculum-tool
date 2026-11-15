@@ -17,7 +17,7 @@ export interface WhatIfPageView {
   profile: WhatIfProfile;
   knockOn: KnockOn;
   prose: WhatIfProse;
-  attachments: Array<{ fileName: string; status: 'ok' | 'failed' | 'held_back' }>;
+  attachments: Array<{ fileName: string; status: 'ok' | 'failed' | 'held_back'; heldBackReason?: string | null }>;
 }
 
 /** The approved version the what-if started from. */
@@ -49,6 +49,18 @@ function Predicted({ rating }: { rating: WhatIfRating }) {
   );
 }
 
+/** The table's version: the numbers and the label only; the reason is given once, under "Ratings that would move". */
+function PredictedBrief({ rating }: { rating: WhatIfRating }) {
+  const change = changeText(rating.before, rating.kud);
+  return (
+    <>
+      <span className="font-semibold">{WHAT_IF_COPY.predictedLabel}</span>
+      {rating.status === 'new' && <span> · {WHAT_IF_COPY.newRating} ({kudText(rating.kud)})</span>}
+      {change && <> · <span>{change}</span></>}
+    </>
+  );
+}
+
 function CourseLink({ code, q }: { code: string; q: string }) {
   return <Link href={wikiCourseHref(code, q)}>{code}</Link>;
 }
@@ -72,7 +84,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
   const title = view.title ?? WHAT_IF_COPY.untitled;
 
   return (
-    <div className="wiki-index wiki-page">
+    <div className="wiki-index wiki-page whatif-page">
       <header className="wiki-index__top">
         <p className="wiki-page__kind">{view.courseCode}</p>
         <h1 className="wiki-index__title wiki-page__title">{title}</h1>
@@ -81,7 +93,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
           <p className="mt-1 text-sm">{WHAT_IF_COPY.predictedExplain}</p>
         </div>
         <p className="wiki-index__status">
-          {WHAT_IF_COPY.writtenBy(view.authorName, formatDate(view.pageCreatedAt))}{' '}
+          {WHAT_IF_COPY.lastUpdatedBy(view.authorName, formatDate(view.pageCreatedAt))}{' '}
           {base.approvedAt && (base.approvedBy
             ? WHAT_IF_COPY.basedOn(base.approvedBy, formatDate(base.approvedAt))
             : WHAT_IF_COPY.basedOnUnknown(formatDate(base.approvedAt)))}
@@ -134,6 +146,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
           <h2>{WHAT_IF_COPY.sectionCourse}</h2>
           {prose.description && <Md>{prose.description}</Md>}
           <h3>{WHAT_IF_COPY.ratingsHeading}</h3>
+          <div className="whatif-table-scroll" tabIndex={0} role="region" aria-label={WHAT_IF_COPY.ratingsHeading}>
           <table>
             <thead>
               <tr>
@@ -148,13 +161,14 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
                 <tr key={n}>
                   <td>
                     <span>{r.statement}</span>
-                    {r.status !== 'approved' && <div className="text-sm"><Predicted rating={r} /></div>}
+                    {r.status !== 'approved' && <div className="text-sm"><PredictedBrief rating={r} /></div>}
                   </td>
                   {(['k', 'u', 'd'] as Array<keyof Kud>).map(d => <td key={d}>{level(r.kud[d])}</td>)}
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
           {hasFoundational && <p className="text-sm">{WHAT_IF_COPY.foundationalNote}</p>}
 
           <h2>{WHAT_IF_COPY.sectionNeighbors}</h2>
@@ -180,6 +194,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
           {knockOn.laterCourses.length > 0 && (
             <>
               <h3>{WHAT_IF_COPY.laterHeading}</h3>
+              <p className="text-sm">{WHAT_IF_COPY.effectsNote}</p>
               <ul>
                 {knockOn.laterCourses.map((l, n) => (
                   <li key={n}>
@@ -195,7 +210,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
               <ul>
                 {knockOn.careerTargets.map((c, n) => (
                   <li key={n}>
-                    {c.targetName}: {c.label} {c.before} → {c.after} ({c.direction === 'up' ? WHAT_IF_COPY.careerUp : WHAT_IF_COPY.careerDown})
+                    {c.targetName}: {c.label} {c.before} → {c.after}<span className="sr-only"> ({c.direction === 'up' ? WHAT_IF_COPY.careerUp : WHAT_IF_COPY.careerDown})</span>
                   </li>
                 ))}
               </ul>
@@ -206,7 +221,6 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
           )}
           {knockOn.careerNotComputed && <p>{WHAT_IF_COPY.careerNotComputed}</p>}
           {neighborsEmpty && <p>{WHAT_IF_COPY.neighborsNone}</p>}
-          <p className="text-sm">{WHAT_IF_COPY.effectsNote}</p>
 
           <h2>{WHAT_IF_COPY.sectionQuestions}</h2>
           {prose.questions.length > 0
@@ -219,7 +233,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
               {view.attachments.map((a, n) => (
                 <li key={n}>
                   <span>{a.fileName}</span>
-                  {a.status === 'held_back' && <> ({WHAT_IF_COPY.basisHeldBack})</>}
+                  {a.status === 'held_back' && <> — {a.heldBackReason ? WHAT_IF_COPY.basisHeldBackWhy(a.heldBackReason) : WHAT_IF_COPY.basisHeldBack}</>}
                   {a.status === 'failed' && <> ({WHAT_IF_COPY.basisFailed})</>}
                 </li>
               ))}

@@ -451,6 +451,17 @@
   .wiki-page__body { grid-template-columns: 1fr; gap: 2.5rem; }
 }
 
+/* What-if page: wider reading column, scrolling table, actions first on phones (2026-11-14). */
+.whatif-page { max-width: 80rem; }
+.whatif-page .wiki-page__body { grid-template-columns: minmax(0, 1fr) 14rem; gap: 3rem; }
+.whatif-page .wiki-prose > :not(table, .whatif-table-scroll) { max-width: 48rem; }
+.whatif-table-scroll { overflow-x: auto; }
+.whatif-table-scroll table { min-width: 30rem; }
+@media (max-width: 860px) {
+  .whatif-page .wiki-page__body { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+  .whatif-page .wiki-page__aside { order: -1; }
+}
+
 /* --- Wiki: "how to read this", three-view course panel, guide (2026-10-05) --- */
 .wiki-index :is(.wiki-index__lede, .wiki-col__intro, .wiki-views__intro, .wiki-views__sub, .wiki-howto__hint, .wiki-howto__more) a {
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--wiki-accent) 60%, transparent);
