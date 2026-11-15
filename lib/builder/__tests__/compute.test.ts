@@ -38,7 +38,8 @@ const plan = (placements: P, over: Partial<PlanState> = {}, goal: Partial<PlanSt
   fade: 0,
   placements: placements.map(([ref, act, branch]) => ({ ref, act, branch: branch ?? null })),
   ...over,
-  goal: { ...EMPTY_PLAN.goal, targetIds: ['t'], levels: { t: { color: final(3), press: final(3), agency: final(3) } }, ...goal },
+  // Career paths only, unless a test switches program targets on (EMPTY_PLAN, for new plans, has them on).
+  goal: { ...EMPTY_PLAN.goal, program: undefined, targetIds: ['t'], levels: { t: { color: final(3), press: final(3), agency: final(3) } }, ...goal },
 });
 const obj = (r: ReturnType<typeof computePlan>, id: string) => r.objectives.find(o => o.competency.id === id)!;
 
@@ -223,6 +224,26 @@ describe('computePlan', () => {
     }));
     expect(r.objectives.map(o => o.competency.id)).toEqual(['press']);
     expect(obj(r, 'press').status).toBe('short');
+  });
+
+  it('judges every competency against program targets with no career path chosen, except those switched off', () => {
+    const l = lib([captured('A', [['color', 3, 3, 3], ['press', 1, 1, 1]])]);
+    const ids = (r: ReturnType<typeof computePlan>) => r.objectives.map(o => o.competency.id).sort();
+    const on = computePlan(l, plan([['A', 1]], {}, { targetIds: [], program: { off: [] }, levels: {} }));
+    expect(ids(on)).toEqual(['agency', 'color', 'press']);
+    expect(on.milestones[0]!.required).toBeGreaterThan(0); // starting values ask for something at Act 1
+    const off = computePlan(l, plan([['A', 1]], {}, { targetIds: [], program: { off: ['agency'] }, levels: {} }));
+    expect(ids(off)).toEqual(['color', 'press']);
+    expect(computePlan(l, plan([['A', 1]], {}, { targetIds: [], levels: {} })).objectives).toEqual([]); // program off: career paths only
+  });
+
+  it('uses the stricter of the program target and a chosen career path\'s', () => {
+    const l = lib([captured('A', [['color', 3, 3, 3]])]);
+    const strict = (program: number, path: number) => obj(computePlan(l, plan([['A', 3]], {}, {
+      program: { off: [] }, levels: { [PLAN_SCOPE]: { color: final(program) }, t: { color: final(path), press: final(0), agency: final(0) } },
+    })), 'color').required[2]!.d;
+    expect(strict(4, 2)).toBe(4);
+    expect(strict(2, 4)).toBe(4);
   });
 
   it('keeps branches apart: a branch course counts only where that branch is in view', () => {

@@ -158,6 +158,12 @@ export interface PlanGoal {
   added: string[];
   removed: string[];
   written: WrittenObjective[];
+  /**
+   * Program targets, independent of any career path (owner, 2026-11-15): when present, every catalog
+   * competency except those in `off` is judged against the plan's own targets (levels[PLAN_SCOPE]); a
+   * chosen career path adds its own targets, and the stricter one counts. Absent = career paths only.
+   */
+  program?: { off: string[] };
 }
 
 export interface PlanState {
@@ -190,7 +196,7 @@ export interface PlanState {
 }
 
 export const EMPTY_PLAN: PlanState = {
-  goal: { targetIds: [], levels: {}, added: [], removed: [], written: [] },
+  goal: { targetIds: [], levels: {}, added: [], removed: [], written: [], program: { off: [] } },
   lens: 'discovered',
   fill: true,
   fade: 1,

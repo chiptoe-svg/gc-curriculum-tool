@@ -1,6 +1,6 @@
 'use client';
 
-import { FLAG_TEXT, requiredLevels, type ObjectiveResult, type PlanResult } from '@/lib/builder/compute';
+import { FLAG_TEXT, inProgram, requiredLevels, type ObjectiveResult, type PlanResult } from '@/lib/builder/compute';
 import { ACTS, PLAN_SCOPE, type ActLevels, type Library, type PlanState } from '@/lib/builder/types';
 import type { Update } from './Builder';
 import type { Selection } from './Map';
@@ -32,7 +32,7 @@ export function ObjectiveDrawer(props: {
   const c = o.competency;
   const dims = dimsOf(c);
   const scopes = [...o.targetIds.map(id => ({ id, name: library.targets.find(t => t.id === id)?.name ?? id })),
-    ...(plan.goal.added.includes(c.id) ? [{ id: PLAN_SCOPE, name: 'This plan' }] : [])];
+    ...(plan.goal.added.includes(c.id) || inProgram(plan, c.id) ? [{ id: PLAN_SCOPE, name: 'Program' }] : [])];
   const neighbors = c.neighbors.map(id => library.competencies.find(x => x.id === id)).filter((x): x is NonNullable<typeof x> => !!x);
   const weightIn = (scope: string) => library.targets.find(t => t.id === scope)?.members.find(m => m.competencyId === c.id)?.weight ?? null;
 

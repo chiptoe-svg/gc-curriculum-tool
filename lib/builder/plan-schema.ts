@@ -23,6 +23,7 @@ export const planStateSchema = z.object({
     written: z.array(z.object({
       id, act, targetId: id.nullable(), text: text(500), competencyIds: z.array(id).max(20),
     })).max(100),
+    program: z.object({ off: z.array(id).max(200) }).optional(),
   }),
   lens: z.enum(['discovered', 'stated']),
   fill: z.boolean(),

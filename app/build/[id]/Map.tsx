@@ -43,12 +43,16 @@ export function CurriculumMap(props: {
   /** Where each card sits in its lane (layoutLanes). */
   positions: Record<string, Pos>;
   zoom: number;
+  /** Draw the prerequisite arrows between courses (a viewer setting). */
+  arrows: boolean;
   selection: Selection;
   onSelect: (s: Selection) => void;
   onDropCourse: (payload: string, target: DropTarget) => void;
   /** A new height for an act, in map pixels; null = automatic. */
   onResizeAct: (act: Act, height: number | null) => void;
   onOpenTargets: () => void;
+  /** Open one act's targets (ActTargetsDrawer). */
+  onOpenAct: (act: Act) => void;
 }) {
   const { plan, result, allCourses, selection, onSelect, positions, zoom } = props;
   const mapRef = useRef<HTMLDivElement>(null);
@@ -186,7 +190,7 @@ export function CurriculumMap(props: {
     const at = positions[c.ref] ?? { slot: 0 as Slot, x: 0 };
     return (
       <button
-        key={c.ref} type="button" data-card={c.ref} draggable
+        key={c.ref} type="button" data-card={c.ref} data-term={termOf(c.act, at.slot)} draggable
         className={`cb-card cb-card--${mark}${selectedCourse === c.ref ? ' is-selected' : ''}${cardDim(c.ref) ? ' is-dim' : ''}`}
         style={{ left: at.x, top: rowTop(at.slot), width: CARD_W, height: CARD_H }}
         onClick={() => onSelect({ kind: 'course', ref: c.ref })}
@@ -196,7 +200,7 @@ export function CurriculumMap(props: {
           e.dataTransfer.setData('text/plain', c.ref); e.dataTransfer.effectAllowed = 'move';
         }}
         onDragEnd={() => { grab.current = null; setDropAt(null); }}
-        title={`${c.code}: ${c.title} (term ${termOf(c.act, at.slot)})${c.reading.filled ? '. No reading under the chosen input, so its other reading is used' : ''}`}
+        title={`${c.code}: ${c.title}${c.reading.filled ? '. No reading under the chosen input, so its other reading is used' : ''}`}
       >
         <span className="cb-card__mark" aria-hidden />
         <span className="cb-card__code">{c.code}</span>
@@ -218,9 +222,11 @@ export function CurriculumMap(props: {
           <p className="cb-band__act">Act {act}</p>
           <h3>{info.name}</h3>
           <p className="cb-band__span">{info.span}</p>
-          <p className="cb-band__note" title={`By the end of Act ${act}: ${m.met} of ${m.required} targets reached${m.fading ? `, ${m.fading} more reached earlier and fading` : ''}. ${m.introduced} objectives introduced, ${m.integrated} worked at integration depth.`}>
+          <button type="button" className="cb-band__note" onClick={() => props.onOpenAct(act)}
+            title={`By the end of Act ${act}: ${m.met} of ${m.required} targets reached${m.fading ? `, ${m.fading} more reached earlier and fading` : ''}. ${m.introduced} objectives introduced, ${m.integrated} worked at integration depth. Click to see and set every target for this act.`}>
             {m.required === 0 ? 'No targets set for this act' : <><b>{m.met}</b> of {m.required} targets reached{m.fading > 0 && <>, <span className="cb-t-fading">{m.fading} fading</span></>}</>}
-          </p>
+            <span className="cb-band__set">Set Act {act} targets</span>
+          </button>
         </header>
         <div className="cb-lanes">
           {lanes.map(lane => {
@@ -238,9 +244,7 @@ export function CurriculumMap(props: {
                 {plan.branches.length > 0 && <p className="cb-lane__name">{lane ? lane.name || 'Unnamed branch' : 'Everyone'}</p>}
                 <div className="cb-lane__cards" style={{ minHeight: TERMS_PER_ACT * ROW_H }}>
                   {([2, 1, 0] as Slot[]).map(s => (
-                    <div key={s} className="cb-term" style={{ top: `calc(${TERMS_PER_ACT - 1 - s} * 100% / ${TERMS_PER_ACT})`, height: `calc(100% / ${TERMS_PER_ACT})` }} aria-hidden>
-                      <span className="cb-term__name">Term {termOf(act, s)}</span>
-                    </div>
+                    <div key={s} className="cb-term" style={{ top: `calc(${TERMS_PER_ACT - 1 - s} * 100% / ${TERMS_PER_ACT})`, height: `calc(100% / ${TERMS_PER_ACT})` }} aria-hidden />
                   ))}
                   {here.map(card)}
                   {isDrop && dropAt?.at && <span className="cb-ghost" style={{ left: dropAt.at.x, top: rowTop(dropAt.at.slot), width: CARD_W, height: CARD_H }} aria-hidden />}
@@ -358,7 +362,7 @@ export function CurriculumMap(props: {
 
   // Dependencies: always draw the broken ones; draw the rest for the course in focus.
   const broken = new Set(result.checks.flatMap(c => (c.from ?? []).map(from => `${from}>${c.ref}`)));
-  const arrows = geom && result.edges.filter(e => geom.cards[e.from] && geom.cards[e.to]).map(e => {
+  const arrows = geom && props.arrows && result.edges.filter(e => geom.cards[e.from] && geom.cards[e.to]).map(e => {
     const bad = broken.has(`${e.from}>${e.to}`);
     const focus = focusCourse === e.from || focusCourse === e.to;
     if (!bad && !focus) return null;

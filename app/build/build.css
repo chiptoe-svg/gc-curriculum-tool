@@ -150,11 +150,17 @@
 .cb-band--1 { background: var(--cb-act-1); }
 .cb-band--2 { background: var(--cb-act-2); }
 .cb-band--3 { background: var(--cb-act-3); }
-.cb-band__head { width: 10.5rem; flex: none; padding: 0.8rem 0.6rem 0.8rem 1rem; }
+.cb-band__head { width: 10.5rem; flex: none; padding: 0.8rem 0.6rem 0.8rem 1rem; position: relative; z-index: 2; }
 .cb-band__act { font-family: var(--font-mono-plex), monospace; font-size: 0.8125rem; color: var(--cb-ink-soft); }
 .cb-band__head h3 { font-size: 1.05rem; line-height: 1.2; margin: 0.1rem 0; }
 .cb-band__span { font-size: 0.8125rem; color: var(--cb-ink-soft); }
-.cb-band__note { font-size: 0.8125rem; margin-top: 0.6rem !important; }
+.cb-band__note { display: block; font-size: 0.8125rem; margin-top: 0.6rem; text-align: left; border: 0; background: none; padding: 0; cursor: pointer; color: inherit; }
+.cb-band__set { display: block; margin-top: 0.25rem; color: var(--cb-accent); text-decoration: underline; text-underline-offset: 2px; }
+.cb-band__note:hover .cb-band__set { text-decoration-thickness: 2px; }
+.cb-rowcheck { margin: 0 0.4rem 0 0; vertical-align: -1px; }
+.cb-table td .cb-linkbtn { text-align: left; }
+.cb-table tr.is-off td { color: var(--cb-ink-soft); }
+.cb-check--block { display: flex; align-items: flex-start; gap: 0.45rem; font-size: 0.875rem; color: var(--cb-ink); }
 .cb-band__trunks { flex: none; pointer-events: none; }
 .cb-lanes { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; padding: 0.7rem 0.6rem; position: relative; z-index: 2; }
 .cb-lane { flex: 1; display: flex; flex-direction: column; border: 1px dashed transparent; border-radius: 3px; padding: 0.25rem; min-height: 3rem; }
@@ -167,11 +173,10 @@
 .cb-lane__cards > .cb-card { position: absolute; }
 .cb-term { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(23, 33, 43, 0.14); pointer-events: none; }
 .cb-term:first-child { border-top: 0; }
-.cb-term__name { position: absolute; right: 0.3rem; top: 0.15rem; font-family: var(--font-mono-plex), monospace; font-size: 0.6875rem; color: var(--cb-ink-soft); opacity: 0.75; }
 .cb-ghost { position: absolute; width: 9.6rem; height: 3rem; border: 2px dashed var(--cb-accent); border-radius: 3px; pointer-events: none; }
 .cb-lane__empty { font-size: 0.8125rem; color: var(--cb-untouched); padding: 0.4rem 0.2rem; }
 /* Every card is the same size (CARD_W x CARD_H, set inline from lib/builder/layout.ts); text that does not fit is cut with an ellipsis. */
-.cb-card { position: relative; width: 9.6rem; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-content: center; gap: 0 0.35rem; align-items: center; text-align: left; background: var(--cb-paper); border: 1px solid var(--cb-ink); border-radius: 3px; padding: 0.25rem 0.45rem; cursor: grab; overflow: hidden; }
+.cb-card { position: relative; width: 9.6rem; display: grid; grid-template-columns: auto max-content minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; gap: 0 0.35rem; align-items: center; text-align: left; background: var(--cb-paper); border: 1px solid var(--cb-ink); border-radius: 3px; padding: 0.25rem 0.45rem; cursor: grab; overflow: hidden; }
 .cb-card:hover { box-shadow: 2px 2px 0 var(--cb-ink); }
 .cb-card.is-selected { box-shadow: 0 0 0 2px var(--cb-accent); }
 .cb-card.is-dim { opacity: 0.35; }
@@ -182,9 +187,10 @@
 .cb-card--proposed .cb-card__mark { background: radial-gradient(var(--cb-ink) 38%, transparent 42%) 0 0 / 4px 4px; border-style: dashed; }
 .cb-card--none { border-color: var(--cb-untouched); color: var(--cb-ink-soft); }
 .cb-card--none .cb-card__mark { border-color: var(--cb-untouched); border-style: dashed; }
-.cb-card__code { grid-column: 2; grid-row: 1; font-size: 0.8125rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The course code is never cut; the 'other reading' note gives way to it. */
+.cb-card__code { grid-column: 2; grid-row: 1; font-size: 0.8125rem; font-weight: 500; white-space: nowrap; }
 .cb-card__title { grid-column: 2 / 4; grid-row: 2; font-size: 0.75rem; color: var(--cb-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cb-card__tag { grid-column: 3; grid-row: 1; font-size: 0.625rem; color: var(--cb-fading); white-space: nowrap; }
+.cb-card__tag { grid-column: 3; grid-row: 1; font-size: 0.625rem; color: var(--cb-fading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: right; }
 .cb-card__warn { position: absolute; top: -0.5rem; right: -0.5rem; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--cb-short); color: #fff; font-size: 0.75rem; font-weight: 700; display: grid; place-items: center; }
 .cb-svg { position: absolute; left: 0; top: 0; }
 .cb-svg--back { z-index: 1; }

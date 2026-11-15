@@ -12,6 +12,7 @@ import { CourseDrawer } from './CourseDrawer';
 import { ObjectiveDrawer } from './ObjectiveDrawer';
 import { TargetsDrawer } from './TargetsDrawer';
 import { ChecksPanel } from './ChecksPanel';
+import { ActTargetsDrawer } from './ActTargetsDrawer';
 import { newId } from './ui';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict' | 'error' | 'refused';
@@ -20,13 +21,14 @@ const ZOOMS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5];
 export type Update = (fn: (p: PlanState) => PlanState) => void;
 
 /** This viewer's own view settings (zoom, library shown). Kept in this browser only; never part of the shared plan. */
-function readView(): { zoom: number; library: boolean } {
+type View = { zoom: number; library: boolean; arrows: boolean };
+function readView(): View {
   try {
-    const v = JSON.parse(localStorage.getItem('cb-view') ?? '{}') as { zoom?: unknown; library?: unknown };
-    return { zoom: typeof v.zoom === 'number' && ZOOMS.includes(v.zoom) ? v.zoom : 1, library: v.library !== false };
-  } catch { return { zoom: 1, library: true }; }
+    const v = JSON.parse(localStorage.getItem('cb-view') ?? '{}') as { zoom?: unknown; library?: unknown; arrows?: unknown };
+    return { zoom: typeof v.zoom === 'number' && ZOOMS.includes(v.zoom) ? v.zoom : 1, library: v.library !== false, arrows: v.arrows !== false };
+  } catch { return { zoom: 1, library: true, arrows: true }; }
 }
-function writeView(v: { zoom: number; library: boolean }) {
+function writeView(v: View) {
   try { localStorage.setItem('cb-view', JSON.stringify(v)); } catch { /* private window or storage blocked: the setting lasts for this visit */ }
 }
 
@@ -39,15 +41,17 @@ export function Builder(props: {
   const [name, setName] = useState(props.initialName);
   const [undo, setUndo] = useState<PlanState[]>([]);
   const [selection, setSelection] = useState<Selection>(null);
-  const [panel, setPanel] = useState<'targets' | 'checks' | null>(props.initialState.goal.targetIds.length === 0 ? 'targets' : null);
+  const [panel, setPanel] = useState<'targets' | 'checks' | { act: Act } | null>(
+    props.initialState.goal.targetIds.length === 0 && !props.initialState.goal.program ? 'targets' : null);
   const [view, setView] = useState<string>('all');
   const [libraryOpen, setLibraryOpen] = useState(true);
   const [zoom, setZoom] = useState(1);
+  const [arrows, setArrows] = useState(true);
   // Read after the first render, so the server's HTML and the browser's first render agree.
-  useEffect(() => { const v = readView(); setZoom(v.zoom); setLibraryOpen(v.library); }, []);
-  const changeView = (next: { zoom?: number; library?: boolean }) => {
-    const v = { zoom: next.zoom ?? zoom, library: next.library ?? libraryOpen };
-    setZoom(v.zoom); setLibraryOpen(v.library); writeView(v);
+  useEffect(() => { const v = readView(); setZoom(v.zoom); setLibraryOpen(v.library); setArrows(v.arrows); }, []);
+  const changeView = (next: Partial<View>) => {
+    const v = { zoom: next.zoom ?? zoom, library: next.library ?? libraryOpen, arrows: next.arrows ?? arrows };
+    setZoom(v.zoom); setLibraryOpen(v.library); setArrows(v.arrows); writeView(v);
   };
   const zoomStep = (dir: 1 | -1) => {
     const i = ZOOMS.indexOf(zoom);
@@ -311,6 +315,10 @@ export function Builder(props: {
         <button type="button" className="cb-btn" onClick={stepBack} disabled={undo.length === 0} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
         <button type="button" className="cb-btn" aria-pressed={!libraryOpen} onClick={() => changeView({ library: !libraryOpen })}
           title="Hide or show the course library, to give the map the full width">{libraryOpen ? 'Hide library' : 'Show library'}</button>
+        <label className="cb-check" title="Show or hide the prerequisite arrows between courses. Order problems are still listed under Checks and marked on the course.">
+          <input type="checkbox" checked={arrows} onChange={e => changeView({ arrows: e.target.checked })} />
+          Prerequisite arrows
+        </label>
         <span className="cb-zoomctl" role="group" aria-label="Zoom">
           <button type="button" onClick={() => zoomStep(-1)} disabled={zoom === ZOOMS[0]} aria-label="Zoom out" title="Zoom out">−</button>
           <button type="button" onClick={() => changeView({ zoom: 1 })} title="Back to 100%">{Math.round(zoom * 100)}%</button>
@@ -349,8 +357,9 @@ export function Builder(props: {
         />
         <main className="cb-main">
           <CurriculumMap
-            library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} selection={selection}
+            library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} arrows={arrows} selection={selection}
             onSelect={s => { setSelection(s); setPanel(null); }} onDropCourse={onDropCourse} onOpenTargets={() => { setPanel('targets'); setSelection(null); }}
+            onOpenAct={act => { setPanel({ act }); setSelection(null); }}
             onResizeAct={(act, height) => update(p => {
               const heights: [number | null, number | null, number | null] = [...(p.heights ?? [null, null, null])];
               if (heights[act - 1] === height) return p;
@@ -369,6 +378,10 @@ export function Builder(props: {
             onClose={() => setSelection(null)} onSelect={setSelection} />
         )}
         {panel === 'targets' && !selection && <TargetsDrawer library={library} plan={plan} result={result} update={update} onClose={() => setPanel(null)} />}
+        {panel && typeof panel === 'object' && !selection && (
+          <ActTargetsDrawer act={panel.act} library={library} plan={plan} result={result} update={update}
+            onClose={() => setPanel(null)} onSelect={s => setSelection(s)} onOpenTargets={() => setPanel('targets')} />
+        )}
         {panel === 'checks' && !selection && <ChecksPanel result={result} onClose={() => setPanel(null)} onSelect={s => { setSelection(s); setPanel(null); }} />}
       </div>
     </div>

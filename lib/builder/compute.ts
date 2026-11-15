@@ -311,7 +311,17 @@ export function placeCourses(lib: Library, plan: PlanState): PlacedCourse[] {
   return out;
 }
 
-/** The plan's objectives: the selected career paths' competencies, plus added, minus removed. */
+/** Whether the plan's program targets cover this competency (PlanGoal.program). */
+export function inProgram(plan: Pick<PlanState, 'goal'>, competencyId: string): boolean {
+  return !!plan.goal.program && !plan.goal.program.off.includes(competencyId);
+}
+
+/** The scopes whose targets judge a competency: its career paths, plus the plan's own when it was added by hand or the program covers it. */
+export function scopesOf(plan: Pick<PlanState, 'goal'>, competencyId: string, targetIds: readonly string[]): string[] {
+  return [...targetIds, ...(plan.goal.added.includes(competencyId) || inProgram(plan, competencyId) ? [PLAN_SCOPE] : [])];
+}
+
+/** The plan's objectives: the selected career paths' competencies, plus added, plus what the program targets cover, minus removed. */
 export function planObjectives(lib: Library, plan: PlanState): Array<{ competency: LibraryCompetency; weight: number | null; targetIds: string[] }> {
   const comp = new Map(lib.competencies.map(c => [c.id, c]));
   const removed = new Set(plan.goal.removed);
@@ -324,6 +334,7 @@ export function planObjectives(lib: Library, plan: PlanState): Array<{ competenc
     }
   }
   for (const id of plan.goal.added) if (!acc.has(id)) acc.set(id, { weight: null, targetIds: [] });
+  for (const c of lib.competencies) if (inProgram(plan, c.id) && !acc.has(c.id)) acc.set(c.id, { weight: null, targetIds: [] });
   return [...acc.entries()]
     .filter(([id]) => comp.has(id) && !removed.has(id))
     .map(([id, v]) => ({ competency: comp.get(id)!, ...v }));
@@ -416,7 +427,7 @@ export function computePlan(lib: Library, plan: PlanState, view: string[] | 'all
   const high = integrationByAct(courses);
   const objectives: ObjectiveResult[] = planObjectives(lib, plan).map(({ competency, weight, targetIds }) => {
     const { byAct, heldByAct, contributions } = stack(courses, competency, plan, high);
-    const scopes = [...targetIds, ...(plan.goal.added.includes(competency.id) ? [PLAN_SCOPE] : [])];
+    const scopes = scopesOf(plan, competency.id, targetIds);
     const required = strictest(scopes.map(s => scopeLevels(s, competency)));
     const checkpoints = byAct.map((at, i) => checkpoint(at, required[i]!, heldByAct[i]!)) as [Checkpoint, Checkpoint, Checkpoint];
     const last = lastRequired(checkpoints);
