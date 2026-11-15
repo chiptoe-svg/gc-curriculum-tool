@@ -31,6 +31,8 @@ const all = (n: number) => ({ k: n, u: n, d: n });
 /** Require `n` on every dimension at the end of Act 3 only. */
 const final = (n: number): ActLevels => [null, null, all(n)];
 type P = Array<[string, 1 | 2 | 3] | [string, 1 | 2 | 3, string]>;
+/** Every course in the last term of its act, so fade starts at the act's end (as when fade was counted per act). */
+const lastTerm = (p: PlanState): PlanState => ({ ...p, placements: p.placements.map(x => ({ ...x, slot: 2 as const, x: 0 })) });
 const plan = (placements: P, over: Partial<PlanState> = {}, goal: Partial<PlanState['goal']> = {}): PlanState => ({
   ...EMPTY_PLAN,
   fade: 0,
@@ -101,9 +103,13 @@ describe('durable (reinforcement and fade)', () => {
   it('a course that works it again near the peak stops the loss for that act', () => {
     expect(held([d(1, 4), d(2, 3)])).toEqual([4, 4, 3.5]);
   });
-  it('a light touch or a supporting neighbor halves the loss and never raises the level', () => {
-    expect(held([d(1, 4), d(2, 1)])).toEqual([4, 3.5, 2.5]);
+  it('a light touch halves the loss for its own term; a supporting neighbor for its whole act; neither raises the level', () => {
+    // Fade runs a third of a level per term. The touch sits in Act 2's last term: two full losses, then a half.
+    expect(held([d(1, 4), d(2, 1)])).toEqual([4, 3.166667, 2.166667]);
     expect(held([d(1, 4)], [false, true, true])).toEqual([4, 3.5, 3]);
+  });
+  it('counts terms within an act: a course in an earlier term has slipped by the act\'s end', () => {
+    expect(durable([{ act: 1, term: 1, k: null, u: null, d: 3 }], none, 1).map(a => a.d)).toEqual([2.333333, 1.333333, 0.333333]);
   });
   it('leaves an unread dimension unread, and does nothing when fade is off', () => {
     expect(durable([d(1, 4)], none, 1)[2].k).toBeNull();
@@ -236,20 +242,39 @@ describe('computePlan', () => {
   it('reports a requirement reached early and never reinforced as fading, unless fade is off', () => {
     const l = lib([captured('A', [['color', 3, 3, 3]])]);
     const levels = { t: { color: [all(3), all(3), all(3)] as ActLevels, press: final(0), agency: final(0) } };
-    const o = obj(computePlan(l, plan([['A', 1]], { fade: 1 }, { levels })), 'color');
+    const o = obj(computePlan(l, lastTerm(plan([['A', 1]], { fade: 1 }, { levels }))), 'color');
     expect(o.checkpoints.map(c => c.status)).toEqual(['met', 'fading', 'fading']);
     expect(o.status).toBe('fading');
     expect(o.byAct[2].d).toBe(3); // the level reached is still reported as reached
     expect(obj(computePlan(l, plan([['A', 1]], { fade: 0 }, { levels })), 'color').status).toBe('met');
   });
 
+  it('counts fade from the term a course sits in: an early term has slipped by the end of its own act', () => {
+    const l = lib([captured('A', [['color', 3, 3, 3]])]);
+    const levels = { t: { color: [all(3), null, null] as ActLevels, press: final(0), agency: final(0) } };
+    const at = (slot: 0 | 2) => obj(computePlan(l, { ...plan([['A', 1]], { fade: 1 }, { levels }), placements: [{ ref: 'A', act: 1, branch: null, slot, x: 0 }] }), 'color');
+    expect(at(2).checkpoints[0]!.status).toBe('met');     // last term of Act 1: nothing has slipped yet
+    expect(at(0).checkpoints[0]!.status).toBe('fading');  // first term: two terms without it, 3 -> 2.33
+  });
+
+  it('wants a prerequisite in an earlier term, not just earlier on the page', () => {
+    const l = lib([captured('A', [['color', 1, 1, 1]]), captured('B', [['color', 2, 2, 2]])],
+      [{ courseCode: 'B', prereqCode: 'A', kind: 'prereq', anyOfGroup: null }]);
+    const same = computePlan(l, { ...plan([['A', 1], ['B', 1]]), placements: [
+      { ref: 'A', act: 1, branch: null, slot: 1, x: 0 }, { ref: 'B', act: 1, branch: null, slot: 1, x: 300 }] });
+    expect(same.checks.some(c => c.ref === 'B' && c.kind === 'prereq_order')).toBe(true);
+    const earlier = computePlan(l, { ...plan([['A', 1], ['B', 1]]), placements: [
+      { ref: 'A', act: 1, branch: null, slot: 0, x: 300 }, { ref: 'B', act: 1, branch: null, slot: 1, x: 0 }] });
+    expect(earlier.checks.some(c => c.kind === 'prereq_order')).toBe(false);
+  });
+
   it('lets a closely related competency worked at integration depth slow the fade, only when switched on', () => {
     const l = lib([captured('A', [['color', 4, 4, 4]]), captured('B', [['press', 4, 4, 4]])]);
     const levels = { t: { color: final(3), press: final(0), agency: final(0) } };
-    const alone = obj(computePlan(l, plan([['A', 1]], { fade: 1 }, { levels })), 'color');
-    const off = obj(computePlan(l, plan([['A', 1], ['B', 2]], { fade: 1 }, { levels })), 'color');
+    const alone = obj(computePlan(l, lastTerm(plan([['A', 1]], { fade: 1 }, { levels }))), 'color');
+    const off = obj(computePlan(l, lastTerm(plan([['A', 1], ['B', 2]], { fade: 1 }, { levels }))), 'color');
     expect(off.status).toBe('fading');
-    const supported = obj(computePlan(l, plan([['A', 1], ['B', 2]], { fade: 1, support: true }, { levels })), 'color');
+    const supported = obj(computePlan(l, lastTerm(plan([['A', 1], ['B', 2]], { fade: 1, support: true }, { levels }))), 'color');
     expect(alone.status).toBe('fading');      // 4, 3, 2
     expect(supported.status).toBe('met');     // 4, 3.5, 2.5: still within half a level of 3
   });

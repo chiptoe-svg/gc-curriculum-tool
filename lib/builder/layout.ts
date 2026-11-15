@@ -1,23 +1,23 @@
 // Where course cards sit on the curriculum map, and the teaching order that follows from it.
 //
-// A card's position is stored on its placement (x, y in map pixels from its lane's top left, at 100% zoom).
-// Cards nobody has moved yet have no position, and layoutLanes() places them: in a lane with no moved cards,
-// rows fill from the bottom up in teaching order; in a lane that has moved cards, the unmoved ones go in rows
-// above them, as the latest. Opening a plan never writes positions; the first move in a lane fixes every card
-// in that lane where it was shown.
+// Each act has three term rows (TERMS_PER_ACT); a card snaps to one of them and moves freely left to right.
+// A card's place is stored on its placement: `slot` (the term within the act) and `x` (map pixels from the
+// lane's left edge, at 100% zoom). Cards nobody has moved have neither, and layoutLanes() places them: in a
+// lane with no moved cards, the cards are spread over the act's three terms in teaching order; in a lane that
+// has moved cards, an unmoved card goes in the act's last term, after what is there. Opening a plan never
+// writes positions; the first move in a lane fixes every card in that lane where it was shown.
 //
-// Teaching order is read from position: lower comes first, and at the same height, further left comes first.
+// Teaching order is read from position: an earlier term first, and within a term, further left first.
 // orderByPosition() rewrites the placements array to that order, so computePlan's order checks match the map.
-import type { Act, Placement } from './types';
+import { TERMS_PER_ACT, type Act, type Placement, type Slot } from './types';
 
-export const CARD_W = 168;   // a card's width on the map, in map pixels (set on the card, so it does not follow the root font size)
-export const COL_W = 182;    // card plus gap, for the automatic layout
-export const ROW_H = 84;     // a row in the automatic layout: tall enough for a card with its tag
-export const PER_ROW = 6;    // cards per row in the automatic layout
-/** Cards whose tops are within this many pixels count as the same height when reading order. */
-export const ROW_SNAP = 24;
+/** Every card is the same size, in map pixels (set on the card, so it does not follow the root font size). */
+export const CARD_W = 176;
+export const CARD_H = 50;
+export const COL_W = 190;    // card plus gap, for the automatic layout
+export const ROW_H = 64;     // the least height of one term row
 
-export interface Pos { x: number; y: number }
+export interface Pos { slot: Slot; x: number }
 
 /** The lane a placement is drawn in. A branch that no longer exists falls back to the trunk, as in placeCourses. */
 export function laneOf(p: Placement, branchIds: ReadonlySet<string>): string {
@@ -25,10 +25,9 @@ export function laneOf(p: Placement, branchIds: ReadonlySet<string>): string {
   return `${p.act}:${branch ?? ''}`;
 }
 
-const hasPos = (p: Placement): p is Placement & { x: number; y: number } =>
-  typeof p.x === 'number' && typeof p.y === 'number';
+const placed = (p: Placement): p is Placement & Pos => p.slot != null && typeof p.x === 'number';
 
-/** Every placed card's position, by ref. Stored positions are kept; the rest are laid out as described above. */
+/** Every placed card's term row and left edge, by ref. Stored positions are kept; the rest are laid out as described above. */
 export function layoutLanes(placements: readonly Placement[], branchIds: ReadonlySet<string>): Record<string, Pos> {
   const lanes = new Map<string, Placement[]>();
   const seen = new Set<string>();
@@ -40,38 +39,22 @@ export function layoutLanes(placements: readonly Placement[], branchIds: Readonl
   }
   const out: Record<string, Pos> = {};
   for (const cards of lanes.values()) {
-    const moved = cards.filter(hasPos);
-    const unmoved = cards.filter(p => !hasPos(p));
-    const here: Record<string, Pos> = {};
-    for (const p of moved) here[p.ref] = { x: p.x, y: p.y };
-    if (moved.length === 0) {
-      const rows = Math.ceil(unmoved.length / PER_ROW);
-      unmoved.forEach((p, i) => {
-        here[p.ref] = { x: (i % PER_ROW) * COL_W, y: (rows - 1 - Math.floor(i / PER_ROW)) * ROW_H };
-      });
-    } else {
-      const top = Math.min(...moved.map(p => p.y));
-      unmoved.forEach((p, i) => {
-        here[p.ref] = { x: (i % PER_ROW) * COL_W, y: top - (Math.floor(i / PER_ROW) + 1) * ROW_H };
-      });
-      // Rows added above the top card can run past the lane's top edge: move the whole lane down to fit.
-      const minY = Math.min(...Object.values(here).map(q => q.y));
-      if (minY < 0) for (const q of Object.values(here)) q.y -= minY;
-    }
-    Object.assign(out, here);
+    const moved = cards.filter(placed);
+    const unmoved = cards.filter(p => !placed(p));
+    for (const p of moved) out[p.ref] = { slot: p.slot, x: p.x };
+    // The next free column in each term row, after the cards already there.
+    const next = [0, 0, 0];
+    for (const p of moved) next[p.slot] = Math.max(next[p.slot]!, Math.ceil((p.x + CARD_W) / COL_W) * COL_W);
+    unmoved.forEach((p, i) => {
+      const slot = (moved.length === 0 ? Math.floor((i * TERMS_PER_ACT) / unmoved.length) : TERMS_PER_ACT - 1) as Slot;
+      out[p.ref] = { slot, x: next[slot]! };
+      next[slot] = next[slot]! + COL_W;
+    });
   }
   return out;
 }
 
-/** The lane's content height: the lowest card's top plus a row. 0 for an empty lane. */
-export function laneHeight(positions: readonly Pos[]): number {
-  return positions.length === 0 ? 0 : Math.max(...positions.map(p => p.y)) + ROW_H;
-}
-
-/**
- * Teaching order from position, act by act: lower first (a larger y), then left first, then the order the
- * cards had. Each act keeps the array slots it had, so courses in other acts do not move in the array.
- */
+/** Teaching order within each act: earlier term first, then left first, then the order the cards had. Each act keeps its array slots. */
 export function orderByPosition(placements: readonly Placement[], pos: Readonly<Record<string, Pos>>): Placement[] {
   const out = [...placements];
   for (const act of [1, 2, 3] as const) {
@@ -82,8 +65,7 @@ export function orderByPosition(placements: readonly Placement[], pos: Readonly<
       .sort((a, b) => {
         const pa = pos[a.p.ref], pb = pos[b.p.ref];
         if (!pa || !pb) return a.i - b.i;
-        const ya = Math.round(pa.y / ROW_SNAP), yb = Math.round(pb.y / ROW_SNAP);
-        return yb - ya || pa.x - pb.x || a.i - b.i;
+        return pa.slot - pb.slot || pa.x - pb.x || a.i - b.i;
       });
     slots.forEach((slot, k) => { out[slot] = sorted[k]!.p; });
   }
@@ -91,8 +73,8 @@ export function orderByPosition(placements: readonly Placement[], pos: Readonly<
 }
 
 /**
- * Move (or add) a card to a point in a lane. Every card in the lane it leaves and the lane it joins is fixed
- * where it was shown, so nothing else on screen jumps; then teaching order is rewritten from the positions.
+ * Move (or add) a card to a term row and a left edge in a lane. Every card in the lane it leaves and the lane
+ * it joins is fixed where it was shown, so nothing else on screen jumps; then teaching order is rewritten.
  */
 export function moveCard(
   placements: readonly Placement[], branchIds: ReadonlySet<string>,
@@ -100,11 +82,20 @@ export function moveCard(
 ): Placement[] {
   const shown = layoutLanes(placements, branchIds);
   const before = placements.find(p => p.ref === ref);
-  const target: Placement = { ref, act, branch: branch && branchIds.has(branch) ? branch : null, x: Math.max(0, Math.round(at.x)), y: Math.max(0, Math.round(at.y)) };
+  const target: Placement = {
+    ref, act, branch: branch && branchIds.has(branch) ? branch : null,
+    slot: Math.min(TERMS_PER_ACT - 1, Math.max(0, Math.round(at.slot))) as Slot, x: Math.max(0, Math.round(at.x)),
+  };
   const touched = new Set([laneOf(target, branchIds), ...(before ? [laneOf(before, branchIds)] : [])]);
   const rest = placements
     .filter(p => p.ref !== ref)
-    .map(p => (touched.has(laneOf(p, branchIds)) && !hasPos(p) && shown[p.ref] ? { ...p, ...shown[p.ref] } : p));
+    .map(p => (touched.has(laneOf(p, branchIds)) && !placed(p) && shown[p.ref] ? { ...p, ...shown[p.ref] } : p));
   const next = [...rest, target];
   return orderByPosition(next, layoutLanes(next, branchIds));
+}
+
+/** The term row a point falls in, from the top of a lane's card area of the given height (the top row is the act's last term). */
+export function slotAt(y: number, height: number): Slot {
+  const row = Math.min(TERMS_PER_ACT - 1, Math.max(0, Math.floor((y / Math.max(1, height)) * TERMS_PER_ACT)));
+  return (TERMS_PER_ACT - 1 - row) as Slot;
 }

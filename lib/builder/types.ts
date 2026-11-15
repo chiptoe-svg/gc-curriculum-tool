@@ -107,11 +107,22 @@ export interface ProposedCourse {
 }
 
 /**
- * `branch` null = the trunk every student takes; otherwise the id of the branch the course belongs to.
- * `x`, `y`: where the card sits in its act and branch, in map pixels from the lane's top left, at 100% zoom.
- * Absent until someone moves a card in that lane; until then layoutLanes() places it (lib/builder/layout.ts).
+ * Each act holds three terms: nine in all (eight semesters and a summer), numbered 1–9 from the bottom of
+ * Act 1. A course sits in one term; fade is counted term by term, each term treated as a semester (owner,
+ * 2026-11-15).
  */
-export interface Placement { ref: string; act: Act; branch: string | null; x?: number; y?: number }
+export const TERMS_PER_ACT = 3;
+/** 0 = the act's first term (bottom row on the map), 2 = its last (top row). */
+export type Slot = 0 | 1 | 2;
+export const termOf = (act: Act, slot: Slot): number => (act - 1) * TERMS_PER_ACT + slot + 1;
+
+/**
+ * `branch` null = the trunk every student takes; otherwise the id of the branch the course belongs to.
+ * `slot`: the term within the act. `x`: the card's left edge in map pixels from its lane's left, at 100% zoom;
+ * left to right is free and orders courses within a term. Both are absent until someone moves a card in that
+ * lane; until then layoutLanes() places it (lib/builder/layout.ts).
+ */
+export interface Placement { ref: string; act: Act; branch: string | null; slot?: Slot; x?: number }
 
 /** An alternative pathway that splits from the trunk and builds toward some of the plan's career paths. */
 export interface Branch { id: string; name: string; targetIds: string[] }
@@ -163,7 +174,7 @@ export interface PlanState {
   support: boolean;
   /**
    * Array order is teaching order within an act. When cards are moved on the map, the order is rewritten
-   * from their positions (lower first, then left first: orderByPosition in lib/builder/layout.ts).
+   * from their positions (earlier term first, then left first: orderByPosition in lib/builder/layout.ts).
    */
   placements: Placement[];
   /** Height in map pixels chosen for Act 1, 2 and 3 (null = automatic). Absent on plans saved before it existed. */

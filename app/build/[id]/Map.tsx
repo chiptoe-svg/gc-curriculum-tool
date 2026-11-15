@@ -9,8 +9,8 @@
  */
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ObjectiveResult, PlacedCourse, PlanResult } from '@/lib/builder/compute';
-import { CARD_W, laneHeight, type Pos } from '@/lib/builder/layout';
-import { ACTS, type Act, type Branch, type Library, type PlanState } from '@/lib/builder/types';
+import { CARD_H, CARD_W, COL_W, ROW_H, slotAt, type Pos } from '@/lib/builder/layout';
+import { ACTS, TERMS_PER_ACT, termOf, type Act, type Branch, type Library, type PlanState, type Slot } from '@/lib/builder/types';
 import { TONE_VAR, dimNote, dimsOf, stratumName, stratumRank, toneOfCheckpoint, trunkLevel, type Tone } from './ui';
 
 const COL = 40;          // one trunk
@@ -21,7 +21,13 @@ const ROOTS_H = 214;
 const NOTE_LINE = 15;
 
 const HEAD_W = 208;      // act heading plus lane padding, left of the cards
-const DROP_OFFSET: Pos = { x: 24, y: 16 }; // where a card from the library is held, when dragged in
+const DROP_OFFSET_X = 24; // where a card from the library is held, when dragged in
+
+/** A term row's top edge in a lane's card area, as CSS: row 0 is the top row, the act's last term. */
+const rowTop = (slot: Slot, inset = 0) => {
+  const row = TERMS_PER_ACT - 1 - slot;
+  return `calc(${row} * 100% / ${TERMS_PER_ACT} + (100% / ${TERMS_PER_ACT} - ${CARD_H}px) / 2 + ${inset}px)`;
+};
 
 export type Selection = { kind: 'course'; ref: string } | { kind: 'objective'; id: string } | null;
 /** `at`: the card's top left in the lane, in map pixels at 100% zoom. Without it the course goes at the end of the lane. */
@@ -52,8 +58,8 @@ export function CurriculumMap(props: {
   const [hover, setHover] = useState<{ course?: string; objective?: string; target?: string } | null>(null);
   const [dropAt, setDropAt] = useState<DropTarget | null>(null);
   const [resizing, setResizing] = useState<{ act: Act; height: number } | null>(null);
-  /** Where the card being dragged was grabbed, in map pixels from its top left. Null for a drag from the library. */
-  const grab = useRef<Pos | null>(null);
+  /** How far from its left edge the card being dragged was grabbed, in map pixels. Null for a drag from the library. */
+  const grab = useRef<number | null>(null);
 
   // Trunks left to right: grouped by stratum, most important first.
   const trunks = useMemo(() => {
@@ -104,9 +110,9 @@ export function CurriculumMap(props: {
     return () => ro.disconnect();
   }, [plan, result, W, zoom, positions, resizing]);
 
-  // Wide enough for the right-most card and the trunks, and at least the visible width at this zoom.
+  // Wide enough for the right-most card plus three empty columns to drag into, the trunks, and at least the visible width at this zoom.
   const maxX = Math.max(0, ...Object.values(positions).map(p => p.x));
-  const mapW = Math.max(viewW / zoom, HEAD_W + maxX + CARD_W + 24 + W, 480 + W);
+  const mapW = Math.max(viewW / zoom, HEAD_W + maxX + CARD_W + 3 * COL_W + W, 480 + W);
 
   const selectedCourse = selection?.kind === 'course' ? selection.ref : null;
   const selectedObjective = selection?.kind === 'objective' ? selection.id : null;
@@ -124,20 +130,22 @@ export function CurriculumMap(props: {
     return (o && !touches(o, ref)) || !inView.has(ref);
   };
 
-  // A drop lands where the card's top left would be: the pointer, less the point the card was held by.
+  // A drop snaps to the term row under the pointer; left to right it lands where the card's left edge would be.
   const pointIn = (e: React.DragEvent): Pos | undefined => {
     const area = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('.cb-lane__cards');
     if (!area) return undefined;
     const r = area.getBoundingClientRect();
-    const held = grab.current ?? DROP_OFFSET;
-    return { x: Math.max(0, (e.clientX - r.left) / zoom - held.x), y: Math.max(0, (e.clientY - r.top) / zoom - held.y) };
+    return {
+      slot: slotAt(e.clientY - r.top, r.height),
+      x: Math.max(0, (e.clientX - r.left) / zoom - (grab.current ?? DROP_OFFSET_X)),
+    };
   };
   const drag = {
     over: (e: React.DragEvent, act: Act, branch: string | null) => {
       e.preventDefault();
       const at = pointIn(e);
       setDropAt(prev => (prev && prev.act === act && prev.branch === branch && prev.at && at
-        && Math.abs(prev.at.x - at.x) < 4 && Math.abs(prev.at.y - at.y) < 4 ? prev : { act, branch, before: null, at }));
+        && prev.at.slot === at.slot && Math.abs(prev.at.x - at.x) < 4 ? prev : { act, branch, before: null, at }));
     },
     drop: (e: React.DragEvent, act: Act, branch: string | null) => {
       e.preventDefault();
@@ -175,26 +183,25 @@ export function CurriculumMap(props: {
   const lanes: Array<Branch | null> = [null, ...plan.branches];
   const card = (c: PlacedCourse) => {
     const mark = c.reading.basis ?? 'none';
-    const at = positions[c.ref] ?? { x: 0, y: 0 };
+    const at = positions[c.ref] ?? { slot: 0 as Slot, x: 0 };
     return (
       <button
         key={c.ref} type="button" data-card={c.ref} draggable
         className={`cb-card cb-card--${mark}${selectedCourse === c.ref ? ' is-selected' : ''}${cardDim(c.ref) ? ' is-dim' : ''}`}
-        style={{ left: at.x, top: at.y, width: CARD_W }}
+        style={{ left: at.x, top: rowTop(at.slot), width: CARD_W, height: CARD_H }}
         onClick={() => onSelect({ kind: 'course', ref: c.ref })}
         onMouseEnter={() => setHover({ course: c.ref })} onMouseLeave={() => setHover(null)}
         onDragStart={e => {
-          const r = e.currentTarget.getBoundingClientRect();
-          grab.current = { x: (e.clientX - r.left) / zoom, y: (e.clientY - r.top) / zoom };
+          grab.current = (e.clientX - e.currentTarget.getBoundingClientRect().left) / zoom;
           e.dataTransfer.setData('text/plain', c.ref); e.dataTransfer.effectAllowed = 'move';
         }}
         onDragEnd={() => { grab.current = null; setDropAt(null); }}
-        title={`${c.code}: ${c.title}`}
+        title={`${c.code}: ${c.title} (term ${termOf(c.act, at.slot)})${c.reading.filled ? '. No reading under the chosen input, so its other reading is used' : ''}`}
       >
         <span className="cb-card__mark" aria-hidden />
         <span className="cb-card__code">{c.code}</span>
+        {c.reading.filled && <span className="cb-card__tag">other reading</span>}
         <span className="cb-card__title">{c.title}</span>
-        {c.reading.filled && <span className="cb-card__tag" title="No reading under the chosen input, so its other reading is used">other reading</span>}
         {checkRefs.has(c.ref) && <span className="cb-card__warn" title="Order or dependency problem: open the course for details">!</span>}
       </button>
     );
@@ -220,7 +227,6 @@ export function CurriculumMap(props: {
             const id = lane?.id ?? null;
             const here = allCourses.filter(c => c.act === act && c.branch === id);
             const isDrop = dropAt && dropAt.act === act && dropAt.branch === id;
-            const contentH = laneHeight(here.map(c => positions[c.ref] ?? { x: 0, y: 0 }));
             return (
               <div
                 key={id ?? 'trunk'} className={`cb-lane${lane ? ' cb-lane--branch' : ''}${isDrop ? ' is-drop' : ''}`}
@@ -230,9 +236,14 @@ export function CurriculumMap(props: {
                 onDrop={e => drag.drop(e, act, id)}
               >
                 {plan.branches.length > 0 && <p className="cb-lane__name">{lane ? lane.name || 'Unnamed branch' : 'Everyone'}</p>}
-                <div className="cb-lane__cards" style={{ minHeight: Math.max(48, contentH) }}>
+                <div className="cb-lane__cards" style={{ minHeight: TERMS_PER_ACT * ROW_H }}>
+                  {([2, 1, 0] as Slot[]).map(s => (
+                    <div key={s} className="cb-term" style={{ top: `calc(${TERMS_PER_ACT - 1 - s} * 100% / ${TERMS_PER_ACT})`, height: `calc(100% / ${TERMS_PER_ACT})` }} aria-hidden>
+                      <span className="cb-term__name">Term {termOf(act, s)}</span>
+                    </div>
+                  ))}
                   {here.map(card)}
-                  {isDrop && dropAt?.at && <span className="cb-ghost" style={{ left: dropAt.at.x, top: dropAt.at.y, width: CARD_W }} aria-hidden />}
+                  {isDrop && dropAt?.at && <span className="cb-ghost" style={{ left: dropAt.at.x, top: rowTop(dropAt.at.slot), width: CARD_W, height: CARD_H }} aria-hidden />}
                   {here.length === 0 && <span className="cb-lane__empty">{lane ? 'Drop a course here to put it on this branch' : 'Drop a course here'}</span>}
                 </div>
               </div>

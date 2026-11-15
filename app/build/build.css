@@ -165,22 +165,26 @@
 /* Cards sit where they were put: absolute positions from lib/builder/layout.ts. */
 .cb-lane__cards { position: relative; flex: 1; }
 .cb-lane__cards > .cb-card { position: absolute; }
+.cb-term { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(23, 33, 43, 0.14); pointer-events: none; }
+.cb-term:first-child { border-top: 0; }
+.cb-term__name { position: absolute; right: 0.3rem; top: 0.15rem; font-family: var(--font-mono-plex), monospace; font-size: 0.6875rem; color: var(--cb-ink-soft); opacity: 0.75; }
 .cb-ghost { position: absolute; width: 9.6rem; height: 3rem; border: 2px dashed var(--cb-accent); border-radius: 3px; pointer-events: none; }
 .cb-lane__empty { font-size: 0.8125rem; color: var(--cb-untouched); padding: 0.4rem 0.2rem; }
-.cb-card { position: relative; width: 9.6rem; display: grid; grid-template-columns: auto 1fr; gap: 0 0.35rem; align-items: center; text-align: left; background: var(--cb-paper); border: 1px solid var(--cb-ink); border-radius: 3px; padding: 0.3rem 0.45rem; cursor: grab; }
+/* Every card is the same size (CARD_W x CARD_H, set inline from lib/builder/layout.ts); text that does not fit is cut with an ellipsis. */
+.cb-card { position: relative; width: 9.6rem; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-content: center; gap: 0 0.35rem; align-items: center; text-align: left; background: var(--cb-paper); border: 1px solid var(--cb-ink); border-radius: 3px; padding: 0.25rem 0.45rem; cursor: grab; overflow: hidden; }
 .cb-card:hover { box-shadow: 2px 2px 0 var(--cb-ink); }
 .cb-card.is-selected { box-shadow: 0 0 0 2px var(--cb-accent); }
 .cb-card.is-dim { opacity: 0.35; }
-.cb-card__mark { grid-row: span 2; width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 1.5px solid var(--cb-ink); }
+.cb-card__mark { grid-column: 1; grid-row: 1 / 3; width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 1.5px solid var(--cb-ink); }
 .cb-card--discovered .cb-card__mark { background: var(--cb-ink); }
 .cb-card--stated .cb-card__mark { background: radial-gradient(var(--cb-ink) 38%, transparent 42%) 0 0 / 4px 4px; }
 .cb-card--proposed { border-style: dashed; }
 .cb-card--proposed .cb-card__mark { background: radial-gradient(var(--cb-ink) 38%, transparent 42%) 0 0 / 4px 4px; border-style: dashed; }
 .cb-card--none { border-color: var(--cb-untouched); color: var(--cb-ink-soft); }
 .cb-card--none .cb-card__mark { border-color: var(--cb-untouched); border-style: dashed; }
-.cb-card__code { font-size: 0.8125rem; font-weight: 500; }
-.cb-card__title { grid-column: 2; font-size: 0.75rem; color: var(--cb-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cb-card__tag { grid-column: 2; font-size: 0.6875rem; color: var(--cb-fading); }
+.cb-card__code { grid-column: 2; grid-row: 1; font-size: 0.8125rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cb-card__title { grid-column: 2 / 4; grid-row: 2; font-size: 0.75rem; color: var(--cb-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cb-card__tag { grid-column: 3; grid-row: 1; font-size: 0.625rem; color: var(--cb-fading); white-space: nowrap; }
 .cb-card__warn { position: absolute; top: -0.5rem; right: -0.5rem; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--cb-short); color: #fff; font-size: 0.75rem; font-weight: 700; display: grid; place-items: center; }
 .cb-svg { position: absolute; left: 0; top: 0; }
 .cb-svg--back { z-index: 1; }

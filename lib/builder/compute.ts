@@ -14,7 +14,8 @@
 import { depthScaffoldingStatus, type ScaffoldingStatus } from '@/lib/program/scaffolding';
 import { isMentionOnly } from '@/lib/program/depth-band';
 import { MEMBERSHIP_CUTOFF } from '@/lib/catalog/membership';
-import { PLAN_SCOPE } from './types';
+import { PLAN_SCOPE, TERMS_PER_ACT, termOf } from './types';
+import { layoutLanes } from './layout';
 import type {
   Act, ActLevels, Basis, CompetencyDepth, Depth, Library, LibraryCompetency, LibraryCourse, PlanState, ProposedCourse,
 } from './types';
@@ -146,26 +147,34 @@ export function checkpoint(at: Depth, req: Depth | null, held?: Depth): Checkpoi
  * model: callers show a band or an arrow, never the number.
  */
 export function durable(
-  contributions: Array<Depth & { act: Act }>, support: [boolean, boolean, boolean], fade: number,
+  contributions: Array<Depth & { act: Act; term?: number }>, support: [boolean, boolean, boolean], fade: number,
 ): [Depth, Depth, Depth] {
+  // Time runs in terms: three per act, nine in all (TERMS_PER_ACT). `fade` is the loss per act, spread
+  // evenly over its terms. A contribution with no term counts as the last term of its act.
   const out: [Depth, Depth, Depth] = [{ ...NONE }, { ...NONE }, { ...NONE }];
+  const rate = fade / TERMS_PER_ACT;
+  const termOf = (c: { act: Act; term?: number }) => c.term ?? c.act * TERMS_PER_ACT;
   for (const dim of DIMS) {
     let held: number | null = null;
     let peak = 0;
     let reinforcers = 0;
-    for (const act of [1, 2, 3] as const) {
-      const here = contributions.filter(c => c.act === act && c[dim] != null).map(c => c[dim]!);
+    for (let term = 1; term <= TERMS_PER_ACT * 3; term++) {
+      const act = Math.ceil(term / TERMS_PER_ACT) as Act;
+      const here = contributions.filter(c => termOf(c) === term && c[dim] != null).map(c => c[dim]!);
       const top = here.length ? Math.max(...here) : null;
-      if (held != null && fade > 0 && !(top != null && top >= peak - 1 && top >= 1)) {
+      const nearPeak = top != null && top >= peak - 1 && top >= 1;
+      if (held != null && rate > 0 && !nearPeak) {
         const touched = here.some(v => v >= 1) || support[act - 1];
-        held = Math.max(0, held - fade * 0.5 ** Math.max(0, reinforcers - 1) * (touched ? 0.5 : 1));
+        held = Math.max(0, held - rate * 0.5 ** Math.max(0, reinforcers - 1) * (touched ? 0.5 : 1));
       }
       if (top != null) {
-        held = Math.max(held ?? 0, top);
         peak = Math.max(peak, top);
+        // Working it again near the peak restores what had slipped, as a spaced review does; a light touch never raises it.
+        held = nearPeak ? peak : Math.max(held ?? 0, top);
         reinforcers += here.filter(v => v >= 1 && v >= peak - 1).length;
       }
-      out[act - 1]![dim] = held;
+      // Reported rounded, so thirds of a level add up to whole levels (3, not 2.9999999999999996).
+      if (term % TERMS_PER_ACT === 0) out[act - 1]![dim] = held == null ? null : Math.round(held * 1e6) / 1e6;
     }
   }
   return out;
@@ -183,6 +192,8 @@ export interface PlacedCourse {
   branch: string | null;
   /** Teaching order across the whole plan (act first, then position). */
   seq: number;
+  /** The term the course sits in, 1–9 (types.ts termOf): its row on the map. */
+  term: number;
   proposed: boolean;
   reading: CourseReading;
 }
@@ -192,6 +203,7 @@ export interface Contribution extends Depth {
   code: string;
   act: Act;
   seq: number;
+  term: number;
   basis: Basis;
   /** Dimensions this course raised above everything taught before it. */
   raised: Array<'k' | 'u' | 'd'>;
@@ -278,6 +290,7 @@ export function placeCourses(lib: Library, plan: PlanState): PlacedCourse[] {
   const byCode = new Map(lib.courses.map(c => [c.code, c]));
   const proposed = new Map(plan.proposed.map(p => [p.id, p]));
   const branchIds = new Set(plan.branches.map(b => b.id));
+  const pos = layoutLanes(plan.placements, branchIds);
   const out: PlacedCourse[] = [];
   const seen = new Set<string>();
   for (const act of [1, 2, 3] as const) {
@@ -288,9 +301,10 @@ export function placeCourses(lib: Library, plan: PlanState): PlacedCourse[] {
       if (!lc && !pc) continue; // a course that left the library, or a deleted proposal
       seen.add(p.ref);
       const branch = p.branch && branchIds.has(p.branch) ? p.branch : null; // a deleted branch's courses fall back to the trunk
+      const term = termOf(act, pos[p.ref]?.slot ?? 0);
       out.push(lc
-        ? { ref: p.ref, code: lc.code, title: lc.title, act, branch, seq: out.length, proposed: false, reading: readCourse(lc, plan) }
-        : { ref: p.ref, code: pc!.code, title: pc!.title, act, branch, seq: out.length, proposed: true,
+        ? { ref: p.ref, code: lc.code, title: lc.title, act, branch, seq: out.length, term, proposed: false, reading: readCourse(lc, plan) }
+        : { ref: p.ref, code: pc!.code, title: pc!.title, act, branch, seq: out.length, term, proposed: true,
             reading: { depths: pc!.depths, basis: pc!.depths.length ? 'proposed' : null, filled: false } });
     }
   }
@@ -355,7 +369,7 @@ function stack(courses: PlacedCourse[], competency: LibraryCompetency, plan: Pic
     const row = competency.foundational ? { ...read, k: null, u: null } : read;
     if (competency.foundational && row.d == null) continue;
     const raised = DIMS.filter(dim => row[dim] != null && (running[dim] == null || row[dim]! > running[dim]!));
-    contributions.push({ ref: c.ref, code: c.code, act: c.act, seq: c.seq, basis: c.reading.basis, k: row.k, u: row.u, d: row.d, raised });
+    contributions.push({ ref: c.ref, code: c.code, act: c.act, seq: c.seq, term: c.term, basis: c.reading.basis, k: row.k, u: row.u, d: row.d, raised });
     running = maxDepth(running, row);
     for (let a = c.act; a <= 3; a++) byAct[a - 1] = running;
   }
@@ -520,7 +534,8 @@ export function computePlan(lib: Library, plan: PlanState, view: string[] | 'all
       }
       const ok = reachable.some(e => {
         const p = placed.get(e.from)!;
-        return p.act < c.act || (p.act === c.act && (p.seq < c.seq || e.kind === 'concurrent_ok'));
+        // A prerequisite belongs in an earlier term; the same term is fine only where the catalog allows taking them together.
+        return p.term < c.term || (p.term === c.term && e.kind === 'concurrent_ok');
       });
       if (!ok) checks.push({ ref: c.ref, code: c.code, kind: 'prereq_order', detail: `Sits before ${names}, which it depends on.`, from: reachable.map(e => e.from) });
     }

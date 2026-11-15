@@ -185,10 +185,10 @@ export function Builder(props: {
   // ---- mutations ----------------------------------------------------------
   const place = (ref: string, target: DropTarget) => update(p => {
     if (target.at) {
-      // Dropped at a point on the map: the card stays there, and teaching order follows from where it sits.
+      // Dropped on a term row: the card stays there, and teaching order (and fade) follow from where it sits.
       const at = target.at;
       const cur = p.placements.find(x => x.ref === ref);
-      if (cur && cur.act === target.act && (cur.branch ?? null) === target.branch && cur.x === Math.round(at.x) && cur.y === Math.round(at.y)) return p;
+      if (cur && cur.act === target.act && (cur.branch ?? null) === target.branch && cur.slot === at.slot && cur.x === Math.round(at.x)) return p;
       return { ...p, placements: moveCard(p.placements, new Set(p.branches.map(b => b.id)), ref, target.act, target.branch, at) };
     }
     if (target.before === ref) return p; // dropped on itself
@@ -276,7 +276,7 @@ export function Builder(props: {
           Fill gaps
         </label>
 
-        <label className="cb-select" title="How much a depth nobody revisits is assumed to lose per act. One level is the department's working assumption, not a measurement, and one rate is used for Know, Understand and Do although skills of different kinds fade at different rates.">
+        <label className="cb-select" title="How much a depth nobody revisits is assumed to lose per act, spread evenly over the act's three terms (each counted as a semester), from the term the course sits in. One level is the department's working assumption, not a measurement, and one rate is used for Know, Understand and Do although skills of different kinds fade at different rates.">
           Fade
           <select value={String(plan.fade)} onChange={e => update(p => ({ ...p, fade: Number(e.target.value) }))}>
             <option value="0">not counted</option>
