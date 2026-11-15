@@ -31,6 +31,7 @@ export const planStateSchema = z.object({
   support: z.boolean(),
   placements: z.array(z.object({ ref: id, act, branch: id.nullable(), slot: slot.optional(), x: coord.optional() })).max(200),
   heights: z.tuple([height, height, height]).optional(),
+  degreeHours: z.number().int().min(1).max(300).optional(),
   branches: z.array(z.object({ id, name: text(60), targetIds: z.array(id).max(20) })).max(12),
   links: z.array(link).max(300),
   unlinked: z.array(link).max(300),

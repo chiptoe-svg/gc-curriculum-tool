@@ -183,6 +183,8 @@ export interface PlanState {
    * from their positions (earlier term first, then left first: orderByPosition in lib/builder/layout.ts).
    */
   placements: Placement[];
+  /** Credit hours the degree requires (the catalog program's total when the plan started from one); absent = 120. */
+  degreeHours?: number;
   /** Height in map pixels chosen for Act 1, 2 and 3 (null = automatic). Absent on plans saved before it existed. */
   heights?: [number | null, number | null, number | null];
   branches: Branch[];

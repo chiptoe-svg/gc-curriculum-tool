@@ -83,6 +83,9 @@
 .cb-bar__name { font-family: var(--font-display), Georgia, serif; font-size: 1.2rem; font-weight: 600; border: 0; border-bottom: 1px dashed transparent; background: none; min-width: 8rem; flex: 0 1 15rem; padding: 0.1rem 0; }
 .cb-bar__name:hover, .cb-bar__name:focus { border-bottom-color: var(--cb-rule); outline: none; }
 .cb-bar__spacer { flex: 1; }
+.cb-hours { font-size: 0.8125rem; color: var(--cb-ink-soft); display: inline-flex; gap: 0.6rem; align-items: baseline; white-space: nowrap; }
+.cb-hours b { color: var(--cb-ink); font-variant-numeric: tabular-nums; }
+.cb-hours__acts { display: inline-flex; gap: 0.5rem; font-size: 0.75rem; }
 .cb-seg { display: inline-flex; border: 1px solid var(--cb-ink); border-radius: 3px; overflow: hidden; }
 .cb-seg button { border: 0; background: var(--cb-paper); padding: 0.3rem 0.75rem; cursor: pointer; }
 .cb-seg button + button { border-left: 1px solid var(--cb-ink); }

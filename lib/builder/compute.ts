@@ -194,6 +194,8 @@ export interface PlacedCourse {
   seq: number;
   /** The term the course sits in, 1–9 (types.ts termOf): its row on the map. */
   term: number;
+  /** Credit hours from the catalog (the low end of a range such as "1-3"); null when unknown. */
+  credits: number | null;
   proposed: boolean;
   reading: CourseReading;
 }
@@ -285,6 +287,27 @@ export interface PlanResult {
   milestones: ActMilestone[];
 }
 
+/** Credit hours from catalog text: "3" -> 3, "1-3" -> 1 (the least a student can take), anything else -> null. */
+export function parseCredits(text: string | null | undefined): number | null {
+  const m = /\d+(\.\d+)?/.exec(text ?? '');
+  return m ? Number(m[0]) : null;
+}
+
+export interface Hours { total: number; byAct: [number, number, number]; byTerm: number[]; unknown: string[] }
+/** Credit hours of the shared trunk (courses on a branch are only some students'), per act and per term (index 0 = term 1). */
+export function hoursOf(courses: readonly PlacedCourse[]): Hours {
+  const byTerm = Array.from({ length: TERMS_PER_ACT * 3 }, () => 0);
+  const unknown: string[] = [];
+  for (const c of courses) {
+    if (c.branch !== null) continue;
+    if (c.credits == null) { unknown.push(c.code); continue; }
+    byTerm[c.term - 1]! += c.credits;
+  }
+  const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
+  const byAct = [0, 1, 2].map(i => sum(byTerm.slice(i * TERMS_PER_ACT, (i + 1) * TERMS_PER_ACT))) as [number, number, number];
+  return { total: sum(byTerm), byAct, byTerm, unknown };
+}
+
 /** Every placed course, in teaching order, whatever its branch. */
 export function placeCourses(lib: Library, plan: PlanState): PlacedCourse[] {
   const byCode = new Map(lib.courses.map(c => [c.code, c]));
@@ -302,9 +325,10 @@ export function placeCourses(lib: Library, plan: PlanState): PlacedCourse[] {
       seen.add(p.ref);
       const branch = p.branch && branchIds.has(p.branch) ? p.branch : null; // a deleted branch's courses fall back to the trunk
       const term = termOf(act, pos[p.ref]?.slot ?? 0);
+      const credits = parseCredits(lc ? lc.credits : pc!.credits);
       out.push(lc
-        ? { ref: p.ref, code: lc.code, title: lc.title, act, branch, seq: out.length, term, proposed: false, reading: readCourse(lc, plan) }
-        : { ref: p.ref, code: pc!.code, title: pc!.title, act, branch, seq: out.length, term, proposed: true,
+        ? { ref: p.ref, code: lc.code, title: lc.title, act, branch, seq: out.length, term, credits, proposed: false, reading: readCourse(lc, plan) }
+        : { ref: p.ref, code: pc!.code, title: pc!.title, act, branch, seq: out.length, term, credits, proposed: true,
             reading: { depths: pc!.depths, basis: pc!.depths.length ? 'proposed' : null, filled: false } });
     }
   }

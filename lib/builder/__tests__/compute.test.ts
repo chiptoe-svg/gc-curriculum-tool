@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkpoint, computePlan, defaultAct, defaultLevels, durable, readCourse } from '../compute';
+import { checkpoint, computePlan, defaultAct, defaultLevels, durable, hoursOf, parseCredits, placeCourses, readCourse } from '../compute';
 import { EMPTY_PLAN, PLAN_SCOPE, type ActLevels, type Library, type LibraryCourse, type PlanState } from '../types';
 
 const course = (code: string, over: Partial<LibraryCourse> = {}): LibraryCourse => ({
@@ -115,6 +115,29 @@ describe('durable (reinforcement and fade)', () => {
   it('leaves an unread dimension unread, and does nothing when fade is off', () => {
     expect(durable([d(1, 4)], none, 1)[2].k).toBeNull();
     expect(held([d(1, 4)], none, 0)).toEqual([4, 4, 4]);
+  });
+});
+
+describe('credit hours', () => {
+  it('reads catalog credit text, taking the low end of a range', () => {
+    expect(parseCredits('3')).toBe(3);
+    expect(parseCredits('1-3')).toBe(1);
+    expect(parseCredits(null)).toBeNull();
+    expect(parseCredits('varies')).toBeNull();
+  });
+  it('adds the shared trunk by term and act, leaving branch courses out and listing courses with no credits', () => {
+    const l = lib([course('A', { credits: '3' }), course('B', { credits: '4' }), course('C', { credits: '2' }), course('D')]);
+    const p = { ...EMPTY_PLAN, branches: [{ id: 'x', name: 'X', targetIds: [] }], placements: [
+      { ref: 'A', act: 1 as const, branch: null, slot: 0 as const, x: 0 },
+      { ref: 'B', act: 1 as const, branch: null, slot: 2 as const, x: 0 },
+      { ref: 'C', act: 3 as const, branch: 'x', slot: 0 as const, x: 0 },
+      { ref: 'D', act: 2 as const, branch: null, slot: 1 as const, x: 0 },
+    ] };
+    const h = hoursOf(placeCourses(l, p));
+    expect(h.total).toBe(7);
+    expect(h.byAct).toEqual([7, 0, 0]);
+    expect(h.byTerm.slice(0, 3)).toEqual([3, 0, 4]);
+    expect(h.unknown).toEqual(['D']);
   });
 });
 

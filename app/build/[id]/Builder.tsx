@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { computePlan, defaultAct, placeCourses } from '@/lib/builder/compute';
+import { computePlan, defaultAct, hoursOf, placeCourses } from '@/lib/builder/compute';
 import { layoutLanes, moveCard } from '@/lib/builder/layout';
 import type { Act, Library, PlanState } from '@/lib/builder/types';
 import type { CatalogHit } from '@/lib/builder/library';
@@ -184,6 +184,7 @@ export function Builder(props: {
   const branchView = shown === 'all' ? 'all' : shown === 'trunk' ? [] : [shown];
   const result = useMemo(() => computePlan(library, plan, branchView), [library, plan, shown]); // eslint-disable-line react-hooks/exhaustive-deps
   const allCourses = useMemo(() => placeCourses(library, plan), [library, plan]);
+  const hours = useMemo(() => hoursOf(allCourses), [allCourses]);
   const placedRefs = useMemo(() => new Set(plan.placements.map(p => p.ref)), [plan.placements]);
   const positions = useMemo(() => layoutLanes(plan.placements, new Set(plan.branches.map(b => b.id))), [plan.placements, plan.branches]);
 
@@ -308,6 +309,14 @@ export function Builder(props: {
           </label>
         )}
 
+        <span className="cb-hours" title={[
+          ...hours.byTerm.map((h, i) => `Term ${i + 1}: ${h} credit hours`),
+          'Shared courses only; courses on a branch are not counted.',
+          ...(hours.unknown.length ? [`No credits in the catalog for: ${hours.unknown.join(', ')}`] : []),
+        ].join('\n')}>
+          <b>{hours.total}</b> of {plan.degreeHours ?? 120} credit hours
+          <span className="cb-hours__acts">{hours.byAct.map((h, i) => <span key={i}>Act {i + 1} <b>{h}</b></span>)}</span>
+        </span>
         <span className="cb-bar__spacer" />
         <button type="button" className="cb-btn" onClick={() => { setPanel(panel === 'targets' ? null : 'targets'); setSelection(null); }}>Targets</button>
         <button type="button" className={`cb-btn${problems + flagged > 0 ? ' cb-btn--alert' : ''}`} onClick={() => { setPanel(panel === 'checks' ? null : 'checks'); setSelection(null); }}>
