@@ -10,7 +10,7 @@ describe('rollUp', () => {
 
   it('takes the highest linked skill, dimension by dimension, and never changes the skills', () => {
     const before = JSON.stringify(skills);
-    const r = rollUp(skills, [link('a', 'x'), link('c', 'x')], [], new Set());
+    const r = rollUp(skills, [link('a', 'x', 'proposed', 'scoring'), link('c', 'x', 'proposed', 'scoring')], [], new Set());
     expect(r.depths[0]).toMatchObject({ competencyId: 'x', k: 3, u: 4, d: 3, method: 'max', soft: true });
     expect(JSON.stringify(skills)).toBe(before);
   });
@@ -22,12 +22,22 @@ describe('rollUp', () => {
   });
 
   it('uses a stored roll-up (AI or faculty) instead of the highest skill', () => {
-    const r = rollUp(skills, [link('a', 'x'), link('b', 'x')], [{ competencyId: 'x', k: 1, u: 1, d: 2, method: 'ai', rationale: 'one narrow skill' }], new Set());
+    const r = rollUp(skills, [link('a', 'x', 'confirmed'), link('b', 'x', 'confirmed')], [{ competencyId: 'x', k: 1, u: 1, d: 2, method: 'ai', rationale: 'one narrow skill' }], new Set());
     expect(r.depths[0]).toMatchObject({ k: 1, u: 1, d: 2, method: 'ai', rationale: 'one narrow skill', soft: false });
   });
 
   it('reads a foundational competency on Do only', () => {
-    const r = rollUp(skills, [link('a', 'agency')], [], new Set(['agency']));
+    const r = rollUp(skills, [link('a', 'agency', 'confirmed')], [], new Set(['agency']));
     expect(r.depths[0]).toMatchObject({ k: null, u: null, d: 3 });
+  });
+
+  it('treats an embedding match alone as a suggestion: not counted until confirmed', () => {
+    const r = rollUp(skills, [link('a', 'x', 'proposed', 'embedding')], [], new Set());
+    expect(r.depths).toEqual([]);
+    expect(r.unmapped.map(s => s.skillRef)).toContain('a');
+    expect(r.suggestions).toMatchObject([{ skillRef: 'a', competencyId: 'x' }]);
+    const ok = rollUp(skills, [link('a', 'x', 'confirmed', 'embedding')], [], new Set());
+    expect(ok.depths[0]).toMatchObject({ competencyId: 'x', k: 3 });
+    expect(ok.suggestions).toEqual([]);
   });
 });

@@ -221,6 +221,12 @@
 .cb-svg--front { z-index: 3; pointer-events: none; }
 .cb-divider { position: absolute; top: 0; bottom: 0; width: 10px; z-index: 5; cursor: col-resize; touch-action: none; }
 .cb-divider:hover, .cb-divider:active { background: linear-gradient(90deg, transparent 4px, var(--cb-accent) 4px, var(--cb-accent) 6px, transparent 6px); }
+.cb-cgroup { border-top: 1px solid var(--cb-rule); padding: 0.55rem 0 0.4rem; }
+.cb-cgroup--none .cb-cgroup__head b { color: var(--cb-short); }
+.cb-cgroup__head { display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem; align-items: baseline; }
+.cb-link.cb-link--stack { grid-template-columns: minmax(0, 1fr); }
+.cb-link.cb-link--stack .cb-linkto { margin: 0.2rem 0 0; justify-self: start; }
+.cb-skills { list-style: none; margin: 0.25rem 0 0.3rem; padding: 0 0 0 0.8rem; border-left: 2px solid var(--cb-rule); }
 .cb-link { display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.3rem; align-items: baseline; margin-top: 0.25rem; font-size: 0.875rem; }
 .cb-link__text { color: var(--cb-ink-soft); }
 .cb-link__meta { font-size: 0.75rem; color: var(--cb-ink-soft); white-space: nowrap; }

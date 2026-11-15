@@ -108,9 +108,9 @@ export async function loadLibrary(): Promise<Library> {
       ...(() => {
         const skills = skillsOf(s.profile);
         const useLinks = linksInUse && (linksBySnap.has(s.id) || rollupsBySnap.has(s.id));
-        if (!useLinks) return { depths: depthsBySnap.get(s.id) ?? [], skills, unmapped: [] as Skill[], linked: false };
+        if (!useLinks) return { depths: depthsBySnap.get(s.id) ?? [], skills, unmapped: [] as Skill[], suggestions: [], linked: false };
         const r = rollUp(skills, linksBySnap.get(s.id) ?? [], rollupsBySnap.get(s.id) ?? [], foundationalIds);
-        return { depths: r.depths, skills, unmapped: r.unmapped, linked: true };
+        return { depths: r.depths, skills, unmapped: r.unmapped, suggestions: r.suggestions, linked: true };
       })(),
       outcomes: ev.rows.map(r => ({ statement: r.statement, k: r.k, u: r.u, d: r.d })),
       disagreements: ev.disagreements,

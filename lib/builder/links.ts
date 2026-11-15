@@ -1,7 +1,9 @@
 // A course's catalog levels from its skills, links and roll-ups (spec 2026-11-15-skill-competency-links-design.md).
 // Skills are never changed: a competency's level is the roll-up stored for it (AI or faculty), else the highest
-// linked skill, dimension by dimension. A link counts unless it is rejected; a skill with no counting link is
-// reported as unmapped. Pure.
+// linked skill, dimension by dimension. A link counts when it is confirmed, or proposed by a judgment (the old
+// scoring, an AI judge, faculty). An embedding match alone is only a suggestion and does not count until
+// someone confirms it (background §11: embeddings work for profiles and are weak for single verdicts). A skill
+// with no counting link is reported as unmapped. Pure.
 import type { CompetencyDepth, LinkedSkill, Skill } from './types';
 
 export interface LinkRow { skillRef: string; competencyId: string; source: LinkedSkill['source']; status: LinkedSkill['status']; similarity: number | null }
@@ -11,9 +13,10 @@ const maxN = (a: number | null, b: number | null) => (a == null ? b : b == null 
 
 export function rollUp(
   skills: readonly Skill[], links: readonly LinkRow[], rollups: readonly RollupRow[], foundational: ReadonlySet<string>,
-): { depths: CompetencyDepth[]; unmapped: Skill[] } {
+): { depths: CompetencyDepth[]; unmapped: Skill[]; suggestions: Array<LinkedSkill & { competencyId: string }> } {
   const byRef = new Map(skills.map(s => [s.skillRef, s]));
-  const live = links.filter(l => l.status !== 'rejected' && byRef.has(l.skillRef));
+  const counts = (l: LinkRow) => l.status === 'confirmed' || (l.status === 'proposed' && l.source !== 'embedding');
+  const live = links.filter(l => counts(l) && byRef.has(l.skillRef));
   const byComp = new Map<string, LinkRow[]>();
   for (const l of live) byComp.set(l.competencyId, [...(byComp.get(l.competencyId) ?? []), l]);
   const stored = new Map(rollups.map(r => [r.competencyId, r]));
@@ -35,5 +38,9 @@ export function rollUp(
     });
   }
   const mapped = new Set(live.map(l => l.skillRef));
-  return { depths, unmapped: skills.filter(s => !mapped.has(s.skillRef)) };
+  const suggestions = links
+    .filter(l => l.status === 'proposed' && l.source === 'embedding' && byRef.has(l.skillRef))
+    .map(l => ({ ...byRef.get(l.skillRef)!, source: l.source, status: l.status, similarity: l.similarity, competencyId: l.competencyId }))
+    .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0));
+  return { depths, unmapped: skills.filter(s => !mapped.has(s.skillRef)), suggestions };
 }

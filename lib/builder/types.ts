@@ -56,6 +56,8 @@ export interface LibraryVersion {
   /** Every skill in the capture, and those with no counting link (links in use only; empty otherwise). */
   skills: Skill[];
   unmapped: Skill[];
+  /** Embedding matches awaiting a decision: shown as suggestions, not counted. */
+  suggestions: Array<LinkedSkill & { competencyId: string }>;
   /** Whether the levels come from links (true) or from the older catalog scoring (false). */
   linked: boolean;
 }

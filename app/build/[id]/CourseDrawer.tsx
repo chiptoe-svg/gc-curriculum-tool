@@ -137,25 +137,29 @@ function TrackedCourse(props: {
     finally { setBusy(false); }
   };
   const projects = version?.projects.length ? version.projects : lc.sheetProjects.map(t => ({ title: t, description: '', deliverables: [] as string[] }));
-  const above0 = (x?: CompetencyDepth) => !!x && (['k', 'u', 'd'] as const).some(dim => (x[dim] ?? 0) > 0);
+  const above0 = (x?: { k: number | null; u: number | null; d: number | null }) => !!x && (['k', 'u', 'd'] as const).some(dim => (x[dim] ?? 0) > 0);
   // The reading the map uses: the what-if when one is chosen, otherwise discovered or stated as the course's reading says.
   const inUseMap = whatIf ? whatIfDepths : inUse === 'stated' ? stated : discovered;
   const works = ids.filter(id => above0(inUseMap.get(id)));
-  const hiddenZero = ids.filter(id => inUseMap.has(id) && !works.includes(id)).length;
   const compareRows = ids.filter(id => above0(stated.get(id)) || above0(discovered.get(id)));
   // What students bring: the deepest level reached by courses in earlier terms, on the shared trunk or this course's branch.
   const earlier = props.allCourses.filter(c => c.term < placed.term && !c.requirement && (c.branch === null || c.branch === placed.branch));
+  // Each earlier course's skills grouped under the competency (or, where a course has no linked skills, its level alone).
   const incoming = (id: string) => {
     const from: string[] = [];
+    const skills: Array<{ code: string; statement: string | null; k: number | null; u: number | null; d: number | null }> = [];
     let k: number | null = null, u: number | null = null, d: number | null = null;
     for (const c of earlier) {
       const r = c.reading.depths.find(x => x.competencyId === id);
       if (!r || !above0(r)) continue;
       from.push(c.code);
       k = maxN(k, r.k); u = maxN(u, r.u); d = maxN(d, r.d);
+      const linked = (r.links ?? []).filter(l => above0(l));
+      if (linked.length) for (const l of linked) skills.push({ code: c.code, statement: l.statement, k: l.k, u: l.u, d: l.d });
+      else skills.push({ code: c.code, statement: r.source ?? null, k: r.k, u: r.u, d: r.d });
     }
     const depth: CompetencyDepth | null = from.length ? { competencyId: id, k, u, d } : null;
-    return { depth, from };
+    return { depth, from, skills };
   };
   const differ = ids.filter(id => apart(stated.get(id), discovered.get(id))).length;
   const date = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -209,100 +213,119 @@ function TrackedCourse(props: {
       </details>
 
       <details className="cb-sec">
-        <summary>Incoming competencies ({works.length})</summary>
-        <p className="cb-muted">For each competency this course works, the level students already hold from courses in earlier terms on this plan (shared courses, and this course&rsquo;s branch). A dash means this course is where they first meet it.</p>
-        {works.length === 0 ? <p className="cb-muted">This course works no competency above level 0 under the reading in use.</p> : (
-          <table className="cb-table">
-            <thead><tr><th>Competency</th><th>Coming in</th><th>From</th></tr></thead>
-            <tbody>
-              {works.map(id => {
-                const c = comp.get(id)!;
-                const inc = incoming(id);
-                return (
-                  <tr key={id} className={props.objectiveIds.has(id) ? 'is-objective' : ''}>
-                    <td>{c.name}</td>
-                    <td className="cb-mono">{inc.depth ? fmtDepth(inc.depth, c.foundational) : '–'}</td>
-                    <td className="cb-muted">{inc.from.join(', ')}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
+        <summary>Incoming skills &amp; competencies ({works.length})</summary>
+        <p className="cb-muted">For each competency this course works, the level students already hold from courses in earlier terms on this plan (shared courses, and this course&rsquo;s branch), and the skills from those courses that count toward it. &ldquo;First met here&rdquo; means no earlier course works it.</p>
+        {works.length === 0 && <p className="cb-muted">This course works no competency above level 0 under the reading in use.</p>}
+        {works.map(id => {
+          const c = comp.get(id)!;
+          const inc = incoming(id);
+          return (
+            <div key={id} className="cb-cgroup">
+              <div className="cb-cgroup__head">
+                <b>{c.name}</b>
+                {inc.depth ? <span className="cb-mono">{fmtDepth(inc.depth, c.foundational)}</span> : <span className="cb-small cb-muted">first met here</span>}
+              </div>
+              {inc.skills.length > 0 && (
+                <ul className="cb-skills">
+                  {inc.skills.map((sk, i) => (
+                    <li key={i} className="cb-link cb-link--stack">
+                      <span className="cb-link__text">{sk.statement ? <>{sk.statement} </> : null}<span className="cb-mono">{fmtDepth(sk, c.foundational)}</span> <span className="cb-muted">({sk.code})</span></span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
       </details>
 
       <details className="cb-sec">
-        <summary>Outgoing competencies ({works.length})</summary>
+        <summary>Developed skills &amp; competencies ({linkedView ? `${version!.skills.length} skills, ${works.length} competencies` : works.length})</summary>
         <p className="cb-muted">
-          {inUse ? `This course's levels from its ${BASIS_WORD[inUse].toLowerCase()} reading${placed.reading.filled ? ' (it has none under the chosen input)' : ''}, and where students stand after it.` : 'It has no reading under the chosen input, so it adds nothing to the map.'}
           {linkedView
-            ? ' Each level comes from the capture\'s own skills linked to the competency: the highest linked skill unless someone set it. Confirm or reject a link with ✓ or ✗; the skills themselves never change.'
-            : inUse === 'discovered' && !whatIf && ' Each level was translated from the capture by the catalog scoring; "from" names the profile statement or trait it was matched to, so a poor match shows.'}
-          {hiddenZero > 0 && ` ${hiddenZero} competenc${hiddenZero === 1 ? 'y' : 'ies'} read at level 0 ${hiddenZero === 1 ? 'is' : 'are'} not listed.`}
+            ? 'Every skill the course capture recorded, as captured, grouped under the competency it counts toward. A competency\'s level is its highest grouped skill unless someone set it; "after it" is where students stand once this course is added to what they bring. A skill can sit in more than one group; ✓ confirms a grouping, ✗ removes it. The skills themselves never change.'
+            : inUse ? `This course's levels from its ${BASIS_WORD[inUse].toLowerCase()} reading${placed.reading.filled ? ' (it has none under the chosen input)' : ''}, and where students stand after it.` : 'It has no reading under the chosen input, so it adds nothing to the map.'}
         </p>
-        {works.length === 0 ? <p className="cb-muted">No competency levels above 0 have been read for this course.</p> : (
-          <table className="cb-table">
-            <thead><tr><th>Competency</th><th>This course</th><th>After it</th></tr></thead>
-            <tbody>
-              {works.map(id => {
-                const c = comp.get(id)!;
-                const used = inUseMap.get(id)!;
-                const inc = incoming(id).depth;
-                const after = { k: maxN(inc?.k, used.k), u: maxN(inc?.u, used.u), d: maxN(inc?.d, used.d) };
-                const raises = (['k', 'u', 'd'] as const).filter(dm => used[dm] != null && (inc?.[dm] == null || used[dm]! > inc[dm]!) && !(c.foundational && dm !== 'd'));
-                return (
-                  <tr key={id} className={props.objectiveIds.has(id) ? 'is-objective' : ''}>
-                    <td>{c.name}
-                      {!linkedView && used.source && inUse === 'discovered' && !whatIf && <div className="cb-source">from: {used.source}</div>}
-                      {linkedView && (used.links ?? []).map(l => (
-                        <div key={l.skillRef} className={`cb-link cb-link--${l.status}`}>
-                          <span className="cb-link__text">{l.statement} <span className="cb-mono">{fmtDepth(l, false)}</span></span>
-                          <span className="cb-link__meta">{l.status === 'confirmed' ? 'confirmed' : `proposed by ${l.source === 'scoring' ? 'the old scoring' : l.source === 'embedding' ? `similarity ${l.similarity?.toFixed(2) ?? ''}` : l.source}`}</span>
-                          <button type="button" className="cb-iconbtn" title="Confirm this link" disabled={busy || l.status === 'confirmed'} onClick={() => decide({ action: 'confirm', competencyId: id, skillRef: l.skillRef })}>✓</button>
-                          <button type="button" className="cb-iconbtn" title="Reject this link: the skill stops counting toward this competency" disabled={busy} onClick={() => decide({ action: 'reject', competencyId: id, skillRef: l.skillRef })}>✗</button>
-                        </div>
-                      ))}
-                    </td>
-                    <td className="cb-mono">{fmtDepth(used, c.foundational)}
-                      {linkedView && <div className="cb-small cb-muted">{used.method === 'faculty' ? 'set by hand' : used.method === 'ai' ? 'AI judgment' : 'highest skill'}{used.soft ? ', proposed' : ''}</div>}
-                      {linkedView && (editing === id ? (
-                        <div className="cb-rollup">
-                          {!c.foundational && <LevelInput label="Know" value={draft.k} onChange={k => setDraft({ ...draft, k })} />}
-                          {!c.foundational && <LevelInput label="Understand" value={draft.u} onChange={u => setDraft({ ...draft, u })} />}
-                          <LevelInput label="Do" value={draft.d} onChange={d => setDraft({ ...draft, d })} />
-                          <button type="button" className="cb-linkbtn" disabled={busy} onClick={() => { decide({ action: 'rollup', competencyId: id, ...draft }); setEditing(null); }}>Save</button>
-                          <button type="button" className="cb-linkbtn" onClick={() => setEditing(null)}>Cancel</button>
-                        </div>
-                      ) : (
-                        <div>
-                          <button type="button" className="cb-linkbtn cb-small" onClick={() => { setEditing(id); setDraft({ k: used.k, u: used.u, d: used.d }); }}>Set level</button>
-                          {used.method !== 'max' && <> · <button type="button" className="cb-linkbtn cb-small" disabled={busy} onClick={() => decide({ action: 'rollup-clear', competencyId: id })}>Use highest skill</button></>}
-                        </div>
-                      ))}
-                    </td>
-                    <td className="cb-mono">{fmtDepth(after, c.foundational)}{raises.length > 0 && <span className="cb-t-reached cb-small"> raises {raises.map(r => r.toUpperCase()).join(', ')}</span>}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
+        {works.length === 0 && !linkedView && <p className="cb-muted">No competency levels above 0 have been read for this course.</p>}
+        {works.map(id => {
+          const c = comp.get(id)!;
+          const used = inUseMap.get(id)!;
+          const inc = incoming(id).depth;
+          const after = { k: maxN(inc?.k, used.k), u: maxN(inc?.u, used.u), d: maxN(inc?.d, used.d) };
+          const raises = (['k', 'u', 'd'] as const).filter(dm => used[dm] != null && (inc?.[dm] == null || used[dm]! > inc[dm]!) && !(c.foundational && dm !== 'd'));
+          return (
+            <div key={id} className={`cb-cgroup${props.objectiveIds.has(id) ? ' is-objective' : ''}`}>
+              <div className="cb-cgroup__head">
+                <b>{c.name}</b>
+                <span className="cb-mono">{fmtDepth(used, c.foundational)}</span>
+                <span className="cb-small cb-muted">
+                  {linkedView ? (used.method === 'faculty' ? 'set by hand' : used.method === 'ai' ? 'AI judgment' : 'highest skill') + (used.soft ? ', proposed' : '') : ''}
+                  {' '}after it <span className="cb-mono">{fmtDepth(after, c.foundational)}</span>{raises.length > 0 && <span className="cb-t-reached"> raises {raises.map(r => r.toUpperCase()).join(', ')}</span>}
+                </span>
+              </div>
+              {!linkedView && used.source && inUse === 'discovered' && !whatIf && <div className="cb-source">from: {used.source}</div>}
+              {linkedView && (
+                <ul className="cb-skills">
+                  {(used.links ?? []).map(l => (
+                    <li key={l.skillRef} className={`cb-link cb-link--${l.status}`}>
+                      <span className="cb-link__text">{l.statement} <span className="cb-mono">{fmtDepth(l, l.k == null && l.u == null)}</span></span>
+                      <span className="cb-link__meta">{l.status === 'confirmed' ? 'confirmed' : `proposed by ${l.source === 'scoring' ? 'the old scoring' : l.source === 'embedding' ? `similarity ${l.similarity?.toFixed(2) ?? ''}` : l.source}`}</span>
+                      <button type="button" className="cb-iconbtn" title="Confirm this grouping" disabled={busy || l.status === 'confirmed'} onClick={() => decide({ action: 'confirm', competencyId: id, skillRef: l.skillRef })}>✓</button>
+                      <button type="button" className="cb-iconbtn" title="Remove the skill from this group (the skill stays)" disabled={busy} onClick={() => decide({ action: 'reject', competencyId: id, skillRef: l.skillRef })}>✗</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {linkedView && (editing === id ? (
+                <div className="cb-rollup">
+                  {!c.foundational && <LevelInput label="Know" value={draft.k} onChange={k => setDraft({ ...draft, k })} />}
+                  {!c.foundational && <LevelInput label="Understand" value={draft.u} onChange={u => setDraft({ ...draft, u })} />}
+                  <LevelInput label="Do" value={draft.d} onChange={d => setDraft({ ...draft, d })} />
+                  <button type="button" className="cb-linkbtn" disabled={busy} onClick={() => { decide({ action: 'rollup', competencyId: id, ...draft }); setEditing(null); }}>Save</button>
+                  <button type="button" className="cb-linkbtn" onClick={() => setEditing(null)}>Cancel</button>
+                </div>
+              ) : (
+                <div className="cb-small">
+                  <button type="button" className="cb-linkbtn" onClick={() => { setEditing(id); setDraft({ k: used.k, u: used.u, d: used.d }); }}>Set the competency level</button>
+                  {used.method !== 'max' && <> · <button type="button" className="cb-linkbtn" disabled={busy} onClick={() => decide({ action: 'rollup-clear', competencyId: id })}>Use the highest skill</button></>}
+                </div>
+              ))}
+            </div>
+          );
+        })}
         {linkedView && version!.unmapped.length > 0 && (
-          <>
-            <h4>Skills not linked to any competency ({version!.unmapped.length})</h4>
-            <p className="cb-muted">They count toward nothing on the map until linked.</p>
-            <ul className="cb-list">
+          <div className="cb-cgroup cb-cgroup--none">
+            <div className="cb-cgroup__head"><b>Not grouped under a competency yet ({version!.unmapped.length})</b></div>
+            <p className="cb-muted cb-small">These count toward nothing on the map until grouped.</p>
+            <ul className="cb-skills">
               {version!.unmapped.map(sk => (
-                <li key={sk.skillRef}>{sk.statement} <span className="cb-mono cb-muted">{fmtDepth(sk, sk.k == null && sk.u == null)}</span>
-                  <select className="cb-linkto" value="" disabled={busy} aria-label={`Link "${sk.statement}" to a competency`}
+                <li key={sk.skillRef} className="cb-link cb-link--stack">
+                  <span className="cb-link__text">{sk.statement} <span className="cb-mono">{fmtDepth(sk, sk.k == null && sk.u == null)}</span></span>
+                  <select className="cb-linkto" value="" disabled={busy} aria-label={`Group "${sk.statement}" under a competency`}
                     onChange={e => { if (e.target.value) decide({ action: 'add', competencyId: e.target.value, skillRef: sk.skillRef }); }}>
-                    <option value="">Link to…</option>
+                    <option value="">Group under…</option>
                     {[...library.competencies].sort((a, b) => a.name.localeCompare(b.name)).map(cc => <option key={cc.id} value={cc.id}>{cc.name}</option>)}
                   </select>
                 </li>
               ))}
             </ul>
-          </>
+          </div>
+        )}
+        {linkedView && version!.suggestions.length > 0 && (
+          <div className="cb-cgroup cb-cgroup--suggest">
+            <div className="cb-cgroup__head"><b>Suggested groupings ({version!.suggestions.length})</b></div>
+            <p className="cb-muted cb-small">Close matches by wording (embedding similarity). Wording similarity cannot tell the same skill from a related one on the same topic, so these count for nothing until someone confirms them.</p>
+            <ul className="cb-skills">
+              {version!.suggestions.map(sg => (
+                <li key={`${sg.skillRef}|${sg.competencyId}`} className="cb-link cb-link--proposed">
+                  <span className="cb-link__text">{sg.statement} <span className="cb-muted">→ {comp.get(sg.competencyId)?.name ?? sg.competencyId}</span></span>
+                  <span className="cb-link__meta">similarity {sg.similarity?.toFixed(2) ?? ''}</span>
+                  <button type="button" className="cb-iconbtn" title="Accept: group this skill under that competency" disabled={busy} onClick={() => decide({ action: 'confirm', competencyId: sg.competencyId, skillRef: sg.skillRef })}>✓</button>
+                  <button type="button" className="cb-iconbtn" title="Dismiss this suggestion" disabled={busy} onClick={() => decide({ action: 'reject', competencyId: sg.competencyId, skillRef: sg.skillRef })}>✗</button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         {linkError && <p className="cb-error" role="alert">{linkError}</p>}
         {version && version.depths.length === 0 && !linkedView && (
