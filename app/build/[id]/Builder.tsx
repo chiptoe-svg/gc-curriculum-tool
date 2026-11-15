@@ -23,12 +23,13 @@ const ZOOMS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5];
 export type Update = (fn: (p: PlanState) => PlanState) => void;
 
 /** This viewer's own view settings (zoom, library shown). Kept in this browser only; never part of the shared plan. */
-type View = { zoom: number; library: boolean; arrows: boolean };
+type View = { zoom: number; library: boolean; arrows: boolean; courseWidth: number | null };
 function readView(): View {
   try {
-    const v = JSON.parse(localStorage.getItem('cb-view') ?? '{}') as { zoom?: unknown; library?: unknown; arrows?: unknown };
-    return { zoom: typeof v.zoom === 'number' && ZOOMS.includes(v.zoom) ? v.zoom : 1, library: v.library !== false, arrows: v.arrows !== false };
-  } catch { return { zoom: 1, library: true, arrows: true }; }
+    const v = JSON.parse(localStorage.getItem('cb-view') ?? '{}') as { zoom?: unknown; library?: unknown; arrows?: unknown; courseWidth?: unknown };
+    return { zoom: typeof v.zoom === 'number' && ZOOMS.includes(v.zoom) ? v.zoom : 1, library: v.library !== false, arrows: v.arrows !== false,
+      courseWidth: typeof v.courseWidth === 'number' && v.courseWidth > 0 && v.courseWidth < 20000 ? v.courseWidth : null };
+  } catch { return { zoom: 1, library: true, arrows: true, courseWidth: null }; }
 }
 function writeView(v: View) {
   try { localStorage.setItem('cb-view', JSON.stringify(v)); } catch { /* private window or storage blocked: the setting lasts for this visit */ }
@@ -51,11 +52,12 @@ export function Builder(props: {
   const [libraryOpen, setLibraryOpen] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [arrows, setArrows] = useState(true);
+  const [courseWidth, setCourseWidth] = useState<number | null>(null);
   // Read after the first render, so the server's HTML and the browser's first render agree.
-  useEffect(() => { const v = readView(); setZoom(v.zoom); setLibraryOpen(v.library); setArrows(v.arrows); }, []);
+  useEffect(() => { const v = readView(); setZoom(v.zoom); setLibraryOpen(v.library); setArrows(v.arrows); setCourseWidth(v.courseWidth); }, []);
   const changeView = (next: Partial<View>) => {
-    const v = { zoom: next.zoom ?? zoom, library: next.library ?? libraryOpen, arrows: next.arrows ?? arrows };
-    setZoom(v.zoom); setLibraryOpen(v.library); setArrows(v.arrows); writeView(v);
+    const v = { zoom: next.zoom ?? zoom, library: next.library ?? libraryOpen, arrows: next.arrows ?? arrows, courseWidth: next.courseWidth !== undefined ? next.courseWidth : courseWidth };
+    setZoom(v.zoom); setLibraryOpen(v.library); setArrows(v.arrows); setCourseWidth(v.courseWidth); writeView(v);
   };
   const zoomStep = (dir: 1 | -1) => {
     const i = ZOOMS.indexOf(zoom);
@@ -373,7 +375,7 @@ export function Builder(props: {
         />
         <main className="cb-main">
           <CurriculumMap
-            library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} arrows={arrows} selection={selection}
+            library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} arrows={arrows} courseWidth={courseWidth} onCourseWidth={w => changeView({ courseWidth: w })} selection={selection}
             onSelect={s => { setSelection(s); setPanel(null); }} onDropCourse={onDropCourse} onOpenTargets={() => { setPanel('targets'); setSelection(null); }}
             onOpenAct={act => { setPanel({ act }); setSelection(null); }}
             onResizeAct={(act, height) => update(p => {

@@ -53,6 +53,9 @@ export function CurriculumMap(props: {
   onOpenTargets: () => void;
   /** Open one act's targets (ActTargetsDrawer). */
   onOpenAct: (act: Act) => void;
+  /** The course area's width set with the divider, in map pixels; null = automatic. A viewer setting. */
+  courseWidth: number | null;
+  onCourseWidth: (w: number | null) => void;
 }) {
   const { plan, result, allCourses, selection, onSelect, positions, zoom } = props;
   const mapRef = useRef<HTMLDivElement>(null);
@@ -116,9 +119,13 @@ export function CurriculumMap(props: {
     return () => ro.disconnect();
   }, [plan, result, W, zoom, positions, resizing]);
 
-  // Wide enough for the right-most card plus three empty columns to drag into, the trunks, and at least the visible width at this zoom.
+  // The course area is as wide as its right-most card plus one empty column to drag into (or the width the viewer
+  // set with the divider, never narrower than the cards); the competency trunks start right after it (owner).
   const maxX = Math.max(0, ...Object.values(positions).map(p => p.x));
-  const mapW = Math.max(viewW / zoom, HEAD_W + maxX + CARD_W + 3 * COL_W + W, 480 + W);
+  const fit = maxX + CARD_W + 24;
+  const laneW = Math.max(fit, props.courseWidth ?? fit + COL_W, 320);
+  const mapW = HEAD_W + laneW + W;
+  void viewW;
 
   const selectedCourse = selection?.kind === 'course' ? selection.ref : null;
   const selectedObjective = selection?.kind === 'objective' ? selection.id : null;
@@ -481,6 +488,18 @@ export function CurriculumMap(props: {
           </svg>
         </>
       )}
+      <div className="cb-divider" style={{ left: HEAD_W + laneW - 5 }} role="separator" aria-orientation="vertical" aria-label="Width of the course area"
+        title="Drag to widen or narrow the course area. Double-click to fit it to the courses again."
+        onDoubleClick={() => props.onCourseWidth(null)}
+        onPointerDown={e => {
+          e.preventDefault();
+          const startX = e.clientX, startW = laneW, el = e.currentTarget;
+          el.setPointerCapture(e.pointerId);
+          let w = startW;
+          const move = (ev: PointerEvent) => { w = Math.max(fit, Math.round(startW + (ev.clientX - startX) / zoom)); el.style.left = `${HEAD_W + w - 5}px`; };
+          const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); if (Math.abs(w - startW) >= 2) props.onCourseWidth(w); };
+          el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+        }} />
       {tip && (() => {
         const o = result.objectives.find(x => x.competency.id === tip.id);
         if (!o) return null;
