@@ -60,6 +60,8 @@ export function CurriculumMap(props: {
   const [geom, setGeom] = useState<Geom | null>(null);
   const [viewW, setViewW] = useState(0);
   const [hover, setHover] = useState<{ course?: string; objective?: string; target?: string } | null>(null);
+  /** The label that follows the pointer over a competency's trunk: where it sits, in map pixels. */
+  const [tip, setTip] = useState<{ id: string; x: number; y: number } | null>(null);
   const [dropAt, setDropAt] = useState<DropTarget | null>(null);
   const [resizing, setResizing] = useState<{ act: Act; height: number } | null>(null);
   /** How far from its left edge the card being dragged was grabbed, in map pixels. Null for a drag from the library. */
@@ -340,7 +342,11 @@ export function CurriculumMap(props: {
     const rootsY = b1.top + b1.height;
     return (
       <g key={o.competency.id} opacity={dim ? 0.22 : 1} className="cb-trunk"
-        onMouseEnter={() => setHover({ objective: o.competency.id })} onMouseLeave={() => setHover(null)}
+        onMouseEnter={() => setHover({ objective: o.competency.id })} onMouseLeave={() => { setHover(null); setTip(null); }}
+        onMouseMove={e => {
+          const box = mapRef.current?.getBoundingClientRect();
+          if (box) setTip({ id: o.competency.id, x: (e.clientX - box.left) / zoom, y: (e.clientY - box.top) / zoom });
+        }}
         onClick={() => onSelect({ kind: 'objective', id: o.competency.id })}>
         <rect x={cx - COL / 2} y={geom.bands[2]!.top} width={COL} height={rootsY - geom.bands[2]!.top + ROOTS_H}
           fill={selectedObjective === o.competency.id ? 'var(--cb-select)' : 'transparent'} />
@@ -475,6 +481,28 @@ export function CurriculumMap(props: {
           </svg>
         </>
       )}
+      {tip && (() => {
+        const o = result.objectives.find(x => x.competency.id === tip.id);
+        if (!o) return null;
+        const flip = geom && tip.x > geom.width - 300;
+        return (
+          <div className="cb-tip" style={{ left: flip ? tip.x - 292 : tip.x + 14, top: tip.y + 14 }} role="tooltip">
+            <b>{o.competency.name}</b>
+            <span className="cb-muted">{stratumName(o.competency.stratum)}{o.weight != null ? `, importance ${Math.round(o.weight * 100)}%` : ''}</span>
+            {[0, 1, 2].map(i => {
+              const cp = o.checkpoints[i]!;
+              return (
+                <span key={i} className="cb-tip__row">
+                  <span>End of Act {i + 1}</span>
+                  <span className="cb-mono">{dimsOf(o.competency).map(dm => { const n = dimNote(o, i, dm); return <span key={dm} style={{ color: TONE_VAR[n.tone] }}>{n.text} </span>; })}</span>
+                  <span className={`cb-t-${toneOfCheckpoint(cp.status)}`}>{cp.status === 'met' ? 'reached' : cp.status === 'none' ? 'no target' : cp.status === 'untouched' ? 'not started' : cp.status}</span>
+                </span>
+              );
+            })}
+            <span className="cb-muted cb-small">Reached/target per Know, Understand, Do; ▾ = reached earlier, fading. Click for more.</span>
+          </div>
+        );
+      })()}
     </div>
     </div>
   );
