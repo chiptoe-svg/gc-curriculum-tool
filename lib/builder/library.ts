@@ -54,12 +54,13 @@ export async function loadLibrary(): Promise<Library> {
   const coverage = await db.select({
     snapshotId: snapshotCompetencyCoverage.snapshotId, competencyId: snapshotCompetencyCoverage.competencyId,
     k: snapshotCompetencyCoverage.kDepth, u: snapshotCompetencyCoverage.uDepth, d: snapshotCompetencyCoverage.dDepth,
+    source: snapshotCompetencyCoverage.matchedCompetency,
   }).from(snapshotCompetencyCoverage);
   const depthsBySnap = new Map<string, CompetencyDepth[]>();
   for (const r of coverage) {
     if (!live.has(r.competencyId)) continue;
     const list = depthsBySnap.get(r.snapshotId) ?? [];
-    list.push({ competencyId: r.competencyId, k: r.k, u: r.u, d: r.d });
+    list.push({ competencyId: r.competencyId, k: r.k, u: r.u, d: r.d, source: r.source });
     depthsBySnap.set(r.snapshotId, list);
   }
   const versionsByCourse = new Map<string, LibraryVersion[]>();

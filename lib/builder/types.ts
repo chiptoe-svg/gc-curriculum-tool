@@ -11,7 +11,11 @@ export const ACTS: ReadonlyArray<{ act: Act; name: string; verb: string; span: s
 
 /** Depth on the 0–5 scale; null = no reading on that dimension (never zero). */
 export interface Depth { k: number | null; u: number | null; d: number | null }
-export interface CompetencyDepth extends Depth { competencyId: string }
+/**
+ * A course's level on one catalog competency. `source`: for a captured course, the profile statement (or trait) the
+ * catalog scoring matched it from, so a reader can check the translation.
+ */
+export interface CompetencyDepth extends Depth { competencyId: string; source?: string | null }
 
 /** Which reading of a course the plan stacks. */
 export type Lens = 'discovered' | 'stated';

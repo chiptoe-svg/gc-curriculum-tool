@@ -214,6 +214,7 @@ function TrackedCourse(props: {
         <summary>Outgoing competencies ({works.length})</summary>
         <p className="cb-muted">
           {inUse ? `This course's levels from its ${BASIS_WORD[inUse].toLowerCase()} reading${placed.reading.filled ? ' (it has none under the chosen input)' : ''}, and where students stand after it.` : 'It has no reading under the chosen input, so it adds nothing to the map.'}
+          {inUse === 'discovered' && !whatIf && ' Each level was translated from the capture by the catalog scoring; "from" names the profile statement or trait it was matched to, so a poor match shows.'}
           {hiddenZero > 0 && ` ${hiddenZero} competenc${hiddenZero === 1 ? 'y' : 'ies'} read at level 0 ${hiddenZero === 1 ? 'is' : 'are'} not listed.`}
         </p>
         {works.length === 0 ? <p className="cb-muted">No competency levels above 0 have been read for this course.</p> : (
@@ -228,7 +229,7 @@ function TrackedCourse(props: {
                 const raises = (['k', 'u', 'd'] as const).filter(dm => used[dm] != null && (inc?.[dm] == null || used[dm]! > inc[dm]!) && !(c.foundational && dm !== 'd'));
                 return (
                   <tr key={id} className={props.objectiveIds.has(id) ? 'is-objective' : ''}>
-                    <td>{c.name}</td>
+                    <td>{c.name}{used.source && inUse === 'discovered' && !whatIf && <div className="cb-source">from: {used.source}</div>}</td>
                     <td className="cb-mono">{fmtDepth(used, c.foundational)}</td>
                     <td className="cb-mono">{fmtDepth(after, c.foundational)}{raises.length > 0 && <span className="cb-t-reached cb-small"> raises {raises.map(r => r.toUpperCase()).join(', ')}</span>}</td>
                   </tr>

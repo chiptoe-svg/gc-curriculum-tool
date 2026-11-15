@@ -221,6 +221,7 @@
 .cb-svg--front { z-index: 3; pointer-events: none; }
 .cb-divider { position: absolute; top: 0; bottom: 0; width: 10px; z-index: 5; cursor: col-resize; touch-action: none; }
 .cb-divider:hover, .cb-divider:active { background: linear-gradient(90deg, transparent 4px, var(--cb-accent) 4px, var(--cb-accent) 6px, transparent 6px); }
+.cb-source { font-size: 0.875rem; color: var(--cb-ink-soft); font-style: italic; margin-top: 0.15rem; }
 .cb-tip { position: absolute; z-index: 6; width: 280px; display: grid; gap: 0.2rem; padding: 0.55rem 0.65rem; background: var(--cb-paper); border: 1px solid var(--cb-ink); border-radius: 3px; box-shadow: 3px 3px 0 rgba(23, 33, 43, 0.15); font-size: 0.9375rem; pointer-events: none; }
 .cb-tip__row { display: grid; grid-template-columns: 5.2rem 1fr auto; gap: 0.4rem; align-items: baseline; font-size: 0.875rem; }
 .cb-trunk { cursor: pointer; transition: opacity 120ms; }
