@@ -9,6 +9,7 @@
  */
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ObjectiveResult, PlacedCourse, PlanResult } from '@/lib/builder/compute';
+import { CARD_W, laneHeight, type Pos } from '@/lib/builder/layout';
 import { ACTS, type Act, type Branch, type Library, type PlanState } from '@/lib/builder/types';
 import { TONE_VAR, dimNote, dimsOf, stratumName, stratumRank, toneOfCheckpoint, trunkLevel, type Tone } from './ui';
 
@@ -19,8 +20,12 @@ const CROWN_H = 168;
 const ROOTS_H = 214;
 const NOTE_LINE = 15;
 
+const HEAD_W = 208;      // act heading plus lane padding, left of the cards
+const DROP_OFFSET: Pos = { x: 24, y: 16 }; // where a card from the library is held, when dragged in
+
 export type Selection = { kind: 'course'; ref: string } | { kind: 'objective'; id: string } | null;
-export interface DropTarget { act: Act; branch: string | null; before: string | null }
+/** `at`: the card's top left in the lane, in map pixels at 100% zoom. Without it the course goes at the end of the lane. */
+export interface DropTarget { act: Act; branch: string | null; before: string | null; at?: Pos }
 
 interface Geom { width: number; height: number; bands: Array<{ top: number; height: number }>; cards: Record<string, { x: number; y: number; w: number; h: number }> }
 
@@ -29,16 +34,26 @@ export function CurriculumMap(props: {
   plan: PlanState;
   result: PlanResult;
   allCourses: PlacedCourse[];
+  /** Where each card sits in its lane (layoutLanes). */
+  positions: Record<string, Pos>;
+  zoom: number;
   selection: Selection;
   onSelect: (s: Selection) => void;
   onDropCourse: (payload: string, target: DropTarget) => void;
+  /** A new height for an act, in map pixels; null = automatic. */
+  onResizeAct: (act: Act, height: number | null) => void;
   onOpenTargets: () => void;
 }) {
-  const { plan, result, allCourses, selection, onSelect } = props;
+  const { plan, result, allCourses, selection, onSelect, positions, zoom } = props;
   const mapRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
   const [geom, setGeom] = useState<Geom | null>(null);
+  const [viewW, setViewW] = useState(0);
   const [hover, setHover] = useState<{ course?: string; objective?: string; target?: string } | null>(null);
   const [dropAt, setDropAt] = useState<DropTarget | null>(null);
+  const [resizing, setResizing] = useState<{ act: Act; height: number } | null>(null);
+  /** Where the card being dragged was grabbed, in map pixels from its top left. Null for a drag from the library. */
+  const grab = useRef<Pos | null>(null);
 
   // Trunks left to right: grouped by stratum, most important first.
   const trunks = useMemo(() => {
@@ -62,27 +77,36 @@ export function CurriculumMap(props: {
   }, [result.objectives]);
   const W = trunks.width;
 
+  // The map is drawn at 100% and scaled as a whole, so every measurement below is divided by the zoom.
   useLayoutEffect(() => {
     const el = mapRef.current;
-    if (!el) return;
+    const view = outerRef.current?.parentElement;
+    if (!el || !view) return;
     const measure = () => {
+      setViewW(view.clientWidth);
       const box = el.getBoundingClientRect();
+      const s = (v: number) => v / zoom;
       const bands = [...el.querySelectorAll<HTMLElement>('[data-band]')]
         .sort((a, b) => Number(a.dataset.band) - Number(b.dataset.band))
-        .map(b => { const r = b.getBoundingClientRect(); return { top: r.top - box.top, height: r.height }; });
+        .map(b => { const r = b.getBoundingClientRect(); return { top: s(r.top - box.top), height: s(r.height) }; });
       const cards: Geom['cards'] = {};
       el.querySelectorAll<HTMLElement>('[data-card]').forEach(c => {
         const r = c.getBoundingClientRect();
-        cards[c.dataset.card!] = { x: r.left - box.left, y: r.top - box.top, w: r.width, h: r.height };
+        cards[c.dataset.card!] = { x: s(r.left - box.left), y: s(r.top - box.top), w: s(r.width), h: s(r.height) };
       });
-      const next: Geom = { width: box.width, height: box.height, bands, cards };
+      const next: Geom = { width: el.offsetWidth, height: el.offsetHeight, bands, cards };
       setGeom(prev => (prev && JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
+    ro.observe(view);
     return () => ro.disconnect();
-  }, [plan, result, W]);
+  }, [plan, result, W, zoom, positions, resizing]);
+
+  // Wide enough for the right-most card and the trunks, and at least the visible width at this zoom.
+  const maxX = Math.max(0, ...Object.values(positions).map(p => p.x));
+  const mapW = Math.max(viewW / zoom, HEAD_W + maxX + CARD_W + 24 + W, 480 + W);
 
   const selectedCourse = selection?.kind === 'course' ? selection.ref : null;
   const selectedObjective = selection?.kind === 'objective' ? selection.id : null;
@@ -100,28 +124,71 @@ export function CurriculumMap(props: {
     return (o && !touches(o, ref)) || !inView.has(ref);
   };
 
+  // A drop lands where the card's top left would be: the pointer, less the point the card was held by.
+  const pointIn = (e: React.DragEvent): Pos | undefined => {
+    const area = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('.cb-lane__cards');
+    if (!area) return undefined;
+    const r = area.getBoundingClientRect();
+    const held = grab.current ?? DROP_OFFSET;
+    return { x: Math.max(0, (e.clientX - r.left) / zoom - held.x), y: Math.max(0, (e.clientY - r.top) / zoom - held.y) };
+  };
   const drag = {
-    over: (e: React.DragEvent, t: DropTarget) => { e.preventDefault(); e.stopPropagation(); setDropAt(t); },
-    drop: (e: React.DragEvent, t: DropTarget) => {
-      e.preventDefault(); e.stopPropagation(); setDropAt(null);
-      const payload = e.dataTransfer.getData('text/plain');
-      if (payload) props.onDropCourse(payload, t);
+    over: (e: React.DragEvent, act: Act, branch: string | null) => {
+      e.preventDefault();
+      const at = pointIn(e);
+      setDropAt(prev => (prev && prev.act === act && prev.branch === branch && prev.at && at
+        && Math.abs(prev.at.x - at.x) < 4 && Math.abs(prev.at.y - at.y) < 4 ? prev : { act, branch, before: null, at }));
     },
+    drop: (e: React.DragEvent, act: Act, branch: string | null) => {
+      e.preventDefault();
+      const at = pointIn(e);
+      setDropAt(null);
+      grab.current = null;
+      const payload = e.dataTransfer.getData('text/plain');
+      if (payload) props.onDropCourse(payload, { act, branch, before: null, at });
+    },
+  };
+
+  // Drag an act's bottom edge to make it taller or shorter. Double-click the edge to go back to automatic.
+  const startResize = (e: React.PointerEvent<HTMLDivElement>, act: Act) => {
+    const bandEl = e.currentTarget.parentElement;
+    if (!bandEl) return;
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = bandEl.offsetHeight;
+    const grip = e.currentTarget;
+    grip.setPointerCapture(e.pointerId);
+    let h = startH;
+    const move = (ev: PointerEvent) => { h = Math.max(120, Math.round(startH + (ev.clientY - startY) / zoom)); setResizing({ act, height: h }); };
+    const up = () => {
+      grip.removeEventListener('pointermove', move);
+      grip.removeEventListener('pointerup', up);
+      grip.removeEventListener('pointercancel', up);
+      setResizing(null);
+      if (Math.abs(h - startH) >= 2) props.onResizeAct(act, h);
+    };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up);
+    grip.addEventListener('pointercancel', up);
   };
 
   const lanes: Array<Branch | null> = [null, ...plan.branches];
   const card = (c: PlacedCourse) => {
     const mark = c.reading.basis ?? 'none';
-    const sameSpot = dropAt?.before === c.ref;
+    const at = positions[c.ref] ?? { x: 0, y: 0 };
     return (
       <button
         key={c.ref} type="button" data-card={c.ref} draggable
-        className={`cb-card cb-card--${mark}${selectedCourse === c.ref ? ' is-selected' : ''}${cardDim(c.ref) ? ' is-dim' : ''}${sameSpot ? ' is-dropbefore' : ''}`}
+        className={`cb-card cb-card--${mark}${selectedCourse === c.ref ? ' is-selected' : ''}${cardDim(c.ref) ? ' is-dim' : ''}`}
+        style={{ left: at.x, top: at.y, width: CARD_W }}
         onClick={() => onSelect({ kind: 'course', ref: c.ref })}
         onMouseEnter={() => setHover({ course: c.ref })} onMouseLeave={() => setHover(null)}
-        onDragStart={e => { e.dataTransfer.setData('text/plain', c.ref); e.dataTransfer.effectAllowed = 'move'; }}
-        onDragOver={e => drag.over(e, { act: c.act, branch: c.branch, before: c.ref })}
-        onDrop={e => drag.drop(e, { act: c.act, branch: c.branch, before: c.ref })}
+        onDragStart={e => {
+          const r = e.currentTarget.getBoundingClientRect();
+          grab.current = { x: (e.clientX - r.left) / zoom, y: (e.clientY - r.top) / zoom };
+          e.dataTransfer.setData('text/plain', c.ref); e.dataTransfer.effectAllowed = 'move';
+        }}
+        onDragEnd={() => { grab.current = null; setDropAt(null); }}
         title={`${c.code}: ${c.title}`}
       >
         <span className="cb-card__mark" aria-hidden />
@@ -136,8 +203,10 @@ export function CurriculumMap(props: {
   const band = (act: Act) => {
     const info = ACTS[act - 1]!;
     const m = result.milestones[act - 1]!;
+    const chosen = resizing?.act === act ? resizing.height : plan.heights?.[act - 1] ?? null;
     return (
-      <section key={act} className={`cb-band cb-band--${act}`} data-band={act} aria-label={`Act ${act}: ${info.name}`}>
+      <section key={act} className={`cb-band cb-band--${act}`} data-band={act} aria-label={`Act ${act}: ${info.name}`}
+        style={chosen != null ? { minHeight: chosen } : undefined}>
         <header className="cb-band__head">
           <p className="cb-band__act">Act {act}</p>
           <h3>{info.name}</h3>
@@ -150,18 +219,20 @@ export function CurriculumMap(props: {
           {lanes.map(lane => {
             const id = lane?.id ?? null;
             const here = allCourses.filter(c => c.act === act && c.branch === id);
-            const isDrop = dropAt && dropAt.act === act && dropAt.branch === id && dropAt.before === null;
+            const isDrop = dropAt && dropAt.act === act && dropAt.branch === id;
+            const contentH = laneHeight(here.map(c => positions[c.ref] ?? { x: 0, y: 0 }));
             return (
               <div
                 key={id ?? 'trunk'} className={`cb-lane${lane ? ' cb-lane--branch' : ''}${isDrop ? ' is-drop' : ''}`}
                 style={lane ? { ['--lane' as string]: `var(--cb-branch-${plan.branches.indexOf(lane) % 4})` } : undefined}
-                onDragOver={e => drag.over(e, { act, branch: id, before: null })}
-                onDragLeave={() => setDropAt(null)}
-                onDrop={e => drag.drop(e, { act, branch: id, before: null })}
+                onDragOver={e => drag.over(e, act, id)}
+                onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropAt(null); }}
+                onDrop={e => drag.drop(e, act, id)}
               >
                 {plan.branches.length > 0 && <p className="cb-lane__name">{lane ? lane.name || 'Unnamed branch' : 'Everyone'}</p>}
-                <div className="cb-lane__cards">
+                <div className="cb-lane__cards" style={{ minHeight: Math.max(48, contentH) }}>
                   {here.map(card)}
+                  {isDrop && dropAt?.at && <span className="cb-ghost" style={{ left: dropAt.at.x, top: dropAt.at.y, width: CARD_W }} aria-hidden />}
                   {here.length === 0 && <span className="cb-lane__empty">{lane ? 'Drop a course here to put it on this branch' : 'Drop a course here'}</span>}
                 </div>
               </div>
@@ -169,6 +240,10 @@ export function CurriculumMap(props: {
           })}
         </div>
         <div className="cb-band__trunks" style={{ width: W }} />
+        <div className="cb-band__grip" role="separator" aria-orientation="horizontal" aria-label={`Resize Act ${act}`}
+          title="Drag to make this act taller or shorter. Double-click to size it to its courses again."
+          onPointerDown={e => startResize(e, act)}
+          onDoubleClick={() => props.onResizeAct(act, null)} />
       </section>
     );
   };
@@ -289,7 +364,8 @@ export function CurriculumMap(props: {
 
   const empty = result.objectives.length === 0;
   return (
-    <div className="cb-map" ref={mapRef} style={{ ['--cb-trunks' as string]: `${W}px` }}>
+    <div className="cb-zoom" ref={outerRef} style={geom ? { width: geom.width * zoom, height: geom.height * zoom } : undefined}>
+    <div className="cb-map" ref={mapRef} style={{ ['--cb-trunks' as string]: `${W}px`, width: mapW, transform: zoom === 1 ? undefined : `scale(${zoom})` }}>
       <section className="cb-crown" style={{ height: CROWN_H }}>
         <div className="cb-crown__left">
           <h2>Career paths</h2>
@@ -371,6 +447,7 @@ export function CurriculumMap(props: {
           </svg>
         </>
       )}
+    </div>
     </div>
   );
 }

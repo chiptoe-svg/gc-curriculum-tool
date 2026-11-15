@@ -9,6 +9,9 @@ const level = z.number().int().min(0).max(5).nullable();
 const depth = z.object({ k: level, u: level, d: level });
 const act = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const link = z.object({ from: id, to: id });
+/** A card position in map pixels; generous, but bounded. */
+const coord = z.number().finite().min(0).max(20000);
+const height = z.number().finite().min(80).max(6000).nullable();
 
 export const planStateSchema = z.object({
   goal: z.object({
@@ -24,7 +27,8 @@ export const planStateSchema = z.object({
   fill: z.boolean(),
   fade: z.number().min(0).max(2),
   support: z.boolean(),
-  placements: z.array(z.object({ ref: id, act, branch: id.nullable() })).max(200),
+  placements: z.array(z.object({ ref: id, act, branch: id.nullable(), x: coord.optional(), y: coord.optional() })).max(200),
+  heights: z.tuple([height, height, height]).optional(),
   branches: z.array(z.object({ id, name: text(60), targetIds: z.array(id).max(20) })).max(12),
   links: z.array(link).max(300),
   unlinked: z.array(link).max(300),

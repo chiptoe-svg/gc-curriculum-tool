@@ -106,8 +106,12 @@ export interface ProposedCourse {
   depths: CompetencyDepth[];
 }
 
-/** `branch` null = the trunk every student takes; otherwise the id of the branch the course belongs to. */
-export interface Placement { ref: string; act: Act; branch: string | null }
+/**
+ * `branch` null = the trunk every student takes; otherwise the id of the branch the course belongs to.
+ * `x`, `y`: where the card sits in its act and branch, in map pixels from the lane's top left, at 100% zoom.
+ * Absent until someone moves a card in that lane; until then layoutLanes() places it (lib/builder/layout.ts).
+ */
+export interface Placement { ref: string; act: Act; branch: string | null; x?: number; y?: number }
 
 /** An alternative pathway that splits from the trunk and builds toward some of the plan's career paths. */
 export interface Branch { id: string; name: string; targetIds: string[] }
@@ -157,8 +161,13 @@ export interface PlanState {
    * Off unless switched on: the transfer literature argues against assuming it (curriculum-map deep dive).
    */
   support: boolean;
-  /** Array order is teaching order within an act. */
+  /**
+   * Array order is teaching order within an act. When cards are moved on the map, the order is rewritten
+   * from their positions (lower first, then left first: orderByPosition in lib/builder/layout.ts).
+   */
   placements: Placement[];
+  /** Height in map pixels chosen for Act 1, 2 and 3 (null = automatic). Absent on plans saved before it existed. */
+  heights?: [number | null, number | null, number | null];
   branches: Branch[];
   /** Dependencies added in this plan, on top of the catalog prerequisites. */
   links: Link[];

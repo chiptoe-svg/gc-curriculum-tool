@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { computePlan, defaultAct, placeCourses } from '@/lib/builder/compute';
+import { layoutLanes, moveCard } from '@/lib/builder/layout';
 import type { Act, Library, PlanState } from '@/lib/builder/types';
 import type { CatalogHit } from '@/lib/builder/library';
 import { CurriculumMap, type DropTarget, type Selection } from './Map';
@@ -15,7 +16,19 @@ import { newId } from './ui';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict' | 'error' | 'refused';
 const MAX_PROPOSED = 60; // the server's limit (lib/builder/plan-schema.ts)
+const ZOOMS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5];
 export type Update = (fn: (p: PlanState) => PlanState) => void;
+
+/** This viewer's own view settings (zoom, library shown). Kept in this browser only; never part of the shared plan. */
+function readView(): { zoom: number; library: boolean } {
+  try {
+    const v = JSON.parse(localStorage.getItem('cb-view') ?? '{}') as { zoom?: unknown; library?: unknown };
+    return { zoom: typeof v.zoom === 'number' && ZOOMS.includes(v.zoom) ? v.zoom : 1, library: v.library !== false };
+  } catch { return { zoom: 1, library: true }; }
+}
+function writeView(v: { zoom: number; library: boolean }) {
+  try { localStorage.setItem('cb-view', JSON.stringify(v)); } catch { /* private window or storage blocked: the setting lasts for this visit */ }
+}
 
 export function Builder(props: {
   planId: string; slug: string; library: Library; initialName: string; initialState: PlanState;
@@ -29,6 +42,18 @@ export function Builder(props: {
   const [panel, setPanel] = useState<'targets' | 'checks' | null>(props.initialState.goal.targetIds.length === 0 ? 'targets' : null);
   const [view, setView] = useState<string>('all');
   const [libraryOpen, setLibraryOpen] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  // Read after the first render, so the server's HTML and the browser's first render agree.
+  useEffect(() => { const v = readView(); setZoom(v.zoom); setLibraryOpen(v.library); }, []);
+  const changeView = (next: { zoom?: number; library?: boolean }) => {
+    const v = { zoom: next.zoom ?? zoom, library: next.library ?? libraryOpen };
+    setZoom(v.zoom); setLibraryOpen(v.library); writeView(v);
+  };
+  const zoomStep = (dir: 1 | -1) => {
+    const i = ZOOMS.indexOf(zoom);
+    const j = Math.min(ZOOMS.length - 1, Math.max(0, (i < 0 ? ZOOMS.indexOf(1) : i) + dir));
+    changeView({ zoom: ZOOMS[j]! });
+  };
   const [save, setSaveState] = useState<SaveState>('saved');
   const saveRef = useRef<SaveState>('saved');
   const setSave = useCallback((s: SaveState) => { saveRef.current = s; setSaveState(s); }, []);
@@ -155,9 +180,17 @@ export function Builder(props: {
   const result = useMemo(() => computePlan(library, plan, branchView), [library, plan, shown]); // eslint-disable-line react-hooks/exhaustive-deps
   const allCourses = useMemo(() => placeCourses(library, plan), [library, plan]);
   const placedRefs = useMemo(() => new Set(plan.placements.map(p => p.ref)), [plan.placements]);
+  const positions = useMemo(() => layoutLanes(plan.placements, new Set(plan.branches.map(b => b.id))), [plan.placements, plan.branches]);
 
   // ---- mutations ----------------------------------------------------------
   const place = (ref: string, target: DropTarget) => update(p => {
+    if (target.at) {
+      // Dropped at a point on the map: the card stays there, and teaching order follows from where it sits.
+      const at = target.at;
+      const cur = p.placements.find(x => x.ref === ref);
+      if (cur && cur.act === target.act && (cur.branch ?? null) === target.branch && cur.x === Math.round(at.x) && cur.y === Math.round(at.y)) return p;
+      return { ...p, placements: moveCard(p.placements, new Set(p.branches.map(b => b.id)), ref, target.act, target.branch, at) };
+    }
     if (target.before === ref) return p; // dropped on itself
     const rest = p.placements.filter(x => x.ref !== ref);
     const entry = { ref, act: target.act, branch: target.branch };
@@ -276,6 +309,13 @@ export function Builder(props: {
           Checks{problems + flagged > 0 ? ` (${problems + flagged})` : ''}
         </button>
         <button type="button" className="cb-btn" onClick={stepBack} disabled={undo.length === 0} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
+        <button type="button" className="cb-btn" aria-pressed={!libraryOpen} onClick={() => changeView({ library: !libraryOpen })}
+          title="Hide or show the course library, to give the map the full width">{libraryOpen ? 'Hide library' : 'Show library'}</button>
+        <span className="cb-zoomctl" role="group" aria-label="Zoom">
+          <button type="button" onClick={() => zoomStep(-1)} disabled={zoom === ZOOMS[0]} aria-label="Zoom out" title="Zoom out">−</button>
+          <button type="button" onClick={() => changeView({ zoom: 1 })} title="Back to 100%">{Math.round(zoom * 100)}%</button>
+          <button type="button" onClick={() => zoomStep(1)} disabled={zoom === ZOOMS[ZOOMS.length - 1]} aria-label="Zoom in" title="Zoom in">+</button>
+        </span>
         <span className={`cb-save cb-save--${save}`} role="status">
           {save === 'saved' ? 'Saved' : save === 'saving' ? 'Saving…' : save === 'dirty' ? 'Unsaved changes' : 'Not saved'}
         </span>
@@ -303,14 +343,20 @@ export function Builder(props: {
 
       <div className="cb-body">
         <LibraryPanel
-          library={library} plan={plan} placed={placedRefs} open={libraryOpen} onToggle={() => setLibraryOpen(o => !o)}
+          library={library} plan={plan} placed={placedRefs} open={libraryOpen} onToggle={() => changeView({ library: !libraryOpen })}
           onAdd={code => { const c = library.courses.find(x => x.code === code)!; place(code, { act: defaultAct(c), branch: null, before: null }); setSelection({ kind: 'course', ref: code }); }}
           onAddCatalog={hit => addCatalog(hit)} onAddNew={addNew} onSelect={ref => setSelection({ kind: 'course', ref })}
         />
         <main className="cb-main">
           <CurriculumMap
-            library={library} plan={plan} result={result} allCourses={allCourses} selection={selection}
+            library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} selection={selection}
             onSelect={s => { setSelection(s); setPanel(null); }} onDropCourse={onDropCourse} onOpenTargets={() => { setPanel('targets'); setSelection(null); }}
+            onResizeAct={(act, height) => update(p => {
+              const heights: [number | null, number | null, number | null] = [...(p.heights ?? [null, null, null])];
+              if (heights[act - 1] === height) return p;
+              heights[act - 1] = height;
+              return { ...p, heights };
+            })}
           />
         </main>
 
