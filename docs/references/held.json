@@ -491,6 +491,30 @@
       "ref-nrc-2010": {
         "file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf"
       }
+    },
+    "curriculum-map-deep-dive.html": {
+      "ref-aldrich-2014": { "file": "pdfs:aldrich-2014-curriculum-prerequisite-network.pdf" },
+      "ref-arthur-1998": { "file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf" },
+      "ref-bahrick-1984": { "file": "pdfs:bahrick-1984-permastore.pdf" },
+      "ref-barthakur-2024": { "file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf" },
+      "ref-biggs-1996": { "file": "pdfs:biggs-1996-constructive-alignment.pdf" },
+      "ref-bjork-1994": { "file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf" },
+      "ref-bridges-2020": { "file": "pdfs:bridges-2020-gc-competencies-delphi.pdf" },
+      "ref-cepeda-2006": { "file": "ai_career:future_of_gc/load_bearing/Cepeda_etal_2006_Distributed_Practice_Verbal_Recall_Meta-Analysis.pdf" },
+      "ref-corcoran-2009": { "file": "pdfs:corcoran-mosher-rogat-2009-learning-progressions-summary.pdf", "note": "summary of CPRE RR-63, acquired 2026-11-15 from sites.nationalacademies.org (dbasse_080094.pdf)" },
+      "ref-doignon-falmagne-2015": { "file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf" },
+      "ref-frej-2024": { "file": "pdfs:frej-2024-course-recommenders-job-market.pdf" },
+      "ref-gibbs-2014": { "file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf" },
+      "ref-heileman-2018": { "file": "pdfs:heileman-2018-curricular-analytics.pdf", "note": "arXiv:1811.09676v1, acquired 2026-11-15" },
+      "ref-jayalath-2025": { "file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf" },
+      "ref-jayalath-2026": { "file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf" },
+      "ref-nelson-2026": { "file": "pdfs:web/nelson-2026-the-curriculum-mapping.html" },
+      "ref-perkins-salomon-1992": { "file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf" },
+      "ref-plaza-2007": { "file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html", "note": "PMC1858603 web text, saved 2026-11-15" },
+      "ref-rawle-2017": { "file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf", "note": "CC BY 4.0, acquired 2026-11-15 from celt.uwindsor.ca" },
+      "ref-sato-2017": { "file": "pdfs:web/sato-2017-whats-in-a-prerequisite.html" },
+      "ref-timss-2011": { "file": "pdfs:timss-2011-frameworks-introduction.pdf", "note": "acquired 2026-11-15 from timssandpirls.bc.edu" },
+      "ref-wiggins-2005": { "file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf" }
     }
   }
 }

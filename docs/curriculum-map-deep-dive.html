@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Curriculum Maps — A Research Synthesis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rail: #141412;
+    --rail-text: #8a8780;
+    --rail-active: #E8A44A;
+    --rail-hover: #2a2925;
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --bg-alt: #F0EDE6;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+    --t1: #2A5C8C;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body { font-family: var(--serif); background: var(--bg); color: var(--text); display: flex; min-height: 100vh; font-size: 16px; line-height: 1.7; }
+
+  #rail { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; background: var(--rail); display: flex; flex-direction: column; overflow-y: auto; z-index: 100; }
+  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
+  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
+  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
+  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
+  .rail-nav { padding: 20px 0; flex: 1; }
+  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
+  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
+  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
+  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
+  .rail-footer a { color: var(--rail-text); text-decoration: none; }
+  .rail-footer a:hover { color: var(--rail-active); }
+
+  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; }
+
+  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
+  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
+  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
+  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
+  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+
+  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+
+  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
+  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
+  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
+  .part-head { font-family: var(--display); font-size: 22px; font-weight: 600; margin: 24px 0 8px; color: var(--text-muted); border: none; padding: 0; display: block; }
+
+  p { margin-bottom: 14px; max-width: 760px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: #a85020; }
+
+  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
+  sup.nv { font-family: var(--mono); font-size: 0.72em; color: var(--text-faint); margin-left: 1px; cursor: help; }
+  ol.refs li { margin-bottom: 8px; font-size: 15px; }
+  li { margin-bottom: 8px; }
+  li strong { color: var(--text); }
+
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; color: var(--text); }
+
+  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
+  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.note { border-left-color: var(--t1); }
+  .callout.note .callout-title { color: var(--t1); }
+
+  table.grid { border-collapse: collapse; margin: 18px 0 24px; max-width: 820px; width: 100%; font-size: 15px; }
+  table.grid th, table.grid td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  table.grid th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); background: var(--bg-alt); font-weight: 500; }
+
+  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
+
+  @media (max-width: 900px) {
+    #rail { position: static; width: 100%; height: auto; }
+    main { margin-left: 0; padding: 32px 16px 64px; }
+    table.grid { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<aside id="rail">
+  <div class="rail-header">
+    <div class="rail-dept">Clemson · Graphic Communications</div>
+    <div class="rail-title">GC Curriculum Tool</div>
+    <div class="rail-doc-type">Research Deep Dive</div>
+  </div>
+  <nav class="rail-nav">
+    <div class="nav-group-label">Sections</div>
+    <a class="nav-link" href="#why">Why this document exists</a>
+    <div class="nav-group-label">Part I — What a map is</div>
+    <a class="nav-link" href="#forms">Origins and standard forms</a>
+    <a class="nav-link" href="#purpose">What a map is for</a>
+    <div class="nav-group-label">Part II — How maps fail</div>
+    <a class="nav-link" href="#three-curricula">Stated vs. taught vs. learned</a>
+    <a class="nav-link" href="#compliance">Presence-and-absence maps</a>
+    <a class="nav-link" href="#judgment">Whose judgment, how reliable</a>
+    <a class="nav-link" href="#buyin">Buy-in and staleness</a>
+    <div class="nav-group-label">Part III — What makes maps useful</div>
+    <a class="nav-link" href="#useful">Lessons from mapping projects</a>
+    <a class="nav-link" href="#analytics">Curriculum analytics</a>
+    <a class="nav-link" href="#progressions">Progressions and spirals</a>
+    <div class="nav-group-label">Part IV — Sequence and time</div>
+    <a class="nav-link" href="#prereqs">Prerequisites and branches</a>
+    <a class="nav-link" href="#decay">Reinforcement and fading</a>
+    <div class="nav-group-label">Part V — Graphic communications</div>
+    <a class="nav-link" href="#gc">What the GC literature offers</a>
+    <div class="nav-group-label">Part VI — Accounting</div>
+    <a class="nav-link" href="#accounting">Supported, committed, assumed</a>
+    <a class="nav-link" href="#implications">Design implications</a>
+    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
+    <a class="nav-link" href="./three-act-deep-dive.html">3-Act deep dive</a>
+    <a class="nav-link" href="./background.html">KUD+ Background</a>
+    <a class="nav-link" href="./competency-catalog-deep-dive.html">Competency catalog</a>
+  </nav>
+  <div class="rail-footer">
+    <a href="./three-act-deep-dive.html">&larr; 3-Act deep dive</a>
+  </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+  <div class="doc-eyebrow">Research synthesis &amp; tool design</div>
+  <h1 class="doc-title">Curriculum Maps</h1>
+  <p class="doc-subtitle">How curriculum maps are built, why so many end up as paperwork, and what the research says a mapping tool must do to be worth a faculty group&rsquo;s time &mdash; read against the design of the GC curriculum builder.</p>
+  <div class="doc-meta">
+    <span><strong>Date</strong> 2026-11-15</span>
+    <span><strong>Status</strong> Research synthesis for the curriculum builder</span>
+    <span><strong>Audience</strong> Faculty, curriculum committee</span>
+  </div>
+</header>
+
+<section id="why">
+  <h2><span class="num">§ 1</span>Why this document exists</h2>
+  <p>A curriculum map is a picture of a degree program: which courses teach which skills and ideas, in what order, and how well. Most departments have made one at some point, usually a spreadsheet with courses down one side, outcomes across the top, and letters in the cells. The department is now building an interactive version. Faculty stack courses into the program&rsquo;s three acts, watch each competency rise toward the levels a career path needs, and see where it falls short, fades, or depends on a course that comes too late.</p>
+  <p>Before committing to that design, it is worth asking what the published work on curriculum mapping says. Three questions organize this page. What is a curriculum map, and what is it supposed to do? Why do so many maps get made, filed, and never used again? And what features make a mapping tool useful to the faculty who have to build and act on it?</p>
+  <p>The page ends with an honest accounting. Some of the builder&rsquo;s choices rest on research. Some are framework commitments, defensible choices the department has made. Some are working assumptions that the tool&rsquo;s own data will have to test. The fading estimate is the clearest example of the last kind.</p>
+  <div class="callout note">
+    <div class="callout-title">How sources are handled</div>
+    <p>Every claim here comes from a source whose full text we hold, with the quoted passage and page recorded in the page&rsquo;s citation ledger. A work we know about but do not hold in full carries a dagger (<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>). Some influential works on curriculum mapping are books or paywalled articles we could not obtain, so a few founding ideas are reported here through later authors who quote them.</p>
+  </div>
+</section>
+
+<h2 class="part-head">Part I — What a curriculum map is</h2>
+
+<section id="forms">
+  <h2><span class="num">§ 2</span>Origins and standard forms</h2>
+  <p>Curriculum mapping took two routes into higher education. In school education, Heidi Hayes Jacobs&rsquo;s <a href="#ref-jacobs-1997"><em>Mapping the Big Picture</em></a><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> (1997) popularized mapping as a way for teachers to record what is actually taught across grades. In medical education, Ronald Harden&rsquo;s <a href="#ref-harden-2001">AMEE Guide No. 21</a><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> (2001) became the standard reference. We do not hold Harden&rsquo;s guide. <a href="#ref-plaza-2007">Plaza et al. (2007)</a> summarize it this way: &ldquo;Harden detailed the 2 main functions of curriculum maps in medical education: to make the curriculum more transparent to all the stakeholders and to demonstrate the links between the various components of the curriculum.&rdquo; Those components are &ldquo;learning outcomes, learning opportunities, content, and assessment.&rdquo;</p>
+  <p>In practice, three forms recur.</p>
+  <h3>The coverage grid</h3>
+  <p>Courses form the rows and program outcomes the columns. A mark in a cell means the course addresses that outcome. This is the simplest map and the most common one.</p>
+  <h3>The introduce&ndash;reinforce&ndash;master matrix</h3>
+  <p>The grid gains a level in each cell. In one University of Toronto Mississauga unit described by <a href="#ref-rawle-2017">Rawle et al. (2017)</a>, &ldquo;for each map element, instructors had to identify if it was taught and/or assessed, and at which level (introduced/reinforced/advanced)&rdquo; (p. 80). A recent practitioner account by <a href="#ref-nelson-2026">Nelson (2026)</a> describes the same sequence as milestones: &ldquo;early exposure and introduction to goals,&rdquo; then reinforcement, then &ldquo;final demonstration and mastery of goals.&rdquo; This I/R/M form is the direct ancestor of the builder. The builder&rsquo;s depth scales are a finer version of the same idea: K, U and D each run 0&ndash;5, where I/R/M has one three-step scale.</p>
+  <h3>The alignment map</h3>
+  <p>Outcomes are linked to the teaching and the assessment meant to produce and check them. Its theory is <a href="#ref-biggs-1996">Biggs&rsquo;s (1996)</a> constructive alignment, which uses the &ldquo;performances of understanding &hellip; align the teaching methods and the assessment&rdquo; (p. 347). It also draws on <a href="#ref-wiggins-2005">Wiggins and McTighe&rsquo;s</a> backward design, which they extend to &ldquo;the design of course syllabi and program frameworks using backward design&rdquo; (p. 275). Their Stage 1 question, &ldquo;What should students know, understand, and be able to do?&rdquo; (p. 17), is where the tool&rsquo;s Know / Understand / Do split comes from (<a href="./background.html">KUD+ Background</a>).</p>
+</section>
+
+<section id="purpose">
+  <h2><span class="num">§ 3</span>What a map is for</h2>
+  <p>Accounts of mapping name a short, consistent list of purposes. <a href="#ref-rawle-2017">Rawle et al.</a> note that &ldquo;curriculum mapping can also be used to identify gaps (Lam &amp; Tsui, 2013), and can lead to increased transparency (Harden, 2001)&rdquo; (p. 75). <a href="#ref-barthakur-2024">Barthakur et al. (2024)</a> describe it as being &ldquo;used to identify potential gaps, redundancies and misalignments between assessments and the stated outcomes&rdquo; (PDF p. 4). Put plainly, a map is meant to answer four questions:</p>
+  <ul>
+    <li><strong>Coverage.</strong> Is every program outcome taught somewhere, and where is it taught twice?</li>
+    <li><strong>Progression.</strong> Does each outcome build from introduction to mastery, in an order students actually follow?</li>
+    <li><strong>Alignment.</strong> Is what a course claims backed by what it teaches and assesses?</li>
+    <li><strong>Transparency.</strong> Can faculty, students and reviewers see how the parts fit?</li>
+  </ul>
+  <p>The builder adds a fifth question that grids rarely ask: <em>how deep</em>, and <em>does it last until it is needed</em>. That addition is what the rest of this page tests against the literature.</p>
+</section>
+
+<h2 class="part-head">Part II — How maps fail</h2>
+
+<section id="three-curricula">
+  <h2><span class="num">§ 4</span>Stated vs. taught vs. learned</h2>
+  <p>The most serious problem with curriculum maps is that they usually record the wrong curriculum. Education research has long separated three curricula. In the model used by the TIMSS international studies, &ldquo;the TIMSS curriculum model has three aspects: the intended curriculum, the implemented curriculum, and the achieved curriculum&rdquo;. The second two are &ldquo;what is actually taught in classrooms, the characteristics of those teaching it, and how it is taught; and, finally, what it is that students have learned&rdquo; (<a href="#ref-timss-2011">TIMSS 2011 Assessment Frameworks</a>, Introduction, PDF p. 6). <a href="#ref-plaza-2007">Plaza et al.</a> give the higher-education version: &ldquo;the designed or intended curriculum is the institutional and program requirements, the delivered or enacted curriculum is the instructional delivery, and the experienced or learned curriculum is what the students actually experience.&rdquo;</p>
+  <p>Most maps are built from syllabi and faculty self-report, so they describe the intended curriculum. Barthakur et al. are blunt about the consequence: &ldquo;A map of the intended or declared curriculum is created, which may substantially deviate from the ways in which learners actually engage and are assessed.&rdquo; They conclude that &ldquo;it is, therefore, difficult to claim a curriculum map is valid, assuming that the evidentiary basis of validity is what students actually do, experience and achieve&rdquo; (PDF p. 2).</p>
+  <p>The gap can be measured. Plaza et al. review a medical-school study that compared all three curricula for cultural competency and found it &ldquo;was mostly &lsquo;hidden&rsquo; and teachers reported a greater extent of coverage than did students.&rdquo; Prerequisites show the same gap. <a href="#ref-sato-2017">Sato et al. (2017)</a> found that a listed microbiology lecture prerequisite did not help students in the lab course it fed: &ldquo;Both sources of data provided complementary evidence that MLec does not impact success in MLab.&rdquo; Even some formal models simply assume the gap away. <a href="#ref-frej-2024">Frej et al. (2024)</a> list as a simplifying assumption of their course recommender &ldquo;that completing a course will automatically result in the acquisition of the associated skills by the learners&rdquo; (p. 8).</p>
+  <p><strong>What this means for the builder.</strong> The toggle between a course&rsquo;s <em>stated</em> objectives (syllabus) and its <em>discovered</em> outcomes (evidence-based course capture) is the literature&rsquo;s central distinction built into the tool. Stated objectives are the intended curriculum. Discovered outcomes come closer to the enacted and assessed curriculum, because the capture asks for assessment items, student reasoning and graded work. They are still not the <em>learned</em> curriculum of a given student cohort. The builder already marks any figure that rests on a stated objective or a proposed course and never presents it as discovered. That rule is well supported and should stay visible at every level of the display, including the career-path summaries.</p>
+</section>
+
+<section id="compliance">
+  <h2><span class="num">§ 5</span>Presence-and-absence maps and compliance artifacts</h2>
+  <p>The second failure is a map made for an outside reviewer. Accreditation is the most common reason departments start mapping. <a href="#ref-jayalath-2026">Jayalath et al. (2026)</a> observe that mapping &ldquo;is often applied in a simplistic, accreditation-driven manner that merely records the presence or absence of skills embedded in assessments&rdquo; (p. 589). Barthakur et al. add that &ldquo;few studies have adopted an analytical approach to ensure programme quality assurance steps are traceable to a fundamental level of these maps: single courses and their assessment items&rdquo; (PDF p. 1).</p>
+  <p>A presence-and-absence map cannot tell a passing mention from sustained practice. In KUD+ terms, it cannot tell K1 from D4. Once the review is over, it has no further use. <a href="#ref-nelson-2026">Nelson</a> argues the opposite stance: &ldquo;Curriculum mapping is not simply a one-time administrative project or bureaucratic task; it is an ongoing leadership responsibility.&rdquo;</p>
+  <p>The builder already answers the first half of this critique, since depth replaces checkmarks. The second half, staying in use after the review, depends on whether faculty keep returning to the tool to make decisions (§7, §8).</p>
+</section>
+
+<section id="judgment">
+  <h2><span class="num">§ 6</span>Whose judgment, and how reliable</h2>
+  <p>Every map rests on someone&rsquo;s judgment that course X develops outcome Y to level Z. Those judgments are less consistent than the clean grid suggests. Barthakur et al. note that manual mapping from course documents &ldquo;is not only time-consuming but susceptible to human error and subjective bias&rdquo; (PDF p. 2). Plaza et al. add that retrospective mapping is &ldquo;subject to recall bias from faculty members.&rdquo; When <a href="#ref-jayalath-2025">Jayalath et al. (2025)</a> measured agreement directly, the expert reviewers who built their reference mapping reached a Krippendorff&rsquo;s alpha of 0.70 overall (p. 299), which is acceptable but well short of perfect. When the authors then compared a generative-AI mapper against those experts, agreement depended heavily on the skill: &ldquo;Oral Communication stands out with near-perfect agreement&rdquo; (p. 301), while &ldquo;Written Communication and International Perspectives had lower alpha values&rdquo; (p. 302). They conclude that difficulties persist with skills that are &ldquo;less explicitly defined in course documents&rdquo; (p. 305). These figures come from one program and measure AI against experts, not expert against expert, so they show that agreement varies by competency, not which GC competencies will be hardest to read.</p>
+  <p><strong>What this means for the builder.</strong> A reading of D3 is an estimate with a spread around it, and the spread is wider for some competencies than others. The measurement-hypotheses spec already requires that derived values be shown as bands, not points (<a href="./superpowers/specs/2026-06-19-curriculum-measurement-hypotheses.md">spec</a> §4.2). The research supports applying the same humility to the inputs: when two readings disagree by a level, the builder should treat that as normal noise rather than a finding.</p>
+</section>
+
+<section id="buyin">
+  <h2><span class="num">§ 7</span>Buy-in and staleness</h2>
+  <p>The third failure is social. <a href="#ref-heileman-2018">Heileman et al. (2018)</a>, writing from experience with curriculum reform, describe the climate: &ldquo;The mantra often stated when the subject of curriculum is broached is, &lsquo;faculty own curriculum,&rsquo; taken by many to mean &lsquo;stay out of the faculty&rsquo;s business&rsquo;&rdquo; (PDF p. 2). A map imposed from outside meets that resistance. In the Toronto initiative, &ldquo;one other department had to drop out because of the lack of support from other faculty members&rdquo; (<a href="#ref-rawle-2017">Rawle et al.</a>, p. 82). Language was a barrier too: &ldquo;pedagogical jargon tends to be a barrier across disciplines&rdquo; (p. 79).</p>
+  <p>The same accounts report what helped:</p>
+  <ul>
+    <li><strong>Start from the faculty&rsquo;s own questions.</strong> &ldquo;Biology tried to increase faculty buy-in by surveying all faculty at the beginning and asking them what curricular questions they needed to be answered and then making sure to follow up with those answers&rdquo; (p. 82).</li>
+    <li><strong>Show a working example.</strong> &ldquo;Geography was able to earn faculty buy-in by showcasing curriculum maps that were being used by other departments&rdquo; (p. 82).</li>
+    <li><strong>Treat it as shared, paid work.</strong> Nelson&rsquo;s program &ldquo;approached curriculum mapping as collaborative, compensated work.&rdquo;</li>
+    <li><strong>Build in stages.</strong> &ldquo;A master curriculum map does not come together all at once&rdquo; (Nelson). Her program mapped one goal at a time on its existing review cycle.</li>
+  </ul>
+  <p>The payoff the departments reported was the conversation itself. All of them &ldquo;found that participating in the curriculum mapping process fostered a collaborative approach to discussing teaching and learning throughout the department&rdquo; (Rawle et al., p. 82).</p>
+  <p>Staleness is the quieter failure. In the Toronto study, &ldquo;most departments use excel to organize their curricular data&rdquo; (p. 79). A spreadsheet map is out of date the first time a course changes. A map tied to live course captures, as the builder&rsquo;s is, can avoid that, but only if each reading shows its date and version so faculty can tell a current reading from an old one.</p>
+</section>
+
+<h2 class="part-head">Part III — What makes a mapping tool useful</h2>
+
+<section id="useful">
+  <h2><span class="num">§ 8</span>Lessons from mapping projects</h2>
+  <p>The held literature on <em>tools</em>, as opposed to mapping <em>processes</em>, is thin. It consists mostly of case reports from single institutions. No controlled study we hold compares a map faculty used with one they ignored. With that caution, the case reports agree on a few points.</p>
+  <ul>
+    <li><strong>Make the problems stand out.</strong> One Toronto institute set out to &ldquo;create a coloured visualization that would highlight overlaps, gaps, and inconsistencies&rdquo; (Rawle et al., p. 81). A map that needs careful reading to find its problems will not be read.</li>
+    <li><strong>Answer questions faculty already have.</strong> These are the questions from the buy-in strategies above, such as &ldquo;where do students first meet this?&rdquo; or &ldquo;what happens if we drop this course?&rdquo;</li>
+    <li><strong>Trace every claim to evidence.</strong> Barthakur et al. and Jayalath et al. both argue for maps that drill down from a program outcome to the specific assessment items behind it (§5). A faculty member who doubts a cell should be able to see why it says what it says.</li>
+    <li><strong>Let software suggest and people decide.</strong> Nelson&rsquo;s summary is typical: &ldquo;AI cannot replace human judgment but it can quickly surface patterns and insights to help with decision-making.&rdquo;</li>
+  </ul>
+  <p>The builder&rsquo;s interactive design, where faculty move a course and immediately see the consequences, fits these points. Whether faculty keep using it is an empirical question the department will answer by watching use, not by citing a study.</p>
+</section>
+
+<section id="analytics">
+  <h2><span class="num">§ 9</span>Curriculum analytics: the structure of the program itself</h2>
+  <p>A separate line of research treats the curriculum as a network and measures it. <a href="#ref-aldrich-2014">Aldrich (2014)</a> treats &ldquo;the curriculum as a complex system with &hellip; nodes representing courses and links between nodes the &hellip; course prerequisites&rdquo; taken from the catalog. In that network, courses play &ldquo;different roles in the overall organization, such as &hellip; information sources, hubs, and bridges&rdquo; (p. 1).</p>
+  <p><a href="#ref-heileman-2018">Heileman et al. (2018)</a> turn this into measures of <em>structural complexity</em>. Their starting assumption is that, &ldquo;assuming instructional factors are held constant, student success (as measured by completion rates) and structural complexity are inversely related&rdquo; (PDF p. 8). Two of their measures matter directly for a builder:</p>
+  <ul>
+    <li><strong>Blocking.</strong> When one course is the gateway to many others, &ldquo;if a student is unable to pass the gateway course, they are blocked from attempting many of the other courses in the curriculum&rdquo; (PDF p. 11).</li>
+    <li><strong>Delay.</strong> &ldquo;As long prerequisite pathways are created within a curriculum, the delay factor associated with the curriculum increases, and the degrees-of-freedom decreases&rdquo; (PDF p. 11).</li>
+  </ul>
+  <p>Their evidence is correlational and comes from a single institution, so it should be read with care. At the University of New Mexico, ranking programs by complexity and regressing on outcomes showed that &ldquo;every 17 point decrease in structural complexity corresponds to a 1% increase in the six-year graduation rate.&rdquo; They also report &ldquo;an inverse correlation between the perceived quality of engineering programs (as determined by US News &amp; World Reports ranking) and the structural complexities of these programs.&rdquo; They offer a conjecture, which they label as such, that &ldquo;the simplest curricula (in terms of structural complexity) that allows students to attain a program&rsquo;s learning outcomes yields the best student success outcomes&rdquo; (PDF p. 21).</p>
+  <p><strong>What this means for the builder.</strong> A competency map rewards adding: every new prerequisite link and every extra reinforcing course makes a trunk look sturdier. The analytics literature shows the cost on the other side, which is that each link also adds blocking and delay for students. A builder that shows only the benefit will push faculty toward more tangled sequences. Showing a course&rsquo;s blocking and delay alongside the competency trunks would let faculty weigh both.</p>
+</section>
+
+<section id="progressions">
+  <h2><span class="num">§ 10</span>Learning progressions, spirals and prerequisite structure</h2>
+  <p>The builder draws each competency as a trunk that rises over time. That picture has three bodies of research behind it, and each adds a caution.</p>
+  <p><strong>Spiral curriculum.</strong> In <a href="#ref-gibbs-2014">Gibbs&rsquo;s (2014)</a> summary, &ldquo;students revisit a topic, theme, or subject several times throughout their schooling, where the complexity of the topic is increased with each visit so the new learning is connected to the old learning.&rdquo; The builder&rsquo;s &ldquo;reinforced thread&rdquo; is a spiral seen from the side. The <a href="./three-act-deep-dive.html#bruner">3-Act deep dive</a> covers Gibbs&rsquo;s argument that the spiral works best at a tighter scale than whole program stages.</p>
+  <p><strong>Learning progressions.</strong> In science education, <a href="#ref-corcoran-2009">Corcoran, Mosher and Rogat</a>, summarizing their 2009 report, define learning progressions as &ldquo;empirically grounded and testable hypotheses about how students&rsquo; understanding and ability to use knowledge and skills in core school subjects&rdquo; grow. Two of their points apply directly. First, a progression is never finally proven: &ldquo;we should not think that testing these propositions can establish the validity of a progression once and for all&rdquo; (PDF p. 11). Second, lower levels are not always smaller versions of the top level. They &ldquo;may reflect mistaken or imperfect understandings of the target concepts that have to be revised or abandoned before the student can move on, rather than, as standards seem often to conceive of them, correct but incomplete understandings&rdquo; (PDF p. 5).</p>
+  <p><strong>Prerequisite structure at the concept level.</strong> Knowledge space theory models a domain as items linked by prerequisite relations. Its &ldquo;outer fringe&rdquo; of a student&rsquo;s knowledge state is useful because &ldquo;it tells us exactly what the student is ready to learn&rdquo; (<a href="#ref-doignon-falmagne-2015">Doignon &amp; Falmagne, 2015</a>, p. 16). Course-level prerequisites are a rough stand-in for these concept-level relations, and Sato et al.&rsquo;s result (§4) shows how rough.</p>
+  <p><strong>What this means for the builder.</strong> The act targets and default levels are a hypothesized progression, and should be presented that way: as a claim the department expects to revise as evidence accumulates. Corcoran et al.&rsquo;s second point also bears on the ordinal-maximum rule (§14).</p>
+</section>
+
+<h2 class="part-head">Part IV — Sequence and time</h2>
+
+<section id="prereqs">
+  <h2><span class="num">§ 11</span>Prerequisites, flexibility and branches</h2>
+  <p>Every program trades coherence against flexibility. A tightly sequenced program can promise that each course builds on the last. A flexible one lets students arrive by many routes. <a href="#ref-nelson-2026">Nelson</a> names the risk on the flexible side: &ldquo;when students can complete the curriculum in any order, essential skills are often presumed to be learned somewhere along the way, rather than intentionally integrated and reinforced throughout.&rdquo; Her own capstone expected mastery of a skill that many students were meeting there for the first time: &ldquo;This made what should have been an opportunity for reinforcement and mastery into a high-stakes crash course.&rdquo; Heileman et al.&rsquo;s blocking and delay measures (§9) name the risk on the tight side.</p>
+  <p>The literature reviewed here does not give a rule for where the balance should fall. It does support three practical points for the builder:</p>
+  <ul>
+    <li><strong>A prerequisite link is a claim to check, not a fact.</strong> Sato et al. show that a listed prerequisite can fail to deliver. The builder&rsquo;s prerequisite checks (missing, out of order, in another branch) catch the structural problems. Whether the earlier course actually supplies the competency depth the later one needs is the separate question Q2 asks, and the trunk view should make that visible.</li>
+    <li><strong>Each branch needs its own complete progression.</strong> If an alternative track skips the course where a competency is reinforced, students on that track get a lone peak, a skill reached once and never practiced again. The builder already judges each career path on the trunk plus that path&rsquo;s own branches, which is the correct unit.</li>
+    <li><strong>Flexibility has a cost students pay.</strong> Branches and electives multiply the routes through a program. The map should show the weakest route to each target, not only the typical one.</li>
+  </ul>
+</section>
+
+<section id="decay">
+  <h2><span class="num">§ 12</span>Reinforcement, spacing and fading</h2>
+  <p>The I/R/M matrix assumes that &ldquo;reinforced&rdquo; means something. The memory and skill-retention research explains why it does, and why a single high-depth course is a weaker guarantee than a grid suggests. This section draws on sources already reviewed for the <a href="./superpowers/specs/2026-06-19-curriculum-measurement-hypotheses.md">measurement-hypotheses spec</a> (§2) and does not re-derive them.</p>
+  <ul>
+    <li><strong>Spaced practice beats massed practice for long-term retention.</strong> Massing practice &ldquo;produces better short-term performance or recall of that procedure or information, but markedly inferior long-term performance or recall&rdquo; (<a href="#ref-bjork-1994">Bjork, 1994</a>, p. 190). In <a href="#ref-cepeda-2006">Cepeda et al.&rsquo;s (2006)</a> meta-analysis, &ldquo;there is no hint that massed presentation was preferable to spaced, whether retention interval was very short (less than 1 min) or very long (over 30 days)&rdquo; (p. 359).</li>
+    <li><strong>Unused skills decay, and cognitive skills decay faster.</strong> <a href="#ref-arthur-1998">Arthur et al.&rsquo;s (1998)</a> meta-analysis reports &ldquo;skill loss ranging from an effect size (d) of -0.01 immediately after training to a d of -1.4 after more than 365 days of nonuse&rdquo;. It also found that &ldquo;physical, natural, and speed-based tasks were less susceptible to skill loss than cognitive, artificial, and accuracy-based tasks&rdquo; (p. 57).</li>
+    <li><strong>Deep enough learning lasts.</strong> In <a href="#ref-bahrick-1984">Bahrick&rsquo;s (1984)</a> 50-year study of school Spanish, the share that survives in &ldquo;permastore&rdquo; &ldquo;is a function of the level of original training, the grades received in Spanish courses, and the method of testing&rdquo; (p. 1).</li>
+    <li><strong>Transfer between related skills is not automatic.</strong> <a href="#ref-perkins-salomon-1992">Perkins and Salomon (1992)</a> conclude that &ldquo;the conditions for transfer are stringent&rdquo; (PDF p. 8).</li>
+  </ul>
+  <p><strong>What this means for the builder.</strong> The research supports the <em>direction</em> of the fade rule: a depth reached once and never revisited should not be assumed to hold until graduation, and repeated work near the peak should count for more than a single course. It does not supply the <em>numbers</em>. Arthur et al.&rsquo;s effect sizes are in standard-deviation units on trained tasks, not KUD levels across semesters. The &ldquo;about one level per act&rdquo; figure, the halving per reinforcing course, and the halving for related-competency support are the owner&rsquo;s working assumptions, as the engine&rsquo;s own comments say. Two findings argue for refinements. Decay differs by kind of task, so a single fade rate for Know, Understand and Do is a simplification. And transfer is fragile, so the related-competency support should stay small, bounded, and limited to pairs with a clear prerequisite relation.</p>
+  <p>For display, the I/R/M vocabulary maps onto the builder&rsquo;s threads cleanly. <em>Introduced</em> is a first reading at low depth. <em>Reinforced</em> is a later course working the competency within a level of its peak; a later passing mention does not count. <em>Mastered</em> is the act target met and still held at the checkpoint. The &ldquo;fading&rdquo; status is the case grids cannot show: reached, but not held.</p>
+</section>
+
+<h2 class="part-head">Part V — Graphic communications</h2>
+
+<section id="gc">
+  <h2><span class="num">§ 13</span>What the GC literature offers</h2>
+  <p>Research on curriculum in graphic communications specifically is sparse. The most relevant held study is <a href="#ref-bridges-2020">Bridges (2020)</a>, a modified Delphi study of the competencies and tools higher-education GC programs need. Its panel was drawn from &ldquo;educators and industry professionals located in the southeast United States.&rdquo; Of roughly 300 invited, &ldquo;13 educators and 21 industry professionals committed to the research project&rdquo; (p. 245), and response fell in later rounds. Panelists rated each competency &ldquo;using a Likert scale ranging from one to seven&rdquo; (p. 245). Its headline result: &ldquo;Participants of the study overwhelmingly identified soft skills as being the most needed skills, while software applications were identified as the most needed tools&rdquo; (p. 243). &ldquo;Critical thinking skills were, again, the highest-ranking competency in round three&rdquo; (p. 249).</p>
+  <p><strong>How the builder can use it, and its limits.</strong> Bridges is a reasonable source for <em>which</em> competencies a GC career-path target should include and how heavily to weight them. It does not say <em>how deep</em>. The study rated importance, not required depth, and it has no K/U/D or level structure. Turning a high importance rating into an Act 3 target of 4, as the builder&rsquo;s defaults do for competencies weighted 0.75 or above, is a framework commitment, not a finding. The panel is also small, regional, and pre-dates current AI tools. Bridges also ties back to §6. The competencies the panel ranked highest are general skills, such as &ldquo;critical thinking skills, problem solving and analytical skills, teamwork, communication skills, and business and personal ethics&rdquo; (p. 248), not named tools or processes. Jayalath et al. found mapping harder for skills less explicitly defined in course documents. The builder should not assume its readings for these competencies are as firm as those for a named software or process skill.</p>
+</section>
+
+<h2 class="part-head">Part VI — Accounting</h2>
+
+<section id="accounting">
+  <h2><span class="num">§ 14</span>What is supported, what is committed, what is assumed</h2>
+
+  <h3>Research-supported</h3>
+  <ul>
+    <li>Mapping by depth rather than presence or absence (Jayalath et al., 2026; Barthakur et al., 2024), and the I/R/M idea of progression that underlies it (Rawle et al., 2017; Nelson, 2026).</li>
+    <li>Keeping the stated (intended) curriculum separate from evidence of what is taught and assessed, and never presenting one as the other (TIMSS; Plaza et al., 2007; Barthakur et al., 2024; Sato et al., 2017).</li>
+    <li>Treating prerequisite links as claims to check (Sato et al., 2017) and the curriculum as a network with hubs, bridges and blocking courses (Aldrich, 2014; Heileman et al., 2018).</li>
+    <li>Counting reinforcement and treating an unreinforced single peak as at risk (Bjork, 1994; Cepeda et al., 2006; Arthur et al., 1998; Bahrick, 1984).</li>
+    <li>Collaborative, faculty-question-first mapping as the condition for a map being used (Rawle et al., 2017; Nelson, 2026), though this rests on case reports rather than comparative studies.</li>
+  </ul>
+
+  <h3>Framework commitments</h3>
+  <ul>
+    <li>The KUD+ split and the 0&ndash;5 anchored depth scales, which refine I/R/M (<a href="./background.html">Background</a>).</li>
+    <li>The three acts as checkpoints for targets (<a href="./three-act-deep-dive.html">3-Act deep dive</a>).</li>
+    <li>The ordinal maximum as the way to combine courses: depth is never summed or averaged. It is defensible because depth is ordinal. It also assumes growth is cumulative, and Corcoran et al.&rsquo;s warning that early understandings may need to be undone is a reason to read a high maximum alongside the courses that produced it, not as a standalone figure.</li>
+    <li>Default act targets, and turning importance weights into depth targets. Bridges (2020) supports the importance side only.</li>
+    <li>Competencies as bundles (<a href="./competency-catalog-deep-dive.html">catalog deep dive</a>).</li>
+  </ul>
+
+  <h3>Working assumptions</h3>
+  <ul>
+    <li>The fade numbers: about one level per act, halved for each reinforcing course, halved for a light touch or a related competency at integration depth. The direction is supported; the magnitudes are not. They should stay adjustable, and the tool should say so wherever &ldquo;fading&rdquo; appears.</li>
+    <li>One fade rate for K, U and D. Arthur et al. found decay differs by kind of task.</li>
+    <li>Time measured in acts. Acts are not equal in length, and the gap between courses varies within an act.</li>
+    <li>Related-competency support slowing the fade. The transfer literature (Perkins &amp; Salomon, 1992) is a counterweight. The measurement-hypotheses spec already requires that this effect be bounded and limited to closely related pairs.</li>
+  </ul>
+
+  <h3>Where the literature pushes against the current design</h3>
+  <ul>
+    <li><strong>No cost side for structure.</strong> The builder shows what added links and courses do for competencies, but not what they cost students in blocking and delay (Heileman et al., 2018).</li>
+    <li><strong>Uniform decay across dimensions</strong> (Arthur et al., 1998), noted above.</li>
+    <li><strong>Importance treated as depth.</strong> Turning a high importance weight into a depth-4 target goes beyond what the GC evidence (Bridges, 2020) measured.</li>
+    <li><strong>Certainty of inputs.</strong> Mapping agreement varies by competency and is weaker for skills loosely defined in course documents (Jayalath et al., 2025). The builder currently shows every reading with the same apparent firmness.</li>
+  </ul>
+</section>
+
+<section id="implications">
+  <h2><span class="num">§ 15</span>Design implications for the builder</h2>
+  <ol>
+    <li><strong>Keep the stated / discovered distinction visible at every level, including career summaries.</strong> The intended curriculum is not the learned one (TIMSS; Barthakur et al.). <em>Supported.</em></li>
+    <li><strong>Let any cell be traced to the course reading and evidence behind it.</strong> Faculty must be able to see why a figure says what it says (Barthakur et al.; Jayalath et al., 2026). <em>Supported.</em></li>
+    <li><strong>Show blocking and delay for each course next to the competency trunks</strong>, so adding structure has a visible cost (Heileman et al.; Aldrich). <em>Supported.</em></li>
+    <li><strong>Flag lone peaks and count only near-peak revisits as reinforcement</strong> (Bjork; Cepeda et al.; Bahrick). <em>Supported.</em></li>
+    <li><strong>Label every fading estimate as an assumption and keep the fade setting adjustable, defaulting to the cautious reading</strong> (Arthur et al.; measurement-hypotheses spec §2.5). <em>Assumption.</em></li>
+    <li><strong>Consider separate fade rates for K, U and D, or at least state that one rate is a simplification</strong> (Arthur et al.). <em>Assumption, flagged by research.</em></li>
+    <li><strong>Keep related-competency support small and limited to pairs with a clear prerequisite relation</strong> (Perkins &amp; Salomon; spec §2.7). <em>Assumption, constrained by research.</em></li>
+    <li><strong>Judge each branch as its own complete route, and show the weakest route to each target</strong> (Nelson; Sato et al.). <em>Supported in principle.</em></li>
+    <li><strong>Present act targets as a hypothesized progression the department expects to revise</strong> (Corcoran et al.). <em>Commitment.</em></li>
+    <li><strong>Show readings as bands, and treat a one-level disagreement between readings as normal</strong> (Jayalath et al., 2025; Plaza et al.). <em>Supported.</em></li>
+    <li><strong>Build the tool around faculty questions, in plain language, and roll it out one goal or path at a time</strong> (Rawle et al.; Nelson). <em>Supported by case reports.</em></li>
+    <li><strong>Use Bridges (2020) to choose and weight GC competencies, not to set depth targets</strong> (Bridges). <em>Commitment.</em></li>
+  </ol>
+</section>
+
+<section id="references" style="margin-top: 56px;">
+  <h2 style="font-size: 18px;">References</h2>
+  <p class="dagger-legend" style="font-size: 14px; color: var(--text-muted);">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
+  <ol class="refs">
+    <li id="ref-aldrich-2014">Aldrich, P. R. (2014). The curriculum prerequisite network: A tool for visualizing and analyzing academic curricula. arXiv:1408.5340. (&sect;9.)</li>
+    <li id="ref-arthur-1998">Arthur, W., Bennett, W., Stanush, P. L., &amp; McNelly, T. L. (1998). Factors that influence skill decay and retention: A quantitative review and analysis. <em>Human Performance</em>, 11(1), 57&ndash;101. (&sect;12.)</li>
+    <li id="ref-bahrick-1984">Bahrick, H. P. (1984). Semantic memory content in permastore: Fifty years of memory for Spanish learned in school. <em>Journal of Experimental Psychology: General</em>, 113(1), 1&ndash;29. (&sect;12.)</li>
+    <li id="ref-barthakur-2024">Barthakur, A., Kovanovi&cacute;, V., Dawson, S., &amp; Deneen, C. C. (2024). The application of curriculum analytics for improving assessments and quality assurance in higher education. <em>Australasian Journal of Educational Technology</em>, 40(4). (&sect;&sect;3&ndash;6.)</li>
+    <li id="ref-biggs-1996">Biggs, J. (1996). Enhancing teaching through constructive alignment. <em>Higher Education</em>, 32(3), 347&ndash;364. (&sect;2.)</li>
+    <li id="ref-bjork-1994">Bjork, R. A. (1994). Memory and metamemory considerations in the training of human beings. In J. Metcalfe &amp; A. Shimamura (Eds.), <em>Metacognition: Knowing About Knowing</em> (pp. 185&ndash;205). MIT Press. (&sect;12.)</li>
+    <li id="ref-bridges-2020">Bridges, A. (2020). Competencies and tools of higher education graphic communications programs. <em>Journal of Print and Media Technology Research</em>, 9(4), 243&ndash;254. (&sect;13.)</li>
+    <li id="ref-cepeda-2006">Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., &amp; Rohrer, D. (2006). Distributed practice in verbal recall tasks: A review and quantitative synthesis. <em>Psychological Bulletin</em>, 132(3), 354&ndash;380. (&sect;12.)</li>
+    <li id="ref-corcoran-2009">Corcoran, T., Mosher, F., &amp; Rogat, A. (n.d.). <em>Learning progressions in science: A summary of the report from the Center on Continuous Instructional Improvement (CCII)</em>. Consortium for Policy Research in Education; hosted by the National Academies&rsquo; Board on Science Education. (Held: this undated summary of the authors&rsquo; 2009 report, CPRE Research Report RR-63, which is not held.) (&sect;10.)</li>
+    <li id="ref-doignon-falmagne-2015">Doignon, J.-P., &amp; Falmagne, J.-C. (2015). Knowledge spaces and learning spaces. arXiv preprint (a version is in <em>The New Handbook of Mathematical Psychology</em>, Cambridge University Press). (&sect;10.)</li>
+    <li id="ref-frej-2024">Frej, J., Dai, A., Montariol, S., Bosselut, A., &amp; K&auml;ser, T. (2024). Course recommender systems need to consider the job market. <em>Proceedings of SIGIR &rsquo;24</em>. (&sect;4.)</li>
+    <li id="ref-gibbs-2014">Gibbs, B. C. (2014). Reconfiguring Bruner: Compressing the spiral curriculum. <em>Phi Delta Kappan</em>, 95(7), 41&ndash;44. (&sect;10.)</li>
+    <li id="ref-harden-2001"><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> Harden, R. M. (2001). AMEE Guide No. 21: Curriculum mapping: A tool for transparent and authentic teaching and learning. <em>Medical Teacher</em>, 23(2), 123&ndash;137. (Not held; described here through Plaza et al., 2007, and Rawle et al., 2017.) (&sect;2.)</li>
+    <li id="ref-heileman-2018">Heileman, G. L., Abdallah, C. T., Slim, A., &amp; Hickman, M. (2018). Curricular analytics: A framework for quantifying the impact of curricular reforms and pedagogical innovations. arXiv:1811.09676. (&sect;&sect;7, 9, 11.)</li>
+    <li id="ref-jacobs-1997"><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> Jacobs, H. H. (1997). <em>Mapping the Big Picture: Integrating Curriculum and Assessment K&ndash;12</em>. ASCD. (Not held.) (&sect;2.)</li>
+    <li id="ref-jayalath-2025">Jayalath, V., Barthakur, A., Dawson, S., Tingey, J., Crase, L., &amp; Kovanovi&cacute;, V. (2025). Scaling curriculum mapping in higher education: Evaluating generative AI&rsquo;s role in curriculum analytics. In <em>AIED 2025</em>, LNAI 15877, 294&ndash;308. (&sect;6.)</li>
+    <li id="ref-jayalath-2026">Jayalath, V., Barthakur, A., Baker, R. S., Dawson, S., &amp; Kovanovic, V. (2026). Capturing professional skill development: A curriculum analytics approach. <em>LAK26</em>, 589&ndash;597. (&sect;5.)</li>
+    <li id="ref-nelson-2026">Nelson, E. (2026, March 17). How to make curriculum mapping work in higher education. <em>Times Higher Education, THE Campus</em>. (A practitioner account, not a research study.) (&sect;&sect;2, 5, 7, 8, 11.)</li>
+    <li id="ref-perkins-salomon-1992">Perkins, D. N., &amp; Salomon, G. (1992). Transfer of learning. In <em>International Encyclopedia of Education</em> (2nd ed.). Pergamon Press. (&sect;12.)</li>
+    <li id="ref-plaza-2007">Plaza, C. M., Draugalis, J. R., Slack, M. K., Skrepnek, G. H., &amp; Sauer, K. A. (2007). Curriculum mapping in program assessment and evaluation. <em>American Journal of Pharmaceutical Education</em>, 71(2), Article 20. (Held as the PubMed Central web text, which has no page numbers.) (&sect;&sect;2, 4, 6.)</li>
+    <li id="ref-rawle-2017">Rawle, F., Bowen, T., Murck, B., &amp; Hong, R. J. (2017). Curriculum mapping across the disciplines: Differences, approaches, and strategies. <em>Collected Essays on Learning and Teaching</em>, 10, 75&ndash;88. (&sect;&sect;2, 3, 7, 8.)</li>
+    <li id="ref-sato-2017">Sato, B. K., Lee, A. K., Alam, U., Dang, J. V., Dacanay, S. J., Morgado, P., Pirino, G., Brunner, J. E., Castillo, L. A., Chan, V. W., &amp; Sandholtz, J. H. (2017). What&rsquo;s in a prerequisite? A mixed-methods approach to identifying the impact of a prerequisite course. <em>CBE&mdash;Life Sciences Education</em>, 16(1), ar16. (&sect;4.)</li>
+    <li id="ref-timss-2011">TIMSS &amp; PIRLS International Study Center. <em>TIMSS 2011 Assessment Frameworks</em>, Introduction. Boston College / IEA. (Held: the Introduction chapter only, which names no chapter authors.) (&sect;4.)</li>
+    <li id="ref-wiggins-2005">Wiggins, G., &amp; McTighe, J. (2005). <em>Understanding by Design</em> (Expanded 2nd ed.). ASCD. (&sect;2.)</li>
+  </ol>
+</section>
+
+<footer class="doc-foot">
+  GC Curriculum Tool · Curriculum Maps Deep Dive · Companion to the
+  <a href="./three-act-deep-dive.html" style="color: var(--accent);">3-Act deep dive</a> and the
+  <a href="./background.html" style="color: var(--accent);">KUD+ Background</a>.
+</footer>
+
+</main>
+
+</body>
+</html>
