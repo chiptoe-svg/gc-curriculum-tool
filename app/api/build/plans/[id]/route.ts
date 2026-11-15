@@ -31,8 +31,7 @@ export async function PUT(req: Request, { params }: Ctx): Promise<Response> {
     return NextResponse.json({ error: 'The plan could not be read.' }, { status: 400 });
   }
   const updatedBy = personalName(auth.grant)
-    ?? (typeof body.authorName === 'string' ? body.authorName.trim().slice(0, NAME_MAX) : '')
-    ?? '';
+    ?? (typeof body.authorName === 'string' ? body.authorName.trim().slice(0, NAME_MAX) : '');
 
   const saved = await savePlan(id, body.version, { name, state, updatedBy: updatedBy || 'Department login' });
   if (saved) return NextResponse.json({ version: saved.version });

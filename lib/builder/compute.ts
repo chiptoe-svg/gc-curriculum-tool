@@ -349,8 +349,11 @@ function stack(courses: PlacedCourse[], competency: LibraryCompetency, plan: Pic
   const byAct: [Depth, Depth, Depth] = [NONE, NONE, NONE];
   const contributions: Contribution[] = [];
   for (const c of courses) {
-    const row = c.reading.depths.find(d => d.competencyId === competencyId);
-    if (!row || !c.reading.basis) continue;
+    const read = c.reading.depths.find(d => d.competencyId === competencyId);
+    if (!read || !c.reading.basis) continue;
+    // Foundational competencies are read on Do only, whatever a reading happens to carry.
+    const row = competency.foundational ? { ...read, k: null, u: null } : read;
+    if (competency.foundational && row.d == null) continue;
     const raised = DIMS.filter(dim => row[dim] != null && (running[dim] == null || row[dim]! > running[dim]!));
     contributions.push({ ref: c.ref, code: c.code, act: c.act, seq: c.seq, basis: c.reading.basis, k: row.k, u: row.u, d: row.d, raised });
     running = maxDepth(running, row);

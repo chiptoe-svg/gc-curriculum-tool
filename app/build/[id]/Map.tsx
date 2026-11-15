@@ -211,7 +211,7 @@ export function CurriculumMap(props: {
           <circle key={`m${act}-${c.ref}`} cx={cx} cy={y} r={on ? 6.5 : 4.2}
             fill={c.raised.length ? 'var(--cb-ink)' : 'var(--cb-paper)'} stroke={on ? 'var(--cb-accent)' : 'var(--cb-ink)'} strokeWidth={on ? 2.5 : 1.4}
             opacity={focusCourse && !on ? 0.3 : 1}>
-            <title>{`${c.code}: K${c.k ?? '·'} U${c.u ?? '·'} D${c.d ?? '·'}${c.raised.length ? `, raises ${c.raised.map(r => r.toUpperCase()).join(', ')}` : ', reinforces'} (${c.basis})`}</title>
+            <title>{`${c.code}: K${c.k ?? '·'} U${c.u ?? '·'} D${c.d ?? '·'}${c.raised.length ? `, raises ${c.raised.map(r => r.toUpperCase()).join(', ')}` : ', works it again without raising it'} (${c.basis})`}</title>
           </circle>,
         );
       });
@@ -333,7 +333,7 @@ export function CurriculumMap(props: {
             <li><span className="cb-swatch" style={{ background: 'var(--cb-fading)' }} /> Reached earlier, fading (▾)</li>
             <li><span className="cb-swatch" style={{ background: 'var(--cb-short)' }} /> Short of target (reached/target)</li>
             <li><span className="cb-swatch cb-swatch--dots" /> Rests on a stated objective or a proposed course</li>
-            <li><span className="cb-dot cb-dot--full" /> Course raises the level <span className="cb-dot" /> Course reinforces it</li>
+            <li><span className="cb-dot cb-dot--full" /> Course raises the level <span className="cb-dot" /> Course works it again without raising it</li>
           </ul>
         </div>
         <div style={{ width: W }} />

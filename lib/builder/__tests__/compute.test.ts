@@ -154,6 +154,16 @@ describe('computePlan', () => {
     expect(o.status).toBe('met');
   });
 
+  it('ignores Know and Understand readings on a foundational competency', () => {
+    const l = lib([course('A', { stated: [{ competencyId: 'agency', k: 4, u: 4, d: null }] }), captured('B', [['agency', 5, 5, 2]])]);
+    const onlyKU = obj(computePlan(l, plan([['A', 1]])), 'agency');
+    expect(onlyKU.status).toBe('untouched');
+    expect(onlyKU.contributions).toEqual([]);
+    const withDo = obj(computePlan(l, plan([['B', 1]])), 'agency');
+    expect(withDo.byAct[2]).toEqual({ k: null, u: null, d: 2 });
+    expect(withDo.status).toBe('short');
+  });
+
   it('takes the strictest requirement across the selected career paths, and judges each path on its own', () => {
     const l = lib([captured('A', [['color', 3, 3, 3]])]);
     const p = plan([['A', 1]], {}, { targetIds: ['t', 'b'], levels: {

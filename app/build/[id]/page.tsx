@@ -29,6 +29,18 @@ export default async function BuildPlanPage({ params, searchParams }: {
   if (!UUID.test(id)) notFound();
   const [plan, library, grant] = await Promise.all([getPlan(id), loadLibrary(), getRequestGrant(await headers())]);
   if (!plan) notFound();
+  // A plan saved by an older build may lack newer fields: fill them from the empty plan. If it still cannot
+  // be read, say so and stop: opening it as an empty plan would let the first edit overwrite it.
+  const stored = (plan.state ?? {}) as Partial<typeof EMPTY_PLAN>;
+  const state = parsePlanState({ ...EMPTY_PLAN, ...stored, goal: { ...EMPTY_PLAN.goal, ...(stored.goal ?? {}) } });
+  if (!state) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
+        <h1 className="text-2xl font-semibold">This plan cannot be opened</h1>
+        <p className="mt-3 text-muted-foreground">“{plan.name}” was saved in a form this version of the builder cannot read. It has not been changed. Tell the site administrator.</p>
+      </div>
+    );
+  }
 
   return (
     <Builder
@@ -36,8 +48,7 @@ export default async function BuildPlanPage({ params, searchParams }: {
       slug={slug}
       library={library}
       initialName={plan.name}
-      // A plan saved by an older build may lack newer fields: fill them from the empty plan.
-      initialState={parsePlanState({ ...EMPTY_PLAN, ...plan.state }) ?? EMPTY_PLAN}
+      initialState={state}
       initialVersion={plan.version}
       lastEditedBy={plan.updatedBy}
       knownName={personalName(grant)}
