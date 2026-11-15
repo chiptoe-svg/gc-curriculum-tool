@@ -71,6 +71,7 @@ export async function loadLibrary(): Promise<Library> {
       depths: depthsBySnap.get(s.id) ?? [],
       outcomes: ev.rows.map(r => ({ statement: r.statement, k: r.k, u: r.u, d: r.d })),
       disagreements: ev.disagreements,
+      projects: (s.profile.major_projects ?? []).map(p => ({ title: p.title, description: p.description, deliverables: p.deliverables ?? [] })),
     });
     versionsByCourse.set(s.course_code, list);
   }
@@ -116,6 +117,7 @@ export async function loadLibrary(): Promise<Library> {
       credits: cat?.credits ?? null,
       wiki: wikiByCode.get(norm(c.code)) ?? null,
       objectives: (c.learningObjectives ?? []).map(s => s.trim()).filter(Boolean),
+      sheetProjects: (c.majorProjects ?? []).map(s => s.trim()).filter(Boolean),
       stated: statedByCourse.get(c.code) ?? [],
       versions: versionsByCourse.get(c.code) ?? [],
       whatIfs: whatIfsByCourse.get(c.code) ?? [],

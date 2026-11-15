@@ -4,10 +4,10 @@ import { EMPTY_PLAN, PLAN_SCOPE, type ActLevels, type Library, type LibraryCours
 
 const course = (code: string, over: Partial<LibraryCourse> = {}): LibraryCourse => ({
   code, title: code, level: 1, category: 'gc_core', track: 'Core', description: '', credits: null, wiki: null,
-  objectives: [], stated: [], versions: [], whatIfs: [], ...over,
+  objectives: [], sheetProjects: [], stated: [], versions: [], whatIfs: [], ...over,
 });
 const version = (id: string, depths: Array<[string, number | null, number | null, number]>) => ({
-  snapshotId: id, instructorName: null, createdAt: '2026-01-01T00:00:00.000Z', outcomes: [], disagreements: [],
+  snapshotId: id, instructorName: null, createdAt: '2026-01-01T00:00:00.000Z', outcomes: [], disagreements: [], projects: [],
   depths: depths.map(([competencyId, k, u, d]) => ({ competencyId, k, u, d })),
 });
 const captured = (code: string, depths: Array<[string, number | null, number | null, number]>) =>

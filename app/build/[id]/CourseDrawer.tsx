@@ -118,6 +118,7 @@ function TrackedCourse(props: {
     !!a && !!b && (['k', 'u', 'd'] as const).some(dim => a[dim] != null && b[dim] != null && Math.abs(a[dim]! - b[dim]!) >= 2);
   const inUse = placed.reading.basis;
   const [compare, setCompare] = useState(false);
+  const projects = version?.projects.length ? version.projects : lc.sheetProjects.map(t => ({ title: t, description: '', deliverables: [] as string[] }));
   const above0 = (x?: CompetencyDepth) => !!x && (['k', 'u', 'd'] as const).some(dim => (x[dim] ?? 0) > 0);
   // The reading the map uses: the what-if when one is chosen, otherwise discovered or stated as the course's reading says.
   const inUseMap = whatIf ? whatIfDepths : inUse === 'stated' ? stated : discovered;
@@ -161,7 +162,14 @@ function TrackedCourse(props: {
       )}
 
       <section className="cb-sec">
-        <h3>Competency levels</h3>
+        <h3>Learning objectives</h3>
+        {lc.objectives.length > 0
+          ? <ul className="cb-list">{lc.objectives.map((o, i) => <li key={i}>{o}</li>)}</ul>
+          : <p className="cb-muted">The course sheet lists no learning objectives.</p>}
+      </section>
+
+      <details className="cb-sec">
+        <summary>Competency levels ({rows.length})</summary>
         <p className="cb-muted">
           {inUse ? `The map uses its ${BASIS_WORD[inUse].toLowerCase()} reading${placed.reading.filled ? ', because it has no reading under the chosen input' : ''}.` : 'It has no reading under the chosen input, so it adds nothing to the map.'}
           {hiddenZero > 0 && ` ${hiddenZero} competenc${hiddenZero === 1 ? 'y' : 'ies'} read at level 0 ${hiddenZero === 1 ? 'is' : 'are'} not listed.`}
@@ -195,14 +203,21 @@ function TrackedCourse(props: {
         {version && version.depths.length === 0 && (
           <p className="cb-muted">This course is captured, but the capture has not been scored against the competency catalog yet, so its discovered outcomes cannot be stacked. Refreshing the Program page scores it.</p>
         )}
-      </section>
+      </details>
 
-      {lc.objectives.length > 0 && (
-        <details className="cb-sec">
-          <summary>Stated learning objectives ({lc.objectives.length})</summary>
-          <ul className="cb-list">{lc.objectives.map((o, i) => <li key={i}>{o}</li>)}</ul>
-        </details>
-      )}
+      <details className="cb-sec">
+        <summary>Major projects ({projects.length})</summary>
+        {projects.length === 0 ? <p className="cb-muted">No major projects recorded for this course.</p> : (
+          <ul className="cb-list">
+            {projects.map((pr, i) => (
+              <li key={i}><b>{pr.title}</b>{pr.description && <> {pr.description}</>}
+                {pr.deliverables.length > 0 && <span className="cb-muted"> Hands in: {pr.deliverables.join('; ')}.</span>}</li>
+            ))}
+          </ul>
+        )}
+        {projects.length > 0 && <p className="cb-muted">{version?.projects.length ? 'From the captured profile.' : 'From the course sheet.'}</p>}
+      </details>
+
       {version && version.outcomes.length > 0 && (
         <details className="cb-sec">
           <summary>Discovered outcomes ({version.outcomes.length})</summary>

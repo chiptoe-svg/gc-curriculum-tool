@@ -38,7 +38,7 @@ describe('catalog plan', () => {
     // Every catalog item is on the map once, and the hours add up to the catalog's term totals.
     const items = y2026.program!.terms.flatMap(t => t.items).length;
     expect(plan.placements.length).toBe(items);
-    const lib = { ...emptyLib, courses: ['GC 1010', 'GC 1020', 'GC 4800'].map(code => ({ code, title: code, level: 1, category: 'gc_core', track: 'Core', description: '', credits: code === 'GC 1010' ? '1' : code === 'GC 1020' ? '2' : '1', wiki: null, objectives: [], stated: [], versions: [], whatIfs: [] })) } as Library;
+    const lib = { ...emptyLib, courses: ['GC 1010', 'GC 1020', 'GC 4800'].map(code => ({ code, title: code, level: 1, category: 'gc_core', track: 'Core', description: '', credits: code === 'GC 1010' ? '1' : code === 'GC 1020' ? '2' : '1', wiki: null, objectives: [], sheetProjects: [], stated: [], versions: [], whatIfs: [] })) } as Library;
     const catalogTotal = y2026.program!.terms.reduce((s, t) => s + (t.credits ?? 0), 0);
     const known = hoursOf(placeCourses(lib, plan));
     expect(known.total + known.unknown.length * 0).toBeLessThanOrEqual(catalogTotal);

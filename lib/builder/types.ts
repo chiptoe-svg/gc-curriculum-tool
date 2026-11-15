@@ -27,6 +27,8 @@ export interface LibraryVersion {
   outcomes: Array<{ statement: string; k: number | null; u: number | null; d: number | null }>;
   /** The capture's own findings where stated objectives and evidence part ways. */
   disagreements: string[];
+  /** Major projects from the captured profile. */
+  projects: Array<{ title: string; description: string; deliverables: string[] }>;
 }
 
 /** A what-if on a course (one with a finished page): the course as it would read if the change were made. */
@@ -52,6 +54,8 @@ export interface LibraryCourse {
   wiki: { slug: string; summary: string } | null;
   /** Stated learning objectives, as written on the course sheet. */
   objectives: string[];
+  /** Major projects as the course sheet lists them (used when no capture records any). */
+  sheetProjects: string[];
   /** Depths read from the syllabus (what the course says it teaches). Empty = no reading. */
   stated: CompetencyDepth[];
   /** Captured versions, newest first, one per instructor. Empty = not captured. */
