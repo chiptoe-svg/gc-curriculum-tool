@@ -1433,6 +1433,70 @@
    "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
    "quote": "directionally the same but not significant",
    "page": "p. 4"
+  },
+  {
+   "id": "bg-perkins-audit1",
+   "location": "§11",
+   "claim_text": "Perkins & Salomon: results on transfer are mostly negative",
+   "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+   "quote": "the preponderance of results concerning transfer appears to be negative",
+   "page": "PDF p. 5 of 11"
+  },
+  {
+   "id": "bg-perkins-audit2",
+   "location": "§11",
+   "claim_text": "Perkins & Salomon: general knowledge works together with local knowledge",
+   "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+   "quote": "The importance of local knowledge does not imply the unimportance of rather general knowledge that works together with local knowledge",
+   "page": "PDF p. 5 of 11"
+  },
+  {
+   "id": "bg-bahrick-audit1",
+   "location": "References",
+   "claim_text": "Bahrick's Method section gives 773 participants",
+   "held_file": "pdfs:bahrick-1984-permastore.pdf",
+   "quote": "There were 773 participants in the study.",
+   "page": "p. 2"
+  },
+  {
+   "id": "bg-bjork-audit1",
+   "location": "§6",
+   "claim_text": "Massed practice gives better short-term but markedly inferior long-term performance",
+   "held_file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
+   "quote": "markedly inferior long-term performance or recall",
+   "page": "p. 190"
+  },
+  {
+   "id": "bg-frej-audit1",
+   "location": "§11",
+   "claim_text": "Frej et al.: the skill-acquisition assumption overlooks variability in outcomes",
+   "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+   "quote": "This overlooks the variability in individual learning",
+   "page": "p. 8 (the sentence continues onto p. 9: \"outcomes and the probability of successfully acquiring new skills\")"
+  },
+  {
+   "id": "bg-atlas-audit2",
+   "location": "§11",
+   "claim_text": "Atlas syllabi are mostly post-2000 with sparse coverage from 1966",
+   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+   "quote": "The majority of the syllabi belong to the period post-2000, with sparse coverage between 1966 and 1999.",
+   "page": "p. 15"
+  },
+  {
+   "id": "bg-atlas-audit3",
+   "location": "§11",
+   "claim_text": "About nine syllabi suffice per institution-field-year; 8 to 10 for most fields",
+   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+   "quote": "The minimum number of syllabi for a majority of the fields of study is between 8 and 10",
+   "page": "p. 17"
+  },
+  {
+   "id": "bg-doignon-audit1",
+   "location": "§2",
+   "claim_text": "The outer-fringe reading is conditional on a faithful learning space",
+   "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+   "quote": "assuming that the learning space is a faithful representation of the cognitive organization of the material, it tells us exactly what the student is ready to learn",
+   "page": "p. 16"
   }
  ]
 }
