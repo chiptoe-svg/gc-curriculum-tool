@@ -6,6 +6,7 @@
  * the prerequisite map. Catalog-only courses are searched separately
  * (searchCatalog) so the page does not ship the whole Clemson catalog.
  */
+import { pfForSnapshot } from '@/lib/db/scaffolding-queries';
 import { and, asc, eq, ilike, notInArray, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
@@ -72,6 +73,7 @@ export async function loadLibrary(): Promise<Library> {
       outcomes: ev.rows.map(r => ({ statement: r.statement, k: r.k, u: r.u, d: r.d })),
       disagreements: ev.disagreements,
       projects: (s.profile.major_projects ?? []).map(p => ({ title: p.title, description: p.description, deliverables: p.deliverables ?? [] })),
+      conditions: pfForSnapshot(new Date(s.created_at), s.profile.audit_notes?.productive_failure_conditions ?? null),
     });
     versionsByCourse.set(s.course_code, list);
   }

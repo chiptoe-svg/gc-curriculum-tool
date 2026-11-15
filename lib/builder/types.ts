@@ -1,5 +1,6 @@
 // Shared types for the curriculum builder (spec docs/superpowers/specs/2026-11-14-curriculum-builder-design.md).
 // Pure: imported by both the server loader and the client.
+import type { Area7Block } from '@/lib/ai/capture/area7-types';
 
 export type Act = 1 | 2 | 3;
 export const ACTS: ReadonlyArray<{ act: Act; name: string; verb: string; span: string }> = [
@@ -29,6 +30,8 @@ export interface LibraryVersion {
   disagreements: string[];
   /** Major projects from the captured profile. */
   projects: Array<{ title: string; description: string; deliverables: string[] }>;
+  /** The capture's problem-solving conditions (Audit Area 7); null when not recorded or captured before they were. */
+  conditions: Area7Block | null;
 }
 
 /** A what-if on a course (one with a finished page): the course as it would read if the change were made. */

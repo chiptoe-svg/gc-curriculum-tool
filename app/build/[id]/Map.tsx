@@ -10,6 +10,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ObjectiveResult, PlacedCourse, PlanResult } from '@/lib/builder/compute';
 import { CARD_H, CARD_W, COL_W, ROW_H, slotAt, type Pos } from '@/lib/builder/layout';
+import { CONDITIONS, type ProblemSolvingResult } from '@/lib/builder/problem-solving';
 import { ACTS, TERMS_PER_ACT, termOf, type Act, type Branch, type Library, type PlanState, type Slot } from '@/lib/builder/types';
 import { TONE_VAR, dimNote, dimsOf, stratumName, stratumRank, toneOfCheckpoint, trunkLevel, type Tone } from './ui';
 
@@ -53,6 +54,9 @@ export function CurriculumMap(props: {
   onOpenTargets: () => void;
   /** Open one act's targets (ActTargetsDrawer). */
   onOpenAct: (act: Act) => void;
+  /** Problem solving by the end of each act, and opening its detail. */
+  problemSolving: [ProblemSolvingResult, ProblemSolvingResult, ProblemSolvingResult];
+  onOpenProblemSolving: (act: Act) => void;
   /** The course area's width set with the divider, in map pixels; null = automatic. A viewer setting. */
   courseWidth: number | null;
   onCourseWidth: (w: number | null) => void;
@@ -249,6 +253,20 @@ export function CurriculumMap(props: {
             })()}
             <span className="cb-band__set">See and set Act {act} targets</span>
           </button>
+          {(() => {
+            const p = props.problemSolving[act - 1]!;
+            const present = CONDITIONS.filter(c => p.conditions[c.key].present.length > 0).length;
+            const strong = p.bands.significant.length + p.bands.moderate.length;
+            return (
+              <button type="button" className="cb-ps" onClick={() => props.onOpenProblemSolving(act)}
+                title={`Problem solving by the end of Act ${act}, read for the program, not scored per course: ${present} of the 5 conditions present in some course so far; ${strong} course${strong === 1 ? '' : 's'} with moderate or significant evidence; ${p.integration.length} competenc${p.integration.length === 1 ? 'y' : 'ies'} at integration depth (U or D 4+). Click for the courses behind these counts.`}>
+                <span className="cb-ps__head">Problem solving</span>
+                <span className="cb-ps__row"><span>Conditions</span><b>{present}/5</b></span>
+                <span className="cb-ps__row"><span>Strong courses</span><b>{strong}</b></span>
+                <span className="cb-ps__row"><span>Integration depth</span><b>{p.integration.length}</b></span>
+              </button>
+            );
+          })()}
         </header>
         <div className="cb-lanes">
           {lanes.map(lane => {

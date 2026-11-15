@@ -7,7 +7,7 @@ const course = (code: string, over: Partial<LibraryCourse> = {}): LibraryCourse 
   objectives: [], sheetProjects: [], stated: [], versions: [], whatIfs: [], ...over,
 });
 const version = (id: string, depths: Array<[string, number | null, number | null, number]>) => ({
-  snapshotId: id, instructorName: null, createdAt: '2026-01-01T00:00:00.000Z', outcomes: [], disagreements: [], projects: [],
+  snapshotId: id, instructorName: null, createdAt: '2026-01-01T00:00:00.000Z', outcomes: [], disagreements: [], projects: [], conditions: null,
   depths: depths.map(([competencyId, k, u, d]) => ({ competencyId, k, u, d })),
 });
 const captured = (code: string, depths: Array<[string, number | null, number | null, number]>) =>

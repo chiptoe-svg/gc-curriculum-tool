@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { computePlan, defaultAct, hoursOf, placeCourses } from '@/lib/builder/compute';
 import { genEdCheck, type GenEdCategory } from '@/lib/builder/degree';
+import { problemSolvingByAct } from '@/lib/builder/problem-solving';
 import { layoutLanes, moveCard } from '@/lib/builder/layout';
 import type { Act, Library, PlanState } from '@/lib/builder/types';
 import type { CatalogHit } from '@/lib/builder/library';
@@ -15,6 +16,7 @@ import { TargetsDrawer } from './TargetsDrawer';
 import { ChecksPanel } from './ChecksPanel';
 import { ActTargetsDrawer } from './ActTargetsDrawer';
 import { RequirementDrawer } from './RequirementDrawer';
+import { ProblemSolvingDrawer } from './ProblemSolvingDrawer';
 import { newId } from './ui';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict' | 'error' | 'refused';
@@ -46,7 +48,7 @@ export function Builder(props: {
   const [name, setName] = useState(props.initialName);
   const [undo, setUndo] = useState<PlanState[]>([]);
   const [selection, setSelection] = useState<Selection>(null);
-  const [panel, setPanel] = useState<'targets' | 'checks' | { act: Act } | null>(
+  const [panel, setPanel] = useState<'targets' | 'checks' | { act: Act } | { ps: Act } | null>(
     props.initialState.goal.targetIds.length === 0 && !props.initialState.goal.program ? 'targets' : null);
   const [view, setView] = useState<string>('all');
   const [libraryOpen, setLibraryOpen] = useState(true);
@@ -192,6 +194,7 @@ export function Builder(props: {
   const hours = useMemo(() => hoursOf(allCourses), [allCourses]);
   const genEdRows = useMemo(() => genEdCheck(props.genEd.categories, allCourses), [props.genEd.categories, allCourses]);
   const genEdShort = genEdRows.filter(r => r.status === 'short').length;
+  const ps = useMemo(() => problemSolvingByAct(library, plan, result.courses, result.objectives), [library, plan, result]);
   const placedRefs = useMemo(() => new Set(plan.placements.map(p => p.ref)), [plan.placements]);
   const positions = useMemo(() => layoutLanes(plan.placements, new Set(plan.branches.map(b => b.id))), [plan.placements, plan.branches]);
 
@@ -378,6 +381,7 @@ export function Builder(props: {
             library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} arrows={arrows} courseWidth={courseWidth} onCourseWidth={w => changeView({ courseWidth: w })} selection={selection}
             onSelect={s => { setSelection(s); setPanel(null); }} onDropCourse={onDropCourse} onOpenTargets={() => { setPanel('targets'); setSelection(null); }}
             onOpenAct={act => { setPanel({ act }); setSelection(null); }}
+            problemSolving={ps} onOpenProblemSolving={act => { setPanel({ ps: act }); setSelection(null); }}
             onResizeAct={(act, height) => update(p => {
               const heights: [number | null, number | null, number | null] = [...(p.heights ?? [null, null, null])];
               if (heights[act - 1] === height) return p;
@@ -399,7 +403,10 @@ export function Builder(props: {
             onClose={() => setSelection(null)} onSelect={setSelection} />
         )}
         {panel === 'targets' && !selection && <TargetsDrawer library={library} plan={plan} result={result} update={update} onClose={() => setPanel(null)} />}
-        {panel && typeof panel === 'object' && !selection && (
+        {panel && typeof panel === 'object' && 'ps' in panel && !selection && (
+          <ProblemSolvingDrawer act={panel.ps} ps={ps[panel.ps - 1]!} onClose={() => setPanel(null)} onSelect={s => setSelection(s)} />
+        )}
+        {panel && typeof panel === 'object' && 'act' in panel && !selection && (
           <ActTargetsDrawer act={panel.act} library={library} plan={plan} result={result} update={update}
             onClose={() => setPanel(null)} onSelect={s => setSelection(s)} onOpenTargets={() => setPanel('targets')} />
         )}

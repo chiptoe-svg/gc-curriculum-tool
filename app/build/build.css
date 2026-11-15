@@ -158,6 +158,11 @@
 .cb-band__head h3 { font-size: 1.2rem; line-height: 1.2; margin: 0.1rem 0; }
 .cb-band__span { font-size: 0.9375rem; color: var(--cb-ink-soft); }
 .cb-band__note { display: block; font-size: 0.9375rem; margin-top: 0.6rem; text-align: left; border: 0; background: none; padding: 0; cursor: pointer; color: inherit; }
+.cb-ps { display: grid; gap: 0.1rem; margin-top: 0.7rem; padding: 0.4rem 0.5rem; text-align: left; font-size: 0.875rem; color: var(--cb-ink-soft); background: var(--cb-paper); border: 1px solid var(--cb-rule); border-left: 3px solid var(--cb-accent); border-radius: 2px; cursor: pointer; }
+.cb-ps:hover { border-color: var(--cb-ink); border-left-color: var(--cb-accent); }
+.cb-ps__head { font-weight: 600; color: var(--cb-ink); }
+.cb-ps__row { display: flex; justify-content: space-between; gap: 0.4rem; }
+.cb-ps__row b { color: var(--cb-ink); font-variant-numeric: tabular-nums; }
 .cb-band__set { display: block; margin-top: 0.25rem; color: var(--cb-accent); text-decoration: underline; text-underline-offset: 2px; }
 .cb-band__note:hover .cb-band__set { text-decoration-thickness: 2px; }
 .cb-rowcheck { margin: 0 0.4rem 0 0; vertical-align: -1px; }
