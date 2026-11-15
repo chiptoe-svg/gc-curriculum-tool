@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { WHAT_IF_PREFIX, versionOf, whatIfOf, type PlacedCourse, type PlanResult } from '@/lib/builder/compute';
-import { ACTS, type Act, type CompetencyDepth, type Library, type PlanState, type ProposedCourse } from '@/lib/builder/types';
+import { type CompetencyDepth, type Library, type PlanState, type ProposedCourse } from '@/lib/builder/types';
 import type { Update } from './Builder';
 import type { Selection } from './Map';
 import { DepthInputs, Drawer } from './controls';
@@ -20,7 +20,7 @@ export function CourseDrawer(props: {
 
   const q = `?slug=${encodeURIComponent(props.slug)}`;
   const objectiveIds = new Set(result.objectives.map(o => o.competency.id));
-  const setPlacement = (patch: { act?: Act; branch?: string | null }) =>
+  const setPlacement = (patch: { branch?: string | null }) =>
     update(p => ({ ...p, placements: p.placements.map(x => (x.ref === courseRef ? { ...x, ...patch } : x)) }));
   const checks = result.checks.filter(c => c.ref === courseRef);
   const incoming = result.edges.filter(e => e.to === courseRef);
@@ -30,21 +30,16 @@ export function CourseDrawer(props: {
   return (
     <Drawer onClose={props.onClose} kicker={pc ? (pc.source === 'catalog' ? 'From the Clemson catalog, not captured' : 'New course in this plan') : `${lc!.code}${lc!.credits ? `, ${lc!.credits} credits` : ''}`}
       title={pc ? pc.title || 'Untitled course' : lc!.title}>
-      <section className="cb-sec cb-sec--row">
-        <label>Act
-          <select value={placed.act} onChange={e => setPlacement({ act: Number(e.target.value) as Act })}>
-            {ACTS.map(a => <option key={a.act} value={a.act}>Act {a.act}: {a.name}</option>)}
-          </select>
-        </label>
-        {plan.branches.length > 0 && (
+      {plan.branches.length > 0 && (
+        <section className="cb-sec cb-sec--row">
           <label>Who takes it
             <select value={placed.branch ?? ''} onChange={e => setPlacement({ branch: e.target.value || null })}>
               <option value="">Everyone</option>
               {plan.branches.map(b => <option key={b.id} value={b.id}>{b.name || 'Unnamed branch'} only</option>)}
             </select>
           </label>
-        )}
-      </section>
+        </section>
+      )}
 
       {checks.length > 0 && (
         <section className="cb-sec cb-alerts">
@@ -99,6 +94,9 @@ export function CourseDrawer(props: {
   );
 }
 
+const maxN = (a: number | null | undefined, b: number | null | undefined): number | null =>
+  a == null ? b ?? null : b == null ? a : Math.max(a, b);
+
 function TrackedCourse(props: {
   lc: Library['courses'][number]; library: Library; plan: PlanState; result: PlanResult; allCourses: PlacedCourse[];
   courseRef: string; update: Update; objectiveIds: Set<string>; q: string;
@@ -117,13 +115,27 @@ function TrackedCourse(props: {
   const apart = (a?: CompetencyDepth, b?: CompetencyDepth) =>
     !!a && !!b && (['k', 'u', 'd'] as const).some(dim => a[dim] != null && b[dim] != null && Math.abs(a[dim]! - b[dim]!) >= 2);
   const inUse = placed.reading.basis;
-  const [compare, setCompare] = useState(false);
   const projects = version?.projects.length ? version.projects : lc.sheetProjects.map(t => ({ title: t, description: '', deliverables: [] as string[] }));
   const above0 = (x?: CompetencyDepth) => !!x && (['k', 'u', 'd'] as const).some(dim => (x[dim] ?? 0) > 0);
   // The reading the map uses: the what-if when one is chosen, otherwise discovered or stated as the course's reading says.
   const inUseMap = whatIf ? whatIfDepths : inUse === 'stated' ? stated : discovered;
-  const rows = ids.filter(id => above0(inUseMap.get(id)) || (compare && (above0(stated.get(id)) || above0(discovered.get(id)))));
-  const hiddenZero = ids.filter(id => inUseMap.has(id) && !rows.includes(id)).length;
+  const works = ids.filter(id => above0(inUseMap.get(id)));
+  const hiddenZero = ids.filter(id => inUseMap.has(id) && !works.includes(id)).length;
+  const compareRows = ids.filter(id => above0(stated.get(id)) || above0(discovered.get(id)));
+  // What students bring: the deepest level reached by courses in earlier terms, on the shared trunk or this course's branch.
+  const earlier = props.allCourses.filter(c => c.term < placed.term && !c.requirement && (c.branch === null || c.branch === placed.branch));
+  const incoming = (id: string) => {
+    const from: string[] = [];
+    let k: number | null = null, u: number | null = null, d: number | null = null;
+    for (const c of earlier) {
+      const r = c.reading.depths.find(x => x.competencyId === id);
+      if (!r || !above0(r)) continue;
+      from.push(c.code);
+      k = maxN(k, r.k); u = maxN(u, r.u); d = maxN(d, r.d);
+    }
+    const depth: CompetencyDepth | null = from.length ? { competencyId: id, k, u, d } : null;
+    return { depth, from };
+  };
   const differ = ids.filter(id => apart(stated.get(id), discovered.get(id))).length;
   const date = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
@@ -161,45 +173,70 @@ function TrackedCourse(props: {
         </section>
       )}
 
-      <section className="cb-sec">
-        <h3>Learning objectives</h3>
+      <details className="cb-sec">
+        <summary>Stated learning objectives ({lc.objectives.length})</summary>
         {lc.objectives.length > 0
           ? <ul className="cb-list">{lc.objectives.map((o, i) => <li key={i}>{o}</li>)}</ul>
           : <p className="cb-muted">The course sheet lists no learning objectives.</p>}
-      </section>
+      </details>
 
       <details className="cb-sec">
-        <summary>Competency levels ({rows.length})</summary>
-        <p className="cb-muted">
-          {inUse ? `The map uses its ${BASIS_WORD[inUse].toLowerCase()} reading${placed.reading.filled ? ', because it has no reading under the chosen input' : ''}.` : 'It has no reading under the chosen input, so it adds nothing to the map.'}
-          {hiddenZero > 0 && ` ${hiddenZero} competenc${hiddenZero === 1 ? 'y' : 'ies'} read at level 0 ${hiddenZero === 1 ? 'is' : 'are'} not listed.`}
-          {differ > 0 && ` A dagger marks ${differ === 1 ? 'the one' : `the ${differ}`} where the stated and discovered readings sit two or more levels apart.`}
-        </p>
-        {rows.length === 0 ? <p className="cb-muted">No competency levels above 0 have been read for this course.</p> : (
+        <summary>Discovered outcomes ({version?.outcomes.length ?? 0})</summary>
+        {version && version.outcomes.length > 0
+          ? <ul className="cb-list">{version.outcomes.map((o, i) => <li key={i}>{o.statement} <span className="cb-mono cb-muted">{fmtDepth(o, o.k == null && o.u == null)}</span></li>)}</ul>
+          : <p className="cb-muted">{lc.versions.length === 0 ? 'Not captured yet, so there are no discovered outcomes.' : 'The capture records no outcome statements.'}</p>}
+      </details>
+
+      <details className="cb-sec">
+        <summary>Incoming competencies ({works.length})</summary>
+        <p className="cb-muted">For each competency this course works, the level students already hold from courses in earlier terms on this plan (shared courses, and this course&rsquo;s branch). A dash means this course is where they first meet it.</p>
+        {works.length === 0 ? <p className="cb-muted">This course works no competency above level 0 under the reading in use.</p> : (
           <table className="cb-table">
-            <thead><tr><th>Competency</th><th>{compare ? 'Discovered' : 'Level'}</th>{compare && <th>Stated</th>}{compare && whatIf && <th>What-if</th>}</tr></thead>
+            <thead><tr><th>Competency</th><th>Coming in</th><th>From</th></tr></thead>
             <tbody>
-              {rows.map(id => {
+              {works.map(id => {
                 const c = comp.get(id)!;
-                const s = stated.get(id), d = discovered.get(id), w = whatIfDepths.get(id);
-                const used = inUseMap.get(id);
+                const inc = incoming(id);
                 return (
                   <tr key={id} className={props.objectiveIds.has(id) ? 'is-objective' : ''}>
-                    <td>{c.name}{apart(s, d) && <sup title={`Stated ${s ? fmtDepth(s, c.foundational) : ''}, discovered ${d ? fmtDepth(d, c.foundational) : ''}: two or more levels apart`}> †</sup>}</td>
-                    {compare ? <td className="cb-mono">{d ? fmtDepth(d, c.foundational) : '–'}</td> : <td className="cb-mono">{used ? fmtDepth(used, c.foundational) : '–'}</td>}
-                    {compare && <td className="cb-mono">{s ? fmtDepth(s, c.foundational) : '–'}</td>}
-                    {compare && whatIf && <td className="cb-mono">{w ? fmtDepth(w, c.foundational) : '–'}</td>}
+                    <td>{c.name}</td>
+                    <td className="cb-mono">{inc.depth ? fmtDepth(inc.depth, c.foundational) : '–'}</td>
+                    <td className="cb-muted">{inc.from.join(', ')}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         )}
-        {lc.stated.length > 0 && discovered.size > 0 && (
-          <label className="cb-check"><input type="checkbox" checked={compare} onChange={e => setCompare(e.target.checked)} /> Compare with the stated-objective reading</label>
+      </details>
+
+      <details className="cb-sec">
+        <summary>Outgoing competencies ({works.length})</summary>
+        <p className="cb-muted">
+          {inUse ? `This course's levels from its ${BASIS_WORD[inUse].toLowerCase()} reading${placed.reading.filled ? ' (it has none under the chosen input)' : ''}, and where students stand after it.` : 'It has no reading under the chosen input, so it adds nothing to the map.'}
+          {hiddenZero > 0 && ` ${hiddenZero} competenc${hiddenZero === 1 ? 'y' : 'ies'} read at level 0 ${hiddenZero === 1 ? 'is' : 'are'} not listed.`}
+        </p>
+        {works.length === 0 ? <p className="cb-muted">No competency levels above 0 have been read for this course.</p> : (
+          <table className="cb-table">
+            <thead><tr><th>Competency</th><th>This course</th><th>After it</th></tr></thead>
+            <tbody>
+              {works.map(id => {
+                const c = comp.get(id)!;
+                const used = inUseMap.get(id)!;
+                const inc = incoming(id).depth;
+                const after = { k: maxN(inc?.k, used.k), u: maxN(inc?.u, used.u), d: maxN(inc?.d, used.d) };
+                const raises = (['k', 'u', 'd'] as const).filter(dm => used[dm] != null && (inc?.[dm] == null || used[dm]! > inc[dm]!) && !(c.foundational && dm !== 'd'));
+                return (
+                  <tr key={id} className={props.objectiveIds.has(id) ? 'is-objective' : ''}>
+                    <td>{c.name}</td>
+                    <td className="cb-mono">{fmtDepth(used, c.foundational)}</td>
+                    <td className="cb-mono">{fmtDepth(after, c.foundational)}{raises.length > 0 && <span className="cb-t-reached cb-small"> raises {raises.map(r => r.toUpperCase()).join(', ')}</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
-        {lc.stated.length === 0 && <p className="cb-muted">No stated-objective reading: the syllabus pass has not been run for this course.</p>}
-        {lc.versions.length === 0 && <p className="cb-muted">Not captured yet, so there are no discovered outcomes.</p>}
         {version && version.depths.length === 0 && (
           <p className="cb-muted">This course is captured, but the capture has not been scored against the competency catalog yet, so its discovered outcomes cannot be stacked. Refreshing the Program page scores it.</p>
         )}
@@ -218,18 +255,39 @@ function TrackedCourse(props: {
         {projects.length > 0 && <p className="cb-muted">{version?.projects.length ? 'From the captured profile.' : 'From the course sheet.'}</p>}
       </details>
 
-      {version && version.outcomes.length > 0 && (
-        <details className="cb-sec">
-          <summary>Discovered outcomes ({version.outcomes.length})</summary>
-          <ul className="cb-list">{version.outcomes.map((o, i) => <li key={i}>{o.statement} <span className="cb-mono cb-muted">{fmtDepth(o, o.k == null && o.u == null)}</span></li>)}</ul>
-        </details>
-      )}
-      {version && version.disagreements.length > 0 && (
-        <details className="cb-sec">
-          <summary>Where the capture found objectives and evidence disagree ({version.disagreements.length})</summary>
-          <ul className="cb-list">{version.disagreements.map((d, i) => <li key={i}>{d}</li>)}</ul>
-        </details>
-      )}
+      <details className="cb-sec">
+        <summary>Objectives vs. outcomes{differ + (version?.disagreements.length ?? 0) > 0 ? ` (${differ + (version?.disagreements.length ?? 0)})` : ''}</summary>
+        {lc.stated.length === 0 || discovered.size === 0 ? (
+          <p className="cb-muted">{lc.stated.length === 0 ? 'No stated-objective reading: the syllabus pass has not been run for this course.' : 'Not captured, or the capture is not scored yet, so there is nothing to compare.'}</p>
+        ) : (
+          <>
+            <p className="cb-muted">What the syllabus says the course teaches beside what the capture found students do. A dagger marks levels two or more apart.</p>
+            <table className="cb-table">
+              <thead><tr><th>Competency</th><th>Stated</th><th>Discovered</th>{whatIf && <th>What-if</th>}</tr></thead>
+              <tbody>
+                {compareRows.map(id => {
+                  const c = comp.get(id)!;
+                  const st = stated.get(id), d = discovered.get(id), w = whatIfDepths.get(id);
+                  return (
+                    <tr key={id} className={props.objectiveIds.has(id) ? 'is-objective' : ''}>
+                      <td>{c.name}{apart(st, d) && <sup> †</sup>}</td>
+                      <td className="cb-mono">{st ? fmtDepth(st, c.foundational) : '–'}</td>
+                      <td className="cb-mono">{d ? fmtDepth(d, c.foundational) : '–'}</td>
+                      {whatIf && <td className="cb-mono">{w ? fmtDepth(w, c.foundational) : '–'}</td>}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
+        {version && version.disagreements.length > 0 && (
+          <>
+            <h4>Where the capture found objectives and evidence disagree</h4>
+            <ul className="cb-list">{version.disagreements.map((d, i) => <li key={i}>{d}</li>)}</ul>
+          </>
+        )}
+      </details>
     </>
   );
 }
