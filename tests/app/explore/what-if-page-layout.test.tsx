@@ -110,6 +110,24 @@ describe('WhatIfPageLayout', () => {
     expect(screen.getByRole('heading', { name: WHAT_IF_COPY.laterHeading }).nextElementSibling).toBe(note);
   });
 
+  it('shows the effects note exactly once when there are no effects at all', () => {
+    renderIt(view({ knockOn: { laterCourses: [], earlierCourses: [], careerTargets: [], notComputed: [], careerNotComputed: false } }));
+    expect(screen.getByText(WHAT_IF_COPY.neighborsNone)).toBeInTheDocument();
+    expect(screen.getAllByText(WHAT_IF_COPY.effectsNote)).toHaveLength(1);
+  });
+
+  it('shows the effects note exactly once when only earlier courses and career targets appear', () => {
+    renderIt(view({ knockOn: { ...knockOn, laterCourses: [], notComputed: [],
+      careerTargets: [{ targetName: 'Production Manager', label: 'Press', before: 'Developing', after: 'Established', direction: 'up' }] } }));
+    expect(screen.queryByRole('heading', { name: WHAT_IF_COPY.laterHeading })).toBeNull();
+    expect(screen.getAllByText(WHAT_IF_COPY.effectsNote)).toHaveLength(1);
+  });
+
+  it('shows the effects note exactly once, under the heading, when later courses are present', () => {
+    renderIt();
+    expect(screen.getAllByText(WHAT_IF_COPY.effectsNote)).toHaveLength(1);
+  });
+
   it('says who last updated the page', () => {
     renderIt();
     expect(screen.getByText(/Last updated by Pat Faculty on/)).toBeInTheDocument();

@@ -221,6 +221,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
           )}
           {knockOn.careerNotComputed && <p>{WHAT_IF_COPY.careerNotComputed}</p>}
           {neighborsEmpty && <p>{WHAT_IF_COPY.neighborsNone}</p>}
+          {knockOn.laterCourses.length === 0 && <p className="text-sm">{WHAT_IF_COPY.effectsNote}</p>}
 
           <h2>{WHAT_IF_COPY.sectionQuestions}</h2>
           {prose.questions.length > 0
