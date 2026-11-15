@@ -323,7 +323,7 @@ export function CurriculumMap(props: {
           <circle key={`m${act}-${c.ref}`} cx={cx} cy={y} r={on ? 6.5 : 4.2}
             fill={c.raised.length ? 'var(--cb-ink)' : 'var(--cb-paper)'} stroke={on ? 'var(--cb-accent)' : 'var(--cb-ink)'} strokeWidth={on ? 2.5 : 1.4}
             opacity={focusCourse && !on ? 0.3 : 1}>
-            <title>{`${c.code}: K${c.k ?? '·'} U${c.u ?? '·'} D${c.d ?? '·'}${c.raised.length ? `, raises ${c.raised.map(r => r.toUpperCase()).join(', ')}` : ', works it again without raising it'} (${c.basis})`}</title>
+            <title>{`${o.competency.name}. ${c.code}: K${c.k ?? '·'} U${c.u ?? '·'} D${c.d ?? '·'}${c.raised.length ? `, raises ${c.raised.map(r => r.toUpperCase()).join(', ')}` : ', works it again without raising it'} (${c.basis})`}</title>
           </circle>,
         );
       });
@@ -337,7 +337,7 @@ export function CurriculumMap(props: {
             const n = dimNote(o, act - 1, dm);
             return (
               <text key={dm} x={cx} y={noteTop + 4 + (i + 1) * NOTE_LINE - 3} textAnchor="middle" className="cb-note" fill={TONE_VAR[n.tone]}>
-                {n.text}<title>{`End of Act ${act}. ${n.title}`}</title>
+                {n.text}
               </text>
             );
           })}
