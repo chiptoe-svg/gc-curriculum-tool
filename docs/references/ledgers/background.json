@@ -1,1582 +1,1582 @@
 {
- "page": "background.html",
- "generated": "2026-10-07",
- "claims": [
-  {
-   "id": "bg-autor-1",
-   "location": "§16 hypothesis box",
-   "claim_text": "Autor & Thompson show, over four decades of automation, that removing an occupation's inexpert tasks raised wages and reduced employment in it. They do not study generative AI or creative work, and they do not say that the remaining expertise is evaluative judgment.",
-   "held_file": "pdfs:autor-thompson-2025-expertise.pdf",
-   "quote": "We document that automation has raised wages and reduced employment in occupations where it eliminated inexpert tasks, but lowered wages and increased employment in occupations where it eliminated expert tasks. ... we use it to quantify changes in occupational expertise demands over four decades attributable to job task removal and addition.",
-   "page": "p.1 (abstract)"
-  },
-  {
-   "id": "bg-sweller-1",
-   "location": "§4",
-   "claim_text": "Conventional problem-solving (working backward from a goal by means-ends search) imposes a cognitive load that may \"leave little for schema acquisition, even if the problem is solved\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Sweller_1988_Cognitive_Load_During_Problem_Solving.pdf",
-   "quote": "The cognitive-processing capacity needed to handle this information may be of such a magnitude as to leave little for schema acquisition, even if the problem is solved.",
-   "page": "261"
-  },
-  {
-   "id": "bg-sweller-2",
-   "location": "§4",
-   "claim_text": "schema acquisition, he argues, is \"possibly the most important component of problem solving expertise.\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Sweller_1988_Cognitive_Load_During_Problem_Solving.pdf",
-   "quote": "Since schema acquisition is possibly the most important component of problem solving expertise, the development of expertise may be retarded by a heavy emphasis on problem solving;",
-   "page": "284"
-  },
-  {
-   "id": "bg-hernaes-1",
-   "location": "§16",
-   "claim_text": "(0.1% against 0.3% growth since October 2022, a gap the authors call \"small and not statistically significant\" and say differential pre-trends make \"even more uncertain\")",
-   "held_file": "pdfs:hernaes-kostol-2026-norway.pdf",
-   "quote": "Since October 2022, the month before ChatGPT's release, employment in the most AI exposed occupations has grown by 0.1 percent against 0.3 percent in the least exposed occupations, a gap that is small and not statistically significant. Differential pre-trends, potentially related to the post-pandemic recovery, make the results even more uncertain.",
-   "page": "PDF printed p. 31 (Section 6, Conclusion)"
-  },
-  {
-   "id": "bg-hernaes-2",
-   "location": "§16",
-   "claim_text": "for workers aged 21–30 the exposure gradient is, in their words, \"a relatively precise null\"",
-   "held_file": "pdfs:hernaes-kostol-2026-norway.pdf",
-   "quote": "The 21–30 exposure gradient is not a fragile negative estimate; it is essentially absent under the paper's preferred design. For the youngest workers the systematic exposure-quintile result is therefore a relatively precise null: there is no post-ChatGPT employment gradient for the relative-magnitude restriction to overturn, rather than a negative effect whose robustness is in question.",
-   "page": "PDF printed p. 22 (Section 3.8 lead-in, after Table 5 HonestDiD results)"
-  },
-  {
-   "id": "bg-hernaes-3",
-   "location": "§16",
-   "claim_text": "a gap for 22–25-year-olds appears only from spring 2025, and the authors call it \"an emerging pattern rather than an identified effect\"",
-   "held_file": "pdfs:hernaes-kostol-2026-norway.pdf",
-   "quote": "the most-exposed and least-exposed quintiles track each other through early 2025, and from spring 2025 the most-exposed quintile falls below, with the gap widening to about 35 log points by February 2026. This widening rests on the final ten months of data, the confidence intervals are wide, and the joint pre-trend test rejects parallel trends, so it is an emerging pattern rather than an identified effect.",
-   "page": "PDF printed p. 47 (Appendix B: Brynjolfsson et al. (2025) Replication)"
-  },
-  {
-   "id": "bg-landis-1",
-   "location": "§7",
-   "claim_text": "Such figures fall short of the 0.61–0.80 band Landis and Koch label \"substantial,\" cut-points the authors themselves call \"clearly arbitrary\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Landis_Koch_1977_Observer_Agreement_Categorical_Data.pdf",
-   "quote": "0.61-0.80 Substantial ... Although these divisions are clearly arbitrary, they do provide useful \"benchmarks\" for the discussion of the specific example in Table 1.",
-   "page": "p.165"
-  },
-  {
-   "id": "bg-hullermeier-1",
-   "location": "§7",
-   "claim_text": "what Hüllermeier and Waegeman call aleatoric uncertainty, \"the irreducible part of the uncertainty\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Hullermeier_Waegeman_2021_Aleatoric_Epistemic_Uncertainty_ML.pdf",
-   "quote": "Aleatoric uncertainty refers to the irreducible part of the uncertainty, which is due to the non-deterministic nature of the sought input/output dependency",
-   "page": "PDF p.8 (§2.3 \"Reducible versus irreducible uncertainty\")"
-  },
-  {
-   "id": "bg-hullermeier-2",
-   "location": "§7",
-   "claim_text": "The same authors caution that the aleatoric/epistemic split is \"context-dependent\" and \"should not be seen as absolute\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Hullermeier_Waegeman_2021_Aleatoric_Epistemic_Uncertainty_ML.pdf",
-   "quote": "What this example shows is that aleatoric and epistemic uncertainty should not be seen as absolute notions. Instead, they are context-dependent in the sense of depending on the setting (X , Y, H, P ).",
-   "page": "PDF p.9"
-  },
-  {
-   "id": "bg-willingham-1",
-   "location": "§4",
-   "claim_text": "concludes that \"it also makes no sense to try to teach critical thinking devoid of factual content.\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Willingham_2007_Critical_Thinking_Why_So_Hard_to_Teach.pdf",
-   "quote": "Just as it makes no sense to try to teach factual content without giving students opportunities to practice using it, it also makes no sense to try to teach critical thinking devoid of factual content.",
-   "page": "PDF p.10 (printed page, 'AMERICAN EDUCATOR' footer)"
-  },
-  {
-   "id": "bg-brynjolfsson-1",
-   "location": "§16",
-   "claim_text": "Codified knowledge overlaps heavily with education",
-   "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
-   "quote": "The codified-knowledge gradient is not significant when controlling for college share quintile, demonstrating its overlap with education. The tacit-knowledge gradient for experienced workers, by contrast, survives this control.",
-   "page": "PDF p.21, footnote 21"
-  },
-  {
-   "id": "bg-veenman-1",
-   "location": "§4 caveats",
-   "claim_text": "whether metacognitive skill is general or domain-specific is still unresolved (studies across tasks and domains \"yielded inconclusive results\"); most students \"spontaneously pick up\" some of it, and explicit instruction, best embedded in the content matter, is of particular value to those who do not",
-   "held_file": "ai_career:future_of_gc/load_bearing/Veenman_etal_2006_Metacognition_and_Learning.pdf",
-   "quote": "So far, studies with multiple tasks or domains yielded inconclusive results.",
-   "page": "7 (inconclusive results); 9 (spontaneous pick-up / embedding principle)"
-  },
-  {
-   "id": "bg-chin-1",
-   "location": "§16",
-   "claim_text": "16.8% of all work-related messages — roughly 44% of the occupation-specific ones, once the 61.5% that is generic work like drafting email is set aside — concern tasks historically belonging to another occupation",
-   "held_file": "pdfs:openai-2026-work-at-the-frontier.pdf",
-   "quote": "In this random sample of work-related messages: • 16.8 percent of messages are classified as Cross-occupation... • and 61.5 percent are classified as Generic... Among non-generic messages, 43.5 percent are cross-occupation.",
-   "page": "printed p.03 (Fig. 1/2 panel); 16.8%/43.5% headline also stated on printed p.01 (Key takeaways #02) and p.02 (Introduction)"
-  },
-  {
-   "id": "bg-frank-1",
-   "location": "§16",
-   "claim_text": "a salary-based comparison moved the same way after 2022, which the authors read as \"a broader early-career tightening that is not specific to LLM-exposed workers.\"",
-   "held_file": "pdfs:frank-2026-ai-exposed-curricula.pdf",
-   "quote": "But the salary-based analysis moves in the same direction post-2022, suggesting a broader early-career tightening that is not specific to LLM-exposed workers.",
-   "page": "PDF p. 7"
-  },
-  {
-   "id": "bg-frank-2",
-   "location": "§16",
-   "claim_text": "That timing fits the 2022 tech and interest-rate downturn as well as AI (Frank et al., 2026)",
-   "held_file": "pdfs:frank-2026-ai-exposed-curricula.pdf",
-   "quote": "other macroeconomic and sector-specific forces were already shifting in early 2022 contributing to weakening outcomes in the same AI-exposed occupations. For example, monetary tightening accelerated through 2022–2023 (9) and may have impacted job stability (10). Also, job postings for software developers declined markedly over 2022–2023 (11) perhaps as a correction to increased hiring during pandemic years (12).",
-   "page": "PDF p. 2"
-  },
-  {
-   "id": "bg-eloundou-1",
-   "location": "§16",
-   "claim_text": "GPT-4-rated task exposure from Eloundou et al. (2024), who collected human ratings in parallel and caution that \"none should be considered the definitive ground truth\"",
-   "held_file": "ai_career:eloundou-2024-gpts-are-gpts-arxiv.pdf",
-   "quote": "As a result, we use multiple annotation sources, but none should be considered the definitive ground truth relative to the others.",
-   "page": "PDF p.9 (no printed page number on the page itself; §3.4.2 'Measuring LLMs with GPT-4', 9th physical page of the PDF)"
-  },
-  {
-   "id": "bg-sinha-1",
-   "location": "§4 caveats",
-   "claim_text": "the productive-failure evidence base is concentrated in mathematics and physics: nearly 75% of the comparisons in the 2021 meta-analysis, whose authors say more studies are needed in other STEM and non-STEM domains \"before we can generalize the effectiveness of PS-I\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Sinha_Kapur_2021_Problem_Solving_Followed_by_Instruction.pdf",
-   "quote": "First, nearly 75% of all included comparisons (see Table 1) targeted learning concepts of math and physics, which were, in turn, skewed with particular subtopics (e.g., variance). ... Clearly, more studies are also needed in other STEM domains as well as in non-STEM domains (e.g., psychology, arts, history) before we can generalize the effectiveness of PS-I, even with high PF fidelity.",
-   "page": "788"
-  },
-  {
-   "id": "bg-lee-1",
-   "location": "§16",
-   "claim_text": "the authors report \"a shift in cognitive effort as knowledge workers increasingly move from task execution to oversight when using GenAI\"",
-   "held_file": "pdfs:lee-2025-critical-thinking.pdf",
-   "quote": "The data shows a shift in cognitive effort as knowledge workers increasingly move from task execution to oversight when using GenAI.",
-   "page": "PDF p.2 (no printed page numbers in this CHI proceedings draft)"
-  },
-  {
-   "id": "bg-lee-2",
-   "location": "§17 refs",
-   "claim_text": "Lee, H.-P., Sarkar, A., Tankelevitch, L., Drosos, I., Rintel, S., Banks, R., & Wilson, N. (2025). The Impact of Generative AI on Critical Thinking: Self-Reported Reductions in Cognitive Effort and Confidence Effects From a Survey of Knowledge Workers. CHI Conference on Human Factors in Computing Systems (CHI '25).",
-   "held_file": "pdfs:lee-2025-critical-thinking.pdf",
-   "quote": "The Impact of Generative AI on Critical Thinking: Self-Reported Reductions in Cognitive Effort and Confidence Effects From a Survey of Knowledge Workers ... CHI Conference on Human Factors in Computing Systems (CHI '25)",
-   "page": "PDF p.1 (title/author block)"
-  },
-  {
-   "id": "bg-lee-3",
-   "location": "§17 refs",
-   "claim_text": "effort shifts \"from task execution to oversight.\"",
-   "held_file": "pdfs:lee-2025-critical-thinking.pdf",
-   "quote": "from task execution to oversight",
-   "page": "PDF p.2"
-  },
-  {
-   "id": "bg-salomon1989-1",
-   "location": "§4",
-   "claim_text": "caution that transfer does not follow on its own: a teacher \"uninformed about the difficulties of transfer\" \"might presume that students would spontaneously make some illuminating connections and might be puzzled when, for the most part, they do not\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Salomon_Perkins_1989_Rocky_Roads_to_Transfer.pdf",
-   "quote": "Imagine, for example, a history teacher wanting his or her students to develop a historical perspective on contemporary events. Uninformed about the difficulties of transfer, the history teacher might presume that students would spontaneously make some illuminating connections and might be puzzled when, for the most part, they do not.",
-   "page": "136"
-  },
-  {
-   "id": "bg-salomon1989-2",
-   "location": "§17 refs",
-   "claim_text": "far transfer is not an automatic byproduct of good teaching.",
-   "held_file": "ai_career:future_of_gc/load_bearing/Salomon_Perkins_1989_Rocky_Roads_to_Transfer.pdf",
-   "quote": "Findings of transfer or nontransfer reflect whether the conditions for either low-road or high-road transfer were met.",
-   "page": "113 (abstract); 136"
-  },
-  {
-   "id": "bg-kohli-1",
-   "location": "§7",
-   "claim_text": "a nine-model panel behaves like roughly two independent votes, and the single best judge matches or beats the full panel (Kohli, 2026)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Kohli_2025_Nine_Judges_Two_Effective_Votes.pdf",
-   "quote": "Testing a panel of 9 frontier LLMs from 7 model families on three natural language inference datasets ... we find that the 9 judges effectively provide only about 2 independent votes' worth of information. ... the best single judge matches or outperforms the full panel across all conditions.",
-   "page": "p.1 (abstract)"
-  },
-  {
-   "id": "bg-kapur2016-1",
-   "location": "§4",
-   "claim_text": "unguided problem-solving with no later consolidation is the design that, in his words, can \"maximize neither performance nor learning,\" and he cites agreement across camps that unguided discovery \"often leads to dismal learning outcomes.\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
-   "quote": "there is the possibility of designing conditions that maximize neither performance nor learning in the short or long terms. I refer to such design efforts as unproductive failure. A well-studied example of unproductive failure is pure discovery learning, where students are expected to learn (or discover) the targeted concepts by engaging in solving problems without any guidance or support whatsoever. ... There is consensus among instructivists (e.g., Kirschner, Sweller, & Clark, 2006) and constructivists (e.g., Hmelo-Silver, Duncan, & Chinn, 2007) that unguided problem solving or discovery learning often leads to dismal learning outcomes.",
-   "page": "290"
-  },
-  {
-   "id": "bg-kapur2016-2",
-   "location": "§4 Fig.1 caption",
-   "claim_text": "Kapur's four design possibilities: productive/unproductive × failure/success (Kapur, 2016) ... Kapur treats productive success as a second route and says \"it is not clear if one is better than the other.\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
-   "quote": "Exploiting the incommensurability between learning and performance results in four possibilities for design: ... productive success, productive failure, unproductive success, and unproductive failure. ... Even though both productive failure and productive success can lead to productive learning outcomes, it is not clear if one is better than the other.",
-   "page": "289, 294"
-  },
-  {
-   "id": "bg-kapur2016-3",
-   "location": "§4 Fig.1 caption",
-   "claim_text": "Unproductive success is the trap a depth-only reading misses: high performance with what Kapur calls \"an illusion of learning.\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
-   "quote": "In other words, there is an illusion of learning in initial high performance. I refer to such design efforts as unproductive success.",
-   "page": "290"
-  },
-  {
-   "id": "bg-skill2vec-1",
-   "location": "§11",
-   "claim_text": "the Skill2vec approach (Le, Vo, & Dang, 2017) that learns skill vectors from skills that co-occur in the same job posting",
-   "held_file": "pdfs:le-2017-skill2vec.pdf",
-   "quote": "In this study, with the documents contain only the skills, we chose the maximum window size, implied that every skills in the same job description are related to each other.",
-   "page": "PDF p.2"
-  },
-  {
-   "id": "bg-abrami-1",
-   "location": "§4",
-   "claim_text": "A large meta-analysis of critical-thinking instruction (341 effect sizes on generic critical-thinking skills)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Abrami_etal_2015_Teaching_Critical_Thinking_Meta-Analysis.pdf",
-   "quote": "Generic CT Skills 341 0.30 Lowb (0.20 to <0.50) 11.79% Yes",
-   "page": "301 (Table 9); also stated in the abstract, p.275 ('The review includes 341 effects sizes...')"
-  },
-  {
-   "id": "bg-abrami-2",
-   "location": "§4",
-   "claim_text": "the promising instructional ingredients it identifies are discussion, authentic situations, and mentorship",
-   "held_file": "ai_career:future_of_gc/load_bearing/Abrami_etal_2015_Teaching_Critical_Thinking_Meta-Analysis.pdf",
-   "quote": "The techniques that we have identified as being promising (i.e., discussion, authentic situations, mentorship) are not an exhaustive list of promising ingredients, but they are a useful starting point...",
-   "page": "303-304 (sentence begins p.303, concludes p.304)"
-  },
-  {
-   "id": "bg-abrami-3",
-   "location": "§4",
-   "claim_text": "It does not show that standalone instruction fails: the four course types it compared (general, infusion, immersion, and mixed) all produced positive effects and did not differ significantly from one another (p = .25).",
-   "held_file": "ai_career:future_of_gc/load_bearing/Abrami_etal_2015_Teaching_Critical_Thinking_Meta-Analysis.pdf",
-   "quote": "All four of the methods in Table 4, coded according to Ennis's (1989) classification, produced significantly positive average effect sizes, but the categories did not differ from one another.",
-   "page": "297 (text); Table 4 itself on p.297; the 'general' course-type name is from the narrative description on p.288 ('In the general course, CT skills and dispositions are learning objectives...')"
-  },
-  {
-   "id": "bg-dearden-1",
-   "location": "§11",
-   "claim_text": "the UK's National Vocational Qualifications (first awarded in 1988)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Dearden_etal_2004_Returns_to_NVQ_Level2_(CEE_DP46).pdf",
-   "quote": "The first NVQ was awarded in 1988 (DFES 2003).",
-   "page": "p.1"
-  },
-  {
-   "id": "bg-dearden-2",
-   "location": "§3 table",
-   "claim_text": "UK NVQ Level 2 delivered poor-to-negative wage returns on its classroom route",
-   "held_file": "ai_career:future_of_gc/load_bearing/Dearden_etal_2004_Returns_to_NVQ_Level2_(CEE_DP46).pdf",
-   "quote": "Returns for NVQs taken at college are zero for women, but large and negative for men.",
-   "page": "p.11 (narrative); Tables 24-25 on pp.42-43"
-  },
-  {
-   "id": "bg-xu2026-1",
-   "location": "§7",
-   "claim_text": "two of the three competency frameworks were unreliable to score at first — agreement between the two trained annotators started at a Cohen's κ of 0.29 and 0.17 on the O*NET and ESDC frameworks (against 0.84 on the third)",
-   "held_file": "pdfs:xu-2026-21c-competencies.pdf",
-   "quote": "The two annotators achieve a Cohen's κ of 0.841 in the framework of EU (Key Competences), a κ of 0.288 in the framework of O*NET (Workforce Competencies), and a κ of 0.168 in the framework of ESDC (Success Model).",
-   "page": "PDF p.7"
-  },
-  {
-   "id": "bg-xu2026-2",
-   "location": "§7",
-   "claim_text": "the coding guidelines spelled out that competencies \"clearly outside the instructional scope\" were coded 0 while \"potentially relevant competencies lacking sufficient textual evidence\" were coded NA, after which agreement rose to κ = 0.94 and 0.92",
-   "held_file": "pdfs:xu-2026-21c-competencies.pdf",
-   "quote": "We therefore refine the coding guidelines to explicitly incorporate course context: competencies clearly outside the instructional scope were coded as 0, whereas potentially relevant competencies lacking sufficient textual evidence were coded as NA. ... The final inter-rater reliability on these two frameworks is κ = 0.94 in O*NET (Workforce Competencies), and κ = 0.92 in ESDC (Success Model).",
-   "page": "PDF p.7"
-  },
-  {
-   "id": "bg-xu2026-3",
-   "location": "§7",
-   "claim_text": "Xu et al.'s rule was about whether course context should inform the inference ... a clear rule about missing evidence resolved most of the disagreement",
-   "held_file": "pdfs:xu-2026-21c-competencies.pdf",
-   "quote": "Follow-up discussions reveal that most disagreements stem from differing interpretations of whether course context (e.g., subject matter and course type) should inform competency inference, leading to confusion between codes 0 (clearly irrelevant) and NA (insufficient information).",
-   "page": "PDF p.7"
-  },
-  {
-   "id": "bg-xu2026-4",
-   "location": "§7",
-   "claim_text": "one of the two main error sources the authors identify is \"systematic over-interpretation of instructional keywords\" (the abstract's \"instructional keyword inference\")",
-   "held_file": "pdfs:xu-2026-21c-competencies.pdf",
-   "quote": "We identify two primary sources of error: systematic over-interpretation of instructional keywords and difficulty identifying relevant pedagogical evidence in long, unstructured texts.",
-   "page": "PDF p.22 (Conclusion); abstract phrasing \"reducing bias in instructional keyword inference\" on PDF p.1"
-  },
-  {
-   "id": "bg-xu2026-5",
-   "location": "§17 refs",
-   "claim_text": "Preprint; its first page states it is \"due to appear in\" the Journal of Learning Analytics (Special Section on Advancing 21st-century Professional Competencies with Learning Analytics in the Age of Generative AI). arXiv:2601.10983.",
-   "held_file": "pdfs:xu-2026-21c-competencies.pdf",
-   "quote": "Due to appear in Journal of Learning Analytics Special Section on Advancing 21st-century Professional Competencies with Learning Analytics in the Age of Generative AI ... arXiv:2601.10983v1 [cs.CY] 16 Jan 2026",
-   "page": "PDF p.1"
-  },
-  {
-   "id": "bg-xu2026-6",
-   "location": "§11",
-   "claim_text": "Xu et al. (2026) found that adding human-defined competency descriptions to LLM prompts \"does not improve LLM performance\"",
-   "held_file": "pdfs:xu-2026-21c-competencies.pdf",
-   "quote": "Interestingly, incorporating human-defined competency descriptions into prompts does not improve LLM performance.",
-   "page": "PDF p.21"
-  },
-  {
-   "id": "bg-xu2026-7",
-   "location": "§7 / §11",
-   "claim_text": "the closest study of LLM curriculum scoring traces much of the models' error to causes that could be reduced, such as over-reading instructional keywords",
-   "held_file": "pdfs:xu-2026-21c-competencies.pdf",
-   "quote": "We further identify two main sources of model error. First, when analyzing abstract course data, LLMs tend to over-infer or hallucinate based on some keywords (e.g., assuming any “final exam” implies writing comprehension), likely due to patterns learned from historical training data. Second, when processing long and unstructured course text, models often fail to locate the precise pedagogical evidence needed for accurate inference. ... Our results show that the CoT-based approach yields modest performance gains, particularly for more advanced models.",
-   "page": "PDF p.21"
-  },
-  {
-   "id": "bg-xu2026-8",
-   "location": "§7",
-   "claim_text": "In the Xu et al. study, the two trained annotators began at κ = 0.29 and 0.17 on two of the three frameworks",
-   "held_file": "pdfs:xu-2026-21c-competencies.pdf",
-   "quote": "a κ of 0.288 in the framework of O*NET (Workforce Competencies), and a κ of 0.168 in the framework of ESDC (Success Model)",
-   "page": "PDF p.7"
-  },
-  {
-   "id": "bg-kapur2023-1",
-   "location": "§4 caveats",
-   "claim_text": "In one pair of studies, students from a high- and a medium-achieving school both learned from productive failure, and the variety of student-generated solutions (inventive production) was a stronger predictor of learning than prior math achievement",
-   "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
-   "quote": "Second, we found that the association between inventive production and learning from PF was much stronger than that of pre-existing differences in prior math achievement in both topics. ... The study contrasted high- and medium-level schools related to students' prior math achievement",
-   "page": "5"
-  },
-  {
-   "id": "bg-kapur2023-2",
-   "location": "§4 caveats",
-   "claim_text": "The two schools had similar topic-specific prerequisite knowledge, so the study does not show what happens without it, and the authors caution that the findings \"may not extend to the lower end of the spectrum.\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
-   "quote": "It is important to notice that in both studies, both schools had similar high scores in the topic-specific pre-tests ... These results indicate that both schools have similar relevant topic-specific prerequisite knowledge of the target concepts. ... The study contrasted high- and medium-level schools related to students' prior math achievement and thus may not extend to the lower end of the spectrum or to other topics.",
-   "page": "3, 5"
-  },
-  {
-   "id": "bg-kapur2023-3",
-   "location": "§17 refs",
-   "claim_text": "Students from schools with very different prior math achievement differed much less in inventive production (ratios study: PSLE math grade d = 2.12 against inventive production d = 0.48; variance study: d = 1.23 against d = 0.03).",
-   "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
-   "quote": "students from School A achieved significantly higher PSLE scores, F(1, 110) = 464.42, p < 0.001, d = 5.34, and PSLE math grade, F(1, 110) = 110.44, p < 0.001, d = 2.12. ... PSLE math grade, F(1, 103) = 35.47, p < 0.001, d = 1.23. ... for school A: M = 6.83, SD = 1.44, for school B: M = 6.16, SD = 1.38, F(1, 110) = 5.669, p = 0.019, d = 0.48. ... for school A: M = 5.23, SD = 1.50, for school B: M = 5.19, SD = 1.49, F(1, 103) = 0.015, p = 0.903, d = 0.03.",
-   "page": "3, 4"
-  },
-  {
-   "id": "bg-arthur-1",
-   "location": "§17 refs",
-   "claim_text": "across all task types, loss ranges from d = −0.01 immediately after training to d = −1.4 after more than 365 days of non-use (abstract); cognitive tasks decayed more than physical ones (δ = −1.15 vs. −0.75, across all intervals).",
-   "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
-   "quote": "the amount of skill loss ranging from an effect size (d) of -0.01 immediately after training to a d of -1.4 after more than 365 days of nonuse",
-   "page": "57 (abstract); 78 (Table 4)"
-  },
-  {
-   "id": "bg-murre-1",
-   "location": "§6",
-   "claim_text": "Replicating Ebbinghaus, Murre and Dros found that the forgetting curve \"is not completely smooth but most probably shows a jump upwards starting at the 24 hour data point,\" and several candidate equations fit the data with only small differences",
-   "held_file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf",
-   "quote": "We conclude that the Ebbinghaus forgetting curve has indeed been replicated and that it is not completely smooth but most probably shows a jump upwards starting at the 24 hour data point.",
-   "page": "1/23 (abstract)"
-  },
-  {
-   "id": "bg-murre-2",
-   "location": "§17 refs",
-   "claim_text": "Single-subject replication measuring savings",
-   "held_file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf",
-   "quote": "One subject spent 70 hours learning lists and relearning them... based on the method of savings.",
-   "page": "1/23 (savings method); 2/23 (explicit 'single-subject design')"
-  },
-  {
-   "id": "bg-ajtf-1",
-   "location": "§17 refs",
-   "claim_text": "Covers \"more than 900 occupations covering over 150 million jobs\"",
-   "held_file": "pdfs:openai-2026-ai-jobs-transition-framework.pdf",
-   "quote": "Across more than 900 occupations covering over 150 million jobs, we show that these factors produce a sharper picture of where AI may affect jobs first in the short run.",
-   "page": "PDF printed p. 4 (Introduction)"
-  },
-  {
-   "id": "bg-kapur2008-1",
-   "location": "§17 refs",
-   "claim_text": "The original productive-failure study: students who worked in groups on ill-structured problems outperformed peers who worked on well-structured problems, on later individual well- and ill-structured tests. The design had no direct-instruction control and no instruction phase.",
-   "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2008_Productive_Failure.pdf",
-   "quote": "In one condition, students solved ill-structured problems in groups followed by well-structured problems individually. In the other condition, students solved well-structured problems in small groups followed by well-structured problems individually. Finally, all students solved ill-structured problems individually. ... However, despite failing in their collaborative efforts, these students outperformed their counterparts in the well-structured condition on individual near- and far-transfer measures subsequently",
-   "page": "379"
-  },
-  {
-   "id": "bg-nrc-1",
-   "location": "§11",
-   "claim_text": "whereas the Abilities descriptors \"reflect a long history of psychological research,\" \"many of the descriptors in the Skills domain lack such an extensive research base,\"",
-   "held_file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf",
-   "quote": "the descriptors reflect a long history of psychological research on the nature and measurement of human abilities, but many of the descriptors in the Skills domain lack such an extensive research base.",
-   "page": "p.42"
-  },
-  {
-   "id": "bg-nrc-2",
-   "location": "§11",
-   "claim_text": "descriptors overlap across domains without clear distinctions (the review's example: \"problem solving\" appears in the Abilities, Skills, Work Styles, and Generalized Work Activities domains, and the content model \"does not clearly distinguish the different meanings\")",
-   "held_file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf",
-   "quote": "“Problem solving” appears in the Abilities, Skills, Work Styles, and GWA domains. Although there may legitimately be both a problem-solving Ability and a problem-solving Skill, the content model does not clearly distinguish the different meanings of problem solving in these two different domains.",
-   "page": "p.42"
-  },
-  {
-   "id": "bg-dellacqua-1",
-   "location": "§16",
-   "claim_text": "participants using AI were 9.2 percentage points less likely to expect their solution to rank in the top 10%, which the authors read as \"a disconnect between actual and perceived performance.\"",
-   "held_file": "pdfs:dellacqua-2025-cybernetic-teammate.pdf",
-   "quote": "As shown in Figure 10, AI-enabled participants were 9.2 percentage points less likely to expect their solutions to rank in the top 10% compared to the control group (p < 0.05), suggesting a disconnect between actual and perceived performance.",
-   "page": "p.18"
-  },
-  {
-   "id": "bg-dellacqua-2",
-   "location": "§16 hypothesis box",
-   "claim_text": "Dell'Acqua et al. show that AI raised output quality, that AI \"can effectively substitute for the expertise and guidance typically provided by team members that are familiar with the task at hand,\" and that AI users under-rated their own output.",
-   "held_file": "pdfs:dellacqua-2025-cybernetic-teammate.pdf",
-   "quote": "This suggests that AI can effectively substitute for the expertise and guidance typically provided by team members that are familiar with the task at hand.",
-   "page": "p.15"
-  },
-  {
-   "id": "bg-schoenfeld-1",
-   "location": "§4 caveats",
-   "claim_text": "in mathematics, metacognition instruction \"is most effective when it takes place in a domain specific context\" (Schoenfeld, 1992)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Schoenfeld_1992_Learning_to_Think_Mathematically.pdf",
-   "quote": "Metacognition instruction is most effective when it takes place in a domain specific context.",
-   "page": "66"
-  },
-  {
-   "id": "bg-gentner-1",
-   "location": "§4",
-   "claim_text": "The comparison effect was replicated with undergraduates learning negotiation strategies, where comparing two cases gave a \"two-fold transfer advantage\" (Gentner, Loewenstein, & Thompson, 2003); the same authors report earlier studies with experienced learners such as MBA students, consultants and managers.",
-   "held_file": "ai_career:future_of_gc/load_bearing/Gentner_Loewenstein_Thompson_2003_Analogical_Encoding.pdf",
-   "quote": "In sum, the comparison group showed a two-fold transfer advantage over the separate-cases group.",
-   "page": "400 (two-fold quote, Experiment 2 — 128 undergraduates); 395 (MBA/consultants/managers passage)"
-  },
-  {
-   "id": "bg-kim-1",
-   "location": "§17 refs",
-   "claim_text": "Across >350 models, LLM errors are correlated — more so for models sharing a developer or architecture ... (Kim et al. do not test judge panels; the panel result is Kohli, 2026.)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Kim_etal_2025_Correlated_Errors_in_LLMs.pdf",
-   "quote": "We conduct a large-scale empirical evaluation on over 350 LLMs overall, using two popular leaderboards and a resume-screening task.",
-   "page": "p.1"
-  },
-  {
-   "id": "bg-barnett-1",
-   "location": "§4",
-   "claim_text": "a far-transfer taxonomy explains why distant transfer is rare (Barnett & Ceci, 2002)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Barnett_Ceci_2002_When_and_Where_Far_Transfer.pdf",
-   "quote": "In this review, we have tried to make the case that transfer is indeed a salvageable concept and that instances of far transfer, although not frequent, are documentable and may even be predictable once the relevant dimensions are specified.",
-   "page": "634 (Concluding Comments)"
-  },
-  {
-   "id": "bg-barnett-2",
-   "location": "§17 refs",
-   "claim_text": "Maps the content/context dimensions far transfer must bridge and why distant transfer is rarely demonstrated.",
-   "held_file": "ai_career:future_of_gc/load_bearing/Barnett_Ceci_2002_When_and_Where_Far_Transfer.pdf",
-   "quote": "the characteristics of transfer can be thought of as breaking down into two overall factors: the content-that is, what is transferred, and the context-that is, when and where it is transferred from and to (see Figure 1).",
-   "page": "621 (Content: What Is Transferred / Figure 1, 'Taxonomy for far transfer')"
-  },
-  {
-   "id": "bg-bjork-1",
-   "location": "§4",
-   "claim_text": "Spaced practice, interleaving, retrieval testing, reduced feedback — all degrade in-the-moment performance and all dramatically improve learning that lasts.",
-   "held_file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
-   "quote": "In general, compared to distributing practice sessions on a given task over time, massing practice or study sessions on to-be-learned procedures or information produces better short-term performance or recall of that procedure or information, but markedly inferior long-term performance or recall.",
-   "page": "190 (PDF p.4)"
-  },
-  {
-   "id": "bg-bransford-1",
-   "location": "§4 What transfers",
-   "claim_text": "\"preparation for future learning\" reframes the usual transfer test: rather than dropping a person into a new domain to see whether prior skill fires unaided, measure how fast they learn the new domain (Bransford & Schwartz, 1999)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf",
-   "quote": "preparation for future learning",
-   "page": 68
-  },
-  {
-   "id": "bg-bransford-2",
-   "location": "§4",
-   "claim_text": "Deep prior problem-solving shows up clearly on that test: prepared learners extract more from each new learning opportunity.",
-   "held_file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf",
-   "quote": "Data strongly supported the assumption that contrasting cases better prepared students for future learning (see Figure 8)... The act of analyzing the cases prepared the students to learn from the lecture-it created a set of experiences that enriched subsequent learning.",
-   "page": 77
-  },
-  {
-   "id": "bg-ericsson-1",
-   "location": "§4 caveats",
-   "claim_text": "The framework's claim ... is theoretically coherent and consistent with the deliberate-practice literature (Ericsson, Krampe, & Tesch-Römer, 1993)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Ericsson_Krampe_Tesch-Romer_1993_Deliberate_Practice.pdf",
-   "quote": "The theoretical framework presented in this article explains expert performance as the end result of individuals' prolonged efforts to improve performance while negotiating motivational and external constraints. In most domains of expertise, individuals begin in their childhood a regimen of effortful activities (deliberate practice) designed to optimize improvement.",
-   "page": "363 (printed; abstract)"
-  },
-  {
-   "id": "bg-gick-1",
-   "location": "§4 / Fig.2",
-   "claim_text": "transfer from a single case is poor — about a 10% base rate",
-   "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1983_Schema_Induction_and_Analogical_Transfer.pdf",
-   "quote": "about 75% of those subjects who received the appropriate military analog produced the convergence solution to the radiation problem, as compared to less than 10% of control subjects who did not receive the analogy.",
-   "page": "1983, p.4"
-  },
-  {
-   "id": "bg-gick-2",
-   "location": "§4 / Fig.2",
-   "claim_text": "rising only to ~20–30% when learners must spontaneously notice the analogy unaided ; Fig.2 bar labeled ~30%",
-   "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1983_Schema_Induction_and_Analogical_Transfer.pdf",
-   "quote": "Under these conditions only about 30% of our subjects produced the convergence solution, as opposed to about 75% who produced it when a hint was given.",
-   "page": "1983, p.4"
-  },
-  {
-   "id": "bg-gick-3",
-   "location": "§4 / Fig.2",
-   "claim_text": "an explicit hint lifts single-case transfer far higher, to ~75–90%",
-   "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1980_Analogical_Problem_Solving.pdf",
-   "quote": "For the Hint condition, 11 out of 12 subjects (92%) produced the complete dispersion solution.",
-   "page": "1980, p.342"
-  },
-  {
-   "id": "bg-gick-4",
-   "location": "§4 / Fig.2",
-   "claim_text": "comparing two surface-different cases to extract the shared principle roughly doubles spontaneous transfer, to ~45–50% (Gick & Holyoak, 1980, 1983); Fig.2 bar ~50%",
-   "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1983_Schema_Induction_and_Analogical_Transfer.pdf",
-   "quote": "Forty-five percent of subjects in the two-analog conditions generated the convergence solution prior to the hint, as opposed to only 21% of subjects in the one-analog condition",
-   "page": "1983, p.23 (Experiment 4)"
-  },
-  {
-   "id": "bg-gonczi-1",
-   "location": "§11",
-   "claim_text": "Gonczi's distinction (Gonczi, 1994) between behaviourist skill-decomposition and integrated competence",
-   "held_file": "ai_career:future_of_gc/load_bearing/Gonczi_1994_Competency_Based_Assessment_Professions_Australia.pdf",
-   "quote": "The first and probably the most widely held conception of the nature of competence is task-based or behaviourist. In it, competence is conceived of in terms of the discrete behaviours associated with the completion of atomised tasks.",
-   "page": "28"
-  },
-  {
-   "id": "bg-gonczi-2",
-   "location": "§17 refs",
-   "claim_text": "Argues that an integrated (holistic) conception of competence — not an atomized behaviourist task-list — is the only defensible basis for assessing professional competence.",
-   "held_file": "ai_career:future_of_gc/load_bearing/Gonczi_1994_Competency_Based_Assessment_Professions_Australia.pdf",
-   "quote": "Clearly this approach is inappropriate for conceptualising professional work and there are very serious doubts about its relevance to work at any level.",
-   "page": "29"
-  },
-  {
-   "id": "bg-gonczi-3",
-   "location": "§3 table",
-   "claim_text": "Atomizing competence into an external checklist optimizes for adequacy over integration (Gonczi, 1994; Brockmann, Clarke, & Winch, 2008)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Gonczi_1994_Competency_Based_Assessment_Professions_Australia.pdf",
-   "quote": "Its aim is transparent specification of competencies such that there can be no disagreement about what constitutes satisfactory performance... This approach is not concerned with the connections between the tasks and ignores the possibility that the coming together of tasks could lead to their transformation. (The whole is not greater than the sum of the parts.)",
-   "page": "28"
-  },
-  {
-   "id": "bg-hosseini-1",
-   "location": "§16",
-   "claim_text": "an adoption-based design, which observes which firms actually integrate generative AI rather than assigning an exposure score",
-   "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
-   "quote": "Our contribution to this literature is to move beyond occupation-level exposure indices and provide broad-based evidence using a more direct measure of firm-level adoption, identified through postings for explicit \"GenAI integrator\" roles. Moreover, unlike exposure-based measures, our adoption measure varies over time, allowing us to exploit variation in adoption timing with an event-study design.",
-   "page": "11"
-  },
-  {
-   "id": "bg-hosseini-2",
-   "location": "§16",
-   "claim_text": "finds junior employment at adopting firms about 9% below non-adopters within six quarters",
-   "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
-   "quote": "beginning in 2023Q1—coinciding with the sharp increase in GenAI adoption—junior employment in adopting firms starts to decline steeply relative to controls, declining by about 9 percent after six quarters.",
-   "page": "5"
-  },
-  {
-   "id": "bg-hosseini-3",
-   "location": "§16",
-   "claim_text": "through slower hiring rather than separations",
-   "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
-   "quote": "The decline is driven primarily by slower hiring rather than increased separations.",
-   "page": "1"
-  },
-  {
-   "id": "bg-hosseini-4",
-   "location": "§16",
-   "claim_text": "while senior employment continues its prior trend",
-   "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
-   "quote": "Senior employment, by contrast, increased more quickly in adopting firms since 2015 and showed no sign of a break in trend after 2022.",
-   "page": "5"
-  },
-  {
-   "id": "bg-hosseini-5",
-   "location": "§16",
-   "claim_text": "though the adopters are large professional-services firms",
-   "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
-   "quote": "Adopting firms are much larger, averaging about 546 employees compared to roughly 108 for non-adopters.",
-   "page": "22"
-  },
-  {
-   "id": "bg-hosseini-6",
-   "location": "§17 refs",
-   "claim_text": "Hosseini Maasoum & Lichtinger (2026). Generative AI as Seniority-Biased Technological Change: Evidence from U.S. Résumé and Job Posting Data. SSRN Working Paper 5425555 (version of 25 May 2026).",
-   "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
-   "quote": "Generative AI as Seniority-Biased Technological Change: Evidence from U.S. Résumé and Job Posting Data ... Seyed M. Hosseini†  Guy Lichtinger‡ ... This Version: May 25, 2026 ... Latest Version: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5425555.",
-   "page": "1"
-  },
-  {
-   "id": "bg-javadian-1",
-   "location": "§11",
-   "claim_text": "computed national O*NET Detailed-Work-Activity coverage by major across roughly 3.16 million U.S. course syllabi",
-   "held_file": "pdfs:javadian-sabet-2024-course-skill-atlas.pdf",
-   "quote": "Through a research contract, we analyze one version 2.1 of the OSP data, which encompasses nearly 8 million course syllabi worldwide among which 3, 162, 747 syllabi across 62 fields of study (FOS) belong to 2, 761 colleges and universities in the United States.",
-   "page": "6"
-  },
-  {
-   "id": "bg-javadian-2",
-   "location": "§11",
-   "claim_text": "it carries the same presence-not-depth limitation as O*NET",
-   "held_file": "pdfs:javadian-sabet-2024-course-skill-atlas.pdf",
-   "quote": "Effectively, it is crucial to acknowledge that teaching does not necessarily equate to learning.",
-   "page": "19"
-  },
-  {
-   "id": "bg-lambert-1",
-   "location": "§16",
-   "claim_text": "adding remote-work exposure absorbs the AI effect in résumé and job-posting data (Lambert & Schindler, 2026)",
-   "held_file": "pdfs:lambert-schindler-2026-remote-work.pdf",
-   "quote": "Our first main result comes from a joint-treatment specification in which both exposures enter simultaneously. The WFH effects are robust, and depict a similar event-study coefficient path to the single-treatment results. By contrast, the GenAI effects attenuate heavily and often become statistically indistinguishable from zero.",
-   "page": "1 (printed page 1; PDF page 3)"
-  },
-  {
-   "id": "bg-lambert-2",
-   "location": "§17 refs",
-   "claim_text": "Lambert & Schindler (2026). The Broken Ladder: AI, Remote Work, and Early-Career Hiring. CAGE (Warwick) / CEP (LSE) Working Paper 808/2026, also SSRN 6787638 (May 2026).",
-   "held_file": "pdfs:lambert-schindler-2026-remote-work.pdf",
-   "quote": "808/2026 May 2026 ... The Broken Ladder: AI, Remote Work, and Early-Career Hiring ... Peter John Lambert, Yannick Schindler",
-   "page": "cover page (PDF page 1) and title page (PDF page 2)"
-  },
-  {
-   "id": "bg-liu-1",
-   "location": "§11",
-   "claim_text": "found data-driven clusters that strongly co-occur yet carry low intrinsic semantic similarity",
-   "held_file": "pdfs:liu-2024-cooccurrent-skills.pdf",
-   "quote": "The skill clusters also display varying levels of semantic similarity, highlighting the difference between co-occurrence in adverts and intrinsic thematic consistency.",
-   "page": "1 (abstract)"
-  },
-  {
-   "id": "bg-liu-2",
-   "location": "§11",
-   "claim_text": "co-occurrence is \"not aligned with the generic semantic understanding from language models\"",
-   "held_file": "pdfs:liu-2024-cooccurrent-skills.pdf",
-   "quote": "Therefore, the co-occurrence of these skills in job adverts is not aligned with the generic semantic understanding from language models, and could be linked to, e.g., technical content.",
-   "page": "6"
-  },
-  {
-   "id": "bg-liu-3",
-   "location": "§11",
-   "claim_text": "their clusters \"differ from expert-authored categorisations … important relationships between skills are not captured by expert assessment alone.\"",
-   "held_file": "pdfs:liu-2024-cooccurrent-skills.pdf",
-   "quote": "We also show that our data-driven clusters differ from expert-authored categorisations of skills, indicating that important relationships between skills are not captured by expert assessment alone.",
-   "page": "1 (abstract)"
-  },
-  {
-   "id": "bg-liu-4",
-   "location": "§17 refs",
-   "claim_text": "A skills network built from 65M UK job adverts (2016–2022)",
-   "held_file": "pdfs:liu-2024-cooccurrent-skills.pdf",
-   "quote": "a national level data set of 65 million job postings from the UK spanning 2016 to 2022",
-   "page": "1 (abstract)"
-  },
-  {
-   "id": "bg-macnamara-1",
-   "location": "§4 caveats",
-   "claim_text": "Macnamara and colleagues' critiques further note that practice time alone explains only a fraction of expertise variance",
-   "held_file": "ai_career:future_of_gc/load_bearing/Macnamara_Hambrick_Oswald_2014_Deliberate_Practice_Meta-Analysis.pdf",
-   "quote": "The results of this meta-analysis do not support these strong claims. Regardless of domain, a large amount of variance in performance is not explained by deliberate practice and is potentially explainable by other factors. We conclude that amount of deliberate practice—although unquestionably important as a predictor of individual differences in performance from both a statistical and a practical perspective—is not as important as Ericsson and his colleagues have argued.",
-   "page": "8 (printed)"
-  },
-  {
-   "id": "bg-macnamara-2",
-   "location": "§17 refs",
-   "claim_text": "practice time alone explains only ~12% of expertise variance across domains",
-   "held_file": "ai_career:future_of_gc/load_bearing/Macnamara_Hambrick_Oswald_2014_Deliberate_Practice_Meta-Analysis.pdf",
-   "quote": "The meta-analytic average correlation between deliberate practice and performance was .35, 95% confidence interval (CI) = [.30, .39], which indicates that deliberate practice explained 12% of the variance in performance, 95% CI = [9%, 15%]; thus, 88% of the variance was unexplained.",
-   "page": "5 (printed)"
-  },
-  {
-   "id": "bg-musazade-1",
-   "location": "§11 / refs",
-   "claim_text": "benchmarked curriculum-to-competency matching is now an active task (UniSkill (Musazade et al., 2026)); a benchmarked curriculum-to-competency matching dataset",
-   "held_file": "pdfs:musazade-2026-uniskill.pdf",
-   "quote": "UniSkill: A Dataset for Matching University Curricula to Professional Competencies ... We train language models on this dataset to serve as a baseline for retrieval and recommendation systems for course-to-skill and skill-to-course matching. We evaluate the models on a portion of the annotated data. Our BERT model achieves 87% F1-score, showing that course and skill matching is a feasible task.",
-   "page": "PDF p.1 (title; Abstract) — paper has no printed page numbers (ACL-style arXiv template)"
-  },
-  {
-   "id": "bg-nisbett-1",
-   "location": "§4 caveats",
-   "claim_text": "Introspective reports of one's own reasoning are reconstructed after the fact, not read off directly (Nisbett & Wilson, 1977)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Nisbett_Wilson_1977_Telling_More_Than_We_Can_Know.pdf",
-   "quote": "When reporting on the effects of stimuli, people may not interrogate a memory of the cognitive processes that operated on the stimuli; instead, they may base their reports on implicit, a priori theories about the causal connection between stimulus and response.",
-   "page": 233
-  },
-  {
-   "id": "bg-perkins1992-1",
-   "location": "§17 refs",
-   "claim_text": "Distinguishes low-road (near, automatic) from high-road (far, deliberate-abstraction) transfer; establishes that far transfer requires explicit scaffolding.",
-   "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
-   "quote": "Low road transfer happens when stimulus conditions in the transfer context are sufficiently similar to those in a prior context of learning to trigger well-developed semi-automatic responses... High road transfer, in contrast, depends on mindful abstraction from the context of learning or application and a deliberate search for connections... It can easily accomplish far transfer, bridging between contexts as remote as arteries and electrical networks or strategies of chess play and politics.",
-   "page": "7 of 11"
-  },
-  {
-   "id": "bg-perkins1992-2",
-   "location": "§11",
-   "claim_text": "O*NET generic skills ... are rejected by the same authorities §4 already cites (Willingham; Perkins & Salomon; Gick & Holyoak)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
-   "quote": "A strong local knowledge position would predict little far transfer under any conditions, because knowledge in one context would not be very relevant to others. However, the research on expertise does not really force such a position: The importance of local knowledge does not imply the unimportance of rather general knowledge that works together with local knowledge (Perkins and Salomon 1989)... In sum, a monolithic local knowledge position is difficult to sustain.",
-   "page": "5 of 11 (§3, Transfer and Local Knowledge)"
-  },
-  {
-   "id": "bg-sala2019-1",
-   "location": "§4 / refs",
-   "claim_text": "Meta-analysis of meta-analyses: the far-transfer effect is near zero after bias correction (Sala et al., 2019)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Sala_etal_2019_Near_and_Far_Transfer_Meta-Analysis.pdf",
-   "quote": "once publication bias and placebo effects are ruled out, far-transfer effects are null regardless of the type of far-transfer measure, type of cognitive training program, and population.",
-   "page": "15 (printed, 'Art. 18, page 15 of 22'; General Discussion)"
-  },
-  {
-   "id": "bg-sala2019-2",
-   "location": "§4",
-   "claim_text": "chess, music, and working-memory training",
-   "held_file": "ai_career:future_of_gc/load_bearing/Sala_etal_2019_Near_and_Far_Transfer_Meta-Analysis.pdf",
-   "quote": "Finally, Model 3 is an extension of Model 2. In Model 3, we included another six meta-analyses of other cognitive-training programs: action video-game and non-action video-game training, music instruction, chess instruction, and exergames (i.e., cognitive-training games combined with physical activities).",
-   "page": "4 (printed, 'Art. 18, page 4 of 22')"
-  },
-  {
-   "id": "bg-sala2019-3",
-   "location": "§17 refs",
-   "claim_text": "Sala, Aksayli, Tatlidil, Tatsumi, Gondo, & Gobet (2019). Near and far transfer in cognitive training: A second-order meta-analysis. Collabra: Psychology, 5(1), 18.",
-   "held_file": "ai_career:future_of_gc/load_bearing/Sala_etal_2019_Near_and_Far_Transfer_Meta-Analysis.pdf",
-   "quote": "Sala, G., et al. (2019). Near and Far Transfer in Cognitive Training: A Second-Order Meta-Analysis. Collabra: Psychology, 5(1): 18. DOI: https://doi.org/10.1525/collabra.203",
-   "page": "1 (printed, running header on first page; also PDF metadata Title/Subject fields)"
-  },
-  {
-   "id": "bg-salagobet-1",
-   "location": "§17 refs",
-   "claim_text": "Trained cognitive skill does not generalize far.",
-   "held_file": "ai_career:future_of_gc/load_bearing/Sala_Gobet_2017_Does_Far_Transfer_Exist.pdf",
-   "quote": "training chess, music, or WM capacity does not reliably enhance any skill beyond the skills they train",
-   "page": "517 (printed); PDF page 4"
-  },
-  {
-   "id": "bg-wiggins-1",
-   "location": "§2 Backward Design",
-   "claim_text": "Understanding by Design defines a three-stage planning sequence: identify desired results, determine acceptable evidence, plan learning experiences and instruction",
-   "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
-   "quote": "We call this three-stage approach to planning \"backward design.\"",
-   "page": "printed p. 17 (PDF p. 29); Figure 1.1, printed p. 18"
-  },
-  {
-   "id": "bg-wiggins-2",
-   "location": "§2 Backward Design",
-   "claim_text": "Stage 2: outcome claims must be backed by demonstrable evidence",
-   "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
-   "quote": "How will we know if students have achieved the desired results? What will we accept as evidence of student understanding and proficiency?",
-   "page": "printed p. 18 (PDF p. 30)"
-  },
-  {
-   "id": "bg-wiggins-3",
-   "location": "§5 The KUD model",
-   "claim_text": "structurally similar separation of desired understandings, knowledge, and skills in Stage 1 (template)",
-   "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
-   "quote": "Students will know . . .",
-   "page": "printed p. 22 (PDF p. 34), Figure 1.2"
-  },
-  {
-   "id": "bg-wiggins-4",
-   "location": "§7 anchors",
-   "claim_text": "second stage of backward design: outcomes are paired with the evidence that would demonstrate them",
-   "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
-   "quote": "we are obligated to consider the assessment evidence implied by the outcomes sought, rather than thinking about assessment primarily as a means for generating grades",
-   "page": "printed p. 148 (PDF p. 160)"
-  },
-  {
-   "id": "bg-tomlinson-1",
-   "location": "§5 The KUD model",
-   "claim_text": "Tomlinson uses the K/U/D structure as a categorical pre-unit planning aid",
-   "held_file": "pdfs:tomlinson-1999-differentiated-classroom.pdf",
-   "quote": "During planning, a teacher should generate specific lists of what students should know (facts), understand (concepts and principles), and be able to do (skills) by the time the unit ends.",
-   "page": "printed p. 40 (PDF p. 47)"
-  },
-  {
-   "id": "bg-tomlinson-2",
-   "location": "References (Tomlinson 1999)",
-   "claim_text": "Establishes the K/U/D three-category planning vocabulary",
-   "held_file": "pdfs:tomlinson-1999-differentiated-classroom.pdf",
-   "quote": "Content is what a student should come to know (facts), understand (concepts and principles), and be able to do (skills) as a result of a given segment of study (a lesson, a learning experience, a unit).",
-   "page": "printed pp. 42-43 (PDF pp. 49-50)"
-  },
-  {
-   "id": "bg-mcpeck-1990-1",
-   "location": "§4 problem-solving",
-   "claim_text": "McPeck's 1990 reply: he does not assume there are no general thinking skills and believes there are some very limited ones",
-   "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
-   "quote": "Thus, I do not assume that there are no general thinking skills as Ennis asserts—I argue the point. For what it is worth, I believe there are, in fact, some very limited general thinking skills.",
-   "page": "printed p. 12 (PDF p. 4)"
-  },
-  {
-   "id": "bg-mcpeck-1990-2",
-   "location": "§4 problem-solving",
-   "claim_text": "while adding that \"these skills offer little to get excited about\"",
-   "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
-   "quote": "these skills offer little to get excited about",
-   "page": "printed p. 12 (PDF p. 4)"
-  },
-  {
-   "id": "bg-mcpeck-1990-3",
-   "location": "References (McPeck 1990)",
-   "claim_text": "he restates that \"there can be no completely general set of thinking skills\" (pp. 11-12)",
-   "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
-   "quote": "that there can be no completely general set of thinking skills",
-   "page": "printed pp. 11-12 (PDF pp. 3-4)"
-  },
-  {
-   "id": "bg-gibbs-1",
-   "location": "§9 spiral curriculum",
-   "claim_text": "Bruner (1960, p. 30), as quoted in Gibbs (2014): \"any subject can be taught in some intellectually honest form to any child at any stage of development\"",
-   "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
-   "quote": "any subject can be taught in some intellectually honest form to any child at any stage of development” (1960, p. 30)",
-   "page": "held web copy, single PDF page"
-  },
-  {
-   "id": "bg-gibbs-2",
-   "location": "§9 spiral curriculum",
-   "claim_text": "spiral curriculum summary (Gibbs, 2014)",
-   "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
-   "quote": "students revisit a topic, theme, or subject several times throughout their schooling, where the complexity of the topic is increased with each visit so the new learning is connected to the old learning",
-   "page": "held web copy, single PDF page"
-  },
-  {
-   "id": "bg-bijker-1",
-   "location": "§7 tacit knowledge",
-   "claim_text": "somatic tacit knowledge \"is tacit because it is tied to the human body,\" as summarized by Bijker (2011)",
-   "held_file": "pdfs:review-2011-collins-tacit-explicit-knowledge.pdf",
-   "quote": "Medium, or somatic, tacit knowledge is tacit because it is tied to the human body.",
-   "page": "held copy p. 1 (page printed \"2\")"
-  },
-  {
-   "id": "bg-bijker-2",
-   "location": "References (Collins 2010)",
-   "claim_text": "Chicago: University of Chicago Press, 2010, xiv + 186 pp.",
-   "held_file": "pdfs:review-2011-collins-tacit-explicit-knowledge.pdf",
-   "quote": "Pp. xiv+186.",
-   "page": "held copy p. 1, review header"
-  },
-  {
-   "id": "bg-doignon2015-1",
-   "location": "§2 skill-tree paragraph",
-   "claim_text": "the outer fringe of a state is the set of items the learner is now ready to learn",
-   "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
-   "quote": "it tells us exactly what the student is ready to learn",
-   "page": "printed p. 16 (Definition 20 on p. 15)"
-  },
-  {
-   "id": "bg-doignon2015-2",
-   "location": "§2 skill-tree paragraph",
-   "claim_text": "ALEKS deploys KST to millions of students",
-   "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
-   "quote": "these methods have been used by millions of students in schools and colleges",
-   "page": "printed p. 1 (Abstract)"
-  },
-  {
-   "id": "bg-doignon2015-3",
-   "location": "References (Doignon & Falmagne 1985 entry)",
-   "claim_text": "the 2015 chapter \"summarizes key concepts and results from two books\"",
-   "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
-   "quote": "This chapter summarizes key concepts and results from two books.",
-   "page": "printed p. 3"
-  },
-  {
-   "id": "bg-cbn-1",
-   "location": "§9 3-Act parallels",
-   "claim_text": "cognitive apprenticeship addresses school knowledge \"abstracted from their uses in the world\"",
-   "held_file": "pdfs:collins-brown-newman-1987-cognitive-apprenticeship-tr403.pdf",
-   "quote": "skills and knowledge taught in schools have become abstracted from their uses in the world",
-   "page": "printed p. 1 (PDF p. 3, Abstract) and printed p. 2"
-  },
-  {
-   "id": "bg-cbn-2",
-   "location": "§9 3-Act parallels",
-   "claim_text": "drawing on Jean Lave's ethnography of craft apprenticeship",
-   "held_file": "pdfs:collins-brown-newman-1987-cognitive-apprenticeship-tr403.pdf",
-   "quote": "practiced in a West African tailoring shop for many of our insights into the nature of apprenticeship",
-   "page": "printed p. 2 (PDF p. 4)"
-  },
-  {
-   "id": "bg-manning-1",
-   "location": "§10 auditor reasoning",
-   "claim_text": "the library itself cautions that the prompts have not been empirically validated as AI interventions",
-   "held_file": "pdfs:web/manning-2025-education-agent-skills-readme.md",
-   "quote": "the prompts themselves have not been empirically validated as AI interventions",
-   "page": "README, \"What Makes This Different\""
-  },
-  {
-   "id": "bg-manning-2",
-   "location": "References (Manning)",
-   "claim_text": "an open-source GitHub library of \"165 evidence-based pedagogical skills across 20 domains\"",
-   "held_file": "pdfs:web/manning-2025-education-agent-skills-readme.md",
-   "quote": "An open-source library of 165 evidence-based pedagogical skills across 20 domains",
-   "page": "README, opening paragraph"
-  },
-  {
-   "id": "bg-barthakur-1",
-   "location": "§7",
-   "claim_text": "few studies trace QA to single courses and their assessment items",
-   "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
-   "quote": "Few studies have adopted an analytical approach to ensure programme quality assurance steps are traceable to a fundamental level of these maps: single courses and their assessment items.",
-   "page": "PDF p. 1"
-  },
-  {
-   "id": "bg-jayalath-1",
-   "location": "§7",
-   "claim_text": "map that merely records presence/absence",
-   "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
-   "quote": "it is often applied in a simplistic, accreditation-driven manner that merely records the presence or absence of skills embedded in assessments",
-   "page": "PDF p. 1 (printed p. 589)"
-  },
-  {
-   "id": "bg-jayalath-2",
-   "location": "§7",
-   "claim_text": "weights add to 100; two coders α 0.70; consensus",
-   "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
-   "quote": "Two human coders independently annotated the curriculum data, achieving a Krippendorff’s 𝛼 of 0.70, and finalised the weighted mapping through consensus discussion. Each assessment was mapped to one or more skills, with weights adding up to 100 per assessment.",
-   "page": "PDF p. 4 (printed p. 592)"
-  },
-  {
-   "id": "bg-jayalath-3",
-   "location": "§7",
-   "claim_text": "fit grades modestly r = 0.43",
-   "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
-   "quote": "the model achieved an RMSE of 0.21 and a Pearson correlation of 0.43",
-   "page": "PDF p. 5 (printed p. 593)"
-  },
-  {
-   "id": "bg-jayalath-4",
-   "location": "§7",
-   "claim_text": "few assessments can inflate/deflate scores",
-   "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
-   "quote": "this may also reflect the limited number of assessments mapped to skills such as international perspective, ethical awareness and teamwork, which can inflate/deflate overall scores",
-   "page": "PDF p. 5 (printed p. 593)"
-  },
-  {
-   "id": "bg-nelson-1",
-   "location": "§4",
-   "claim_text": "capstone as high-stakes crash course",
-   "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
-   "quote": "This made what should have been an opportunity for reinforcement and mastery into a high-stakes crash course.",
-   "page": "web article"
-  },
-  {
-   "id": "bg-atlas-fields-1",
-   "location": "§11",
-   "claim_text": "62 fields of study",
-   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
-   "quote": "syllabi across 62 fields of study (FOS)",
-   "page": "p. 6"
-  },
-  {
-   "id": "bg-atlas-fields-2",
-   "location": "§11",
-   "claim_text": "curated subset of the CIP taxonomy",
-   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
-   "quote": "OSP’s FOS classifier is trained and tested on a curated subset of the CIP taxonomy",
-   "page": "p. 14"
-  },
-  {
-   "id": "bg-frej-1",
-   "location": "§11",
-   "claim_text": "required skills with levels",
-   "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
-   "quote": "the required skills with their proficiency levels",
-   "page": "p. 5"
-  },
-  {
-   "id": "bg-frej-2",
-   "location": "§11",
-   "claim_text": "provided skills with levels",
-   "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
-   "quote": "the provided skills with their proficiency levels",
-   "page": "p. 5"
-  },
-  {
-   "id": "bg-frej-3",
-   "location": "§11",
-   "claim_text": "level extraction accuracy 0.68 vs one expert, 212 skills, 10 postings",
-   "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
-   "quote": "An expert manually annotated 212 skills from 10 job postings in the IT sector. We compared the annotations with the levels extracted by our system and obtained an accuracy of 0.68.",
-   "page": "p. 7"
-  },
-  {
-   "id": "bg-frej-4",
-   "location": "§11",
-   "claim_text": "assumption of skill acquisition (limitation)",
-   "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
-   "quote": "A fundamental assumption in our sequential recommendation approach is that completing a course will automatically result in the acquisition of the associated skills by the learners.",
-   "page": "p. 8"
-  },
-  {
-   "id": "bg-frej-5",
-   "location": "§11",
-   "claim_text": "job reachable above a threshold",
-   "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
-   "quote": "we set a threshold",
-   "page": "p. 6"
-  },
-  {
-   "id": "bg-pavlik-1",
-   "location": "§15",
-   "claim_text": "PFA-Decay weights prior successes/failures by recency",
-   "held_file": "pdfs:pavlik-2021-logistic-knowledge-tracing.pdf",
-   "quote": "counts of success and failures be exponentially weighted as a function of their recency",
-   "page": "p. 3"
-  },
-  {
-   "id": "bg-zamecnik-1",
-   "location": "§7",
-   "claim_text": "71% average accuracy",
-   "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
-   "quote": "the LLM achieved an average of 71% accuracy",
-   "page": "p. 3"
-  },
-  {
-   "id": "bg-zamecnik-2",
-   "location": "§7",
-   "claim_text": "LLM-expert kappa mostly Fair",
-   "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
-   "quote": "indicating Kappa results to be mostly Fair",
-   "page": "p. 10"
-  },
-  {
-   "id": "bg-zamecnik-3",
-   "location": "§7",
-   "claim_text": "not yet human baseline",
-   "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
-   "quote": "LLMs have not yet achieved the average human baseline data annotation performance",
-   "page": "p. 10"
-  },
-  {
-   "id": "bg-zamecnik-4",
-   "location": "§7",
-   "claim_text": "expert-expert kappa mostly moderate",
-   "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
-   "quote": "indicating Kappa results to be mostly moderate",
-   "page": "p. 9"
-  },
-  {
-   "id": "bg-zamecnik-5",
-   "location": "§7",
-   "claim_text": "26 courses",
-   "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
-   "quote": "extracting course outline data from a total of 26 courses",
-   "page": "p. 6"
-  },
-  {
-   "id": "bg-jayalath25-1",
-   "location": "§7",
-   "claim_text": "19 courses, three years",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "we analyzed all curriculum data from 19 courses in the program",
-   "page": "PDF p. 6 (printed p. 299)"
-  },
-  {
-   "id": "bg-jayalath25-2",
-   "location": "§7",
-   "claim_text": "alpha 0.76 vs 0.65",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "alpha of 0.76, compared to the overall Krippendorff's alpha value of the ML model",
-   "page": "PDF p. 8 (printed p. 301)"
-  },
-  {
-   "id": "bg-jayalath25-3",
-   "location": "§7",
-   "claim_text": "experts 0.70",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "The overall Krippendorff's alpha value for the reviewers' labelling was 0.70",
-   "page": "PDF p. 6 (printed p. 299)"
-  },
-  {
-   "id": "bg-jayalath25-4",
-   "location": "§7",
-   "claim_text": "gold standard by discussion",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "this study was developed collaboratively by domain experts through discussion",
-   "page": "PDF p. 10 (printed p. 303)"
-  },
-  {
-   "id": "bg-jayalath25-5",
-   "location": "§7",
-   "claim_text": "oral comm near-perfect",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "Oral Communication stands out with near-perfect agreement",
-   "page": "PDF p. 8 (printed p. 301)"
-  },
-  {
-   "id": "bg-jayalath25-6",
-   "location": "§7",
-   "claim_text": "written comm / int perspective lower",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "Written Communication and International Perspectives had lower alpha values",
-   "page": "PDF p. 9 (printed p. 302)"
-  },
-  {
-   "id": "bg-jayalath25-7",
-   "location": "§7",
-   "claim_text": "year 2 least consistent",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "Year 2 had the most inconsistency",
-   "page": "PDF p. 11 (printed p. 304)"
-  },
-  {
-   "id": "bg-jayalath25-8",
-   "location": "§7",
-   "claim_text": "less explicitly defined skills",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "less explicitly defined in course documents",
-   "page": "PDF p. 12 (printed p. 305)"
-  },
-  {
-   "id": "bg-jayalath25-9",
-   "location": "§7",
-   "claim_text": "human-in-the-loop future work",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "integrating a human-in-the-loop process would refine and rank the usefulness of justifications",
-   "page": "PDF p. 12 (printed p. 305)"
-  },
-  {
-   "id": "bg-collins2007-1",
-   "location": "§7 tacit knowledge",
-   "claim_text": "Collins (2007): somatic-limit tacit knowledge has to do with the limitations of the human body and brain",
-   "held_file": "pdfs:collins-2007-bicycling-on-the-moon.pdf",
-   "quote": "‘somatic-limit tacit knowledge’, has to do with the limitations of the human body and brain",
-   "page": "p. 257 (abstract)"
-  },
-  {
-   "id": "bg-collins2007-2",
-   "location": "§7 tacit knowledge",
-   "claim_text": "Most humans can demonstrate their knowledge of bike-riding only by bike-riding",
-   "held_file": "pdfs:collins-2007-bicycling-on-the-moon.pdf",
-   "quote": "Most humans can demonstrate their knowledge of bike-riding only by bike-riding.",
-   "page": "p. 258"
-  },
-  {
-   "id": "bg-collins2007-3",
-   "location": "§7 tacit knowledge",
-   "claim_text": "even where the rules of a craft can be written down, the craftsperson shows the knowledge by performing, not by stating rules",
-   "held_file": "pdfs:collins-2007-bicycling-on-the-moon.pdf",
-   "quote": "Somatic-limit tacit knowledge can often be converted into explicit rules and/or executed by mechanisms such as sieves or robots; it is just that humans cannot make use of the rules to carry out the behaviours that they represent.",
-   "page": "p. 258"
-  },
-  {
-   "id": "bg-duguid-1",
-   "location": "§9 Lave & Wenger",
-   "claim_text": "The community-of-practice account was introduced as a theory of learning drawing on studies of apprenticeship (Lave & Wenger, 1991)",
-   "held_file": "pdfs:duguid-2005-art-of-knowing-manuscript.pdf",
-   "quote": "was introduced as a theory of learning, drawing much of its evidence from studies of … apprenticeship (Lave & Wenger, 1991)",
-   "page": "manuscript pp. 9-10 (footer page numbers; PDF pp. 9-10)"
-  },
-  {
-   "id": "bg-brynjolfsson-2",
-   "location": "§16",
-   "claim_text": "by mid-2026, workers aged 22–25 in the most-exposed quintile had fallen about 18 percentage points behind the least-exposed",
-   "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
-   "quote": "For workers aged 22–25, employment in the most exposed quintile declined by about 18 percentage points relative to the least exposed quintile (Panel A; −0.179).",
-   "page": "PDF p.12"
-  },
-  {
-   "id": "bg-krathwohl2002-1",
-   "location": "§2 Bloom paragraph",
-   "claim_text": "Procedural Knowledge (\"how to do something\") is a Knowledge Dimension category",
-   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
-   "quote": "Procedural Knowledge – How to do something",
-   "page": "printed p. 214 (Table 2)"
-  },
-  {
-   "id": "bg-krathwohl2002-2",
-   "location": "§2 Bloom paragraph",
-   "claim_text": "Apply is \"carrying out or using a procedure in a given situation\"",
-   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
-   "quote": "Apply – Carrying out or using a procedure in a given situation.",
-   "page": "printed p. 215 (Table 3)"
-  },
-  {
-   "id": "bg-doignon2015-4",
-   "location": "§2 skill-tree paragraph",
-   "claim_text": "KST's assessment procedure rests on a probabilistic knowledge structure",
-   "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
-   "quote": "It relies on the notion of a probabilistic knowledge structure",
-   "page": "printed p. 3"
-  },
-  {
-   "id": "bg-doignon2015-5",
-   "location": "§2 skill-tree paragraph",
-   "claim_text": "the probabilistic structure allows a careless error on a mastered item or a lucky guess on an unmastered one",
-   "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
-   "quote": "represents the careless error probability to item q, and the number",
-   "page": "printed p. 28 (Definition 34)"
-  },
-  {
-   "id": "bg-brynjolfsson-3",
-   "location": "§17 (Brynjolfsson entry)",
-   "claim_text": "the kept-pace shortfall for 22–25-year-olds was 15% at the July 2025 vintage and 19% as of June 2026",
-   "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
-   "quote": "the kept-pace shortfall was 15% at the July 2025 data vintage and has since widened to 19% as of June 2026",
-   "page": "PDF p.3"
-  },
-  {
-   "id": "bg-brockmann-1",
-   "location": "§3 table",
-   "claim_text": "An atomized competence model lacks the integration that constitutes occupational competence (Brockmann, Clarke, & Winch, 2008)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Brockmann_Clarke_Winch_2008_Knowledge_Skills_Competence_VET.pdf",
-   "quote": "There is no notion of an integration of different forms of knowledge, and thus of experiential learning and knowledge creation.",
-   "page": "printed p. 555"
-  },
-  {
-   "id": "bg-brockmann-2",
-   "location": "§3 table",
-   "claim_text": "Competence as integrative rather than cumulative (Brockmann, Clarke, & Winch, 2008)",
-   "held_file": "ai_career:future_of_gc/load_bearing/Brockmann_Clarke_Winch_2008_Knowledge_Skills_Competence_VET.pdf",
-   "quote": "integrative rather than cumulative, relying on the different components of occupational, social and individual competence to come together in a given work situation",
-   "page": "printed p. 557"
-  },
-  {
-   "id": "bg-turaev-1",
-   "location": "§5",
-   "claim_text": "two faculty raters, working blind, each assigned a Bloom level ... agreed at a Cohen's κ of 0.86",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "The extraction is validated blind by two independent faculty raters (domain κ = 0.91, Bloom level κ = 0.86)",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "bg-turaev-2",
-   "location": "§5",
-   "claim_text": "the same 300 competency statements drawn from course outcomes and job postings",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "Two faculty raters independently coded a stratified sample of three hundred competencies",
-   "page": "p. 9 (§5); Table 3 strata include Supply (curriculum) and Demand (labor market), 150 each"
-  },
-  {
-   "id": "bg-turaev-3",
-   "location": "§5",
-   "claim_text": "statements with more than one verb, where leveling by the leading verb \"parts company with leveling by the highest-order verb\"",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "On the cognitive level, the few large gaps arose on multi-verb outcomes, where leveling by the leading verb, the convention the extraction adopts, parts company with leveling by the highest-order verb",
-   "page": "p. 10"
-  },
-  {
-   "id": "bg-krathwohl2002-3",
-   "location": "§5",
-   "claim_text": "Apply is \"carrying out or using a procedure in a given situation\"",
-   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
-   "quote": "Apply – Carrying out or using a procedure in a given situation.",
-   "page": "printed p. 215 (Table 3)"
-  },
-  {
-   "id": "bg-xu2025-1",
-   "location": "§11",
-   "claim_text": "embedding-only arm used SBERT",
-   "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
-   "quote": "SBERT, a siamese network-based model known for effective sentence embeddings",
-   "page": "p. 3"
-  },
-  {
-   "id": "bg-xu2025-2",
-   "location": "§11",
-   "claim_text": "retrieve-then-reason: the 20 most similar skills by embedding, then an LLM",
-   "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
-   "quote": "we embed 2,070 skill descriptions into a vector database and retrieve the top 20 most relevant skills",
-   "page": "p. 3"
-  },
-  {
-   "id": "bg-xu2025-3",
-   "location": "§11",
-   "claim_text": "precision = share of top-ten skills rated 4 or higher",
-   "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
-   "quote": "% top 10 extracted skills that score 4 or higher",
-   "page": "p. 5"
-  },
-  {
-   "id": "bg-xu2025-4",
-   "location": "§11",
-   "claim_text": "embedding-only (BERT) precision 0.240; RAG 0.820 / 0.715 / 0.695 / 0.721 (GPT, Llama, Claude, Gemini)",
-   "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
-   "quote": "0.269 0.240 0.418 0.116 0.160 0.199 0.820 0.715 0.695 0.721",
-   "page": "p. 5 (Table 2, Precision4 row: TF-IDF, BERT, zero-shot GPT/Llama/Claude/Gemini, RAG GPT/Llama/Claude/Gemini)"
-  },
-  {
-   "id": "bg-xu2025-5",
-   "location": "§11",
-   "claim_text": "the study compared four strategies (TF-IDF, SBERT, zero-shot, RAG), no reranking step",
-   "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
-   "quote": "We apply the following four text alignment strategies.",
-   "page": "p. 3"
-  },
-  {
-   "id": "bg-atlas-1",
-   "location": "§11",
-   "claim_text": "off-the-shelf sentence model \"all-mpnet-base-v2\"",
-   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
-   "quote": "we implement the “all-mpnet-base-v2” model",
-   "page": "p. 8"
-  },
-  {
-   "id": "bg-atlas-2",
-   "location": "§11",
-   "claim_text": "course score on each activity = maximum similarity over its sentences",
-   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
-   "quote": "for a given skill, we select the maximum similarity score across all the sentences within the syllabus",
-   "page": "p. 9"
-  },
-  {
-   "id": "bg-atlas-3",
-   "location": "§11",
-   "claim_text": "\"teaching does not necessarily equate to learning\"",
-   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
-   "quote": "it is crucial to acknowledge that teaching does not necessarily equate to learning",
-   "page": "p. 19"
-  },
-  {
-   "id": "bg-veys-1",
-   "location": "§11",
-   "claim_text": "second gate: is the specific activity actually mentioned or directly implied",
-   "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
-   "quote": "Is the specific activity described by the skill actually mentioned or directly implied?",
-   "page": "p. 2"
-  },
-  {
-   "id": "bg-veys-2",
-   "location": "§11",
-   "claim_text": "a \"no\" there: \"plausible, but the activity is not there\"",
-   "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
-   "quote": "yields grade 1 (plausible, but the activity is not there)",
-   "page": "p. 2"
-  },
-  {
-   "id": "bg-veys-3",
-   "location": "§11",
-   "claim_text": "gates agreed better with a blind human expert than asking for the grade outright",
-   "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
-   "quote": "decomposing the grade into ordered binary gates produces labels closer to a human expert than asking the same model for the grade directly",
-   "page": "p. 5"
-  },
-  {
-   "id": "bg-veys-4",
-   "location": "§11",
-   "claim_text": "QWK 0.686 vs 0.618 and 0.631",
-   "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
-   "quote": "Cascade (released) 0.686",
-   "page": "p. 5 (Table 1: one call with rationale 0.618, grade only 0.631)"
-  },
-  {
-   "id": "bg-veys-5",
-   "location": "§11",
-   "claim_text": "\"The most consequential limitation is circularity\"",
-   "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
-   "quote": "The most consequential limitation is circularity.",
-   "page": "p. 11"
-  },
-  {
-   "id": "bg-veys-6",
-   "location": "§11 objective-link",
-   "claim_text": "\"whether a small model trained on graded labels would have closed the same gap, only that no one tried\"",
-   "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
-   "quote": "whether a small model trained on graded labels would have closed the same gap, only that no one tried",
-   "page": "p. 11"
-  },
-  {
-   "id": "bg-le-1",
-   "location": "§11",
-   "claim_text": "22-competency framework; model chooses from a retrieved set and returns evidence spans",
-   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
-   "quote": "The LLM then selects the most relevant competencies from this set and provides supporting evidence spans from the fragment text",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "bg-le-2",
-   "location": "§11",
-   "claim_text": "micro-F1 0.57 and macro-F1 0.50",
-   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
-   "quote": "with a micro-F1 of 0.57 and macro-F1 of 0.50 at the fragment level",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "bg-le-3",
-   "location": "§11",
-   "claim_text": "framework of 22 competencies at one university",
-   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
-   "quote": "covering 22 competencies",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "bg-le-4",
-   "location": "§11",
-   "claim_text": "retrieval alone \"is insufficient without an explicit semantic decision rule\"",
-   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
-   "quote": "retrieving plausible candidates alone is insufficient without an explicit semantic decision rule",
-   "page": "p. 11"
-  },
-  {
-   "id": "bg-turaev-audit1",
-   "location": "References",
-   "claim_text": "Most demand-side competencies receive no Bloom level",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "the majority of competencies are possessions for which no cognitive level can be honestly assigned",
-   "page": "p. 6"
-  },
-  {
-   "id": "bg-atlas-audit1",
-   "location": "§11",
-   "claim_text": "The Atlas aggregates by averaging syllabus scores",
-   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
-   "quote": "The aggregated scores are the average scores across all the syllabi belonging to the corresponding year, university, and FOS.",
-   "page": "p. 15"
-  },
-  {
-   "id": "bg-xu2025-audit1",
-   "location": "§11",
-   "claim_text": "Xu et al.'s scores come from a calibrated LLM evaluator",
-   "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
-   "quote": "we deploy the calibrated LLM evaluator to assess the top 10 skills identified by each of the 10 alignment methods across 400 curriculum samples",
-   "page": "p. 5"
-  },
-  {
-   "id": "bg-le-audit1",
-   "location": "§11",
-   "claim_text": "Lê et al. expect stronger models to improve on their result",
-   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
-   "quote": "larger or domain-adapted models could further improve",
-   "page": "PDF p. 13"
-  },
-  {
-   "id": "bg-veys-audit1",
-   "location": "§11",
-   "claim_text": "The kappa gap against the grade-only variant is not significant",
-   "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
-   "quote": "directionally the same but not significant",
-   "page": "p. 4"
-  },
-  {
-   "id": "bg-perkins-audit1",
-   "location": "§11",
-   "claim_text": "Perkins & Salomon: results on transfer are mostly negative",
-   "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
-   "quote": "the preponderance of results concerning transfer appears to be negative",
-   "page": "PDF p. 5 of 11"
-  },
-  {
-   "id": "bg-perkins-audit2",
-   "location": "§11",
-   "claim_text": "Perkins & Salomon: general knowledge works together with local knowledge",
-   "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
-   "quote": "The importance of local knowledge does not imply the unimportance of rather general knowledge that works together with local knowledge",
-   "page": "PDF p. 5 of 11"
-  },
-  {
-   "id": "bg-bahrick-audit1",
-   "location": "References",
-   "claim_text": "Bahrick's Method section gives 773 participants",
-   "held_file": "pdfs:bahrick-1984-permastore.pdf",
-   "quote": "There were 773 participants in the study.",
-   "page": "p. 2"
-  },
-  {
-   "id": "bg-bjork-audit1",
-   "location": "§6",
-   "claim_text": "Massed practice gives better short-term but markedly inferior long-term performance",
-   "held_file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
-   "quote": "markedly inferior long-term performance or recall",
-   "page": "p. 190"
-  },
-  {
-   "id": "bg-frej-audit1",
-   "location": "§11",
-   "claim_text": "Frej et al.: the skill-acquisition assumption overlooks variability in outcomes",
-   "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
-   "quote": "This overlooks the variability in individual learning",
-   "page": "p. 8 (the sentence continues onto p. 9: \"outcomes and the probability of successfully acquiring new skills\")"
-  },
-  {
-   "id": "bg-atlas-audit2",
-   "location": "§11",
-   "claim_text": "Atlas syllabi are mostly post-2000 with sparse coverage from 1966",
-   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
-   "quote": "The majority of the syllabi belong to the period post-2000, with sparse coverage between 1966 and 1999.",
-   "page": "p. 15"
-  },
-  {
-   "id": "bg-atlas-audit3",
-   "location": "§11",
-   "claim_text": "About nine syllabi suffice per institution-field-year; 8 to 10 for most fields",
-   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
-   "quote": "The minimum number of syllabi for a majority of the fields of study is between 8 and 10",
-   "page": "p. 17"
-  },
-  {
-   "id": "bg-doignon-audit1",
-   "location": "§2",
-   "claim_text": "The outer-fringe reading is conditional on a faithful learning space",
-   "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
-   "quote": "assuming that the learning space is a faithful representation of the cognitive organization of the material, it tells us exactly what the student is ready to learn",
-   "page": "p. 16"
-  },
-  {
-   "id": "bg-choo-1",
-   "location": "§11",
-   "claim_text": "Probe joint accuracy 92.50-94.78% across four models",
-   "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
-   "quote": "probe joint accuracy ranges from 92.50% to 94.78% across models",
-   "page": "PDF p. 2"
-  },
-  {
-   "id": "bg-choo-2",
-   "location": "§11",
-   "claim_text": "Four-shot verbal classification 54.35-69.46% joint accuracy",
-   "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
-   "quote": "four-shot verbalization achieves 54.35–69.46% joint accuracy on the main test set",
-   "page": "PDF p. 9"
-  },
-  {
-   "id": "bg-choo-3",
-   "location": "§11",
-   "claim_text": "The authors limit the probe-vs-asking claim to the tested conditions",
-   "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
-   "quote": "it does not show that the models could never express the same labels under other prompts or training procedures",
-   "page": "PDF p. 9"
-  },
-  {
-   "id": "bg-choo-4",
-   "location": "§11",
-   "claim_text": "Probe accuracy falls on deceptive queries",
-   "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
-   "quote": "probe joint accuracy falls to 58.18–62.27% on this set",
-   "page": "PDF p. 9"
-  },
-  {
-   "id": "bg-choo-5",
-   "location": "§11",
-   "claim_text": "Deceptive queries were generated and screened with language models",
-   "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
-   "quote": "These queries were generated and screened with language models",
-   "page": "PDF p. 9"
-  },
-  {
-   "id": "bg-bernardelle-1",
-   "location": "§11",
-   "claim_text": "In several models probes match or outperform generated judgments",
-   "held_file": "pdfs:bernardelle-2026-relevance-layerwise-signal.pdf",
-   "quote": "in several models, validation-selected probes match or outperform generated judgments",
-   "page": "PDF p. 1"
-  },
-  {
-   "id": "bg-bernardelle-2",
-   "location": "§11",
-   "claim_text": "For one model (Qwen2.5-7B) generated judgments are strongest on all three formulations",
-   "held_file": "pdfs:bernardelle-2026-relevance-layerwise-signal.pdf",
-   "quote": "whose inference output baseline is strongest across all three relevance formulations",
-   "page": "PDF p. 8"
-  },
-  {
-   "id": "bg-chi-1",
-   "location": "§11",
-   "claim_text": "Removing prompt and instruction lowers average QWK to 0.527 (Table 6: 0.652 full, 0.576 without prompt, 0.541 without instruction)",
-   "held_file": "pdfs:chi-2025-activations-as-features.pdf",
-   "quote": "with the corresponding QWK score decreasing to 0.527 for prompts and traits",
-   "page": "PDF p. 5 (prose); Table 6, PDF p. 7"
-  },
-  {
-   "id": "bg-chi-2",
-   "location": "§11",
-   "claim_text": "Removing only the prompt hurts less than removing only the instruction",
-   "held_file": "pdfs:chi-2025-activations-as-features.pdf",
-   "quote": "The results of removing only the prompt were higher than those from removing only the instruction",
-   "page": "PDF p. 5"
-  },
-  {
-   "id": "bg-chi-3",
-   "location": "§11",
-   "claim_text": "Best head chosen on the test set; no claim to outperform the baseline",
-   "held_file": "pdfs:chi-2025-activations-as-features.pdf",
-   "quote": "the comparison with the baseline does not imply that our method outperforms the baseline",
-   "page": "PDF p. 3"
-  }
- ]
+  "page": "background.html",
+  "generated": "2026-10-07",
+  "claims": [
+    {
+      "id": "bg-autor-1",
+      "location": "§16 hypothesis box",
+      "claim_text": "Autor & Thompson show, over four decades of automation, that removing an occupation's inexpert tasks raised wages and reduced employment in it. They do not study generative AI or creative work, and they do not say that the remaining expertise is evaluative judgment.",
+      "held_file": "pdfs:autor-thompson-2025-expertise.pdf",
+      "quote": "We document that automation has raised wages and reduced employment in occupations where it eliminated inexpert tasks, but lowered wages and increased employment in occupations where it eliminated expert tasks. ... we use it to quantify changes in occupational expertise demands over four decades attributable to job task removal and addition.",
+      "page": "p.1 (abstract)"
+    },
+    {
+      "id": "bg-sweller-1",
+      "location": "§4",
+      "claim_text": "Conventional problem-solving (working backward from a goal by means-ends search) imposes a cognitive load that may \"leave little for schema acquisition, even if the problem is solved\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sweller_1988_Cognitive_Load_During_Problem_Solving.pdf",
+      "quote": "The cognitive-processing capacity needed to handle this information may be of such a magnitude as to leave little for schema acquisition, even if the problem is solved.",
+      "page": "261"
+    },
+    {
+      "id": "bg-sweller-2",
+      "location": "§4",
+      "claim_text": "schema acquisition, he argues, is \"possibly the most important component of problem solving expertise.\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sweller_1988_Cognitive_Load_During_Problem_Solving.pdf",
+      "quote": "Since schema acquisition is possibly the most important component of problem solving expertise, the development of expertise may be retarded by a heavy emphasis on problem solving;",
+      "page": "284"
+    },
+    {
+      "id": "bg-hernaes-1",
+      "location": "§16",
+      "claim_text": "(0.1% against 0.3% growth since October 2022, a gap the authors call \"small and not statistically significant\" and say differential pre-trends make \"even more uncertain\")",
+      "held_file": "pdfs:hernaes-kostol-2026-norway.pdf",
+      "quote": "Since October 2022, the month before ChatGPT's release, employment in the most AI exposed occupations has grown by 0.1 percent against 0.3 percent in the least exposed occupations, a gap that is small and not statistically significant. Differential pre-trends, potentially related to the post-pandemic recovery, make the results even more uncertain.",
+      "page": "PDF printed p. 31 (Section 6, Conclusion)"
+    },
+    {
+      "id": "bg-hernaes-2",
+      "location": "§16",
+      "claim_text": "for workers aged 21–30 the exposure gradient is, in their words, \"a relatively precise null\"",
+      "held_file": "pdfs:hernaes-kostol-2026-norway.pdf",
+      "quote": "The 21–30 exposure gradient is not a fragile negative estimate; it is essentially absent under the paper's preferred design. For the youngest workers the systematic exposure-quintile result is therefore a relatively precise null: there is no post-ChatGPT employment gradient for the relative-magnitude restriction to overturn, rather than a negative effect whose robustness is in question.",
+      "page": "PDF printed p. 22 (Section 3.8 lead-in, after Table 5 HonestDiD results)"
+    },
+    {
+      "id": "bg-hernaes-3",
+      "location": "§16",
+      "claim_text": "a gap for 22–25-year-olds appears only from spring 2025, and the authors call it \"an emerging pattern rather than an identified effect\"",
+      "held_file": "pdfs:hernaes-kostol-2026-norway.pdf",
+      "quote": "the most-exposed and least-exposed quintiles track each other through early 2025, and from spring 2025 the most-exposed quintile falls below, with the gap widening to about 35 log points by February 2026. This widening rests on the final ten months of data, the confidence intervals are wide, and the joint pre-trend test rejects parallel trends, so it is an emerging pattern rather than an identified effect.",
+      "page": "PDF printed p. 47 (Appendix B: Brynjolfsson et al. (2025) Replication)"
+    },
+    {
+      "id": "bg-landis-1",
+      "location": "§7",
+      "claim_text": "Such figures fall short of the 0.61–0.80 band Landis and Koch label \"substantial,\" cut-points the authors themselves call \"clearly arbitrary\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Landis_Koch_1977_Observer_Agreement_Categorical_Data.pdf",
+      "quote": "0.61-0.80 Substantial ... Although these divisions are clearly arbitrary, they do provide useful \"benchmarks\" for the discussion of the specific example in Table 1.",
+      "page": "p.165"
+    },
+    {
+      "id": "bg-hullermeier-1",
+      "location": "§7",
+      "claim_text": "what Hüllermeier and Waegeman call aleatoric uncertainty, \"the irreducible part of the uncertainty\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Hullermeier_Waegeman_2021_Aleatoric_Epistemic_Uncertainty_ML.pdf",
+      "quote": "Aleatoric uncertainty refers to the irreducible part of the uncertainty, which is due to the non-deterministic nature of the sought input/output dependency",
+      "page": "PDF p.8 (§2.3 \"Reducible versus irreducible uncertainty\")"
+    },
+    {
+      "id": "bg-hullermeier-2",
+      "location": "§7",
+      "claim_text": "The same authors caution that the aleatoric/epistemic split is \"context-dependent\" and \"should not be seen as absolute\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Hullermeier_Waegeman_2021_Aleatoric_Epistemic_Uncertainty_ML.pdf",
+      "quote": "What this example shows is that aleatoric and epistemic uncertainty should not be seen as absolute notions. Instead, they are context-dependent in the sense of depending on the setting (X , Y, H, P ).",
+      "page": "PDF p.9"
+    },
+    {
+      "id": "bg-willingham-1",
+      "location": "§4",
+      "claim_text": "concludes that \"it also makes no sense to try to teach critical thinking devoid of factual content.\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Willingham_2007_Critical_Thinking_Why_So_Hard_to_Teach.pdf",
+      "quote": "Just as it makes no sense to try to teach factual content without giving students opportunities to practice using it, it also makes no sense to try to teach critical thinking devoid of factual content.",
+      "page": "PDF p.10 (printed page, 'AMERICAN EDUCATOR' footer)"
+    },
+    {
+      "id": "bg-brynjolfsson-1",
+      "location": "§16",
+      "claim_text": "Codified knowledge overlaps heavily with education",
+      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
+      "quote": "The codified-knowledge gradient is not significant when controlling for college share quintile, demonstrating its overlap with education. The tacit-knowledge gradient for experienced workers, by contrast, survives this control.",
+      "page": "PDF p.21, footnote 21"
+    },
+    {
+      "id": "bg-veenman-1",
+      "location": "§4 caveats",
+      "claim_text": "whether metacognitive skill is general or domain-specific is still unresolved (studies across tasks and domains \"yielded inconclusive results\"); most students \"spontaneously pick up\" some of it, and explicit instruction, best embedded in the content matter, is of particular value to those who do not",
+      "held_file": "ai_career:future_of_gc/load_bearing/Veenman_etal_2006_Metacognition_and_Learning.pdf",
+      "quote": "So far, studies with multiple tasks or domains yielded inconclusive results.",
+      "page": "7 (inconclusive results); 9 (spontaneous pick-up / embedding principle)"
+    },
+    {
+      "id": "bg-chin-1",
+      "location": "§16",
+      "claim_text": "16.8% of all work-related messages — roughly 44% of the occupation-specific ones, once the 61.5% that is generic work like drafting email is set aside — concern tasks historically belonging to another occupation",
+      "held_file": "pdfs:openai-2026-work-at-the-frontier.pdf",
+      "quote": "In this random sample of work-related messages: • 16.8 percent of messages are classified as Cross-occupation... • and 61.5 percent are classified as Generic... Among non-generic messages, 43.5 percent are cross-occupation.",
+      "page": "printed p.03 (Fig. 1/2 panel); 16.8%/43.5% headline also stated on printed p.01 (Key takeaways #02) and p.02 (Introduction)"
+    },
+    {
+      "id": "bg-frank-1",
+      "location": "§16",
+      "claim_text": "a salary-based comparison moved the same way after 2022, which the authors read as \"a broader early-career tightening that is not specific to LLM-exposed workers.\"",
+      "held_file": "pdfs:frank-2026-ai-exposed-curricula.pdf",
+      "quote": "But the salary-based analysis moves in the same direction post-2022, suggesting a broader early-career tightening that is not specific to LLM-exposed workers.",
+      "page": "PDF p. 7"
+    },
+    {
+      "id": "bg-frank-2",
+      "location": "§16",
+      "claim_text": "That timing fits the 2022 tech and interest-rate downturn as well as AI (Frank et al., 2026)",
+      "held_file": "pdfs:frank-2026-ai-exposed-curricula.pdf",
+      "quote": "other macroeconomic and sector-specific forces were already shifting in early 2022 contributing to weakening outcomes in the same AI-exposed occupations. For example, monetary tightening accelerated through 2022–2023 (9) and may have impacted job stability (10). Also, job postings for software developers declined markedly over 2022–2023 (11) perhaps as a correction to increased hiring during pandemic years (12).",
+      "page": "PDF p. 2"
+    },
+    {
+      "id": "bg-eloundou-1",
+      "location": "§16",
+      "claim_text": "GPT-4-rated task exposure from Eloundou et al. (2024), who collected human ratings in parallel and caution that \"none should be considered the definitive ground truth\"",
+      "held_file": "ai_career:eloundou-2024-gpts-are-gpts-arxiv.pdf",
+      "quote": "As a result, we use multiple annotation sources, but none should be considered the definitive ground truth relative to the others.",
+      "page": "PDF p.9 (no printed page number on the page itself; §3.4.2 'Measuring LLMs with GPT-4', 9th physical page of the PDF)"
+    },
+    {
+      "id": "bg-sinha-1",
+      "location": "§4 caveats",
+      "claim_text": "the productive-failure evidence base is concentrated in mathematics and physics: nearly 75% of the comparisons in the 2021 meta-analysis, whose authors say more studies are needed in other STEM and non-STEM domains \"before we can generalize the effectiveness of PS-I\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sinha_Kapur_2021_Problem_Solving_Followed_by_Instruction.pdf",
+      "quote": "First, nearly 75% of all included comparisons (see Table 1) targeted learning concepts of math and physics, which were, in turn, skewed with particular subtopics (e.g., variance). ... Clearly, more studies are also needed in other STEM domains as well as in non-STEM domains (e.g., psychology, arts, history) before we can generalize the effectiveness of PS-I, even with high PF fidelity.",
+      "page": "788"
+    },
+    {
+      "id": "bg-lee-1",
+      "location": "§16",
+      "claim_text": "the authors report \"a shift in cognitive effort as knowledge workers increasingly move from task execution to oversight when using GenAI\"",
+      "held_file": "pdfs:lee-2025-critical-thinking.pdf",
+      "quote": "The data shows a shift in cognitive effort as knowledge workers increasingly move from task execution to oversight when using GenAI.",
+      "page": "PDF p.2 (no printed page numbers in this CHI proceedings draft)"
+    },
+    {
+      "id": "bg-lee-2",
+      "location": "§17 refs",
+      "claim_text": "Lee, H.-P., Sarkar, A., Tankelevitch, L., Drosos, I., Rintel, S., Banks, R., & Wilson, N. (2025). The Impact of Generative AI on Critical Thinking: Self-Reported Reductions in Cognitive Effort and Confidence Effects From a Survey of Knowledge Workers. CHI Conference on Human Factors in Computing Systems (CHI '25).",
+      "held_file": "pdfs:lee-2025-critical-thinking.pdf",
+      "quote": "The Impact of Generative AI on Critical Thinking: Self-Reported Reductions in Cognitive Effort and Confidence Effects From a Survey of Knowledge Workers ... CHI Conference on Human Factors in Computing Systems (CHI '25)",
+      "page": "PDF p.1 (title/author block)"
+    },
+    {
+      "id": "bg-lee-3",
+      "location": "§17 refs",
+      "claim_text": "effort shifts \"from task execution to oversight.\"",
+      "held_file": "pdfs:lee-2025-critical-thinking.pdf",
+      "quote": "from task execution to oversight",
+      "page": "PDF p.2"
+    },
+    {
+      "id": "bg-salomon1989-1",
+      "location": "§4",
+      "claim_text": "caution that transfer does not follow on its own: a teacher \"uninformed about the difficulties of transfer\" \"might presume that students would spontaneously make some illuminating connections and might be puzzled when, for the most part, they do not\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Salomon_Perkins_1989_Rocky_Roads_to_Transfer.pdf",
+      "quote": "Imagine, for example, a history teacher wanting his or her students to develop a historical perspective on contemporary events. Uninformed about the difficulties of transfer, the history teacher might presume that students would spontaneously make some illuminating connections and might be puzzled when, for the most part, they do not.",
+      "page": "136"
+    },
+    {
+      "id": "bg-salomon1989-2",
+      "location": "§17 refs",
+      "claim_text": "far transfer is not an automatic byproduct of good teaching.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Salomon_Perkins_1989_Rocky_Roads_to_Transfer.pdf",
+      "quote": "Findings of transfer or nontransfer reflect whether the conditions for either low-road or high-road transfer were met.",
+      "page": "113 (abstract); 136"
+    },
+    {
+      "id": "bg-kohli-1",
+      "location": "§7",
+      "claim_text": "a nine-model panel behaves like roughly two independent votes, and the single best judge matches or beats the full panel (Kohli, 2026)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kohli_2025_Nine_Judges_Two_Effective_Votes.pdf",
+      "quote": "Testing a panel of 9 frontier LLMs from 7 model families on three natural language inference datasets ... we find that the 9 judges effectively provide only about 2 independent votes' worth of information. ... the best single judge matches or outperforms the full panel across all conditions.",
+      "page": "p.1 (abstract)"
+    },
+    {
+      "id": "bg-kapur2016-1",
+      "location": "§4",
+      "claim_text": "unguided problem-solving with no later consolidation is the design that, in his words, can \"maximize neither performance nor learning,\" and he cites agreement across camps that unguided discovery \"often leads to dismal learning outcomes.\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
+      "quote": "there is the possibility of designing conditions that maximize neither performance nor learning in the short or long terms. I refer to such design efforts as unproductive failure. A well-studied example of unproductive failure is pure discovery learning, where students are expected to learn (or discover) the targeted concepts by engaging in solving problems without any guidance or support whatsoever. ... There is consensus among instructivists (e.g., Kirschner, Sweller, & Clark, 2006) and constructivists (e.g., Hmelo-Silver, Duncan, & Chinn, 2007) that unguided problem solving or discovery learning often leads to dismal learning outcomes.",
+      "page": "290"
+    },
+    {
+      "id": "bg-kapur2016-2",
+      "location": "§4 Fig.1 caption",
+      "claim_text": "Kapur's four design possibilities: productive/unproductive × failure/success (Kapur, 2016) ... Kapur treats productive success as a second route and says \"it is not clear if one is better than the other.\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
+      "quote": "Exploiting the incommensurability between learning and performance results in four possibilities for design: ... productive success, productive failure, unproductive success, and unproductive failure. ... Even though both productive failure and productive success can lead to productive learning outcomes, it is not clear if one is better than the other.",
+      "page": "289, 294"
+    },
+    {
+      "id": "bg-kapur2016-3",
+      "location": "§4 Fig.1 caption",
+      "claim_text": "Unproductive success is the trap a depth-only reading misses: high performance with what Kapur calls \"an illusion of learning.\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
+      "quote": "In other words, there is an illusion of learning in initial high performance. I refer to such design efforts as unproductive success.",
+      "page": "290"
+    },
+    {
+      "id": "bg-skill2vec-1",
+      "location": "§11",
+      "claim_text": "the Skill2vec approach (Le, Vo, & Dang, 2017) that learns skill vectors from skills that co-occur in the same job posting",
+      "held_file": "pdfs:le-2017-skill2vec.pdf",
+      "quote": "In this study, with the documents contain only the skills, we chose the maximum window size, implied that every skills in the same job description are related to each other.",
+      "page": "PDF p.2"
+    },
+    {
+      "id": "bg-abrami-1",
+      "location": "§4",
+      "claim_text": "A large meta-analysis of critical-thinking instruction (341 effect sizes on generic critical-thinking skills)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Abrami_etal_2015_Teaching_Critical_Thinking_Meta-Analysis.pdf",
+      "quote": "Generic CT Skills 341 0.30 Lowb (0.20 to <0.50) 11.79% Yes",
+      "page": "301 (Table 9); also stated in the abstract, p.275 ('The review includes 341 effects sizes...')"
+    },
+    {
+      "id": "bg-abrami-2",
+      "location": "§4",
+      "claim_text": "the promising instructional ingredients it identifies are discussion, authentic situations, and mentorship",
+      "held_file": "ai_career:future_of_gc/load_bearing/Abrami_etal_2015_Teaching_Critical_Thinking_Meta-Analysis.pdf",
+      "quote": "The techniques that we have identified as being promising (i.e., discussion, authentic situations, mentorship) are not an exhaustive list of promising ingredients, but they are a useful starting point...",
+      "page": "303-304 (sentence begins p.303, concludes p.304)"
+    },
+    {
+      "id": "bg-abrami-3",
+      "location": "§4",
+      "claim_text": "It does not show that standalone instruction fails: the four course types it compared (general, infusion, immersion, and mixed) all produced positive effects and did not differ significantly from one another (p = .25).",
+      "held_file": "ai_career:future_of_gc/load_bearing/Abrami_etal_2015_Teaching_Critical_Thinking_Meta-Analysis.pdf",
+      "quote": "All four of the methods in Table 4, coded according to Ennis's (1989) classification, produced significantly positive average effect sizes, but the categories did not differ from one another.",
+      "page": "297 (text); Table 4 itself on p.297; the 'general' course-type name is from the narrative description on p.288 ('In the general course, CT skills and dispositions are learning objectives...')"
+    },
+    {
+      "id": "bg-dearden-1",
+      "location": "§11",
+      "claim_text": "the UK's National Vocational Qualifications (first awarded in 1988)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Dearden_etal_2004_Returns_to_NVQ_Level2_(CEE_DP46).pdf",
+      "quote": "The first NVQ was awarded in 1988 (DFES 2003).",
+      "page": "p.1"
+    },
+    {
+      "id": "bg-dearden-2",
+      "location": "§3 table",
+      "claim_text": "UK NVQ Level 2 delivered poor-to-negative wage returns on its classroom route",
+      "held_file": "ai_career:future_of_gc/load_bearing/Dearden_etal_2004_Returns_to_NVQ_Level2_(CEE_DP46).pdf",
+      "quote": "Returns for NVQs taken at college are zero for women, but large and negative for men.",
+      "page": "p.11 (narrative); Tables 24-25 on pp.42-43"
+    },
+    {
+      "id": "bg-xu2026-1",
+      "location": "§7",
+      "claim_text": "two of the three competency frameworks were unreliable to score at first — agreement between the two trained annotators started at a Cohen's κ of 0.29 and 0.17 on the O*NET and ESDC frameworks (against 0.84 on the third)",
+      "held_file": "pdfs:xu-2026-21c-competencies.pdf",
+      "quote": "The two annotators achieve a Cohen's κ of 0.841 in the framework of EU (Key Competences), a κ of 0.288 in the framework of O*NET (Workforce Competencies), and a κ of 0.168 in the framework of ESDC (Success Model).",
+      "page": "PDF p.7"
+    },
+    {
+      "id": "bg-xu2026-2",
+      "location": "§7",
+      "claim_text": "the coding guidelines spelled out that competencies \"clearly outside the instructional scope\" were coded 0 while \"potentially relevant competencies lacking sufficient textual evidence\" were coded NA, after which agreement rose to κ = 0.94 and 0.92",
+      "held_file": "pdfs:xu-2026-21c-competencies.pdf",
+      "quote": "We therefore refine the coding guidelines to explicitly incorporate course context: competencies clearly outside the instructional scope were coded as 0, whereas potentially relevant competencies lacking sufficient textual evidence were coded as NA. ... The final inter-rater reliability on these two frameworks is κ = 0.94 in O*NET (Workforce Competencies), and κ = 0.92 in ESDC (Success Model).",
+      "page": "PDF p.7"
+    },
+    {
+      "id": "bg-xu2026-3",
+      "location": "§7",
+      "claim_text": "Xu et al.'s rule was about whether course context should inform the inference ... a clear rule about missing evidence resolved most of the disagreement",
+      "held_file": "pdfs:xu-2026-21c-competencies.pdf",
+      "quote": "Follow-up discussions reveal that most disagreements stem from differing interpretations of whether course context (e.g., subject matter and course type) should inform competency inference, leading to confusion between codes 0 (clearly irrelevant) and NA (insufficient information).",
+      "page": "PDF p.7"
+    },
+    {
+      "id": "bg-xu2026-4",
+      "location": "§7",
+      "claim_text": "one of the two main error sources the authors identify is \"systematic over-interpretation of instructional keywords\" (the abstract's \"instructional keyword inference\")",
+      "held_file": "pdfs:xu-2026-21c-competencies.pdf",
+      "quote": "We identify two primary sources of error: systematic over-interpretation of instructional keywords and difficulty identifying relevant pedagogical evidence in long, unstructured texts.",
+      "page": "PDF p.22 (Conclusion); abstract phrasing \"reducing bias in instructional keyword inference\" on PDF p.1"
+    },
+    {
+      "id": "bg-xu2026-5",
+      "location": "§17 refs",
+      "claim_text": "Preprint; its first page states it is \"due to appear in\" the Journal of Learning Analytics (Special Section on Advancing 21st-century Professional Competencies with Learning Analytics in the Age of Generative AI). arXiv:2601.10983.",
+      "held_file": "pdfs:xu-2026-21c-competencies.pdf",
+      "quote": "Due to appear in Journal of Learning Analytics Special Section on Advancing 21st-century Professional Competencies with Learning Analytics in the Age of Generative AI ... arXiv:2601.10983v1 [cs.CY] 16 Jan 2026",
+      "page": "PDF p.1"
+    },
+    {
+      "id": "bg-xu2026-6",
+      "location": "§11",
+      "claim_text": "Xu et al. (2026) found that adding human-defined competency descriptions to LLM prompts \"does not improve LLM performance\"",
+      "held_file": "pdfs:xu-2026-21c-competencies.pdf",
+      "quote": "Interestingly, incorporating human-defined competency descriptions into prompts does not improve LLM performance.",
+      "page": "PDF p.21"
+    },
+    {
+      "id": "bg-xu2026-7",
+      "location": "§7 / §11",
+      "claim_text": "the closest study of LLM curriculum scoring traces much of the models' error to causes that could be reduced, such as over-reading instructional keywords",
+      "held_file": "pdfs:xu-2026-21c-competencies.pdf",
+      "quote": "We further identify two main sources of model error. First, when analyzing abstract course data, LLMs tend to over-infer or hallucinate based on some keywords (e.g., assuming any “final exam” implies writing comprehension), likely due to patterns learned from historical training data. Second, when processing long and unstructured course text, models often fail to locate the precise pedagogical evidence needed for accurate inference. ... Our results show that the CoT-based approach yields modest performance gains, particularly for more advanced models.",
+      "page": "PDF p.21"
+    },
+    {
+      "id": "bg-xu2026-8",
+      "location": "§7",
+      "claim_text": "In the Xu et al. study, the two trained annotators began at κ = 0.29 and 0.17 on two of the three frameworks",
+      "held_file": "pdfs:xu-2026-21c-competencies.pdf",
+      "quote": "a κ of 0.288 in the framework of O*NET (Workforce Competencies), and a κ of 0.168 in the framework of ESDC (Success Model)",
+      "page": "PDF p.7"
+    },
+    {
+      "id": "bg-kapur2023-1",
+      "location": "§4 caveats",
+      "claim_text": "In one pair of studies, students from a high- and a medium-achieving school both learned from productive failure, and the variety of student-generated solutions (inventive production) was a stronger predictor of learning than prior math achievement",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
+      "quote": "Second, we found that the association between inventive production and learning from PF was much stronger than that of pre-existing differences in prior math achievement in both topics. ... The study contrasted high- and medium-level schools related to students' prior math achievement",
+      "page": "5"
+    },
+    {
+      "id": "bg-kapur2023-2",
+      "location": "§4 caveats",
+      "claim_text": "The two schools had similar topic-specific prerequisite knowledge, so the study does not show what happens without it, and the authors caution that the findings \"may not extend to the lower end of the spectrum.\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
+      "quote": "It is important to notice that in both studies, both schools had similar high scores in the topic-specific pre-tests ... These results indicate that both schools have similar relevant topic-specific prerequisite knowledge of the target concepts. ... The study contrasted high- and medium-level schools related to students' prior math achievement and thus may not extend to the lower end of the spectrum or to other topics.",
+      "page": "3, 5"
+    },
+    {
+      "id": "bg-kapur2023-3",
+      "location": "§17 refs",
+      "claim_text": "Students from schools with very different prior math achievement differed much less in inventive production (ratios study: PSLE math grade d = 2.12 against inventive production d = 0.48; variance study: d = 1.23 against d = 0.03).",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
+      "quote": "students from School A achieved significantly higher PSLE scores, F(1, 110) = 464.42, p < 0.001, d = 5.34, and PSLE math grade, F(1, 110) = 110.44, p < 0.001, d = 2.12. ... PSLE math grade, F(1, 103) = 35.47, p < 0.001, d = 1.23. ... for school A: M = 6.83, SD = 1.44, for school B: M = 6.16, SD = 1.38, F(1, 110) = 5.669, p = 0.019, d = 0.48. ... for school A: M = 5.23, SD = 1.50, for school B: M = 5.19, SD = 1.49, F(1, 103) = 0.015, p = 0.903, d = 0.03.",
+      "page": "3, 4"
+    },
+    {
+      "id": "bg-arthur-1",
+      "location": "§17 refs",
+      "claim_text": "across all task types, loss ranges from d = −0.01 immediately after training to d = −1.4 after more than 365 days of non-use (abstract); cognitive tasks decayed more than physical ones (δ = −1.15 vs. −0.75, across all intervals).",
+      "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
+      "quote": "the amount of skill loss ranging from an effect size (d) of -0.01 immediately after training to a d of -1.4 after more than 365 days of nonuse",
+      "page": "57 (abstract); 78 (Table 4)"
+    },
+    {
+      "id": "bg-murre-1",
+      "location": "§6",
+      "claim_text": "Replicating Ebbinghaus, Murre and Dros found that the forgetting curve \"is not completely smooth but most probably shows a jump upwards starting at the 24 hour data point,\" and several candidate equations fit the data with only small differences",
+      "held_file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf",
+      "quote": "We conclude that the Ebbinghaus forgetting curve has indeed been replicated and that it is not completely smooth but most probably shows a jump upwards starting at the 24 hour data point.",
+      "page": "1/23 (abstract)"
+    },
+    {
+      "id": "bg-murre-2",
+      "location": "§17 refs",
+      "claim_text": "Single-subject replication measuring savings",
+      "held_file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf",
+      "quote": "One subject spent 70 hours learning lists and relearning them... based on the method of savings.",
+      "page": "1/23 (savings method); 2/23 (explicit 'single-subject design')"
+    },
+    {
+      "id": "bg-ajtf-1",
+      "location": "§17 refs",
+      "claim_text": "Covers \"more than 900 occupations covering over 150 million jobs\"",
+      "held_file": "pdfs:openai-2026-ai-jobs-transition-framework.pdf",
+      "quote": "Across more than 900 occupations covering over 150 million jobs, we show that these factors produce a sharper picture of where AI may affect jobs first in the short run.",
+      "page": "PDF printed p. 4 (Introduction)"
+    },
+    {
+      "id": "bg-kapur2008-1",
+      "location": "§17 refs",
+      "claim_text": "The original productive-failure study: students who worked in groups on ill-structured problems outperformed peers who worked on well-structured problems, on later individual well- and ill-structured tests. The design had no direct-instruction control and no instruction phase.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2008_Productive_Failure.pdf",
+      "quote": "In one condition, students solved ill-structured problems in groups followed by well-structured problems individually. In the other condition, students solved well-structured problems in small groups followed by well-structured problems individually. Finally, all students solved ill-structured problems individually. ... However, despite failing in their collaborative efforts, these students outperformed their counterparts in the well-structured condition on individual near- and far-transfer measures subsequently",
+      "page": "379"
+    },
+    {
+      "id": "bg-nrc-1",
+      "location": "§11",
+      "claim_text": "whereas the Abilities descriptors \"reflect a long history of psychological research,\" \"many of the descriptors in the Skills domain lack such an extensive research base,\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf",
+      "quote": "the descriptors reflect a long history of psychological research on the nature and measurement of human abilities, but many of the descriptors in the Skills domain lack such an extensive research base.",
+      "page": "p.42"
+    },
+    {
+      "id": "bg-nrc-2",
+      "location": "§11",
+      "claim_text": "descriptors overlap across domains without clear distinctions (the review's example: \"problem solving\" appears in the Abilities, Skills, Work Styles, and Generalized Work Activities domains, and the content model \"does not clearly distinguish the different meanings\")",
+      "held_file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf",
+      "quote": "“Problem solving” appears in the Abilities, Skills, Work Styles, and GWA domains. Although there may legitimately be both a problem-solving Ability and a problem-solving Skill, the content model does not clearly distinguish the different meanings of problem solving in these two different domains.",
+      "page": "p.42"
+    },
+    {
+      "id": "bg-dellacqua-1",
+      "location": "§16",
+      "claim_text": "participants using AI were 9.2 percentage points less likely to expect their solution to rank in the top 10%, which the authors read as \"a disconnect between actual and perceived performance.\"",
+      "held_file": "pdfs:dellacqua-2025-cybernetic-teammate.pdf",
+      "quote": "As shown in Figure 10, AI-enabled participants were 9.2 percentage points less likely to expect their solutions to rank in the top 10% compared to the control group (p < 0.05), suggesting a disconnect between actual and perceived performance.",
+      "page": "p.18"
+    },
+    {
+      "id": "bg-dellacqua-2",
+      "location": "§16 hypothesis box",
+      "claim_text": "Dell'Acqua et al. show that AI raised output quality, that AI \"can effectively substitute for the expertise and guidance typically provided by team members that are familiar with the task at hand,\" and that AI users under-rated their own output.",
+      "held_file": "pdfs:dellacqua-2025-cybernetic-teammate.pdf",
+      "quote": "This suggests that AI can effectively substitute for the expertise and guidance typically provided by team members that are familiar with the task at hand.",
+      "page": "p.15"
+    },
+    {
+      "id": "bg-schoenfeld-1",
+      "location": "§4 caveats",
+      "claim_text": "in mathematics, metacognition instruction \"is most effective when it takes place in a domain specific context\" (Schoenfeld, 1992)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Schoenfeld_1992_Learning_to_Think_Mathematically.pdf",
+      "quote": "Metacognition instruction is most effective when it takes place in a domain specific context.",
+      "page": "66"
+    },
+    {
+      "id": "bg-gentner-1",
+      "location": "§4",
+      "claim_text": "The comparison effect was replicated with undergraduates learning negotiation strategies, where comparing two cases gave a \"two-fold transfer advantage\" (Gentner, Loewenstein, & Thompson, 2003); the same authors report earlier studies with experienced learners such as MBA students, consultants and managers.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gentner_Loewenstein_Thompson_2003_Analogical_Encoding.pdf",
+      "quote": "In sum, the comparison group showed a two-fold transfer advantage over the separate-cases group.",
+      "page": "400 (two-fold quote, Experiment 2 — 128 undergraduates); 395 (MBA/consultants/managers passage)"
+    },
+    {
+      "id": "bg-kim-1",
+      "location": "§17 refs",
+      "claim_text": "Across >350 models, LLM errors are correlated — more so for models sharing a developer or architecture ... (Kim et al. do not test judge panels; the panel result is Kohli, 2026.)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kim_etal_2025_Correlated_Errors_in_LLMs.pdf",
+      "quote": "We conduct a large-scale empirical evaluation on over 350 LLMs overall, using two popular leaderboards and a resume-screening task.",
+      "page": "p.1"
+    },
+    {
+      "id": "bg-barnett-1",
+      "location": "§4",
+      "claim_text": "a far-transfer taxonomy explains why distant transfer is rare (Barnett & Ceci, 2002)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Barnett_Ceci_2002_When_and_Where_Far_Transfer.pdf",
+      "quote": "In this review, we have tried to make the case that transfer is indeed a salvageable concept and that instances of far transfer, although not frequent, are documentable and may even be predictable once the relevant dimensions are specified.",
+      "page": "634 (Concluding Comments)"
+    },
+    {
+      "id": "bg-barnett-2",
+      "location": "§17 refs",
+      "claim_text": "Maps the content/context dimensions far transfer must bridge and why distant transfer is rarely demonstrated.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Barnett_Ceci_2002_When_and_Where_Far_Transfer.pdf",
+      "quote": "the characteristics of transfer can be thought of as breaking down into two overall factors: the content-that is, what is transferred, and the context-that is, when and where it is transferred from and to (see Figure 1).",
+      "page": "621 (Content: What Is Transferred / Figure 1, 'Taxonomy for far transfer')"
+    },
+    {
+      "id": "bg-bjork-1",
+      "location": "§4",
+      "claim_text": "Spaced practice, interleaving, retrieval testing, reduced feedback — all degrade in-the-moment performance and all dramatically improve learning that lasts.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
+      "quote": "In general, compared to distributing practice sessions on a given task over time, massing practice or study sessions on to-be-learned procedures or information produces better short-term performance or recall of that procedure or information, but markedly inferior long-term performance or recall.",
+      "page": "190 (PDF p.4)"
+    },
+    {
+      "id": "bg-bransford-1",
+      "location": "§4 What transfers",
+      "claim_text": "\"preparation for future learning\" reframes the usual transfer test: rather than dropping a person into a new domain to see whether prior skill fires unaided, measure how fast they learn the new domain (Bransford & Schwartz, 1999)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf",
+      "quote": "preparation for future learning",
+      "page": 68
+    },
+    {
+      "id": "bg-bransford-2",
+      "location": "§4",
+      "claim_text": "Deep prior problem-solving shows up clearly on that test: prepared learners extract more from each new learning opportunity.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf",
+      "quote": "Data strongly supported the assumption that contrasting cases better prepared students for future learning (see Figure 8)... The act of analyzing the cases prepared the students to learn from the lecture-it created a set of experiences that enriched subsequent learning.",
+      "page": 77
+    },
+    {
+      "id": "bg-ericsson-1",
+      "location": "§4 caveats",
+      "claim_text": "The framework's claim ... is theoretically coherent and consistent with the deliberate-practice literature (Ericsson, Krampe, & Tesch-Römer, 1993)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Ericsson_Krampe_Tesch-Romer_1993_Deliberate_Practice.pdf",
+      "quote": "The theoretical framework presented in this article explains expert performance as the end result of individuals' prolonged efforts to improve performance while negotiating motivational and external constraints. In most domains of expertise, individuals begin in their childhood a regimen of effortful activities (deliberate practice) designed to optimize improvement.",
+      "page": "363 (printed; abstract)"
+    },
+    {
+      "id": "bg-gick-1",
+      "location": "§4 / Fig.2",
+      "claim_text": "transfer from a single case is poor — about a 10% base rate",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1983_Schema_Induction_and_Analogical_Transfer.pdf",
+      "quote": "about 75% of those subjects who received the appropriate military analog produced the convergence solution to the radiation problem, as compared to less than 10% of control subjects who did not receive the analogy.",
+      "page": "1983, p.4"
+    },
+    {
+      "id": "bg-gick-2",
+      "location": "§4 / Fig.2",
+      "claim_text": "rising only to ~20–30% when learners must spontaneously notice the analogy unaided ; Fig.2 bar labeled ~30%",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1983_Schema_Induction_and_Analogical_Transfer.pdf",
+      "quote": "Under these conditions only about 30% of our subjects produced the convergence solution, as opposed to about 75% who produced it when a hint was given.",
+      "page": "1983, p.4"
+    },
+    {
+      "id": "bg-gick-3",
+      "location": "§4 / Fig.2",
+      "claim_text": "an explicit hint lifts single-case transfer far higher, to ~75–90%",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1980_Analogical_Problem_Solving.pdf",
+      "quote": "For the Hint condition, 11 out of 12 subjects (92%) produced the complete dispersion solution.",
+      "page": "1980, p.342"
+    },
+    {
+      "id": "bg-gick-4",
+      "location": "§4 / Fig.2",
+      "claim_text": "comparing two surface-different cases to extract the shared principle roughly doubles spontaneous transfer, to ~45–50% (Gick & Holyoak, 1980, 1983); Fig.2 bar ~50%",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1983_Schema_Induction_and_Analogical_Transfer.pdf",
+      "quote": "Forty-five percent of subjects in the two-analog conditions generated the convergence solution prior to the hint, as opposed to only 21% of subjects in the one-analog condition",
+      "page": "1983, p.23 (Experiment 4)"
+    },
+    {
+      "id": "bg-gonczi-1",
+      "location": "§11",
+      "claim_text": "Gonczi's distinction (Gonczi, 1994) between behaviourist skill-decomposition and integrated competence",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gonczi_1994_Competency_Based_Assessment_Professions_Australia.pdf",
+      "quote": "The first and probably the most widely held conception of the nature of competence is task-based or behaviourist. In it, competence is conceived of in terms of the discrete behaviours associated with the completion of atomised tasks.",
+      "page": "28"
+    },
+    {
+      "id": "bg-gonczi-2",
+      "location": "§17 refs",
+      "claim_text": "Argues that an integrated (holistic) conception of competence — not an atomized behaviourist task-list — is the only defensible basis for assessing professional competence.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gonczi_1994_Competency_Based_Assessment_Professions_Australia.pdf",
+      "quote": "Clearly this approach is inappropriate for conceptualising professional work and there are very serious doubts about its relevance to work at any level.",
+      "page": "29"
+    },
+    {
+      "id": "bg-gonczi-3",
+      "location": "§3 table",
+      "claim_text": "Atomizing competence into an external checklist optimizes for adequacy over integration (Gonczi, 1994; Brockmann, Clarke, & Winch, 2008)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gonczi_1994_Competency_Based_Assessment_Professions_Australia.pdf",
+      "quote": "Its aim is transparent specification of competencies such that there can be no disagreement about what constitutes satisfactory performance... This approach is not concerned with the connections between the tasks and ignores the possibility that the coming together of tasks could lead to their transformation. (The whole is not greater than the sum of the parts.)",
+      "page": "28"
+    },
+    {
+      "id": "bg-hosseini-1",
+      "location": "§16",
+      "claim_text": "an adoption-based design, which observes which firms actually integrate generative AI rather than assigning an exposure score",
+      "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
+      "quote": "Our contribution to this literature is to move beyond occupation-level exposure indices and provide broad-based evidence using a more direct measure of firm-level adoption, identified through postings for explicit \"GenAI integrator\" roles. Moreover, unlike exposure-based measures, our adoption measure varies over time, allowing us to exploit variation in adoption timing with an event-study design.",
+      "page": "11"
+    },
+    {
+      "id": "bg-hosseini-2",
+      "location": "§16",
+      "claim_text": "finds junior employment at adopting firms about 9% below non-adopters within six quarters",
+      "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
+      "quote": "beginning in 2023Q1—coinciding with the sharp increase in GenAI adoption—junior employment in adopting firms starts to decline steeply relative to controls, declining by about 9 percent after six quarters.",
+      "page": "5"
+    },
+    {
+      "id": "bg-hosseini-3",
+      "location": "§16",
+      "claim_text": "through slower hiring rather than separations",
+      "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
+      "quote": "The decline is driven primarily by slower hiring rather than increased separations.",
+      "page": "1"
+    },
+    {
+      "id": "bg-hosseini-4",
+      "location": "§16",
+      "claim_text": "while senior employment continues its prior trend",
+      "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
+      "quote": "Senior employment, by contrast, increased more quickly in adopting firms since 2015 and showed no sign of a break in trend after 2022.",
+      "page": "5"
+    },
+    {
+      "id": "bg-hosseini-5",
+      "location": "§16",
+      "claim_text": "though the adopters are large professional-services firms",
+      "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
+      "quote": "Adopting firms are much larger, averaging about 546 employees compared to roughly 108 for non-adopters.",
+      "page": "22"
+    },
+    {
+      "id": "bg-hosseini-6",
+      "location": "§17 refs",
+      "claim_text": "Hosseini Maasoum & Lichtinger (2026). Generative AI as Seniority-Biased Technological Change: Evidence from U.S. Résumé and Job Posting Data. SSRN Working Paper 5425555 (version of 25 May 2026).",
+      "held_file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf",
+      "quote": "Generative AI as Seniority-Biased Technological Change: Evidence from U.S. Résumé and Job Posting Data ... Seyed M. Hosseini†  Guy Lichtinger‡ ... This Version: May 25, 2026 ... Latest Version: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5425555.",
+      "page": "1"
+    },
+    {
+      "id": "bg-javadian-1",
+      "location": "§11",
+      "claim_text": "computed national O*NET Detailed-Work-Activity coverage by major across roughly 3.16 million U.S. course syllabi",
+      "held_file": "pdfs:javadian-sabet-2024-course-skill-atlas.pdf",
+      "quote": "Through a research contract, we analyze one version 2.1 of the OSP data, which encompasses nearly 8 million course syllabi worldwide among which 3, 162, 747 syllabi across 62 fields of study (FOS) belong to 2, 761 colleges and universities in the United States.",
+      "page": "6"
+    },
+    {
+      "id": "bg-javadian-2",
+      "location": "§11",
+      "claim_text": "it carries the same presence-not-depth limitation as O*NET",
+      "held_file": "pdfs:javadian-sabet-2024-course-skill-atlas.pdf",
+      "quote": "Effectively, it is crucial to acknowledge that teaching does not necessarily equate to learning.",
+      "page": "19"
+    },
+    {
+      "id": "bg-lambert-1",
+      "location": "§16",
+      "claim_text": "adding remote-work exposure absorbs the AI effect in résumé and job-posting data (Lambert & Schindler, 2026)",
+      "held_file": "pdfs:lambert-schindler-2026-remote-work.pdf",
+      "quote": "Our first main result comes from a joint-treatment specification in which both exposures enter simultaneously. The WFH effects are robust, and depict a similar event-study coefficient path to the single-treatment results. By contrast, the GenAI effects attenuate heavily and often become statistically indistinguishable from zero.",
+      "page": "1 (printed page 1; PDF page 3)"
+    },
+    {
+      "id": "bg-lambert-2",
+      "location": "§17 refs",
+      "claim_text": "Lambert & Schindler (2026). The Broken Ladder: AI, Remote Work, and Early-Career Hiring. CAGE (Warwick) / CEP (LSE) Working Paper 808/2026, also SSRN 6787638 (May 2026).",
+      "held_file": "pdfs:lambert-schindler-2026-remote-work.pdf",
+      "quote": "808/2026 May 2026 ... The Broken Ladder: AI, Remote Work, and Early-Career Hiring ... Peter John Lambert, Yannick Schindler",
+      "page": "cover page (PDF page 1) and title page (PDF page 2)"
+    },
+    {
+      "id": "bg-liu-1",
+      "location": "§11",
+      "claim_text": "found data-driven clusters that strongly co-occur yet carry low intrinsic semantic similarity",
+      "held_file": "pdfs:liu-2024-cooccurrent-skills.pdf",
+      "quote": "The skill clusters also display varying levels of semantic similarity, highlighting the difference between co-occurrence in adverts and intrinsic thematic consistency.",
+      "page": "1 (abstract)"
+    },
+    {
+      "id": "bg-liu-2",
+      "location": "§11",
+      "claim_text": "co-occurrence is \"not aligned with the generic semantic understanding from language models\"",
+      "held_file": "pdfs:liu-2024-cooccurrent-skills.pdf",
+      "quote": "Therefore, the co-occurrence of these skills in job adverts is not aligned with the generic semantic understanding from language models, and could be linked to, e.g., technical content.",
+      "page": "6"
+    },
+    {
+      "id": "bg-liu-3",
+      "location": "§11",
+      "claim_text": "their clusters \"differ from expert-authored categorisations … important relationships between skills are not captured by expert assessment alone.\"",
+      "held_file": "pdfs:liu-2024-cooccurrent-skills.pdf",
+      "quote": "We also show that our data-driven clusters differ from expert-authored categorisations of skills, indicating that important relationships between skills are not captured by expert assessment alone.",
+      "page": "1 (abstract)"
+    },
+    {
+      "id": "bg-liu-4",
+      "location": "§17 refs",
+      "claim_text": "A skills network built from 65M UK job adverts (2016–2022)",
+      "held_file": "pdfs:liu-2024-cooccurrent-skills.pdf",
+      "quote": "a national level data set of 65 million job postings from the UK spanning 2016 to 2022",
+      "page": "1 (abstract)"
+    },
+    {
+      "id": "bg-macnamara-1",
+      "location": "§4 caveats",
+      "claim_text": "Macnamara and colleagues' critiques further note that practice time alone explains only a fraction of expertise variance",
+      "held_file": "ai_career:future_of_gc/load_bearing/Macnamara_Hambrick_Oswald_2014_Deliberate_Practice_Meta-Analysis.pdf",
+      "quote": "The results of this meta-analysis do not support these strong claims. Regardless of domain, a large amount of variance in performance is not explained by deliberate practice and is potentially explainable by other factors. We conclude that amount of deliberate practice—although unquestionably important as a predictor of individual differences in performance from both a statistical and a practical perspective—is not as important as Ericsson and his colleagues have argued.",
+      "page": "8 (printed)"
+    },
+    {
+      "id": "bg-macnamara-2",
+      "location": "§17 refs",
+      "claim_text": "practice time alone explains only ~12% of expertise variance across domains",
+      "held_file": "ai_career:future_of_gc/load_bearing/Macnamara_Hambrick_Oswald_2014_Deliberate_Practice_Meta-Analysis.pdf",
+      "quote": "The meta-analytic average correlation between deliberate practice and performance was .35, 95% confidence interval (CI) = [.30, .39], which indicates that deliberate practice explained 12% of the variance in performance, 95% CI = [9%, 15%]; thus, 88% of the variance was unexplained.",
+      "page": "5 (printed)"
+    },
+    {
+      "id": "bg-musazade-1",
+      "location": "§11 / refs",
+      "claim_text": "benchmarked curriculum-to-competency matching is now an active task (UniSkill (Musazade et al., 2026)); a benchmarked curriculum-to-competency matching dataset",
+      "held_file": "pdfs:musazade-2026-uniskill.pdf",
+      "quote": "UniSkill: A Dataset for Matching University Curricula to Professional Competencies ... We train language models on this dataset to serve as a baseline for retrieval and recommendation systems for course-to-skill and skill-to-course matching. We evaluate the models on a portion of the annotated data. Our BERT model achieves 87% F1-score, showing that course and skill matching is a feasible task.",
+      "page": "PDF p.1 (title; Abstract) — paper has no printed page numbers (ACL-style arXiv template)"
+    },
+    {
+      "id": "bg-nisbett-1",
+      "location": "§4 caveats",
+      "claim_text": "Introspective reports of one's own reasoning are reconstructed after the fact, not read off directly (Nisbett & Wilson, 1977)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Nisbett_Wilson_1977_Telling_More_Than_We_Can_Know.pdf",
+      "quote": "When reporting on the effects of stimuli, people may not interrogate a memory of the cognitive processes that operated on the stimuli; instead, they may base their reports on implicit, a priori theories about the causal connection between stimulus and response.",
+      "page": 233
+    },
+    {
+      "id": "bg-perkins1992-1",
+      "location": "§17 refs",
+      "claim_text": "Distinguishes low-road (near, automatic) from high-road (far, deliberate-abstraction) transfer; establishes that far transfer requires explicit scaffolding.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "Low road transfer happens when stimulus conditions in the transfer context are sufficiently similar to those in a prior context of learning to trigger well-developed semi-automatic responses... High road transfer, in contrast, depends on mindful abstraction from the context of learning or application and a deliberate search for connections... It can easily accomplish far transfer, bridging between contexts as remote as arteries and electrical networks or strategies of chess play and politics.",
+      "page": "7 of 11"
+    },
+    {
+      "id": "bg-perkins1992-2",
+      "location": "§11",
+      "claim_text": "O*NET generic skills ... are rejected by the same authorities §4 already cites (Willingham; Perkins & Salomon; Gick & Holyoak)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "A strong local knowledge position would predict little far transfer under any conditions, because knowledge in one context would not be very relevant to others. However, the research on expertise does not really force such a position: The importance of local knowledge does not imply the unimportance of rather general knowledge that works together with local knowledge (Perkins and Salomon 1989)... In sum, a monolithic local knowledge position is difficult to sustain.",
+      "page": "5 of 11 (§3, Transfer and Local Knowledge)"
+    },
+    {
+      "id": "bg-sala2019-1",
+      "location": "§4 / refs",
+      "claim_text": "Meta-analysis of meta-analyses: the far-transfer effect is near zero after bias correction (Sala et al., 2019)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sala_etal_2019_Near_and_Far_Transfer_Meta-Analysis.pdf",
+      "quote": "once publication bias and placebo effects are ruled out, far-transfer effects are null regardless of the type of far-transfer measure, type of cognitive training program, and population.",
+      "page": "15 (printed, 'Art. 18, page 15 of 22'; General Discussion)"
+    },
+    {
+      "id": "bg-sala2019-2",
+      "location": "§4",
+      "claim_text": "chess, music, and working-memory training",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sala_etal_2019_Near_and_Far_Transfer_Meta-Analysis.pdf",
+      "quote": "Finally, Model 3 is an extension of Model 2. In Model 3, we included another six meta-analyses of other cognitive-training programs: action video-game and non-action video-game training, music instruction, chess instruction, and exergames (i.e., cognitive-training games combined with physical activities).",
+      "page": "4 (printed, 'Art. 18, page 4 of 22')"
+    },
+    {
+      "id": "bg-sala2019-3",
+      "location": "§17 refs",
+      "claim_text": "Sala, Aksayli, Tatlidil, Tatsumi, Gondo, & Gobet (2019). Near and far transfer in cognitive training: A second-order meta-analysis. Collabra: Psychology, 5(1), 18.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sala_etal_2019_Near_and_Far_Transfer_Meta-Analysis.pdf",
+      "quote": "Sala, G., et al. (2019). Near and Far Transfer in Cognitive Training: A Second-Order Meta-Analysis. Collabra: Psychology, 5(1): 18. DOI: https://doi.org/10.1525/collabra.203",
+      "page": "1 (printed, running header on first page; also PDF metadata Title/Subject fields)"
+    },
+    {
+      "id": "bg-salagobet-1",
+      "location": "§17 refs",
+      "claim_text": "Trained cognitive skill does not generalize far.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sala_Gobet_2017_Does_Far_Transfer_Exist.pdf",
+      "quote": "training chess, music, or WM capacity does not reliably enhance any skill beyond the skills they train",
+      "page": "517 (printed); PDF page 4"
+    },
+    {
+      "id": "bg-wiggins-1",
+      "location": "§2 Backward Design",
+      "claim_text": "Understanding by Design defines a three-stage planning sequence: identify desired results, determine acceptable evidence, plan learning experiences and instruction",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "We call this three-stage approach to planning \"backward design.\"",
+      "page": "printed p. 17 (PDF p. 29); Figure 1.1, printed p. 18"
+    },
+    {
+      "id": "bg-wiggins-2",
+      "location": "§2 Backward Design",
+      "claim_text": "Stage 2: outcome claims must be backed by demonstrable evidence",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "How will we know if students have achieved the desired results? What will we accept as evidence of student understanding and proficiency?",
+      "page": "printed p. 18 (PDF p. 30)"
+    },
+    {
+      "id": "bg-wiggins-3",
+      "location": "§5 The KUD model",
+      "claim_text": "structurally similar separation of desired understandings, knowledge, and skills in Stage 1 (template)",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "Students will know . . .",
+      "page": "printed p. 22 (PDF p. 34), Figure 1.2"
+    },
+    {
+      "id": "bg-wiggins-4",
+      "location": "§7 anchors",
+      "claim_text": "second stage of backward design: outcomes are paired with the evidence that would demonstrate them",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "we are obligated to consider the assessment evidence implied by the outcomes sought, rather than thinking about assessment primarily as a means for generating grades",
+      "page": "printed p. 148 (PDF p. 160)"
+    },
+    {
+      "id": "bg-tomlinson-1",
+      "location": "§5 The KUD model",
+      "claim_text": "Tomlinson uses the K/U/D structure as a categorical pre-unit planning aid",
+      "held_file": "pdfs:tomlinson-1999-differentiated-classroom.pdf",
+      "quote": "During planning, a teacher should generate specific lists of what students should know (facts), understand (concepts and principles), and be able to do (skills) by the time the unit ends.",
+      "page": "printed p. 40 (PDF p. 47)"
+    },
+    {
+      "id": "bg-tomlinson-2",
+      "location": "References (Tomlinson 1999)",
+      "claim_text": "Establishes the K/U/D three-category planning vocabulary",
+      "held_file": "pdfs:tomlinson-1999-differentiated-classroom.pdf",
+      "quote": "Content is what a student should come to know (facts), understand (concepts and principles), and be able to do (skills) as a result of a given segment of study (a lesson, a learning experience, a unit).",
+      "page": "printed pp. 42-43 (PDF pp. 49-50)"
+    },
+    {
+      "id": "bg-mcpeck-1990-1",
+      "location": "§4 problem-solving",
+      "claim_text": "McPeck's 1990 reply: he does not assume there are no general thinking skills and believes there are some very limited ones",
+      "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
+      "quote": "Thus, I do not assume that there are no general thinking skills as Ennis asserts—I argue the point. For what it is worth, I believe there are, in fact, some very limited general thinking skills.",
+      "page": "printed p. 12 (PDF p. 4)"
+    },
+    {
+      "id": "bg-mcpeck-1990-2",
+      "location": "§4 problem-solving",
+      "claim_text": "while adding that \"these skills offer little to get excited about\"",
+      "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
+      "quote": "these skills offer little to get excited about",
+      "page": "printed p. 12 (PDF p. 4)"
+    },
+    {
+      "id": "bg-mcpeck-1990-3",
+      "location": "References (McPeck 1990)",
+      "claim_text": "he restates that \"there can be no completely general set of thinking skills\" (pp. 11-12)",
+      "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
+      "quote": "that there can be no completely general set of thinking skills",
+      "page": "printed pp. 11-12 (PDF pp. 3-4)"
+    },
+    {
+      "id": "bg-gibbs-1",
+      "location": "§9 spiral curriculum",
+      "claim_text": "Bruner (1960, p. 30), as quoted in Gibbs (2014): \"any subject can be taught in some intellectually honest form to any child at any stage of development\"",
+      "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
+      "quote": "any subject can be taught in some intellectually honest form to any child at any stage of development” (1960, p. 30)",
+      "page": "held web copy, single PDF page"
+    },
+    {
+      "id": "bg-gibbs-2",
+      "location": "§9 spiral curriculum",
+      "claim_text": "spiral curriculum summary (Gibbs, 2014)",
+      "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
+      "quote": "students revisit a topic, theme, or subject several times throughout their schooling, where the complexity of the topic is increased with each visit so the new learning is connected to the old learning",
+      "page": "held web copy, single PDF page"
+    },
+    {
+      "id": "bg-bijker-1",
+      "location": "§7 tacit knowledge",
+      "claim_text": "somatic tacit knowledge \"is tacit because it is tied to the human body,\" as summarized by Bijker (2011)",
+      "held_file": "pdfs:review-2011-collins-tacit-explicit-knowledge.pdf",
+      "quote": "Medium, or somatic, tacit knowledge is tacit because it is tied to the human body.",
+      "page": "held copy p. 1 (page printed \"2\")"
+    },
+    {
+      "id": "bg-bijker-2",
+      "location": "References (Collins 2010)",
+      "claim_text": "Chicago: University of Chicago Press, 2010, xiv + 186 pp.",
+      "held_file": "pdfs:review-2011-collins-tacit-explicit-knowledge.pdf",
+      "quote": "Pp. xiv+186.",
+      "page": "held copy p. 1, review header"
+    },
+    {
+      "id": "bg-doignon2015-1",
+      "location": "§2 skill-tree paragraph",
+      "claim_text": "the outer fringe of a state is the set of items the learner is now ready to learn",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "it tells us exactly what the student is ready to learn",
+      "page": "printed p. 16 (Definition 20 on p. 15)"
+    },
+    {
+      "id": "bg-doignon2015-2",
+      "location": "§2 skill-tree paragraph",
+      "claim_text": "ALEKS deploys KST to millions of students",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "these methods have been used by millions of students in schools and colleges",
+      "page": "printed p. 1 (Abstract)"
+    },
+    {
+      "id": "bg-doignon2015-3",
+      "location": "References (Doignon & Falmagne 1985 entry)",
+      "claim_text": "the 2015 chapter \"summarizes key concepts and results from two books\"",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "This chapter summarizes key concepts and results from two books.",
+      "page": "printed p. 3"
+    },
+    {
+      "id": "bg-cbn-1",
+      "location": "§9 3-Act parallels",
+      "claim_text": "cognitive apprenticeship addresses school knowledge \"abstracted from their uses in the world\"",
+      "held_file": "pdfs:collins-brown-newman-1987-cognitive-apprenticeship-tr403.pdf",
+      "quote": "skills and knowledge taught in schools have become abstracted from their uses in the world",
+      "page": "printed p. 1 (PDF p. 3, Abstract) and printed p. 2"
+    },
+    {
+      "id": "bg-cbn-2",
+      "location": "§9 3-Act parallels",
+      "claim_text": "drawing on Jean Lave's ethnography of craft apprenticeship",
+      "held_file": "pdfs:collins-brown-newman-1987-cognitive-apprenticeship-tr403.pdf",
+      "quote": "practiced in a West African tailoring shop for many of our insights into the nature of apprenticeship",
+      "page": "printed p. 2 (PDF p. 4)"
+    },
+    {
+      "id": "bg-manning-1",
+      "location": "§10 auditor reasoning",
+      "claim_text": "the library itself cautions that the prompts have not been empirically validated as AI interventions",
+      "held_file": "pdfs:web/manning-2025-education-agent-skills-readme.md",
+      "quote": "the prompts themselves have not been empirically validated as AI interventions",
+      "page": "README, \"What Makes This Different\""
+    },
+    {
+      "id": "bg-manning-2",
+      "location": "References (Manning)",
+      "claim_text": "an open-source GitHub library of \"165 evidence-based pedagogical skills across 20 domains\"",
+      "held_file": "pdfs:web/manning-2025-education-agent-skills-readme.md",
+      "quote": "An open-source library of 165 evidence-based pedagogical skills across 20 domains",
+      "page": "README, opening paragraph"
+    },
+    {
+      "id": "bg-barthakur-1",
+      "location": "§7",
+      "claim_text": "few studies trace QA to single courses and their assessment items",
+      "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
+      "quote": "Few studies have adopted an analytical approach to ensure programme quality assurance steps are traceable to a fundamental level of these maps: single courses and their assessment items.",
+      "page": "PDF p. 1"
+    },
+    {
+      "id": "bg-jayalath-1",
+      "location": "§7",
+      "claim_text": "map that merely records presence/absence",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "it is often applied in a simplistic, accreditation-driven manner that merely records the presence or absence of skills embedded in assessments",
+      "page": "PDF p. 1 (printed p. 589)"
+    },
+    {
+      "id": "bg-jayalath-2",
+      "location": "§7",
+      "claim_text": "weights add to 100; two coders α 0.70; consensus",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "Two human coders independently annotated the curriculum data, achieving a Krippendorff’s 𝛼 of 0.70, and finalised the weighted mapping through consensus discussion. Each assessment was mapped to one or more skills, with weights adding up to 100 per assessment.",
+      "page": "PDF p. 4 (printed p. 592)"
+    },
+    {
+      "id": "bg-jayalath-3",
+      "location": "§7",
+      "claim_text": "fit grades modestly r = 0.43",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "the model achieved an RMSE of 0.21 and a Pearson correlation of 0.43",
+      "page": "PDF p. 5 (printed p. 593)"
+    },
+    {
+      "id": "bg-jayalath-4",
+      "location": "§7",
+      "claim_text": "few assessments can inflate/deflate scores",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "this may also reflect the limited number of assessments mapped to skills such as international perspective, ethical awareness and teamwork, which can inflate/deflate overall scores",
+      "page": "PDF p. 5 (printed p. 593)"
+    },
+    {
+      "id": "bg-nelson-1",
+      "location": "§4",
+      "claim_text": "capstone as high-stakes crash course",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "This made what should have been an opportunity for reinforcement and mastery into a high-stakes crash course.",
+      "page": "web article"
+    },
+    {
+      "id": "bg-atlas-fields-1",
+      "location": "§11",
+      "claim_text": "62 fields of study",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "syllabi across 62 fields of study (FOS)",
+      "page": "p. 6"
+    },
+    {
+      "id": "bg-atlas-fields-2",
+      "location": "§11",
+      "claim_text": "curated subset of the CIP taxonomy",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "OSP’s FOS classifier is trained and tested on a curated subset of the CIP taxonomy",
+      "page": "p. 14"
+    },
+    {
+      "id": "bg-frej-1",
+      "location": "§11",
+      "claim_text": "required skills with levels",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "the required skills with their proficiency levels",
+      "page": "p. 5"
+    },
+    {
+      "id": "bg-frej-2",
+      "location": "§11",
+      "claim_text": "provided skills with levels",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "the provided skills with their proficiency levels",
+      "page": "p. 5"
+    },
+    {
+      "id": "bg-frej-3",
+      "location": "§11",
+      "claim_text": "level extraction accuracy 0.68 vs one expert, 212 skills, 10 postings",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "An expert manually annotated 212 skills from 10 job postings in the IT sector. We compared the annotations with the levels extracted by our system and obtained an accuracy of 0.68.",
+      "page": "p. 7"
+    },
+    {
+      "id": "bg-frej-4",
+      "location": "§11",
+      "claim_text": "assumption of skill acquisition (limitation)",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "A fundamental assumption in our sequential recommendation approach is that completing a course will automatically result in the acquisition of the associated skills by the learners.",
+      "page": "p. 8"
+    },
+    {
+      "id": "bg-frej-5",
+      "location": "§11",
+      "claim_text": "job reachable above a threshold",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "we set a threshold",
+      "page": "p. 6"
+    },
+    {
+      "id": "bg-pavlik-1",
+      "location": "§15",
+      "claim_text": "PFA-Decay weights prior successes/failures by recency",
+      "held_file": "pdfs:pavlik-2021-logistic-knowledge-tracing.pdf",
+      "quote": "counts of success and failures be exponentially weighted as a function of their recency",
+      "page": "p. 3"
+    },
+    {
+      "id": "bg-zamecnik-1",
+      "location": "§7",
+      "claim_text": "71% average accuracy",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "the LLM achieved an average of 71% accuracy",
+      "page": "p. 3"
+    },
+    {
+      "id": "bg-zamecnik-2",
+      "location": "§7",
+      "claim_text": "LLM-expert kappa mostly Fair",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "indicating Kappa results to be mostly Fair",
+      "page": "p. 10"
+    },
+    {
+      "id": "bg-zamecnik-3",
+      "location": "§7",
+      "claim_text": "not yet human baseline",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "LLMs have not yet achieved the average human baseline data annotation performance",
+      "page": "p. 10"
+    },
+    {
+      "id": "bg-zamecnik-4",
+      "location": "§7",
+      "claim_text": "expert-expert kappa mostly moderate",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "indicating Kappa results to be mostly moderate",
+      "page": "p. 9"
+    },
+    {
+      "id": "bg-zamecnik-5",
+      "location": "§7",
+      "claim_text": "26 courses",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "extracting course outline data from a total of 26 courses",
+      "page": "p. 6"
+    },
+    {
+      "id": "bg-jayalath25-1",
+      "location": "§7",
+      "claim_text": "19 courses, three years",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "we analyzed all curriculum data from 19 courses in the program",
+      "page": "PDF p. 6 (printed p. 299)"
+    },
+    {
+      "id": "bg-jayalath25-2",
+      "location": "§7",
+      "claim_text": "alpha 0.76 vs 0.65",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "alpha of 0.76, compared to the overall Krippendorff's alpha value of the ML model",
+      "page": "PDF p. 8 (printed p. 301)"
+    },
+    {
+      "id": "bg-jayalath25-3",
+      "location": "§7",
+      "claim_text": "experts 0.70",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "The overall Krippendorff's alpha value for the reviewers' labelling was 0.70",
+      "page": "PDF p. 6 (printed p. 299)"
+    },
+    {
+      "id": "bg-jayalath25-4",
+      "location": "§7",
+      "claim_text": "gold standard by discussion",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "this study was developed collaboratively by domain experts through discussion",
+      "page": "PDF p. 10 (printed p. 303)"
+    },
+    {
+      "id": "bg-jayalath25-5",
+      "location": "§7",
+      "claim_text": "oral comm near-perfect",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "Oral Communication stands out with near-perfect agreement",
+      "page": "PDF p. 8 (printed p. 301)"
+    },
+    {
+      "id": "bg-jayalath25-6",
+      "location": "§7",
+      "claim_text": "written comm / int perspective lower",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "Written Communication and International Perspectives had lower alpha values",
+      "page": "PDF p. 9 (printed p. 302)"
+    },
+    {
+      "id": "bg-jayalath25-7",
+      "location": "§7",
+      "claim_text": "year 2 least consistent",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "Year 2 had the most inconsistency",
+      "page": "PDF p. 11 (printed p. 304)"
+    },
+    {
+      "id": "bg-jayalath25-8",
+      "location": "§7",
+      "claim_text": "less explicitly defined skills",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "less explicitly defined in course documents",
+      "page": "PDF p. 12 (printed p. 305)"
+    },
+    {
+      "id": "bg-jayalath25-9",
+      "location": "§7",
+      "claim_text": "human-in-the-loop future work",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "integrating a human-in-the-loop process would refine and rank the usefulness of justifications",
+      "page": "PDF p. 12 (printed p. 305)"
+    },
+    {
+      "id": "bg-collins2007-1",
+      "location": "§7 tacit knowledge",
+      "claim_text": "Collins (2007): somatic-limit tacit knowledge has to do with the limitations of the human body and brain",
+      "held_file": "pdfs:collins-2007-bicycling-on-the-moon.pdf",
+      "quote": "‘somatic-limit tacit knowledge’, has to do with the limitations of the human body and brain",
+      "page": "p. 257 (abstract)"
+    },
+    {
+      "id": "bg-collins2007-2",
+      "location": "§7 tacit knowledge",
+      "claim_text": "Most humans can demonstrate their knowledge of bike-riding only by bike-riding",
+      "held_file": "pdfs:collins-2007-bicycling-on-the-moon.pdf",
+      "quote": "Most humans can demonstrate their knowledge of bike-riding only by bike-riding.",
+      "page": "p. 258"
+    },
+    {
+      "id": "bg-collins2007-3",
+      "location": "§7 tacit knowledge",
+      "claim_text": "even where the rules of a craft can be written down, the craftsperson shows the knowledge by performing, not by stating rules",
+      "held_file": "pdfs:collins-2007-bicycling-on-the-moon.pdf",
+      "quote": "Somatic-limit tacit knowledge can often be converted into explicit rules and/or executed by mechanisms such as sieves or robots; it is just that humans cannot make use of the rules to carry out the behaviours that they represent.",
+      "page": "p. 258"
+    },
+    {
+      "id": "bg-duguid-1",
+      "location": "§9 Lave & Wenger",
+      "claim_text": "The community-of-practice account was introduced as a theory of learning drawing on studies of apprenticeship (Lave & Wenger, 1991)",
+      "held_file": "pdfs:duguid-2005-art-of-knowing-manuscript.pdf",
+      "quote": "was introduced as a theory of learning, drawing much of its evidence from studies of … apprenticeship (Lave & Wenger, 1991)",
+      "page": "manuscript pp. 9-10 (footer page numbers; PDF pp. 9-10)"
+    },
+    {
+      "id": "bg-brynjolfsson-2",
+      "location": "§16",
+      "claim_text": "by mid-2026, workers aged 22–25 in the most-exposed quintile had fallen about 18 percentage points behind the least-exposed",
+      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
+      "quote": "For workers aged 22–25, employment in the most exposed quintile declined by about 18 percentage points relative to the least exposed quintile (Panel A; −0.179).",
+      "page": "PDF p.12"
+    },
+    {
+      "id": "bg-krathwohl2002-1",
+      "location": "§2 Bloom paragraph",
+      "claim_text": "Procedural Knowledge (\"how to do something\") is a Knowledge Dimension category",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "Procedural Knowledge – How to do something",
+      "page": "printed p. 214 (Table 2)"
+    },
+    {
+      "id": "bg-krathwohl2002-2",
+      "location": "§2 Bloom paragraph",
+      "claim_text": "Apply is \"carrying out or using a procedure in a given situation\"",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "Apply – Carrying out or using a procedure in a given situation.",
+      "page": "printed p. 215 (Table 3)"
+    },
+    {
+      "id": "bg-doignon2015-4",
+      "location": "§2 skill-tree paragraph",
+      "claim_text": "KST's assessment procedure rests on a probabilistic knowledge structure",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "It relies on the notion of a probabilistic knowledge structure",
+      "page": "printed p. 3"
+    },
+    {
+      "id": "bg-doignon2015-5",
+      "location": "§2 skill-tree paragraph",
+      "claim_text": "the probabilistic structure allows a careless error on a mastered item or a lucky guess on an unmastered one",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "represents the careless error probability to item q, and the number",
+      "page": "printed p. 28 (Definition 34)"
+    },
+    {
+      "id": "bg-brynjolfsson-3",
+      "location": "§17 (Brynjolfsson entry)",
+      "claim_text": "the kept-pace shortfall for 22–25-year-olds was 15% at the July 2025 vintage and 19% as of June 2026",
+      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
+      "quote": "the kept-pace shortfall was 15% at the July 2025 data vintage and has since widened to 19% as of June 2026",
+      "page": "PDF p.3"
+    },
+    {
+      "id": "bg-brockmann-1",
+      "location": "§3 table",
+      "claim_text": "An atomized competence model lacks the integration that constitutes occupational competence (Brockmann, Clarke, & Winch, 2008)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Brockmann_Clarke_Winch_2008_Knowledge_Skills_Competence_VET.pdf",
+      "quote": "There is no notion of an integration of different forms of knowledge, and thus of experiential learning and knowledge creation.",
+      "page": "printed p. 555"
+    },
+    {
+      "id": "bg-brockmann-2",
+      "location": "§3 table",
+      "claim_text": "Competence as integrative rather than cumulative (Brockmann, Clarke, & Winch, 2008)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Brockmann_Clarke_Winch_2008_Knowledge_Skills_Competence_VET.pdf",
+      "quote": "integrative rather than cumulative, relying on the different components of occupational, social and individual competence to come together in a given work situation",
+      "page": "printed p. 557"
+    },
+    {
+      "id": "bg-turaev-1",
+      "location": "§5",
+      "claim_text": "two faculty raters, working blind, each assigned a Bloom level ... agreed at a Cohen's κ of 0.86",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "The extraction is validated blind by two independent faculty raters (domain κ = 0.91, Bloom level κ = 0.86)",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "bg-turaev-2",
+      "location": "§5",
+      "claim_text": "the same 300 competency statements drawn from course outcomes and job postings",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "Two faculty raters independently coded a stratified sample of three hundred competencies",
+      "page": "p. 9 (§5); Table 3 strata include Supply (curriculum) and Demand (labor market), 150 each"
+    },
+    {
+      "id": "bg-turaev-3",
+      "location": "§5",
+      "claim_text": "statements with more than one verb, where leveling by the leading verb \"parts company with leveling by the highest-order verb\"",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "On the cognitive level, the few large gaps arose on multi-verb outcomes, where leveling by the leading verb, the convention the extraction adopts, parts company with leveling by the highest-order verb",
+      "page": "p. 10"
+    },
+    {
+      "id": "bg-krathwohl2002-3",
+      "location": "§5",
+      "claim_text": "Apply is \"carrying out or using a procedure in a given situation\"",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "Apply – Carrying out or using a procedure in a given situation.",
+      "page": "printed p. 215 (Table 3)"
+    },
+    {
+      "id": "bg-xu2025-1",
+      "location": "§11",
+      "claim_text": "embedding-only arm used SBERT",
+      "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
+      "quote": "SBERT, a siamese network-based model known for effective sentence embeddings",
+      "page": "p. 3"
+    },
+    {
+      "id": "bg-xu2025-2",
+      "location": "§11",
+      "claim_text": "retrieve-then-reason: the 20 most similar skills by embedding, then an LLM",
+      "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
+      "quote": "we embed 2,070 skill descriptions into a vector database and retrieve the top 20 most relevant skills",
+      "page": "p. 3"
+    },
+    {
+      "id": "bg-xu2025-3",
+      "location": "§11",
+      "claim_text": "precision = share of top-ten skills rated 4 or higher",
+      "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
+      "quote": "% top 10 extracted skills that score 4 or higher",
+      "page": "p. 5"
+    },
+    {
+      "id": "bg-xu2025-4",
+      "location": "§11",
+      "claim_text": "embedding-only (BERT) precision 0.240; RAG 0.820 / 0.715 / 0.695 / 0.721 (GPT, Llama, Claude, Gemini)",
+      "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
+      "quote": "0.269 0.240 0.418 0.116 0.160 0.199 0.820 0.715 0.695 0.721",
+      "page": "p. 5 (Table 2, Precision4 row: TF-IDF, BERT, zero-shot GPT/Llama/Claude/Gemini, RAG GPT/Llama/Claude/Gemini)"
+    },
+    {
+      "id": "bg-xu2025-5",
+      "location": "§11",
+      "claim_text": "the study compared four strategies (TF-IDF, SBERT, zero-shot, RAG), no reranking step",
+      "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
+      "quote": "We apply the following four text alignment strategies.",
+      "page": "p. 3"
+    },
+    {
+      "id": "bg-atlas-1",
+      "location": "§11",
+      "claim_text": "off-the-shelf sentence model \"all-mpnet-base-v2\"",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "we implement the “all-mpnet-base-v2” model",
+      "page": "p. 8"
+    },
+    {
+      "id": "bg-atlas-2",
+      "location": "§11",
+      "claim_text": "course score on each activity = maximum similarity over its sentences",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "for a given skill, we select the maximum similarity score across all the sentences within the syllabus",
+      "page": "p. 9"
+    },
+    {
+      "id": "bg-atlas-3",
+      "location": "§11",
+      "claim_text": "\"teaching does not necessarily equate to learning\"",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "it is crucial to acknowledge that teaching does not necessarily equate to learning",
+      "page": "p. 19"
+    },
+    {
+      "id": "bg-veys-1",
+      "location": "§11",
+      "claim_text": "second gate: is the specific activity actually mentioned or directly implied",
+      "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
+      "quote": "Is the specific activity described by the skill actually mentioned or directly implied?",
+      "page": "p. 2"
+    },
+    {
+      "id": "bg-veys-2",
+      "location": "§11",
+      "claim_text": "a \"no\" there: \"plausible, but the activity is not there\"",
+      "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
+      "quote": "yields grade 1 (plausible, but the activity is not there)",
+      "page": "p. 2"
+    },
+    {
+      "id": "bg-veys-3",
+      "location": "§11",
+      "claim_text": "gates agreed better with a blind human expert than asking for the grade outright",
+      "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
+      "quote": "decomposing the grade into ordered binary gates produces labels closer to a human expert than asking the same model for the grade directly",
+      "page": "p. 5"
+    },
+    {
+      "id": "bg-veys-4",
+      "location": "§11",
+      "claim_text": "QWK 0.686 vs 0.618 and 0.631",
+      "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
+      "quote": "Cascade (released) 0.686",
+      "page": "p. 5 (Table 1: one call with rationale 0.618, grade only 0.631)"
+    },
+    {
+      "id": "bg-veys-5",
+      "location": "§11",
+      "claim_text": "\"The most consequential limitation is circularity\"",
+      "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
+      "quote": "The most consequential limitation is circularity.",
+      "page": "p. 11"
+    },
+    {
+      "id": "bg-veys-6",
+      "location": "§11 objective-link",
+      "claim_text": "\"whether a small model trained on graded labels would have closed the same gap, only that no one tried\"",
+      "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
+      "quote": "whether a small model trained on graded labels would have closed the same gap, only that no one tried",
+      "page": "p. 11"
+    },
+    {
+      "id": "bg-le-1",
+      "location": "§11",
+      "claim_text": "22-competency framework; model chooses from a retrieved set and returns evidence spans",
+      "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+      "quote": "The LLM then selects the most relevant competencies from this set and provides supporting evidence spans from the fragment text",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "bg-le-2",
+      "location": "§11",
+      "claim_text": "micro-F1 0.57 and macro-F1 0.50",
+      "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+      "quote": "with a micro-F1 of 0.57 and macro-F1 of 0.50 at the fragment level",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "bg-le-3",
+      "location": "§11",
+      "claim_text": "framework of 22 competencies at one university",
+      "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+      "quote": "covering 22 competencies",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "bg-le-4",
+      "location": "§11",
+      "claim_text": "retrieval alone \"is insufficient without an explicit semantic decision rule\"",
+      "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+      "quote": "retrieving plausible candidates alone is insufficient without an explicit semantic decision rule",
+      "page": "p. 11"
+    },
+    {
+      "id": "bg-turaev-audit1",
+      "location": "References",
+      "claim_text": "Most demand-side competencies receive no Bloom level",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "the majority of competencies are possessions for which no cognitive level can be honestly assigned",
+      "page": "p. 6"
+    },
+    {
+      "id": "bg-atlas-audit1",
+      "location": "§11",
+      "claim_text": "The Atlas aggregates by averaging syllabus scores",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "The aggregated scores are the average scores across all the syllabi belonging to the corresponding year, university, and FOS.",
+      "page": "p. 15"
+    },
+    {
+      "id": "bg-xu2025-audit1",
+      "location": "§11",
+      "claim_text": "Xu et al.'s scores come from a calibrated LLM evaluator",
+      "held_file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf",
+      "quote": "we deploy the calibrated LLM evaluator to assess the top 10 skills identified by each of the 10 alignment methods across 400 curriculum samples",
+      "page": "p. 5"
+    },
+    {
+      "id": "bg-le-audit1",
+      "location": "§11",
+      "claim_text": "Lê et al. expect stronger models to improve on their result",
+      "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+      "quote": "larger or domain-adapted models could further improve",
+      "page": "PDF p. 13"
+    },
+    {
+      "id": "bg-veys-audit1",
+      "location": "§11",
+      "claim_text": "The kappa gap against the grade-only variant is not significant",
+      "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
+      "quote": "directionally the same but not significant",
+      "page": "p. 4"
+    },
+    {
+      "id": "bg-perkins-audit1",
+      "location": "§11",
+      "claim_text": "Perkins & Salomon: results on transfer are mostly negative",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "the preponderance of results concerning transfer appears to be negative",
+      "page": "PDF p. 5 of 11"
+    },
+    {
+      "id": "bg-perkins-audit2",
+      "location": "§11",
+      "claim_text": "Perkins & Salomon: general knowledge works together with local knowledge",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "The importance of local knowledge does not imply the unimportance of rather general knowledge that works together with local knowledge",
+      "page": "PDF p. 5 of 11"
+    },
+    {
+      "id": "bg-bahrick-audit1",
+      "location": "References",
+      "claim_text": "Bahrick's Method section gives 773 participants",
+      "held_file": "pdfs:bahrick-1984-permastore.pdf",
+      "quote": "There were 773 participants in the study.",
+      "page": "p. 2"
+    },
+    {
+      "id": "bg-bjork-audit1",
+      "location": "§6",
+      "claim_text": "Massed practice gives better short-term but markedly inferior long-term performance",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
+      "quote": "markedly inferior long-term performance or recall",
+      "page": "p. 190"
+    },
+    {
+      "id": "bg-frej-audit1",
+      "location": "§11",
+      "claim_text": "Frej et al.: the skill-acquisition assumption overlooks variability in outcomes",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "This overlooks the variability in individual learning",
+      "page": "p. 8 (the sentence continues onto p. 9: \"outcomes and the probability of successfully acquiring new skills\")"
+    },
+    {
+      "id": "bg-atlas-audit2",
+      "location": "§11",
+      "claim_text": "Atlas syllabi are mostly post-2000 with sparse coverage from 1966",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "The majority of the syllabi belong to the period post-2000, with sparse coverage between 1966 and 1999.",
+      "page": "p. 15"
+    },
+    {
+      "id": "bg-atlas-audit3",
+      "location": "§11",
+      "claim_text": "About nine syllabi suffice per institution-field-year; 8 to 10 for most fields",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "The minimum number of syllabi for a majority of the fields of study is between 8 and 10",
+      "page": "p. 17"
+    },
+    {
+      "id": "bg-doignon-audit1",
+      "location": "§2",
+      "claim_text": "The outer-fringe reading is conditional on a faithful learning space",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "assuming that the learning space is a faithful representation of the cognitive organization of the material, it tells us exactly what the student is ready to learn",
+      "page": "p. 16"
+    },
+    {
+      "id": "bg-choo-1",
+      "location": "§11",
+      "claim_text": "Probe joint accuracy 92.50-94.78% across four models",
+      "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
+      "quote": "probe joint accuracy ranges from 92.50% to 94.78% across models",
+      "page": "PDF p. 2"
+    },
+    {
+      "id": "bg-choo-2",
+      "location": "§11",
+      "claim_text": "Four-shot verbal classification 54.35-69.46% joint accuracy",
+      "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
+      "quote": "four-shot verbalization achieves 54.35–69.46% joint accuracy on the main test set",
+      "page": "PDF p. 9"
+    },
+    {
+      "id": "bg-choo-3",
+      "location": "§11",
+      "claim_text": "The authors limit the probe-vs-asking claim to the tested conditions",
+      "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
+      "quote": "it does not show that the models could never express the same labels under other prompts or training procedures",
+      "page": "PDF p. 9"
+    },
+    {
+      "id": "bg-choo-4",
+      "location": "§11",
+      "claim_text": "Probe accuracy falls on deceptive queries",
+      "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
+      "quote": "probe joint accuracy falls to 58.18–62.27% on this set",
+      "page": "PDF p. 9"
+    },
+    {
+      "id": "bg-choo-5",
+      "location": "§11",
+      "claim_text": "Deceptive queries were generated and screened with language models",
+      "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
+      "quote": "These queries were generated and screened with language models",
+      "page": "PDF p. 9"
+    },
+    {
+      "id": "bg-bernardelle-1",
+      "location": "§11",
+      "claim_text": "In several models probes match or outperform generated judgments",
+      "held_file": "pdfs:bernardelle-2026-relevance-layerwise-signal.pdf",
+      "quote": "in several models, validation-selected probes match or outperform generated judgments",
+      "page": "PDF p. 1"
+    },
+    {
+      "id": "bg-bernardelle-2",
+      "location": "§11",
+      "claim_text": "For one model (Qwen2.5-7B) generated judgments are strongest on all three formulations",
+      "held_file": "pdfs:bernardelle-2026-relevance-layerwise-signal.pdf",
+      "quote": "whose inference output baseline is strongest across all three relevance formulations",
+      "page": "PDF p. 8"
+    },
+    {
+      "id": "bg-chi-1",
+      "location": "§11",
+      "claim_text": "Removing prompt and instruction lowers average QWK to 0.527 (Table 6: 0.652 full, 0.576 without prompt, 0.541 without instruction)",
+      "held_file": "pdfs:chi-2025-activations-as-features.pdf",
+      "quote": "with the corresponding QWK score decreasing to 0.527 for prompts and traits",
+      "page": "PDF p. 5 (prose); Table 6, PDF p. 7"
+    },
+    {
+      "id": "bg-chi-2",
+      "location": "§11",
+      "claim_text": "Removing only the prompt hurts less than removing only the instruction",
+      "held_file": "pdfs:chi-2025-activations-as-features.pdf",
+      "quote": "The results of removing only the prompt were higher than those from removing only the instruction",
+      "page": "PDF p. 5"
+    },
+    {
+      "id": "bg-chi-3",
+      "location": "§11",
+      "claim_text": "Best head chosen on the test set; no claim to outperform the baseline",
+      "held_file": "pdfs:chi-2025-activations-as-features.pdf",
+      "quote": "the comparison with the baseline does not imply that our method outperforms the baseline",
+      "page": "PDF p. 3"
+    }
+  ]
 }

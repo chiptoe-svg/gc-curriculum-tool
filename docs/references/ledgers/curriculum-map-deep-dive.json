@@ -1,710 +1,710 @@
 {
- "page": "curriculum-map-deep-dive.html",
- "generated": "2026-11-15",
- "claims": [
-  {
-   "id": "cm-plaza-1",
-   "location": "§2",
-   "claim_text": "Plaza et al. summarize Harden's two main functions of a curriculum map: transparency and showing links between components",
-   "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
-   "quote": "Harden detailed the 2 main functions of curriculum maps in medical education: to make the curriculum more transparent to all the stakeholders and to demonstrate the links between the various components of the curriculum.",
-   "page": "Introduction (AJPE 71(2) art. 20, PMC1858603 web text)"
-  },
-  {
-   "id": "cm-plaza-2",
-   "location": "§2",
-   "claim_text": "Maps link learning outcomes, learning opportunities, content and assessment",
-   "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
-   "quote": "demonstrate the links among the different key components of the curriculum: learning outcomes, learning opportunities, content, and assessment",
-   "page": "Introduction"
-  },
-  {
-   "id": "cm-rawle-1",
-   "location": "§2",
-   "claim_text": "In one Toronto department, instructors marked each map element as taught and/or assessed, and at which level (introduced/reinforced/advanced)",
-   "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
-   "quote": "For each map element, instructors had to identify if it was taught and/or assessed, and at which level (introduced/reinforced/advanced)",
-   "page": "PDF p. 6 (printed p. 80)"
-  },
-  {
-   "id": "cm-nelson-1",
-   "location": "§2",
-   "claim_text": "Nelson's milestone sequence: early exposure and introduction, reinforcement, final demonstration and mastery",
-   "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
-   "quote": "Early exposure and introduction to goals",
-   "page": "web article, section 'Break down programme goals into learning milestones'"
-  },
-  {
-   "id": "cm-nelson-2",
-   "location": "§2",
-   "claim_text": "Nelson's milestone sequence ends in final demonstration and mastery",
-   "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
-   "quote": "Final demonstration and mastery of goals",
-   "page": "web article, same section"
-  },
-  {
-   "id": "cm-biggs-1",
-   "location": "§2",
-   "claim_text": "Constructive alignment uses the performances of understanding in the objectives to align teaching methods and assessment",
-   "held_file": "pdfs:biggs-1996-constructive-alignment.pdf",
-   "quote": "performances of understanding … align the teaching methods and the assessment",
-   "page": "p. 347 (abstract)"
-  },
-  {
-   "id": "cm-wiggins-1",
-   "location": "§2",
-   "claim_text": "Wiggins & McTighe's Stage 1 question: what should students know, understand, and be able to do?",
-   "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
-   "quote": "What should students know, understand, and be able to do?",
-   "page": "printed p. 17 (PDF p. 29), Stage 1"
-  },
-  {
-   "id": "cm-wiggins-2",
-   "location": "§2",
-   "claim_text": "Wiggins & McTighe extend backward design to course syllabi and program frameworks",
-   "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
-   "quote": "the design of course syllabi and program frameworks using backward design",
-   "page": "printed p. 275 (PDF p. 287), ch. 12"
-  },
-  {
-   "id": "cm-rawle-2",
-   "location": "§3",
-   "claim_text": "Rawle et al.: mapping can identify gaps and increase transparency",
-   "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
-   "quote": "Curriculum mapping can also be used to identify gaps (Lam & Tsui, 2013), and can lead to increased transparency (Harden, 2001).",
-   "page": "PDF p. 1 (printed p. 75)"
-  },
-  {
-   "id": "cm-barthakur-1",
-   "location": "§3",
-   "claim_text": "Mapping is used to find gaps, redundancies and misalignments between assessments and stated outcomes",
-   "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
-   "quote": "curriculum mapping is used to identify potential gaps, redundancies and misalignments between assessments and the stated outcomes",
-   "page": "PDF p. 4"
-  },
-  {
-   "id": "cm-timss-1",
-   "location": "§4",
-   "claim_text": "TIMSS curriculum model: intended, implemented, achieved",
-   "held_file": "pdfs:timss-2011-frameworks-introduction.pdf",
-   "quote": "The TIMSS curriculum model has three aspects: the intended curriculum, the implemented curriculum, and the achieved curriculum",
-   "page": "PDF p. 6"
-  },
-  {
-   "id": "cm-timss-2",
-   "location": "§4",
-   "claim_text": "Implemented = what is actually taught; achieved = what students have learned",
-   "held_file": "pdfs:timss-2011-frameworks-introduction.pdf",
-   "quote": "what is actually taught in classrooms, the characteristics of those teaching it, and how it is taught; and, finally, what it is that students have learned",
-   "page": "PDF p. 6"
-  },
-  {
-   "id": "cm-plaza-3",
-   "location": "§4",
-   "claim_text": "Designed/intended, delivered/enacted, experienced/learned curriculum defined",
-   "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
-   "quote": "The designed or intended curriculum is the institutional and program requirements, the delivered or enacted curriculum is the instructional delivery, and the experienced or learned curriculum is what the students actually experience.",
-   "page": "Introduction"
-  },
-  {
-   "id": "cm-plaza-4",
-   "location": "§4",
-   "claim_text": "In a triangulated mapping study Plaza et al. review, teachers reported more coverage than students",
-   "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
-   "quote": "it was mostly “hidden” and teachers reported a greater extent of coverage than did students",
-   "page": "Introduction (describing a medical-school study)"
-  },
-  {
-   "id": "cm-plaza-5",
-   "location": "§6",
-   "claim_text": "Retrospective mapping is subject to faculty recall bias",
-   "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
-   "quote": "the retrospective nature of the curriculum mapping makes it subject to recall bias from faculty members",
-   "page": "Discussion"
-  },
-  {
-   "id": "cm-barthakur-2",
-   "location": "§4",
-   "claim_text": "A map of the declared curriculum may deviate substantially from what learners do and how they are assessed",
-   "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
-   "quote": "A map of the intended or declared curriculum is created, which may substantially deviate from the ways in which learners actually engage and are assessed",
-   "page": "PDF p. 2"
-  },
-  {
-   "id": "cm-barthakur-3",
-   "location": "§4",
-   "claim_text": "Hard to call a map valid if validity rests on what students do and achieve",
-   "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
-   "quote": "It is, therefore, difficult to claim a curriculum map is valid, assuming that the evidentiary basis of validity is what students actually do, experience and achieve.",
-   "page": "PDF p. 2"
-  },
-  {
-   "id": "cm-sato-1",
-   "location": "§4",
-   "claim_text": "A listed prerequisite lecture course did not affect success in the lab course",
-   "held_file": "pdfs:web/sato-2017-whats-in-a-prerequisite.html",
-   "quote": "Both sources of data provided complementary evidence that MLec does not impact success in MLab",
-   "page": "Introduction (ar16, PMC5332042)"
-  },
-  {
-   "id": "cm-frej-1",
-   "location": "§4",
-   "claim_text": "Frej et al. name, as an assumption of their model, that completing a course automatically yields its skills",
-   "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
-   "quote": "that completing a course will automatically result in the acquisition of the associated skills by the learners",
-   "page": "p. 8"
-  },
-  {
-   "id": "cm-jayalath26-1",
-   "location": "§5",
-   "claim_text": "Curriculum mapping is often applied in a simplistic, accreditation-driven presence/absence manner",
-   "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
-   "quote": "it is often applied in a simplistic, accreditation-driven manner that merely records the presence or absence of skills embedded in assessments",
-   "page": "PDF p. 1 (printed p. 589)"
-  },
-  {
-   "id": "cm-barthakur-4",
-   "location": "§5",
-   "claim_text": "Few studies make quality-assurance maps traceable to single courses and assessment items",
-   "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
-   "quote": "Few studies have adopted an analytical approach to ensure programme quality assurance steps are traceable to a fundamental level of these maps: single courses and their assessment items.",
-   "page": "PDF p. 1"
-  },
-  {
-   "id": "cm-nelson-3",
-   "location": "§5",
-   "claim_text": "Nelson: mapping is not a one-time administrative project but an ongoing responsibility",
-   "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
-   "quote": "Curriculum mapping is not simply a one-time administrative project or bureaucratic task; it is an ongoing leadership responsibility.",
-   "page": "web article, closing paragraph"
-  },
-  {
-   "id": "cm-barthakur-5",
-   "location": "§6",
-   "claim_text": "Manual mapping from documentation is time-consuming and open to error and bias",
-   "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
-   "quote": "Such an approach is not only time-consuming but susceptible to human error and subjective bias.",
-   "page": "PDF p. 2"
-  },
-  {
-   "id": "cm-jayalath25-1",
-   "location": "§6",
-   "claim_text": "Expert reviewers' overall agreement was Krippendorff's alpha 0.70",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "The overall Krippendorff's alpha value for the reviewers' labelling was 0.70",
-   "page": "PDF p. 6 (printed p. 299)"
-  },
-  {
-   "id": "cm-jayalath25-2",
-   "location": "§6",
-   "claim_text": "In the GenAI-vs-expert comparison, challenges persist for skills less explicitly defined in course documents",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "less explicitly defined in course documents",
-   "page": "PDF p. 12 (printed p. 305), Conclusion"
-  },
-  {
-   "id": "cm-jayalath25-3",
-   "location": "§6",
-   "claim_text": "GenAI-vs-expert agreement: oral communication near-perfect",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "Oral Communication stands out with near-perfect agreement",
-   "page": "PDF p. 8 (printed p. 301)"
-  },
-  {
-   "id": "cm-jayalath25-4",
-   "location": "§6",
-   "claim_text": "GenAI-vs-expert agreement: written communication and international perspectives lower",
-   "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
-   "quote": "Written Communication and International Perspectives had lower alpha values",
-   "page": "PDF p. 9 (printed p. 302)"
-  },
-  {
-   "id": "cm-heileman-1",
-   "location": "§7",
-   "claim_text": "'Faculty own curriculum' is taken by many to mean 'stay out of the faculty's business'",
-   "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
-   "quote": "The mantra often stated when the subject of curriculum is broached is, “faculty own curriculum,” taken by many to mean “stay out of the faculty’s business.”",
-   "page": "PDF p. 2"
-  },
-  {
-   "id": "cm-rawle-3",
-   "location": "§7",
-   "claim_text": "Pedagogical jargon is a barrier across disciplines",
-   "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
-   "quote": "pedagogical jargon tends to be a barrier across disciplines",
-   "page": "PDF p. 5 (printed p. 79), Table 2"
-  },
-  {
-   "id": "cm-rawle-4",
-   "location": "§7",
-   "claim_text": "Biology surveyed faculty at the start for the curricular questions they needed answered and followed up",
-   "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
-   "quote": "Biology tried to increase faculty buy-in by surveying all faculty at the beginning and asking them what curricular questions they needed to be answered and then making sure to follow up with those answers",
-   "page": "PDF p. 8 (printed p. 82)"
-  },
-  {
-   "id": "cm-rawle-5",
-   "location": "§7",
-   "claim_text": "Geography earned buy-in by showcasing maps used by other departments",
-   "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
-   "quote": "Geography was able to earn faculty buy-in by showcasing curriculum maps that were being used by other departments.",
-   "page": "PDF p. 8 (printed p. 82)"
-  },
-  {
-   "id": "cm-rawle-6",
-   "location": "§7",
-   "claim_text": "One department dropped out for lack of faculty support",
-   "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
-   "quote": "one other department had to drop out because of the lack of support from other faculty members",
-   "page": "PDF p. 8 (printed p. 82)"
-  },
-  {
-   "id": "cm-rawle-7",
-   "location": "§7",
-   "claim_text": "All departments found mapping fostered collaborative discussion of teaching and learning",
-   "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
-   "quote": "fostered a collaborative approach to discussing teaching and learning throughout the department",
-   "page": "PDF p. 8 (printed p. 82)"
-  },
-  {
-   "id": "cm-rawle-8",
-   "location": "§7",
-   "claim_text": "Most departments organized data in Excel",
-   "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
-   "quote": "most departments use excel to organize their curricular data",
-   "page": "PDF p. 5 (printed p. 79), Table 2"
-  },
-  {
-   "id": "cm-rawle-9",
-   "location": "§8",
-   "claim_text": "A goal was a colored visualization highlighting overlaps, gaps and inconsistencies",
-   "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
-   "quote": "create a coloured visualization that would highlight overlaps, gaps, and inconsistencies",
-   "page": "PDF p. 7 (printed p. 81)"
-  },
-  {
-   "id": "cm-nelson-4",
-   "location": "§7",
-   "claim_text": "Nelson approached mapping as collaborative, compensated work",
-   "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
-   "quote": "we approached curriculum mapping as collaborative, compensated work",
-   "page": "web article, section 'Bring others on board'"
-  },
-  {
-   "id": "cm-nelson-5",
-   "location": "§7",
-   "claim_text": "A master map does not come together all at once",
-   "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
-   "quote": "A master curriculum map does not come together all at once.",
-   "page": "web article, section 'The role of rubrics'"
-  },
-  {
-   "id": "cm-nelson-6",
-   "location": "§8",
-   "claim_text": "Nelson: AI can surface patterns but does not replace judgment",
-   "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
-   "quote": "AI cannot replace human judgment but it can quickly surface patterns and insights to help with decision-making.",
-   "page": "web article, section 'How AI can help with curriculum mapping'"
-  },
-  {
-   "id": "cm-heileman-2",
-   "location": "§9",
-   "claim_text": "With instruction held constant, completion and structural complexity are inversely related (the authors' stated assumption)",
-   "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
-   "quote": "assuming instructional factors are held constant, student success (as measured by completion rates) and structural complexity are inversely related",
-   "page": "PDF p. 8"
-  },
-  {
-   "id": "cm-heileman-3",
-   "location": "§9",
-   "claim_text": "Failing a gateway course blocks many later courses",
-   "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
-   "quote": "if a student is unable to pass the gateway course, they are blocked from attempting many of the other courses in the curriculum",
-   "page": "PDF p. 11"
-  },
-  {
-   "id": "cm-heileman-4",
-   "location": "§9",
-   "claim_text": "Long prerequisite chains raise delay and reduce degrees of freedom",
-   "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
-   "quote": "as long prerequisite pathways are created within a curriculum, the delay factor associated with the curriculum increases, and the degrees-of-freedom decreases",
-   "page": "PDF p. 11"
-  },
-  {
-   "id": "cm-heileman-5",
-   "location": "§9",
-   "claim_text": "At UNM, each 17-point decrease in structural complexity corresponded to a 1% rise in six-year graduation rate",
-   "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
-   "quote": "every 17 point decrease in structural complexity corresponds to a 1% increase in the six-year graduation rate",
-   "page": "PDF p. 21"
-  },
-  {
-   "id": "cm-heileman-6",
-   "location": "§9",
-   "claim_text": "Observed inverse correlation between perceived engineering program quality and structural complexity",
-   "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
-   "quote": "we have observed an inverse correlation between the perceived quality of engineering programs (as determined by US News & World Reports ranking) and the structural complexities of these programs",
-   "page": "PDF p. 21"
-  },
-  {
-   "id": "cm-heileman-7",
-   "location": "§9",
-   "claim_text": "Conjecture: the simplest curriculum that attains the outcomes yields the best success outcomes",
-   "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
-   "quote": "the simplest curricula (in terms of structural complexity) that allows students to attain a program’s learning outcomes yields the best student success outcomes",
-   "page": "PDF p. 21"
-  },
-  {
-   "id": "cm-aldrich-1",
-   "location": "§9",
-   "claim_text": "Aldrich treats the curriculum as a network of courses linked by prerequisites from the catalog",
-   "held_file": "pdfs:aldrich-2014-curriculum-prerequisite-network.pdf",
-   "quote": "Here I treat the curriculum as a complex system with … nodes representing courses and links between nodes the … course prerequisites as readily obtained from a course",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "cm-aldrich-2",
-   "location": "§9",
-   "claim_text": "Courses play roles such as information sources, hubs and bridges",
-   "held_file": "pdfs:aldrich-2014-curriculum-prerequisite-network.pdf",
-   "quote": "different roles in the overall organization, such as … information sources, hubs, and bridges",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "cm-corcoran-1",
-   "location": "§10",
-   "claim_text": "Learning progressions as empirically grounded, testable hypotheses",
-   "held_file": "pdfs:corcoran-mosher-rogat-2009-learning-progressions-summary.pdf",
-   "quote": "learning progressions should be defined as empirically grounded and testable hypotheses about how students’ understanding and ability to use knowledge and skills in core school subjects",
-   "page": "PDF p. 1"
-  },
-  {
-   "id": "cm-corcoran-2",
-   "location": "§10",
-   "claim_text": "Lower levels may be mistaken understandings that must be revised, not correct-but-incomplete ones",
-   "held_file": "pdfs:corcoran-mosher-rogat-2009-learning-progressions-summary.pdf",
-   "quote": "may reflect mistaken or imperfect understandings of the target concepts that have to be revised or abandoned before the student can move on, rather than, as standards seem often to conceive of them, correct but incomplete understandings",
-   "page": "PDF p. 5"
-  },
-  {
-   "id": "cm-corcoran-3",
-   "location": "§10",
-   "claim_text": "Testing cannot establish a progression's validity once and for all",
-   "held_file": "pdfs:corcoran-mosher-rogat-2009-learning-progressions-summary.pdf",
-   "quote": "we should not think that testing these propositions can establish the validity of a progression once and for all",
-   "page": "PDF p. 11"
-  },
-  {
-   "id": "cm-gibbs-1",
-   "location": "§10",
-   "claim_text": "Gibbs's summary of the spiral: revisit with increasing complexity",
-   "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
-   "quote": "students revisit a topic, theme, or subject several times throughout their schooling, where the complexity of the topic is increased with each visit so the new learning is connected to the old learning",
-   "page": "held web copy, single PDF page"
-  },
-  {
-   "id": "cm-doignon-1",
-   "location": "§10",
-   "claim_text": "In knowledge space theory the outer fringe tells exactly what a student is ready to learn",
-   "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
-   "quote": "it tells us exactly what the student is ready to learn",
-   "page": "printed p. 16 (Definition 20 on p. 15)"
-  },
-  {
-   "id": "cm-nelson-7",
-   "location": "§11",
-   "claim_text": "When students can take courses in any order, essential skills are presumed learned somewhere",
-   "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
-   "quote": "when students can complete the curriculum in any order, essential skills are often presumed to be learned somewhere along the way, rather than intentionally integrated and reinforced throughout",
-   "page": "web article, opening"
-  },
-  {
-   "id": "cm-nelson-8",
-   "location": "§11",
-   "claim_text": "A capstone expected mastery where students first met the instruction, turning it into a crash course",
-   "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
-   "quote": "This made what should have been an opportunity for reinforcement and mastery into a high-stakes crash course.",
-   "page": "web article, opening"
-  },
-  {
-   "id": "cm-bjork-1",
-   "location": "§12",
-   "claim_text": "Massed practice gives better short-term but markedly inferior long-term performance",
-   "held_file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
-   "quote": "In general, compared to distributing practice sessions on a given task over time, massing practice or study sessions on to-be-learned procedures or information produces better short-term performance or recall of that procedure or information, but markedly inferior long-term performance or recall.",
-   "page": "PDF p. 190 (printed p. 190)"
-  },
-  {
-   "id": "cm-cepeda-1",
-   "location": "§12",
-   "claim_text": "No hint that massed beat spaced at any retention interval",
-   "held_file": "ai_career:future_of_gc/load_bearing/Cepeda_etal_2006_Distributed_Practice_Verbal_Recall_Meta-Analysis.pdf",
-   "quote": "there is no hint that massed presentation was preferable to spaced, whether retention interval was very short (less than 1 min) or very long (over 30 days)",
-   "page": "p. 359"
-  },
-  {
-   "id": "cm-arthur-1",
-   "location": "§12",
-   "claim_text": "Skill loss from d = -0.01 immediately to d = -1.4 after more than a year of nonuse",
-   "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
-   "quote": "the amount of skill loss ranging from an effect size (d) of -0.01 immediately after training to a d of -1.4 after more than 365 days of nonuse.",
-   "page": "p. 57 (abstract)"
-  },
-  {
-   "id": "cm-arthur-2",
-   "location": "§12",
-   "claim_text": "Physical, natural and speed-based tasks decayed less than cognitive, artificial and accuracy-based tasks",
-   "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
-   "quote": "Physical, natural, and speed-based tasks were less susceptible to skill loss than cognitive, artificial, and accuracy-based tasks.",
-   "page": "p. 57 (abstract)"
-  },
-  {
-   "id": "cm-bahrick-1",
-   "location": "§12",
-   "claim_text": "The share held in permastore depends on level of original training and grades",
-   "held_file": "pdfs:bahrick-1984-permastore.pdf",
-   "quote": "This portion of the information in a \"permastore\" state is a function of the level of original training, the grades received in Spanish courses, and the method of testing (recall vs. recognition)",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "cm-perkins-1",
-   "location": "§12",
-   "claim_text": "Perkins & Salomon: the conditions for transfer are stringent",
-   "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
-   "quote": "This analysis along with the views and findings of Luria, Scribner and Cole, Greeno, and others emphasizes that the conditions for transfer are stringent.",
-   "page": "PDF p. 8 (printed \"8 of 11\")"
-  },
-  {
-   "id": "cm-bridges-1",
-   "location": "§13",
-   "claim_text": "Bridges's panel identified soft skills as most needed skills and software as most needed tools",
-   "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
-   "quote": "Participants of the study overwhelmingly identified soft skills as being the most needed skills, while software applications were identified as the most needed tools.",
-   "page": "p. 243 (abstract)"
-  },
-  {
-   "id": "cm-bridges-2",
-   "location": "§13",
-   "claim_text": "Of about 300 invited, 13 educators and 21 industry professionals committed",
-   "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
-   "quote": "Of the 300 requested, 13 educators and 21 industry professionals committed to the research project",
-   "page": "p. 245"
-  },
-  {
-   "id": "cm-bridges-3",
-   "location": "§13",
-   "claim_text": "Competencies were rated on a one-to-seven desirability scale",
-   "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
-   "quote": "rate each competency using a Likert scale ranging from one to seven",
-   "page": "p. 245"
-  },
-  {
-   "id": "cm-bridges-4",
-   "location": "§13",
-   "claim_text": "Panel drawn from the southeast United States",
-   "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
-   "quote": "educators and industry professionals located in the southeast United States",
-   "page": "p. 243 (abstract)"
-  },
-  {
-   "id": "cm-bridges-5",
-   "location": "§13",
-   "claim_text": "Critical thinking ranked highest in round three",
-   "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
-   "quote": "Critical thinking skills were, again, the highest-ranking competency in round three.",
-   "page": "p. 249"
-  },
-  {
-   "id": "cm-bridges-6",
-   "location": "§13",
-   "claim_text": "Highest-ranking round-two statements were general (soft) skills",
-   "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
-   "quote": "critical thinking skills, problem solving and analytical skills, teamwork, communication skills, and business and personal ethics",
-   "page": "p. 248"
-  },
-  {
-   "id": "cm-atlas-1",
-   "location": "§4",
-   "claim_text": "\"teaching does not necessarily equate to learning\"",
-   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
-   "quote": "it is crucial to acknowledge that teaching does not necessarily equate to learning",
-   "page": "p. 19"
-  },
-  {
-   "id": "cm-atlas-2",
-   "location": "§4",
-   "claim_text": "difficult to confirm effectiveness without wide-scale exams",
-   "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
-   "quote": "it is difficult to confirm the effectiveness of our approach without wide-scale comprehensive exams to test the skills that students actually obtain during a course",
-   "page": "p. 19"
-  },
-  {
-   "id": "cm-le-1",
-   "location": "§6",
-   "claim_text": "LLM as a constrained, evidence-producing tagger",
-   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
-   "quote": "uses a large language model (LLM) as a constrained, evidence-producing tagger",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "cm-le-2",
-   "location": "§6",
-   "claim_text": "22 competencies; micro-F1 0.57, macro-F1 0.50",
-   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
-   "quote": "with a micro-F1 of 0.57 and macro-F1 of 0.50 at the fragment level",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "cm-le-3",
-   "location": "§6",
-   "claim_text": "framework from one university department, 22 competencies",
-   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
-   "quote": "covering 22 competencies",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "cm-le-4",
-   "location": "§6",
-   "claim_text": "better than the alternatives they tested",
-   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
-   "quote": "outperforming zero-shot and few-shot LLM variants, retrieval/similarity baselines, and supervised classifiers",
-   "page": "p. 1 (abstract); Table 2, p. 11"
-  },
-  {
-   "id": "cm-veys-1",
-   "location": "§6",
-   "claim_text": "grade 1: plausible, activity not there",
-   "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
-   "quote": "yields grade 1 (plausible, but the activity is not there)",
-   "page": "p. 2"
-  },
-  {
-   "id": "cm-veys-2",
-   "location": "§6",
-   "claim_text": "ordered yes/no gates closer to a human expert than grading directly",
-   "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
-   "quote": "decomposing the grade into ordered binary gates produces labels closer to a human expert than asking the same model for the grade directly",
-   "page": "p. 5"
-  },
-  {
-   "id": "cm-turaev-1",
-   "location": "§9",
-   "claim_text": "five programs; 1,922 course outcomes vs competencies from 5,186 job openings",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "comparing 1,922 course learning outcomes against 103,349 competencies extracted from a unified corpus of 5,186 deduplicated job openings",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "cm-turaev-2",
-   "location": "§9",
-   "claim_text": "mean Bloom level 2.68 vs market 3.63, −0.95 of a level",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "at a mean Bloom level of 2.68 against the market’s 3.63, a differential of −0.95 of a level",
-   "page": "p. 12"
-  },
-  {
-   "id": "cm-turaev-3",
-   "location": "§9",
-   "claim_text": "shared core satisfies about a third of demanded competencies",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "the shared college core satisfies only about a third of the demanded competencies",
-   "page": "p. 1 (abstract); p. 12 gives coverage 0.31"
-  },
-  {
-   "id": "cm-turaev-4",
-   "location": "§9 / §8",
-   "claim_text": "level κ 0.86 by two blind faculty raters",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "The extraction is validated blind by two independent faculty raters (domain κ = 0.91, Bloom level κ = 0.86)",
-   "page": "p. 1 (abstract)"
-  },
-  {
-   "id": "cm-turaev-5",
-   "location": "§11",
-   "claim_text": "a plan of study is \"an inventory of opportunities rather than a record of attainment\"",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "A published plan of study is an inventory of opportunities rather than a record of attainment",
-   "page": "p. 2"
-  },
-  {
-   "id": "cm-turaev-6",
-   "location": "§11",
-   "claim_text": "counting every cataloged course equally measures an idealized program no student completes",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "A supply-versus-demand comparison that counts every cataloged course equally therefore measures an idealized program that no student actually completes",
-   "page": "p. 2"
-  },
-  {
-   "id": "cm-turaev-7",
-   "location": "§8",
-   "claim_text": "multi-verb outcomes: leading verb vs highest-order verb",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "leveling by the leading verb, the convention the extraction adopts, parts company with leveling by the highest-order verb",
-   "page": "p. 10"
-  },
-  {
-   "id": "cm-turaev-audit1",
-   "location": "§9",
-   "claim_text": "Most demand-side competencies receive no Bloom level",
-   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
-   "quote": "the majority of competencies are possessions for which no cognitive level can be honestly assigned",
-   "page": "p. 6"
-  },
-  {
-   "id": "cm-nelson-audit1",
-   "location": "§8",
-   "claim_text": "Nelson's program started with one goal and staggered the rest on its review timelines",
-   "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
-   "quote": "We started by creating a rubric for just one programme goal and then staggered remaining mapping work to align with our existing three-year review timelines.",
-   "page": "web article, no page numbers"
-  },
-  {
-   "id": "cm-plaza-audit1",
-   "location": "§6",
-   "claim_text": "Plaza: recollection-based retrospective mapping is subject to recall bias from faculty and students",
-   "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
-   "quote": "the retrospective nature of the curriculum mapping makes it subject to recall bias from faculty members and students",
-   "page": "Discussion (PMC1858603 web text)"
-  },
-  {
-   "id": "cm-plaza-audit2",
-   "location": "§6",
-   "claim_text": "Plaza's own syllabus-based map assumed intended = delivered",
-   "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
-   "quote": "The assumption that the intended curriculum was the same as the delivered curriculum was also a major limitation of this study.",
-   "page": "Discussion (PMC1858603 web text)"
-  },
-  {
-   "id": "cm-le-audit1",
-   "location": "§6",
-   "claim_text": "Lê et al. expect stronger models to improve on their result",
-   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
-   "quote": "It is reasonable to expect that larger or domain-adapted models could further improve F1 and evidence quality",
-   "page": "PDF p. 13"
-  },
-  {
-   "id": "cm-heileman-audit1",
-   "location": "§9",
-   "claim_text": "Heileman et al.'s main evidence is a simulation of hypothetical students",
-   "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
-   "quote": "we developed a simulation model that allows us to study the impact of these components on hypothetical students within a simulated environment",
-   "page": "PDF p. 14"
-  },
-  {
-   "id": "cm-heileman-audit2",
-   "location": "§9",
-   "claim_text": "The paper is a prerelease",
-   "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
-   "quote": "This paper is a prerelease created for the purpose of obtaining feedback.",
-   "page": "PDF p. 1"
-  },
-  {
-   "id": "cm-arthur-audit1",
-   "location": "§12",
-   "claim_text": "Arthur et al.'s Discussion gives the first-interval figure as -0.1",
-   "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
-   "quote": "the amount of skill loss ranges from a d of -0.1 immediately after training (less than one day) to a d of -1.4 after more than 365 days of nonuse",
-   "page": "p. 85"
-  }
- ]
+  "page": "curriculum-map-deep-dive.html",
+  "generated": "2026-11-15",
+  "claims": [
+    {
+      "id": "cm-plaza-1",
+      "location": "§2",
+      "claim_text": "Plaza et al. summarize Harden's two main functions of a curriculum map: transparency and showing links between components",
+      "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
+      "quote": "Harden detailed the 2 main functions of curriculum maps in medical education: to make the curriculum more transparent to all the stakeholders and to demonstrate the links between the various components of the curriculum.",
+      "page": "Introduction (AJPE 71(2) art. 20, PMC1858603 web text)"
+    },
+    {
+      "id": "cm-plaza-2",
+      "location": "§2",
+      "claim_text": "Maps link learning outcomes, learning opportunities, content and assessment",
+      "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
+      "quote": "demonstrate the links among the different key components of the curriculum: learning outcomes, learning opportunities, content, and assessment",
+      "page": "Introduction"
+    },
+    {
+      "id": "cm-rawle-1",
+      "location": "§2",
+      "claim_text": "In one Toronto department, instructors marked each map element as taught and/or assessed, and at which level (introduced/reinforced/advanced)",
+      "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
+      "quote": "For each map element, instructors had to identify if it was taught and/or assessed, and at which level (introduced/reinforced/advanced)",
+      "page": "PDF p. 6 (printed p. 80)"
+    },
+    {
+      "id": "cm-nelson-1",
+      "location": "§2",
+      "claim_text": "Nelson's milestone sequence: early exposure and introduction, reinforcement, final demonstration and mastery",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "Early exposure and introduction to goals",
+      "page": "web article, section 'Break down programme goals into learning milestones'"
+    },
+    {
+      "id": "cm-nelson-2",
+      "location": "§2",
+      "claim_text": "Nelson's milestone sequence ends in final demonstration and mastery",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "Final demonstration and mastery of goals",
+      "page": "web article, same section"
+    },
+    {
+      "id": "cm-biggs-1",
+      "location": "§2",
+      "claim_text": "Constructive alignment uses the performances of understanding in the objectives to align teaching methods and assessment",
+      "held_file": "pdfs:biggs-1996-constructive-alignment.pdf",
+      "quote": "performances of understanding … align the teaching methods and the assessment",
+      "page": "p. 347 (abstract)"
+    },
+    {
+      "id": "cm-wiggins-1",
+      "location": "§2",
+      "claim_text": "Wiggins & McTighe's Stage 1 question: what should students know, understand, and be able to do?",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "What should students know, understand, and be able to do?",
+      "page": "printed p. 17 (PDF p. 29), Stage 1"
+    },
+    {
+      "id": "cm-wiggins-2",
+      "location": "§2",
+      "claim_text": "Wiggins & McTighe extend backward design to course syllabi and program frameworks",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "the design of course syllabi and program frameworks using backward design",
+      "page": "printed p. 275 (PDF p. 287), ch. 12"
+    },
+    {
+      "id": "cm-rawle-2",
+      "location": "§3",
+      "claim_text": "Rawle et al.: mapping can identify gaps and increase transparency",
+      "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
+      "quote": "Curriculum mapping can also be used to identify gaps (Lam & Tsui, 2013), and can lead to increased transparency (Harden, 2001).",
+      "page": "PDF p. 1 (printed p. 75)"
+    },
+    {
+      "id": "cm-barthakur-1",
+      "location": "§3",
+      "claim_text": "Mapping is used to find gaps, redundancies and misalignments between assessments and stated outcomes",
+      "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
+      "quote": "curriculum mapping is used to identify potential gaps, redundancies and misalignments between assessments and the stated outcomes",
+      "page": "PDF p. 4"
+    },
+    {
+      "id": "cm-timss-1",
+      "location": "§4",
+      "claim_text": "TIMSS curriculum model: intended, implemented, achieved",
+      "held_file": "pdfs:timss-2011-frameworks-introduction.pdf",
+      "quote": "The TIMSS curriculum model has three aspects: the intended curriculum, the implemented curriculum, and the achieved curriculum",
+      "page": "PDF p. 6"
+    },
+    {
+      "id": "cm-timss-2",
+      "location": "§4",
+      "claim_text": "Implemented = what is actually taught; achieved = what students have learned",
+      "held_file": "pdfs:timss-2011-frameworks-introduction.pdf",
+      "quote": "what is actually taught in classrooms, the characteristics of those teaching it, and how it is taught; and, finally, what it is that students have learned",
+      "page": "PDF p. 6"
+    },
+    {
+      "id": "cm-plaza-3",
+      "location": "§4",
+      "claim_text": "Designed/intended, delivered/enacted, experienced/learned curriculum defined",
+      "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
+      "quote": "The designed or intended curriculum is the institutional and program requirements, the delivered or enacted curriculum is the instructional delivery, and the experienced or learned curriculum is what the students actually experience.",
+      "page": "Introduction"
+    },
+    {
+      "id": "cm-plaza-4",
+      "location": "§4",
+      "claim_text": "In a triangulated mapping study Plaza et al. review, teachers reported more coverage than students",
+      "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
+      "quote": "it was mostly “hidden” and teachers reported a greater extent of coverage than did students",
+      "page": "Introduction (describing a medical-school study)"
+    },
+    {
+      "id": "cm-plaza-5",
+      "location": "§6",
+      "claim_text": "Retrospective mapping is subject to faculty recall bias",
+      "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
+      "quote": "the retrospective nature of the curriculum mapping makes it subject to recall bias from faculty members",
+      "page": "Discussion"
+    },
+    {
+      "id": "cm-barthakur-2",
+      "location": "§4",
+      "claim_text": "A map of the declared curriculum may deviate substantially from what learners do and how they are assessed",
+      "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
+      "quote": "A map of the intended or declared curriculum is created, which may substantially deviate from the ways in which learners actually engage and are assessed",
+      "page": "PDF p. 2"
+    },
+    {
+      "id": "cm-barthakur-3",
+      "location": "§4",
+      "claim_text": "Hard to call a map valid if validity rests on what students do and achieve",
+      "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
+      "quote": "It is, therefore, difficult to claim a curriculum map is valid, assuming that the evidentiary basis of validity is what students actually do, experience and achieve.",
+      "page": "PDF p. 2"
+    },
+    {
+      "id": "cm-sato-1",
+      "location": "§4",
+      "claim_text": "A listed prerequisite lecture course did not affect success in the lab course",
+      "held_file": "pdfs:web/sato-2017-whats-in-a-prerequisite.html",
+      "quote": "Both sources of data provided complementary evidence that MLec does not impact success in MLab",
+      "page": "Introduction (ar16, PMC5332042)"
+    },
+    {
+      "id": "cm-frej-1",
+      "location": "§4",
+      "claim_text": "Frej et al. name, as an assumption of their model, that completing a course automatically yields its skills",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "that completing a course will automatically result in the acquisition of the associated skills by the learners",
+      "page": "p. 8"
+    },
+    {
+      "id": "cm-jayalath26-1",
+      "location": "§5",
+      "claim_text": "Curriculum mapping is often applied in a simplistic, accreditation-driven presence/absence manner",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "it is often applied in a simplistic, accreditation-driven manner that merely records the presence or absence of skills embedded in assessments",
+      "page": "PDF p. 1 (printed p. 589)"
+    },
+    {
+      "id": "cm-barthakur-4",
+      "location": "§5",
+      "claim_text": "Few studies make quality-assurance maps traceable to single courses and assessment items",
+      "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
+      "quote": "Few studies have adopted an analytical approach to ensure programme quality assurance steps are traceable to a fundamental level of these maps: single courses and their assessment items.",
+      "page": "PDF p. 1"
+    },
+    {
+      "id": "cm-nelson-3",
+      "location": "§5",
+      "claim_text": "Nelson: mapping is not a one-time administrative project but an ongoing responsibility",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "Curriculum mapping is not simply a one-time administrative project or bureaucratic task; it is an ongoing leadership responsibility.",
+      "page": "web article, closing paragraph"
+    },
+    {
+      "id": "cm-barthakur-5",
+      "location": "§6",
+      "claim_text": "Manual mapping from documentation is time-consuming and open to error and bias",
+      "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
+      "quote": "Such an approach is not only time-consuming but susceptible to human error and subjective bias.",
+      "page": "PDF p. 2"
+    },
+    {
+      "id": "cm-jayalath25-1",
+      "location": "§6",
+      "claim_text": "Expert reviewers' overall agreement was Krippendorff's alpha 0.70",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "The overall Krippendorff's alpha value for the reviewers' labelling was 0.70",
+      "page": "PDF p. 6 (printed p. 299)"
+    },
+    {
+      "id": "cm-jayalath25-2",
+      "location": "§6",
+      "claim_text": "In the GenAI-vs-expert comparison, challenges persist for skills less explicitly defined in course documents",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "less explicitly defined in course documents",
+      "page": "PDF p. 12 (printed p. 305), Conclusion"
+    },
+    {
+      "id": "cm-jayalath25-3",
+      "location": "§6",
+      "claim_text": "GenAI-vs-expert agreement: oral communication near-perfect",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "Oral Communication stands out with near-perfect agreement",
+      "page": "PDF p. 8 (printed p. 301)"
+    },
+    {
+      "id": "cm-jayalath25-4",
+      "location": "§6",
+      "claim_text": "GenAI-vs-expert agreement: written communication and international perspectives lower",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "Written Communication and International Perspectives had lower alpha values",
+      "page": "PDF p. 9 (printed p. 302)"
+    },
+    {
+      "id": "cm-heileman-1",
+      "location": "§7",
+      "claim_text": "'Faculty own curriculum' is taken by many to mean 'stay out of the faculty's business'",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "The mantra often stated when the subject of curriculum is broached is, “faculty own curriculum,” taken by many to mean “stay out of the faculty’s business.”",
+      "page": "PDF p. 2"
+    },
+    {
+      "id": "cm-rawle-3",
+      "location": "§7",
+      "claim_text": "Pedagogical jargon is a barrier across disciplines",
+      "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
+      "quote": "pedagogical jargon tends to be a barrier across disciplines",
+      "page": "PDF p. 5 (printed p. 79), Table 2"
+    },
+    {
+      "id": "cm-rawle-4",
+      "location": "§7",
+      "claim_text": "Biology surveyed faculty at the start for the curricular questions they needed answered and followed up",
+      "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
+      "quote": "Biology tried to increase faculty buy-in by surveying all faculty at the beginning and asking them what curricular questions they needed to be answered and then making sure to follow up with those answers",
+      "page": "PDF p. 8 (printed p. 82)"
+    },
+    {
+      "id": "cm-rawle-5",
+      "location": "§7",
+      "claim_text": "Geography earned buy-in by showcasing maps used by other departments",
+      "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
+      "quote": "Geography was able to earn faculty buy-in by showcasing curriculum maps that were being used by other departments.",
+      "page": "PDF p. 8 (printed p. 82)"
+    },
+    {
+      "id": "cm-rawle-6",
+      "location": "§7",
+      "claim_text": "One department dropped out for lack of faculty support",
+      "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
+      "quote": "one other department had to drop out because of the lack of support from other faculty members",
+      "page": "PDF p. 8 (printed p. 82)"
+    },
+    {
+      "id": "cm-rawle-7",
+      "location": "§7",
+      "claim_text": "All departments found mapping fostered collaborative discussion of teaching and learning",
+      "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
+      "quote": "fostered a collaborative approach to discussing teaching and learning throughout the department",
+      "page": "PDF p. 8 (printed p. 82)"
+    },
+    {
+      "id": "cm-rawle-8",
+      "location": "§7",
+      "claim_text": "Most departments organized data in Excel",
+      "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
+      "quote": "most departments use excel to organize their curricular data",
+      "page": "PDF p. 5 (printed p. 79), Table 2"
+    },
+    {
+      "id": "cm-rawle-9",
+      "location": "§8",
+      "claim_text": "A goal was a colored visualization highlighting overlaps, gaps and inconsistencies",
+      "held_file": "pdfs:rawle-2017-curriculum-mapping-across-disciplines.pdf",
+      "quote": "create a coloured visualization that would highlight overlaps, gaps, and inconsistencies",
+      "page": "PDF p. 7 (printed p. 81)"
+    },
+    {
+      "id": "cm-nelson-4",
+      "location": "§7",
+      "claim_text": "Nelson approached mapping as collaborative, compensated work",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "we approached curriculum mapping as collaborative, compensated work",
+      "page": "web article, section 'Bring others on board'"
+    },
+    {
+      "id": "cm-nelson-5",
+      "location": "§7",
+      "claim_text": "A master map does not come together all at once",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "A master curriculum map does not come together all at once.",
+      "page": "web article, section 'The role of rubrics'"
+    },
+    {
+      "id": "cm-nelson-6",
+      "location": "§8",
+      "claim_text": "Nelson: AI can surface patterns but does not replace judgment",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "AI cannot replace human judgment but it can quickly surface patterns and insights to help with decision-making.",
+      "page": "web article, section 'How AI can help with curriculum mapping'"
+    },
+    {
+      "id": "cm-heileman-2",
+      "location": "§9",
+      "claim_text": "With instruction held constant, completion and structural complexity are inversely related (the authors' stated assumption)",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "assuming instructional factors are held constant, student success (as measured by completion rates) and structural complexity are inversely related",
+      "page": "PDF p. 8"
+    },
+    {
+      "id": "cm-heileman-3",
+      "location": "§9",
+      "claim_text": "Failing a gateway course blocks many later courses",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "if a student is unable to pass the gateway course, they are blocked from attempting many of the other courses in the curriculum",
+      "page": "PDF p. 11"
+    },
+    {
+      "id": "cm-heileman-4",
+      "location": "§9",
+      "claim_text": "Long prerequisite chains raise delay and reduce degrees of freedom",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "as long prerequisite pathways are created within a curriculum, the delay factor associated with the curriculum increases, and the degrees-of-freedom decreases",
+      "page": "PDF p. 11"
+    },
+    {
+      "id": "cm-heileman-5",
+      "location": "§9",
+      "claim_text": "At UNM, each 17-point decrease in structural complexity corresponded to a 1% rise in six-year graduation rate",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "every 17 point decrease in structural complexity corresponds to a 1% increase in the six-year graduation rate",
+      "page": "PDF p. 21"
+    },
+    {
+      "id": "cm-heileman-6",
+      "location": "§9",
+      "claim_text": "Observed inverse correlation between perceived engineering program quality and structural complexity",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "we have observed an inverse correlation between the perceived quality of engineering programs (as determined by US News & World Reports ranking) and the structural complexities of these programs",
+      "page": "PDF p. 21"
+    },
+    {
+      "id": "cm-heileman-7",
+      "location": "§9",
+      "claim_text": "Conjecture: the simplest curriculum that attains the outcomes yields the best success outcomes",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "the simplest curricula (in terms of structural complexity) that allows students to attain a program’s learning outcomes yields the best student success outcomes",
+      "page": "PDF p. 21"
+    },
+    {
+      "id": "cm-aldrich-1",
+      "location": "§9",
+      "claim_text": "Aldrich treats the curriculum as a network of courses linked by prerequisites from the catalog",
+      "held_file": "pdfs:aldrich-2014-curriculum-prerequisite-network.pdf",
+      "quote": "Here I treat the curriculum as a complex system with … nodes representing courses and links between nodes the … course prerequisites as readily obtained from a course",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "cm-aldrich-2",
+      "location": "§9",
+      "claim_text": "Courses play roles such as information sources, hubs and bridges",
+      "held_file": "pdfs:aldrich-2014-curriculum-prerequisite-network.pdf",
+      "quote": "different roles in the overall organization, such as … information sources, hubs, and bridges",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "cm-corcoran-1",
+      "location": "§10",
+      "claim_text": "Learning progressions as empirically grounded, testable hypotheses",
+      "held_file": "pdfs:corcoran-mosher-rogat-2009-learning-progressions-summary.pdf",
+      "quote": "learning progressions should be defined as empirically grounded and testable hypotheses about how students’ understanding and ability to use knowledge and skills in core school subjects",
+      "page": "PDF p. 1"
+    },
+    {
+      "id": "cm-corcoran-2",
+      "location": "§10",
+      "claim_text": "Lower levels may be mistaken understandings that must be revised, not correct-but-incomplete ones",
+      "held_file": "pdfs:corcoran-mosher-rogat-2009-learning-progressions-summary.pdf",
+      "quote": "may reflect mistaken or imperfect understandings of the target concepts that have to be revised or abandoned before the student can move on, rather than, as standards seem often to conceive of them, correct but incomplete understandings",
+      "page": "PDF p. 5"
+    },
+    {
+      "id": "cm-corcoran-3",
+      "location": "§10",
+      "claim_text": "Testing cannot establish a progression's validity once and for all",
+      "held_file": "pdfs:corcoran-mosher-rogat-2009-learning-progressions-summary.pdf",
+      "quote": "we should not think that testing these propositions can establish the validity of a progression once and for all",
+      "page": "PDF p. 11"
+    },
+    {
+      "id": "cm-gibbs-1",
+      "location": "§10",
+      "claim_text": "Gibbs's summary of the spiral: revisit with increasing complexity",
+      "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
+      "quote": "students revisit a topic, theme, or subject several times throughout their schooling, where the complexity of the topic is increased with each visit so the new learning is connected to the old learning",
+      "page": "held web copy, single PDF page"
+    },
+    {
+      "id": "cm-doignon-1",
+      "location": "§10",
+      "claim_text": "In knowledge space theory the outer fringe tells exactly what a student is ready to learn",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "it tells us exactly what the student is ready to learn",
+      "page": "printed p. 16 (Definition 20 on p. 15)"
+    },
+    {
+      "id": "cm-nelson-7",
+      "location": "§11",
+      "claim_text": "When students can take courses in any order, essential skills are presumed learned somewhere",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "when students can complete the curriculum in any order, essential skills are often presumed to be learned somewhere along the way, rather than intentionally integrated and reinforced throughout",
+      "page": "web article, opening"
+    },
+    {
+      "id": "cm-nelson-8",
+      "location": "§11",
+      "claim_text": "A capstone expected mastery where students first met the instruction, turning it into a crash course",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "This made what should have been an opportunity for reinforcement and mastery into a high-stakes crash course.",
+      "page": "web article, opening"
+    },
+    {
+      "id": "cm-bjork-1",
+      "location": "§12",
+      "claim_text": "Massed practice gives better short-term but markedly inferior long-term performance",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
+      "quote": "In general, compared to distributing practice sessions on a given task over time, massing practice or study sessions on to-be-learned procedures or information produces better short-term performance or recall of that procedure or information, but markedly inferior long-term performance or recall.",
+      "page": "PDF p. 190 (printed p. 190)"
+    },
+    {
+      "id": "cm-cepeda-1",
+      "location": "§12",
+      "claim_text": "No hint that massed beat spaced at any retention interval",
+      "held_file": "ai_career:future_of_gc/load_bearing/Cepeda_etal_2006_Distributed_Practice_Verbal_Recall_Meta-Analysis.pdf",
+      "quote": "there is no hint that massed presentation was preferable to spaced, whether retention interval was very short (less than 1 min) or very long (over 30 days)",
+      "page": "p. 359"
+    },
+    {
+      "id": "cm-arthur-1",
+      "location": "§12",
+      "claim_text": "Skill loss from d = -0.01 immediately to d = -1.4 after more than a year of nonuse",
+      "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
+      "quote": "the amount of skill loss ranging from an effect size (d) of -0.01 immediately after training to a d of -1.4 after more than 365 days of nonuse.",
+      "page": "p. 57 (abstract)"
+    },
+    {
+      "id": "cm-arthur-2",
+      "location": "§12",
+      "claim_text": "Physical, natural and speed-based tasks decayed less than cognitive, artificial and accuracy-based tasks",
+      "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
+      "quote": "Physical, natural, and speed-based tasks were less susceptible to skill loss than cognitive, artificial, and accuracy-based tasks.",
+      "page": "p. 57 (abstract)"
+    },
+    {
+      "id": "cm-bahrick-1",
+      "location": "§12",
+      "claim_text": "The share held in permastore depends on level of original training and grades",
+      "held_file": "pdfs:bahrick-1984-permastore.pdf",
+      "quote": "This portion of the information in a \"permastore\" state is a function of the level of original training, the grades received in Spanish courses, and the method of testing (recall vs. recognition)",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "cm-perkins-1",
+      "location": "§12",
+      "claim_text": "Perkins & Salomon: the conditions for transfer are stringent",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "This analysis along with the views and findings of Luria, Scribner and Cole, Greeno, and others emphasizes that the conditions for transfer are stringent.",
+      "page": "PDF p. 8 (printed \"8 of 11\")"
+    },
+    {
+      "id": "cm-bridges-1",
+      "location": "§13",
+      "claim_text": "Bridges's panel identified soft skills as most needed skills and software as most needed tools",
+      "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
+      "quote": "Participants of the study overwhelmingly identified soft skills as being the most needed skills, while software applications were identified as the most needed tools.",
+      "page": "p. 243 (abstract)"
+    },
+    {
+      "id": "cm-bridges-2",
+      "location": "§13",
+      "claim_text": "Of about 300 invited, 13 educators and 21 industry professionals committed",
+      "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
+      "quote": "Of the 300 requested, 13 educators and 21 industry professionals committed to the research project",
+      "page": "p. 245"
+    },
+    {
+      "id": "cm-bridges-3",
+      "location": "§13",
+      "claim_text": "Competencies were rated on a one-to-seven desirability scale",
+      "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
+      "quote": "rate each competency using a Likert scale ranging from one to seven",
+      "page": "p. 245"
+    },
+    {
+      "id": "cm-bridges-4",
+      "location": "§13",
+      "claim_text": "Panel drawn from the southeast United States",
+      "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
+      "quote": "educators and industry professionals located in the southeast United States",
+      "page": "p. 243 (abstract)"
+    },
+    {
+      "id": "cm-bridges-5",
+      "location": "§13",
+      "claim_text": "Critical thinking ranked highest in round three",
+      "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
+      "quote": "Critical thinking skills were, again, the highest-ranking competency in round three.",
+      "page": "p. 249"
+    },
+    {
+      "id": "cm-bridges-6",
+      "location": "§13",
+      "claim_text": "Highest-ranking round-two statements were general (soft) skills",
+      "held_file": "pdfs:bridges-2020-gc-competencies-delphi.pdf",
+      "quote": "critical thinking skills, problem solving and analytical skills, teamwork, communication skills, and business and personal ethics",
+      "page": "p. 248"
+    },
+    {
+      "id": "cm-atlas-1",
+      "location": "§4",
+      "claim_text": "\"teaching does not necessarily equate to learning\"",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "it is crucial to acknowledge that teaching does not necessarily equate to learning",
+      "page": "p. 19"
+    },
+    {
+      "id": "cm-atlas-2",
+      "location": "§4",
+      "claim_text": "difficult to confirm effectiveness without wide-scale exams",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "it is difficult to confirm the effectiveness of our approach without wide-scale comprehensive exams to test the skills that students actually obtain during a course",
+      "page": "p. 19"
+    },
+    {
+      "id": "cm-le-1",
+      "location": "§6",
+      "claim_text": "LLM as a constrained, evidence-producing tagger",
+      "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+      "quote": "uses a large language model (LLM) as a constrained, evidence-producing tagger",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "cm-le-2",
+      "location": "§6",
+      "claim_text": "22 competencies; micro-F1 0.57, macro-F1 0.50",
+      "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+      "quote": "with a micro-F1 of 0.57 and macro-F1 of 0.50 at the fragment level",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "cm-le-3",
+      "location": "§6",
+      "claim_text": "framework from one university department, 22 competencies",
+      "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+      "quote": "covering 22 competencies",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "cm-le-4",
+      "location": "§6",
+      "claim_text": "better than the alternatives they tested",
+      "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+      "quote": "outperforming zero-shot and few-shot LLM variants, retrieval/similarity baselines, and supervised classifiers",
+      "page": "p. 1 (abstract); Table 2, p. 11"
+    },
+    {
+      "id": "cm-veys-1",
+      "location": "§6",
+      "claim_text": "grade 1: plausible, activity not there",
+      "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
+      "quote": "yields grade 1 (plausible, but the activity is not there)",
+      "page": "p. 2"
+    },
+    {
+      "id": "cm-veys-2",
+      "location": "§6",
+      "claim_text": "ordered yes/no gates closer to a human expert than grading directly",
+      "held_file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
+      "quote": "decomposing the grade into ordered binary gates produces labels closer to a human expert than asking the same model for the grade directly",
+      "page": "p. 5"
+    },
+    {
+      "id": "cm-turaev-1",
+      "location": "§9",
+      "claim_text": "five programs; 1,922 course outcomes vs competencies from 5,186 job openings",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "comparing 1,922 course learning outcomes against 103,349 competencies extracted from a unified corpus of 5,186 deduplicated job openings",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "cm-turaev-2",
+      "location": "§9",
+      "claim_text": "mean Bloom level 2.68 vs market 3.63, −0.95 of a level",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "at a mean Bloom level of 2.68 against the market’s 3.63, a differential of −0.95 of a level",
+      "page": "p. 12"
+    },
+    {
+      "id": "cm-turaev-3",
+      "location": "§9",
+      "claim_text": "shared core satisfies about a third of demanded competencies",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "the shared college core satisfies only about a third of the demanded competencies",
+      "page": "p. 1 (abstract); p. 12 gives coverage 0.31"
+    },
+    {
+      "id": "cm-turaev-4",
+      "location": "§9 / §8",
+      "claim_text": "level κ 0.86 by two blind faculty raters",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "The extraction is validated blind by two independent faculty raters (domain κ = 0.91, Bloom level κ = 0.86)",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "cm-turaev-5",
+      "location": "§11",
+      "claim_text": "a plan of study is \"an inventory of opportunities rather than a record of attainment\"",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "A published plan of study is an inventory of opportunities rather than a record of attainment",
+      "page": "p. 2"
+    },
+    {
+      "id": "cm-turaev-6",
+      "location": "§11",
+      "claim_text": "counting every cataloged course equally measures an idealized program no student completes",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "A supply-versus-demand comparison that counts every cataloged course equally therefore measures an idealized program that no student actually completes",
+      "page": "p. 2"
+    },
+    {
+      "id": "cm-turaev-7",
+      "location": "§8",
+      "claim_text": "multi-verb outcomes: leading verb vs highest-order verb",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "leveling by the leading verb, the convention the extraction adopts, parts company with leveling by the highest-order verb",
+      "page": "p. 10"
+    },
+    {
+      "id": "cm-turaev-audit1",
+      "location": "§9",
+      "claim_text": "Most demand-side competencies receive no Bloom level",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "the majority of competencies are possessions for which no cognitive level can be honestly assigned",
+      "page": "p. 6"
+    },
+    {
+      "id": "cm-nelson-audit1",
+      "location": "§8",
+      "claim_text": "Nelson's program started with one goal and staggered the rest on its review timelines",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "We started by creating a rubric for just one programme goal and then staggered remaining mapping work to align with our existing three-year review timelines.",
+      "page": "web article, no page numbers"
+    },
+    {
+      "id": "cm-plaza-audit1",
+      "location": "§6",
+      "claim_text": "Plaza: recollection-based retrospective mapping is subject to recall bias from faculty and students",
+      "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
+      "quote": "the retrospective nature of the curriculum mapping makes it subject to recall bias from faculty members and students",
+      "page": "Discussion (PMC1858603 web text)"
+    },
+    {
+      "id": "cm-plaza-audit2",
+      "location": "§6",
+      "claim_text": "Plaza's own syllabus-based map assumed intended = delivered",
+      "held_file": "pdfs:web/plaza-2007-curriculum-mapping-pharmacy.html",
+      "quote": "The assumption that the intended curriculum was the same as the delivered curriculum was also a major limitation of this study.",
+      "page": "Discussion (PMC1858603 web text)"
+    },
+    {
+      "id": "cm-le-audit1",
+      "location": "§6",
+      "claim_text": "Lê et al. expect stronger models to improve on their result",
+      "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+      "quote": "It is reasonable to expect that larger or domain-adapted models could further improve F1 and evidence quality",
+      "page": "PDF p. 13"
+    },
+    {
+      "id": "cm-heileman-audit1",
+      "location": "§9",
+      "claim_text": "Heileman et al.'s main evidence is a simulation of hypothetical students",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "we developed a simulation model that allows us to study the impact of these components on hypothetical students within a simulated environment",
+      "page": "PDF p. 14"
+    },
+    {
+      "id": "cm-heileman-audit2",
+      "location": "§9",
+      "claim_text": "The paper is a prerelease",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "This paper is a prerelease created for the purpose of obtaining feedback.",
+      "page": "PDF p. 1"
+    },
+    {
+      "id": "cm-arthur-audit1",
+      "location": "§12",
+      "claim_text": "Arthur et al.'s Discussion gives the first-interval figure as -0.1",
+      "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
+      "quote": "the amount of skill loss ranges from a d of -0.1 immediately after training (less than one day) to a d of -1.4 after more than 365 days of nonuse",
+      "page": "p. 85"
+    }
+  ]
 }
