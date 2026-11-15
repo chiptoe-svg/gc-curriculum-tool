@@ -170,6 +170,12 @@ describe('curriculum-plan writes', () => {
   it.each([['POST', P], ['PUT', ID], ['DELETE', ID]])('%s %s is a plan write', (m, p) => expect(classify(m, p)).toEqual({ kind: 'plan-write' }));
   it.each([['GET', P], ['GET', ID], ['GET', '/api/build/catalog']])('%s %s is a read', (m, p) => expect(classify(m, p)).toEqual({ kind: 'read' }));
   it('a login scoped to one course may save a plan', () => expect(authorize(scoped, 'PUT', ID)).toEqual({ ok: true }));
+  it('a link decision is a plan write: any login that can capture a course may make one; others are refused', () => {
+    expect(classify('POST', '/api/build/links')).toEqual({ kind: 'plan-write' });
+    expect(authorize(scoped, 'POST', '/api/build/links')).toEqual({ ok: true });
+    expect(authorize(creator, 'POST', '/api/build/links')).toEqual({ ok: false, reason: 'needs-capture' });
+    expect(classify('POST', '/api/build/links/extra')).toEqual({ kind: 'admin' });
+  });
   it.each([creator, noCourses])('a create-only or no-course login is refused', g =>
     expect(authorize(g, 'POST', P)).toEqual({ ok: false, reason: 'needs-capture' }));
   it.each([['POST', `${ID}/anything`], ['POST', `${P}/not-an-id`], ['POST', '/api/build/other']])(

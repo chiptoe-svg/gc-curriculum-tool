@@ -942,6 +942,52 @@ export const snapshotCompetencyCoverage = pgTable('snapshot_competency_coverage'
 ]);
 
 /**
+ * Migration 0068 (spec 2026-11-15-skill-competency-links-design.md): which catalog competency a captured skill
+ * counts toward. The skill (a statement in the snapshot's profile) is never changed; a link is proposed by an
+ * embedding match, an AI pass or the old scoring, and confirmed, rejected or added by faculty.
+ */
+export const skillCompetencyLinks = pgTable('skill_competency_links', {
+  snapshotId: uuid('snapshot_id').notNull(),
+  skillRef: text('skill_ref').notNull(),
+  statement: text('statement').notNull(),
+  competencyId: text('competency_id').notNull(),
+  source: text('source').$type<'embedding' | 'ai' | 'scoring' | 'faculty'>().notNull(),
+  status: text('status').$type<'proposed' | 'confirmed' | 'rejected'>().notNull().default('proposed'),
+  similarity: real('similarity'),
+  note: text('note'),
+  decidedBy: text('decided_by'),
+  decidedAt: timestamp('decided_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'skill_competency_links_pkey', columns: [t.snapshotId, t.skillRef, t.competencyId] }),
+  foreignKey({ name: 'skill_competency_links_snapshot_id_fkey', columns: [t.snapshotId], foreignColumns: [courseCaptureSnapshots.id] }).onDelete('cascade'),
+  foreignKey({ name: 'skill_competency_links_competency_id_fkey', columns: [t.competencyId], foreignColumns: [subCompetencies.id] }).onDelete('cascade'),
+  index('idx_skill_competency_links_competency').on(t.competencyId),
+  check('skill_competency_links_source_check', sql`${t.source} IN ('embedding', 'ai', 'scoring', 'faculty')`),
+  check('skill_competency_links_status_check', sql`${t.status} IN ('proposed', 'confirmed', 'rejected')`),
+  check('skill_competency_links_decided_check', sql`(${t.status} = 'proposed') = (${t.decidedAt} IS NULL)`),
+]);
+
+/** Migration 0068: a course's level on a competency set by an AI judgment or by hand, over its linked skills. Absent = the highest linked skill. */
+export const competencyRollups = pgTable('competency_rollups', {
+  snapshotId: uuid('snapshot_id').notNull(),
+  competencyId: text('competency_id').notNull(),
+  k: integer('k'),
+  u: integer('u'),
+  d: integer('d'),
+  method: text('method').$type<'ai' | 'faculty'>().notNull(),
+  rationale: text('rationale'),
+  model: text('model'),
+  decidedBy: text('decided_by').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'competency_rollups_pkey', columns: [t.snapshotId, t.competencyId] }),
+  foreignKey({ name: 'competency_rollups_snapshot_id_fkey', columns: [t.snapshotId], foreignColumns: [courseCaptureSnapshots.id] }).onDelete('cascade'),
+  foreignKey({ name: 'competency_rollups_competency_id_fkey', columns: [t.competencyId], foreignColumns: [subCompetencies.id] }).onDelete('cascade'),
+  check('competency_rollups_method_check', sql`${t.method} IN ('ai', 'faculty')`),
+]);
+
+/**
  * Migration 0057 snapshot (CREATE TABLE AS SELECT, no constraints carried
  * over — every column is nullable regardless of the source's nullability):
  * each merge survivor's own snapshot_competency_coverage cells AS THEY WERE

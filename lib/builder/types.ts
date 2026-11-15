@@ -11,11 +11,28 @@ export const ACTS: ReadonlyArray<{ act: Act; name: string; verb: string; span: s
 
 /** Depth on the 0–5 scale; null = no reading on that dimension (never zero). */
 export interface Depth { k: number | null; u: number | null; d: number | null }
+/** A captured skill: one statement in a capture profile, with the level the capture gave it. Never changed downstream. */
+export interface Skill { skillRef: string; statement: string; k: number | null; u: number | null; d: number | null }
+/** A skill as linked to a catalog competency (spec 2026-11-15-skill-competency-links-design.md). */
+export interface LinkedSkill extends Skill {
+  source: 'embedding' | 'ai' | 'scoring' | 'faculty';
+  status: 'proposed' | 'confirmed' | 'rejected';
+  similarity: number | null;
+}
+
 /**
- * A course's level on one catalog competency. `source`: for a captured course, the profile statement (or trait) the
- * catalog scoring matched it from, so a reader can check the translation.
+ * A course's level on one catalog competency. For a captured course read through links: `links` are the skills
+ * counted toward it, `method` says how they were combined ('max' = the highest linked skill), and `soft` is set
+ * when every link is still a proposal. `source`: the older scoring's matched statement, when links are not in use.
  */
-export interface CompetencyDepth extends Depth { competencyId: string; source?: string | null }
+export interface CompetencyDepth extends Depth {
+  competencyId: string;
+  source?: string | null;
+  links?: LinkedSkill[];
+  method?: 'max' | 'ai' | 'faculty';
+  rationale?: string | null;
+  soft?: boolean;
+}
 
 /** Which reading of a course the plan stacks. */
 export type Lens = 'discovered' | 'stated';
@@ -36,6 +53,11 @@ export interface LibraryVersion {
   projects: Array<{ title: string; description: string; deliverables: string[] }>;
   /** The capture's problem-solving conditions (Audit Area 7); null when not recorded or captured before they were. */
   conditions: Area7Block | null;
+  /** Every skill in the capture, and those with no counting link (links in use only; empty otherwise). */
+  skills: Skill[];
+  unmapped: Skill[];
+  /** Whether the levels come from links (true) or from the older catalog scoring (false). */
+  linked: boolean;
 }
 
 /** A what-if on a course (one with a finished page): the course as it would read if the change were made. */

@@ -5,7 +5,7 @@ import { EMPTY_PLAN, type Library, type LibraryCourse } from '../types';
 
 const course = (code: string, conditions: LibraryCourse['versions'][number]['conditions'], d = 2): LibraryCourse => ({
   code, title: code, level: 1, category: 'gc_core', track: 'Core', description: '', credits: '3', wiki: null, objectives: [], sheetProjects: [], stated: [], whatIfs: [],
-  versions: [{ snapshotId: code, instructorName: null, createdAt: '2026-01-01T00:00:00.000Z', outcomes: [], disagreements: [], projects: [], conditions,
+  versions: [{ snapshotId: code, instructorName: null, createdAt: '2026-01-01T00:00:00.000Z', outcomes: [], disagreements: [], projects: [], conditions, skills: [], unmapped: [], linked: false,
     depths: [{ competencyId: 'color', k: 2, u: 2, d }] }],
 });
 const lib: Library = {

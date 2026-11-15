@@ -7,11 +7,14 @@
  * (searchCatalog) so the page does not ship the whole Clemson catalog.
  */
 import { pfForSnapshot } from '@/lib/db/scaffolding-queries';
+import { rollUp, type LinkRow, type RollupRow } from './links';
+import { textHash } from '@/lib/catalog/bundles';
+import { normalizeStatement } from '@/lib/catalog/project-trail';
 import { and, asc, eq, ilike, notInArray, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   careerTargetMembership, careerTargets, courseCatalogEntries, courseIntendedCoverage, courses,
-  snapshotCompetencyCoverage, subCompetencies,
+  competencyRollups, skillCompetencyLinks, snapshotCompetencyCoverage, subCompetencies,
 } from '@/lib/db/schema';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 import { loadPrereqMap } from '@/lib/curriculum/prereq-map';
@@ -21,7 +24,7 @@ import { loadCompetencyRelations } from './relations';
 import { courseWhatIfs } from '@/lib/db/schema';
 import { resolveWhatIfDepths } from '@/lib/what-if/knock-on';
 import { isNotNull } from 'drizzle-orm';
-import type { CompetencyDepth, Library, LibraryCourse, LibraryVersion, LibraryWhatIf } from './types';
+import type { CompetencyDepth, Library, LibraryCourse, LibraryVersion, LibraryWhatIf, Skill } from './types';
 
 const norm = (s: string) => s.trim().toUpperCase().replace(/\s+/g, ' ');
 
@@ -63,6 +66,38 @@ export async function loadLibrary(): Promise<Library> {
     list.push({ competencyId: r.competencyId, k: r.k, u: r.u, d: r.d, source: r.source });
     depthsBySnap.set(r.snapshotId, list);
   }
+  // Links and roll-ups (migration 0068), when present: the levels come from the capture's own skills through
+  // editable links, not from the older scoring. Before 0068 is applied the old scoring is used unchanged.
+  const foundationalIds = new Set(compRows.filter(c => c.foundational).map(c => c.id));
+  let linkRows: Array<LinkRow & { snapshotId: string }> = [];
+  let rollupRows: Array<RollupRow & { snapshotId: string }> = [];
+  let linksInUse = false;
+  try {
+    linkRows = (await db.select({
+      snapshotId: skillCompetencyLinks.snapshotId, skillRef: skillCompetencyLinks.skillRef, competencyId: skillCompetencyLinks.competencyId,
+      source: skillCompetencyLinks.source, status: skillCompetencyLinks.status, similarity: skillCompetencyLinks.similarity,
+    }).from(skillCompetencyLinks)).filter(r => live.has(r.competencyId));
+    rollupRows = (await db.select({
+      snapshotId: competencyRollups.snapshotId, competencyId: competencyRollups.competencyId,
+      k: competencyRollups.k, u: competencyRollups.u, d: competencyRollups.d, method: competencyRollups.method, rationale: competencyRollups.rationale,
+    }).from(competencyRollups)).filter(r => live.has(r.competencyId));
+    linksInUse = true;
+  } catch { /* 0068 not applied on this database: keep the older scoring */ }
+  const linksBySnap = new Map<string, LinkRow[]>();
+  for (const r of linkRows) linksBySnap.set(r.snapshotId, [...(linksBySnap.get(r.snapshotId) ?? []), r]);
+  const rollupsBySnap = new Map<string, RollupRow[]>();
+  for (const r of rollupRows) rollupsBySnap.set(r.snapshotId, [...(rollupsBySnap.get(r.snapshotId) ?? []), r]);
+  const skillsOf = (p: CaptureProfile): Skill[] => {
+    const seen = new Set<string>();
+    return (p.competencies ?? []).flatMap(c => {
+      const statement = (c.statement ?? '').trim();
+      const skillRef = statement ? textHash(normalizeStatement(statement)) : '';
+      if (!statement || seen.has(skillRef)) return [];
+      seen.add(skillRef);
+      return [{ skillRef, statement, k: c.k_depth ?? null, u: c.u_depth ?? null, d: c.d_depth ?? null }];
+    });
+  };
+
   const versionsByCourse = new Map<string, LibraryVersion[]>();
   for (const s of snapRows) {
     const createdAt = new Date(s.created_at).toISOString();
@@ -70,7 +105,13 @@ export async function loadLibrary(): Promise<Library> {
     const list = versionsByCourse.get(s.course_code) ?? [];
     list.push({
       snapshotId: s.id, instructorName: s.instructor_name, createdAt,
-      depths: depthsBySnap.get(s.id) ?? [],
+      ...(() => {
+        const skills = skillsOf(s.profile);
+        const useLinks = linksInUse && (linksBySnap.has(s.id) || rollupsBySnap.has(s.id));
+        if (!useLinks) return { depths: depthsBySnap.get(s.id) ?? [], skills, unmapped: [] as Skill[], linked: false };
+        const r = rollUp(skills, linksBySnap.get(s.id) ?? [], rollupsBySnap.get(s.id) ?? [], foundationalIds);
+        return { depths: r.depths, skills, unmapped: r.unmapped, linked: true };
+      })(),
       outcomes: ev.rows.map(r => ({ statement: r.statement, k: r.k, u: r.u, d: r.d })),
       disagreements: ev.disagreements,
       projects: (s.profile.major_projects ?? []).map(p => ({ title: p.title, description: p.description, deliverables: p.deliverables ?? [] })),
