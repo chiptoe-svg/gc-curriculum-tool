@@ -168,6 +168,20 @@
 .cb-lane.is-drop { border-color: var(--cb-accent); background: var(--cb-select); }
 .cb-lane__name { font-size: 0.75rem; color: var(--cb-ink-soft); margin-bottom: 0.2rem !important; }
 .cb-lane--branch .cb-lane__name { color: var(--lane); font-weight: 600; }
+/* Act progress strip: one tile per competency with a target at the end of this act. */
+.cb-progress { display: flex; flex-wrap: wrap; gap: 0.3rem 0.8rem; padding: 0.1rem 0 0.45rem; border-bottom: 1px dashed rgba(23, 33, 43, 0.18); }
+.cb-progress__group { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
+.cb-progress__label { font-size: 0.6875rem; color: var(--cb-ink-soft); text-transform: uppercase; letter-spacing: 0.04em; margin-right: 0.15rem; }
+.cb-tile { position: relative; width: 7.4rem; height: 2.15rem; display: grid; align-content: center; padding: 0.1rem 0.35rem 0.25rem 0.45rem; text-align: left; background: var(--cb-paper); border: 1px solid var(--cb-rule); border-left: 4px solid var(--tone, var(--cb-untouched)); border-radius: 2px; cursor: pointer; overflow: hidden; }
+.cb-tile:hover, .cb-tile.is-selected { border-color: var(--cb-ink); border-left-color: var(--tone, var(--cb-untouched)); }
+.cb-tile--reached { --tone: var(--cb-reached); }
+.cb-tile--fading { --tone: var(--cb-fading); }
+.cb-tile--short { --tone: var(--cb-short); }
+.cb-tile--untouched { --tone: var(--cb-untouched); }
+.cb-tile__name { font-size: 0.6875rem; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cb-tile__dims { font-family: var(--font-mono-plex), monospace; font-size: 0.625rem; display: flex; gap: 0.3rem; }
+.cb-tile__bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--tone, var(--cb-untouched)); }
+
 /* Cards sit where they were put: absolute positions from lib/builder/layout.ts. */
 .cb-lane__cards { position: relative; flex: 1; }
 .cb-lane__cards > .cb-card { position: absolute; }

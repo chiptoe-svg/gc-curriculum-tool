@@ -21,12 +21,12 @@ const ZOOMS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5];
 export type Update = (fn: (p: PlanState) => PlanState) => void;
 
 /** This viewer's own view settings (zoom, library shown). Kept in this browser only; never part of the shared plan. */
-type View = { zoom: number; library: boolean; arrows: boolean };
+type View = { zoom: number; library: boolean; arrows: boolean; progress: boolean };
 function readView(): View {
   try {
-    const v = JSON.parse(localStorage.getItem('cb-view') ?? '{}') as { zoom?: unknown; library?: unknown; arrows?: unknown };
-    return { zoom: typeof v.zoom === 'number' && ZOOMS.includes(v.zoom) ? v.zoom : 1, library: v.library !== false, arrows: v.arrows !== false };
-  } catch { return { zoom: 1, library: true, arrows: true }; }
+    const v = JSON.parse(localStorage.getItem('cb-view') ?? '{}') as { zoom?: unknown; library?: unknown; arrows?: unknown; progress?: unknown };
+    return { zoom: typeof v.zoom === 'number' && ZOOMS.includes(v.zoom) ? v.zoom : 1, library: v.library !== false, arrows: v.arrows !== false, progress: v.progress !== false };
+  } catch { return { zoom: 1, library: true, arrows: true, progress: true }; }
 }
 function writeView(v: View) {
   try { localStorage.setItem('cb-view', JSON.stringify(v)); } catch { /* private window or storage blocked: the setting lasts for this visit */ }
@@ -47,11 +47,12 @@ export function Builder(props: {
   const [libraryOpen, setLibraryOpen] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [arrows, setArrows] = useState(true);
+  const [showProgress, setShowProgress] = useState(true);
   // Read after the first render, so the server's HTML and the browser's first render agree.
-  useEffect(() => { const v = readView(); setZoom(v.zoom); setLibraryOpen(v.library); setArrows(v.arrows); }, []);
+  useEffect(() => { const v = readView(); setZoom(v.zoom); setLibraryOpen(v.library); setArrows(v.arrows); setShowProgress(v.progress); }, []);
   const changeView = (next: Partial<View>) => {
-    const v = { zoom: next.zoom ?? zoom, library: next.library ?? libraryOpen, arrows: next.arrows ?? arrows };
-    setZoom(v.zoom); setLibraryOpen(v.library); setArrows(v.arrows); writeView(v);
+    const v = { zoom: next.zoom ?? zoom, library: next.library ?? libraryOpen, arrows: next.arrows ?? arrows, progress: next.progress ?? showProgress };
+    setZoom(v.zoom); setLibraryOpen(v.library); setArrows(v.arrows); setShowProgress(v.progress); writeView(v);
   };
   const zoomStep = (dir: 1 | -1) => {
     const i = ZOOMS.indexOf(zoom);
@@ -319,6 +320,10 @@ export function Builder(props: {
           <input type="checkbox" checked={arrows} onChange={e => changeView({ arrows: e.target.checked })} />
           Prerequisite arrows
         </label>
+        <label className="cb-check" title="Show or hide the strip at the top of each act with one tile per competency: its target at the end of that act and how far the courses get.">
+          <input type="checkbox" checked={showProgress} onChange={e => changeView({ progress: e.target.checked })} />
+          Act progress
+        </label>
         <span className="cb-zoomctl" role="group" aria-label="Zoom">
           <button type="button" onClick={() => zoomStep(-1)} disabled={zoom === ZOOMS[0]} aria-label="Zoom out" title="Zoom out">−</button>
           <button type="button" onClick={() => changeView({ zoom: 1 })} title="Back to 100%">{Math.round(zoom * 100)}%</button>
@@ -357,7 +362,7 @@ export function Builder(props: {
         />
         <main className="cb-main">
           <CurriculumMap
-            library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} arrows={arrows} selection={selection}
+            library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} arrows={arrows} progress={showProgress} selection={selection}
             onSelect={s => { setSelection(s); setPanel(null); }} onDropCourse={onDropCourse} onOpenTargets={() => { setPanel('targets'); setSelection(null); }}
             onOpenAct={act => { setPanel({ act }); setSelection(null); }}
             onResizeAct={(act, height) => update(p => {

@@ -45,6 +45,8 @@ export function CurriculumMap(props: {
   zoom: number;
   /** Draw the prerequisite arrows between courses (a viewer setting). */
   arrows: boolean;
+  /** Draw the act progress strips (a viewer setting). */
+  progress: boolean;
   selection: Selection;
   onSelect: (s: Selection) => void;
   onDropCourse: (payload: string, target: DropTarget) => void;
@@ -211,6 +213,44 @@ export function CurriculumMap(props: {
     );
   };
 
+  // A strip at the top of each act: one small tile per competency with a target here, showing the target and
+  // how far the courses up to this point get (owner, 2026-11-15). Hover for the detail; click to open it.
+  const progress = (act: Act) => {
+    if (!props.progress) return null;
+    const here = trunks.placed.map(t => t.o).filter(o => o.checkpoints[act - 1]!.status !== 'none');
+    if (here.length === 0) return null;
+    const groups: Array<{ name: string; items: ObjectiveResult[] }> = [];
+    for (const o of here) {
+      const name = stratumName(o.competency.stratum);
+      if (groups[groups.length - 1]?.name !== name) groups.push({ name, items: [] });
+      groups[groups.length - 1]!.items.push(o);
+    }
+    return (
+      <div className="cb-progress" aria-label={`Act ${act} targets`}>
+        {groups.map(g => (
+          <div key={g.name} className="cb-progress__group">
+            <span className="cb-progress__label">{g.name}</span>
+            {g.items.map(o => {
+              const cp = o.checkpoints[act - 1]!;
+              const tone = toneOfCheckpoint(cp.status);
+              const notes = dimsOf(o.competency).map(dm => dimNote(o, act - 1, dm));
+              return (
+                <button key={o.competency.id} type="button" className={`cb-tile cb-tile--${tone}${selectedObjective === o.competency.id ? ' is-selected' : ''}`}
+                  onClick={() => onSelect({ kind: 'objective', id: o.competency.id })}
+                  onMouseEnter={() => setHover({ objective: o.competency.id })} onMouseLeave={() => setHover(null)}
+                  title={`${o.competency.name}\nEnd of Act ${act}: ${cp.status === 'met' ? 'target reached' : cp.status === 'fading' ? 'reached earlier, fading' : cp.status === 'untouched' ? 'not started' : 'short of target'}\n${notes.map(n => n.title).join('\n')}\nClick for more.`}>
+                  <span className="cb-tile__name">{o.competency.name}</span>
+                  <span className="cb-tile__dims">{notes.map((n, i) => <span key={i} style={{ color: TONE_VAR[n.tone] }}>{n.text}</span>)}</span>
+                  <span className="cb-tile__bar" style={{ width: `${Math.round(cp.completion * 100)}%` }} aria-hidden />
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const band = (act: Act) => {
     const info = ACTS[act - 1]!;
     const m = result.milestones[act - 1]!;
@@ -229,6 +269,7 @@ export function CurriculumMap(props: {
           </button>
         </header>
         <div className="cb-lanes">
+          {progress(act)}
           {lanes.map(lane => {
             const id = lane?.id ?? null;
             const here = allCourses.filter(c => c.act === act && c.branch === id);
