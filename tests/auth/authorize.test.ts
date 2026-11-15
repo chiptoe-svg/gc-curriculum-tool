@@ -162,3 +162,16 @@ describe('what-if writes', () => {
   it('a non-course segment under /api/explore/ stays admin-kind', () =>
     expect(classify('POST', '/api/explore/intended-skills/what-ifs')).toEqual({ kind: 'admin' }));
 });
+
+describe('curriculum-plan writes', () => {
+  const noCourses: Grant = { id: 'p2', label: 'x', scope: [], can: ['capture'] };
+  const P = '/api/build/plans';
+  const ID = `${P}/8b1f0c2e-0000-4000-8000-000000000001`;
+  it.each([['POST', P], ['PUT', ID], ['DELETE', ID]])('%s %s is a plan write', (m, p) => expect(classify(m, p)).toEqual({ kind: 'plan-write' }));
+  it.each([['GET', P], ['GET', ID], ['GET', '/api/build/catalog']])('%s %s is a read', (m, p) => expect(classify(m, p)).toEqual({ kind: 'read' }));
+  it('a login scoped to one course may save a plan', () => expect(authorize(scoped, 'PUT', ID)).toEqual({ ok: true }));
+  it.each([creator, noCourses])('a create-only or no-course login is refused', g =>
+    expect(authorize(g, 'POST', P)).toEqual({ ok: false, reason: 'needs-capture' }));
+  it.each([['POST', `${ID}/anything`], ['POST', `${P}/not-an-id`], ['POST', '/api/build/other']])(
+    '%s %s stays admin-kind', (m, p) => expect(classify(m, p)).toEqual({ kind: 'admin' }));
+});

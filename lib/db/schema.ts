@@ -4,6 +4,7 @@ import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 import type { ObjectiveGuide } from '@/lib/objective-guide/schema';
 import type { OwnerKind, WhatIfEstimate, WhatIfProfile, KnockOn, WhatIfProse, WhatIfUsage } from '@/lib/what-if/types';
+import type { PlanState } from '@/lib/builder/types';
 
 export const careerTargets = pgTable('career_targets', {
   id: text('id').primaryKey(),               // stable slug like 'production-operations'
@@ -1368,4 +1369,28 @@ export const courseWhatIfAttachments = pgTable('course_what_if_attachments', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => ({
   statusCheck: check('course_what_if_attachments_status_check', sql`${t.status} IN ('ok', 'failed', 'held_back')`),
+}));
+
+/**
+ * A saved curriculum plan (curriculum builder, spec 2026-11-14): which courses
+ * sit in which act, the targets, and any proposed courses, as one JSON
+ * document. Never writes to courses, snapshots or coverage. `version` is the
+ * optimistic lock: a save names the version it read and is refused if another
+ * save landed first. Migration 0067 (hand-written).
+ */
+export const curriculumPlans = pgTable('curriculum_plans', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  state: jsonb('state').$type<PlanState>().notNull(),
+  version: integer('version').notNull().default(1),
+  ownerGrantId: text('owner_grant_id').notNull(),
+  ownerKind: text('owner_kind').$type<OwnerKind>().notNull(),
+  createdBy: text('created_by').notNull(),
+  updatedBy: text('updated_by').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  updatedIdx: index('idx_curriculum_plans_updated').on(t.updatedAt),
+  ownerKindCheck: check('curriculum_plans_owner_kind_check', sql`${t.ownerKind} IN ('personal', 'department')`),
+  versionCheck: check('curriculum_plans_version_check', sql`${t.version} >= 1`),
 }));

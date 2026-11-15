@@ -106,6 +106,15 @@ export default async function HomePage() {
             >
               How to capture a course
             </CaptureLink>
+            {slug && (
+              <a
+                href={`/build?slug=${encodeURIComponent(slug)}`}
+                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                title="Curriculum builder: stack courses across the three acts and see how they build toward a career path (requires login)"
+              >
+                Curriculum builder
+              </a>
+            )}
             {askHref && (
               <a
                 href={askHref}

@@ -8,6 +8,7 @@ export type Kind =
   | { kind: 'read' }
   | { kind: 'course-write'; code: string }
   | { kind: 'what-if-write' }
+  | { kind: 'plan-write' }
   | { kind: 'create' }
   | { kind: 'admin' };
 export type Decision =
@@ -78,6 +79,10 @@ export function isAdminSurface(path: string): boolean {
 // strictly-shaped course code, so a non-code segment falls through to admin as before.
 const WHAT_IF_WRITE = /^\/api\/explore\/[^/]+\/what-ifs(?:\/[^/]+(?:\/(?:chat|attachments|page))?)?$/;
 
+// Curriculum-plan writes (POST /api/build/plans, PUT/DELETE /api/build/plans/<id>, POST /api/build/suggest). A plan is a
+// shared working document that never writes to a real course, so it is not bound to a course scope.
+const PLAN_WRITE = /^\/api\/build\/(?:plans(?:\/[0-9a-f-]{36})?|suggest)$/;
+
 export function classify(method: string, pathname: string): Kind {
   const m = method.toUpperCase();
   const path = pathname.replace(/\/+$/, '') || '/';
@@ -98,6 +103,7 @@ export function classify(method: string, pathname: string): Kind {
   if (CREATE_PATHS.has(path)) return { kind: 'create' };
   if (path.startsWith(ROSTER_BULK + '/')) return { kind: 'admin' };
   if (WHAT_IF_WRITE.test(path) && courseOf(path)) return { kind: 'what-if-write' };
+  if (PLAN_WRITE.test(path)) return { kind: 'plan-write' };
   const code = courseOf(path);
   if (code) return { kind: 'course-write', code };
   return { kind: 'admin' };
@@ -117,6 +123,9 @@ export function authorize(grant: Grant, method: string, pathname: string): Decis
     case 'what-if-write':
       // Anyone who can capture at least one course may start a what-if on any course:
       // a what-if never writes to the real course, so the course is not checked against scope.
+      return grant.can.includes('capture') && grant.scope.length > 0 ? { ok: true } : { ok: false, reason: 'needs-capture' };
+    case 'plan-write':
+      // Same rule as a what-if: anyone who can capture at least one course may build plans.
       return grant.can.includes('capture') && grant.scope.length > 0 ? { ok: true } : { ok: false, reason: 'needs-capture' };
     case 'create':
       return grant.can.includes('create') ? { ok: true } : { ok: false, reason: 'needs-create' };

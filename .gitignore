@@ -2,7 +2,7 @@
 node_modules/
 .next/
 out/
-build/
+/build/
 dist/
 *.tsbuildinfo
 next-env.d.ts
