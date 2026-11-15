@@ -1497,6 +1497,86 @@
    "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
    "quote": "assuming that the learning space is a faithful representation of the cognitive organization of the material, it tells us exactly what the student is ready to learn",
    "page": "p. 16"
+  },
+  {
+   "id": "bg-choo-1",
+   "location": "§11",
+   "claim_text": "Probe joint accuracy 92.50-94.78% across four models",
+   "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
+   "quote": "probe joint accuracy ranges from 92.50% to 94.78% across models",
+   "page": "PDF p. 2"
+  },
+  {
+   "id": "bg-choo-2",
+   "location": "§11",
+   "claim_text": "Four-shot verbal classification 54.35-69.46% joint accuracy",
+   "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
+   "quote": "four-shot verbalization achieves 54.35–69.46% joint accuracy on the main test set",
+   "page": "PDF p. 9"
+  },
+  {
+   "id": "bg-choo-3",
+   "location": "§11",
+   "claim_text": "The authors limit the probe-vs-asking claim to the tested conditions",
+   "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
+   "quote": "it does not show that the models could never express the same labels under other prompts or training procedures",
+   "page": "PDF p. 9"
+  },
+  {
+   "id": "bg-choo-4",
+   "location": "§11",
+   "claim_text": "Probe accuracy falls on deceptive queries",
+   "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
+   "quote": "probe joint accuracy falls to 58.18–62.27% on this set",
+   "page": "PDF p. 9"
+  },
+  {
+   "id": "bg-choo-5",
+   "location": "§11",
+   "claim_text": "Deceptive queries were generated and screened with language models",
+   "held_file": "pdfs:choo-2026-structured-but-silent.pdf",
+   "quote": "These queries were generated and screened with language models",
+   "page": "PDF p. 9"
+  },
+  {
+   "id": "bg-bernardelle-1",
+   "location": "§11",
+   "claim_text": "In several models probes match or outperform generated judgments",
+   "held_file": "pdfs:bernardelle-2026-relevance-layerwise-signal.pdf",
+   "quote": "in several models, validation-selected probes match or outperform generated judgments",
+   "page": "PDF p. 1"
+  },
+  {
+   "id": "bg-bernardelle-2",
+   "location": "§11",
+   "claim_text": "For one model (Qwen2.5-7B) generated judgments are strongest on all three formulations",
+   "held_file": "pdfs:bernardelle-2026-relevance-layerwise-signal.pdf",
+   "quote": "whose inference output baseline is strongest across all three relevance formulations",
+   "page": "PDF p. 8"
+  },
+  {
+   "id": "bg-chi-1",
+   "location": "§11",
+   "claim_text": "Removing prompt and instruction lowers average QWK to 0.527 (Table 6: 0.652 full, 0.576 without prompt, 0.541 without instruction)",
+   "held_file": "pdfs:chi-2025-activations-as-features.pdf",
+   "quote": "with the corresponding QWK score decreasing to 0.527 for prompts and traits",
+   "page": "PDF p. 5 (prose); Table 6, PDF p. 7"
+  },
+  {
+   "id": "bg-chi-2",
+   "location": "§11",
+   "claim_text": "Removing only the prompt hurts less than removing only the instruction",
+   "held_file": "pdfs:chi-2025-activations-as-features.pdf",
+   "quote": "The results of removing only the prompt were higher than those from removing only the instruction",
+   "page": "PDF p. 5"
+  },
+  {
+   "id": "bg-chi-3",
+   "location": "§11",
+   "claim_text": "Best head chosen on the test set; no claim to outperform the baseline",
+   "held_file": "pdfs:chi-2025-activations-as-features.pdf",
+   "quote": "the comparison with the baseline does not imply that our method outperforms the baseline",
+   "page": "PDF p. 3"
   }
  ]
 }

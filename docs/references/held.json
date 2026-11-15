@@ -330,6 +330,18 @@
       "ref-veys-2026": {
         "file": "pdfs:veys-2026-workrb-grading-unannotated.pdf",
         "note": "arXiv:2611.03525v1, acquired 2026-11-15 from arXiv"
+      },
+      "ref-choo-2026": {
+        "file": "pdfs:choo-2026-structured-but-silent.pdf",
+        "note": "arXiv:2610.08018v1, acquired 2026-11-15 from arXiv; main body (PDF pp. 1-10) read, appendices not read"
+      },
+      "ref-bernardelle-2026": {
+        "file": "pdfs:bernardelle-2026-relevance-layerwise-signal.pdf",
+        "note": "arXiv:2607.15555v1, acquired 2026-11-15 from arXiv; PDF pp. 1-9 read (not the multilingual results or conclusion)"
+      },
+      "ref-chi-2025": {
+        "file": "pdfs:chi-2025-activations-as-features.pdf",
+        "note": "arXiv:2512.19456v1, acquired 2026-11-15 from arXiv; read in full"
       }
     },
     "measurement-hypotheses-deep-dive.html": {
