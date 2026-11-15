@@ -15,6 +15,8 @@ interface Props {
   approveLabel?: string;
   /** True once a snapshot exists: approving records an update. */
   isUpdate?: boolean;
+  /** Set when the profile shown is the approved one, unchanged: its approval date. Replaces the how-to-review note. */
+  approvedDate?: string | null;
 }
 
 const HEADING = 'text-sm font-semibold text-foreground';
@@ -43,7 +45,7 @@ function BulletList({ items, label }: { items: string[]; label: string }) {
  * ("— D3 via Budget", "K2/U2/D1") read as words, including on profiles
  * generated before the prompt asked for plain language.
  */
-export function VerificationSummary({ summary, isLegacy, onCitationClick, approveLabel = 'Approve the profile', isUpdate = false }: Props) {
+export function VerificationSummary({ summary, isLegacy, onCitationClick, approveLabel = 'Approve the profile', isUpdate = false, approvedDate = null }: Props) {
   return (
     <section className="rounded-md border bg-amber-50/50 px-4 py-4 shadow-sm space-y-4">
       {isLegacy && <LegacyBanner />}
@@ -58,6 +60,12 @@ export function VerificationSummary({ summary, isLegacy, onCitationClick, approv
             <SourceBadge source={summary.source} citations={summary.citations} onCitationClick={onCitationClick} />
           )}
         </div>
+        {approvedDate ? (
+          <p role="note" aria-label="Approved" className="mt-3 rounded-md border-l-4 border-teal-500 bg-background px-4 py-3 text-base leading-relaxed text-foreground shadow-sm">
+            <span className="font-semibold">Approved on {approvedDate}.</span> This is the record as it stands; nothing here needs your attention.
+            To change it, adjust a score below and use &ldquo;{approveLabel}&rdquo;.
+          </p>
+        ) : (
         <div
           role="note"
           aria-label="How to review"
@@ -80,6 +88,7 @@ export function VerificationSummary({ summary, isLegacy, onCitationClick, approv
             &ldquo;← Back to the interview&rdquo; and tell the interviewer what it missed.
           </p>
         </div>
+        )}
       </header>
 
       <div>

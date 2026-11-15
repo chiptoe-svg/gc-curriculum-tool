@@ -251,6 +251,13 @@ interface Props {
    */
   hasSnapshot?: boolean;
   /**
+   * Set when the draft shown is exactly the last approved snapshot (computed
+   * in page.tsx by lib/capture/approved-state.ts): that approval's date. The
+   * page then says the course is approved instead of asking for a review,
+   * until something is edited.
+   */
+  approvedOn?: string | null;
+  /**
    * The automatic stress test (owned by CaptureClient, started right after a
    * profile is generated). When its result arrives, its flags become the
    * "Worth a look" cards. Absent/idle/error → the interviewer's own triage
@@ -926,6 +933,7 @@ export function ProfileReviewPanel({
   evidence = null,
   reconciliationLog,
   hasSnapshot,
+  approvedOn = null,
   stressTest,
 }: Props) {
   const [working, setWorking] = useState<CaptureProfile>(profile);
@@ -1162,7 +1170,14 @@ export function ProfileReviewPanel({
     () => working.competencies.map((_, i) => i).filter(i => !needsReview.has(i)),
     [working.competencies, needsReview],
   );
-  const unreviewedCount = [...needsReview].filter(i => !reviewed.has(i)).length;
+  // Settled: this is the approved version and nothing has been changed since. There
+  // is nothing to confirm and nothing to approve (approving again would only record
+  // an identical snapshot). Any edit, or a change to the note, ends it.
+  const settled = approvedOn != null && !dirty && reviewerNote === (initialReviewerNote ?? '');
+  const approvedDate = approvedOn
+    ? new Date(approvedOn).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : '';
+  const unreviewedCount = settled ? 0 : [...needsReview].filter(i => !reviewed.has(i)).length;
 
   // A15 — Approve rubber-stamp guard (vision-alignment review 2026-06-12).
   // Approval is an epistemic act, not a click-through. The documented decay
@@ -1184,7 +1199,7 @@ export function ProfileReviewPanel({
   const unjustifiedBumpCount = bumps.filter(b => (overrideReasons.get(b.index) ?? '').trim().length === 0).length;
   const allUpwardBumpsJustified = unjustifiedBumpCount === 0;
   const revisionBlocked = revisionBlocksApproval(working.revision);
-  const approveUnlocked = (dirty || allWorthLookReviewed || noteSubstantive) && allUpwardBumpsJustified && !revisionBlocked;
+  const approveUnlocked = !settled && (dirty || allWorthLookReviewed || noteSubstantive) && allUpwardBumpsJustified && !revisionBlocked;
   const approveLockTitle = revisionBlocked ? REVISION_BLOCKED_MESSAGE : `Before ${approveQuoted}: for each 'Worth a look' card, mark ✓ Looks right or use 'Needs adjusting' to correct it, or add a departmental-context note. (Approving is a judgment, not a click-through.)`;
 
   async function persist(status: 'confirmed' | 'edited') {
@@ -1316,10 +1331,12 @@ export function ProfileReviewPanel({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-display text-xl font-semibold tracking-tight">
-              Here&apos;s what the interviewer concluded.
+              {settled ? 'This is the approved version.' : <>Here&apos;s what the interviewer concluded.</>}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Check it, adjust it, approve it — nothing is recorded until you use {approveQuoted}.
+              {settled
+                ? `Approved on ${approvedDate}. There is nothing to do here. If you change a score or the wording, you can record the change with ${approveQuoted}.`
+                : `Check it, adjust it, approve it — nothing is recorded until you use ${approveQuoted}.`}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -1388,6 +1405,7 @@ export function ProfileReviewPanel({
           onCitationClick={handleCitationClick}
           approveLabel={approveLabel}
           isUpdate={isCaptured}
+          approvedDate={settled ? approvedDate : null}
         />
       )}
 
@@ -1425,7 +1443,7 @@ export function ProfileReviewPanel({
                       : 'rounded-full bg-amber-200 px-3 py-1 text-sm font-bold text-amber-900'
                   }
                 >
-                  {unreviewedCount === 0 ? 'all confirmed ✓' : `${unreviewedCount} still to confirm`}
+                  {settled ? 'approved ✓' : unreviewedCount === 0 ? 'all confirmed ✓' : `${unreviewedCount} still to confirm`}
                 </span>
               )}
               {confidentIndices.length > 0 && (
@@ -1448,9 +1466,9 @@ export function ProfileReviewPanel({
           <StressTestStatus stressTest={stressTest} flaggedCount={needsReview.size} />
           {needsReview.size > 0 && (
             <p className="text-sm text-muted-foreground">
-              Listed in course order. The highlighted cards are worth a look — each says why. Mark
-              each ✓ Looks right, or use Needs adjusting to change a score and save it. The rest
-              are rolled up — click any to open it.
+              {settled
+                ? 'Listed in course order. The highlighted cards are the ones the review flagged before approval; they were approved with the rest. Use Needs adjusting on any card to change a score.'
+                : 'Listed in course order. The highlighted cards are worth a look — each says why. Mark each ✓ Looks right, or use Needs adjusting to change a score and save it. The rest are rolled up — click any to open it.'}
             </p>
           )}
 
@@ -1465,7 +1483,7 @@ export function ProfileReviewPanel({
                   key={i}
                   className={
                     'space-y-1 rounded-md border border-amber-300 bg-amber-50/40 p-2'
-                    + (reviewed.has(i) ? ' opacity-60' : '')
+                    + (reviewed.has(i) || settled ? ' opacity-60' : '')
                   }
                 >
                   {reason && <p className="text-xs font-medium text-amber-800">⚑ {reason}</p>}
@@ -1485,7 +1503,7 @@ export function ProfileReviewPanel({
                     courseCode={courseCode}
                     slug={slug}
                     onConfirm={() => markReviewed(i)}
-                    confirmed={reviewed.has(i)}
+                    confirmed={reviewed.has(i) || settled}
                   />
                   {renderOverrideReason(i)}
                   {dirty && <div className="flex justify-end">{renderInlineSave()}</div>}
@@ -1799,7 +1817,7 @@ export function ProfileReviewPanel({
 
       {/* ── 7. STICKY ACTION BAR ── hidden once this session's approval succeeded and
           nothing new was edited: the faculty member is done (owner, 2026-10-07). */}
-      {!(snapshotMessage?.kind === 'ok' && !dirty) && (
+      {!(snapshotMessage?.kind === 'ok' && !dirty) && !settled && (
       <div data-testid="action-bar" className="sticky bottom-0 z-10 border-t bg-card px-4 py-3 shadow-[0_-1px_4px_rgba(0,0,0,0.06)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Summary chip */}

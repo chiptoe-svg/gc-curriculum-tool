@@ -54,6 +54,8 @@ interface Props {
   catalogSyncedAt: string | null;
   /** True when a non-retired snapshot exists — gates the OKF download link on the review panel. */
   hasSnapshot?: boolean;
+  /** When the saved draft is exactly the last approved snapshot: that approval's date (ISO). Otherwise null. */
+  approvedOn?: string | null;
   /** Whether the tiered-ingestion triage flow is enabled. Resolved on the SERVER
    *  (page.tsx) and passed down — process.env.COURSECAPTURE_TRIAGE is not visible
    *  to this client component, so it must arrive as a prop. */
@@ -95,6 +97,7 @@ export function CaptureClient({
   priorBriefings,
   catalogSyncedAt,
   hasSnapshot,
+  approvedOn = null,
   triageEnabled = false,
   isExternalTester = false,
 }: Props) {
@@ -727,6 +730,9 @@ export function CaptureClient({
             onSnapshotCreated={handleSnapshotCreated}
             reconciliationLog={reconciliationLog}
             hasSnapshot={hasSnapshot}
+            // Only while the profile on screen is still the one the page loaded: a
+            // profile generated or loaded in this session is a new draft, not the approved one.
+            approvedOn={profile === existingProfile ? approvedOn : null}
             stressTest={stressTest}
             evidence={materialsFresh && evidence.warn ? evidence : null}
           />

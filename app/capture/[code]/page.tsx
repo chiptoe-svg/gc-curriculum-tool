@@ -10,6 +10,7 @@ import { listPairedCodes } from '@/lib/db/course-codes-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { getLatestSnapshotByCourse, getSnapshotById } from '@/lib/db/capture-snapshots-queries';
+import { approvedOn } from '@/lib/capture/approved-state';
 import { getLatestSessionId, getSessionInstructor, getSessionMessages, listPriorSessionSummaries } from '@/lib/db/capture-messages-queries';
 import { getSessionMode } from '@/lib/db/capture-sessions-queries';
 import { checklistFromReplies, readinessFromStoredReply } from '@/lib/capture/interview-checklist';
@@ -238,6 +239,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           priorSnapshotInfo={priorSnapshotInfo}
           resumedMode={resumedMode}
           hasSnapshot={latestSnapshot != null}
+          approvedOn={approvedOn(priorCapture, latestSnapshot)}
           initialInstructor={initialInstructor}
           defaultInstructor={viewerName}
           priorBriefings={priorBriefings}
