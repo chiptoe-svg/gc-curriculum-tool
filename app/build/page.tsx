@@ -5,6 +5,7 @@ import { getRequestGrant, personalName } from '@/lib/auth/viewer';
 import { listPlans } from '@/lib/db/curriculum-plan-queries';
 import { canManageWhatIf } from '@/lib/what-if/ownership';
 import { NewPlan } from './NewPlan';
+import { PLAN_YEARS } from '@/lib/builder/degree-data';
 import { DeletePlan } from './DeletePlan';
 import './build.css';
 
@@ -37,7 +38,7 @@ export default async function BuildIndex({ searchParams }: { searchParams: Promi
         </p>
       </header>
 
-      <NewPlan slug={slug} knownName={personalName(grant)} />
+      <NewPlan slug={slug} knownName={personalName(grant)} years={PLAN_YEARS} />
 
       <section className="cb-index__list">
         <h2>Plans</h2>

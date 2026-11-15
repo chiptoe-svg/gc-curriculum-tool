@@ -188,7 +188,7 @@ export function CurriculumMap(props: {
 
   const lanes: Array<Branch | null> = [null, ...plan.branches];
   const card = (c: PlacedCourse) => {
-    const mark = c.reading.basis ?? 'none';
+    const mark = c.requirement ? 'requirement' : c.reading.basis ?? 'none';
     const at = positions[c.ref] ?? { slot: 0 as Slot, x: 0 };
     return (
       <button
@@ -205,7 +205,7 @@ export function CurriculumMap(props: {
         title={`${c.code}: ${c.title}${c.reading.filled ? '. No reading under the chosen input, so its other reading is used' : ''}`}
       >
         <span className="cb-card__mark" aria-hidden />
-        <span className="cb-card__code">{c.code}</span>
+        <span className="cb-card__code">{c.code}{c.requirement && c.credits != null ? ` · ${c.credits} cr` : ''}</span>
         {c.reading.filled && <span className="cb-card__tag">other reading</span>}
         <span className="cb-card__title">{c.title}</span>
         {checkRefs.has(c.ref) && <span className="cb-card__warn" title="Order or dependency problem: open the course for details">!</span>}

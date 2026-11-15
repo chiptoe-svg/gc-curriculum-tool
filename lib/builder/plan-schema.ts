@@ -32,6 +32,11 @@ export const planStateSchema = z.object({
   placements: z.array(z.object({ ref: id, act, branch: id.nullable(), slot: slot.optional(), x: coord.optional() })).max(200),
   heights: z.tuple([height, height, height]).optional(),
   degreeHours: z.number().int().min(1).max(300).optional(),
+  catalogYear: z.string().regex(/^\d{4}-\d{4}$/).optional(),
+  requirements: z.array(z.object({
+    id, label: text(300), credits: z.number().min(0).max(30).nullable(), options: z.array(text(40)).max(20),
+    genEd: text(80).nullable(), notes: z.array(text(2000)).max(10),
+  })).max(60).optional(),
   branches: z.array(z.object({ id, name: text(60), targetIds: z.array(id).max(20) })).max(12),
   links: z.array(link).max(300),
   unlinked: z.array(link).max(300),

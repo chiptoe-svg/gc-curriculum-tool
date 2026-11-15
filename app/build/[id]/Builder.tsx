@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { computePlan, defaultAct, hoursOf, placeCourses } from '@/lib/builder/compute';
+import { genEdCheck, type GenEdCategory } from '@/lib/builder/degree';
 import { layoutLanes, moveCard } from '@/lib/builder/layout';
 import type { Act, Library, PlanState } from '@/lib/builder/types';
 import type { CatalogHit } from '@/lib/builder/library';
@@ -13,6 +14,7 @@ import { ObjectiveDrawer } from './ObjectiveDrawer';
 import { TargetsDrawer } from './TargetsDrawer';
 import { ChecksPanel } from './ChecksPanel';
 import { ActTargetsDrawer } from './ActTargetsDrawer';
+import { RequirementDrawer } from './RequirementDrawer';
 import { newId } from './ui';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict' | 'error' | 'refused';
@@ -35,6 +37,8 @@ function writeView(v: View) {
 export function Builder(props: {
   planId: string; slug: string; library: Library; initialName: string; initialState: PlanState;
   initialVersion: number; lastEditedBy: string; knownName: string | null;
+  /** The plan's catalog year and its General Education categories (lib/builder/degree-data.ts). */
+  genEd: { year: string; categories: GenEdCategory[] };
 }) {
   const { library } = props;
   const [plan, setPlan] = useState(props.initialState);
@@ -185,6 +189,8 @@ export function Builder(props: {
   const result = useMemo(() => computePlan(library, plan, branchView), [library, plan, shown]); // eslint-disable-line react-hooks/exhaustive-deps
   const allCourses = useMemo(() => placeCourses(library, plan), [library, plan]);
   const hours = useMemo(() => hoursOf(allCourses), [allCourses]);
+  const genEdRows = useMemo(() => genEdCheck(props.genEd.categories, allCourses), [props.genEd.categories, allCourses]);
+  const genEdShort = genEdRows.filter(r => r.status === 'short').length;
   const placedRefs = useMemo(() => new Set(plan.placements.map(p => p.ref)), [plan.placements]);
   const positions = useMemo(() => layoutLanes(plan.placements, new Set(plan.branches.map(b => b.id))), [plan.placements, plan.branches]);
 
@@ -254,6 +260,7 @@ export function Builder(props: {
       ...p,
       placements: p.placements.filter(x => x.ref !== ref),
       proposed: p.proposed.filter(x => x.id !== ref),
+      requirements: p.requirements?.filter(x => x.id !== ref),
       links: p.links.filter(l => l.from !== ref && l.to !== ref),
     }));
     setSelection(null);
@@ -319,8 +326,8 @@ export function Builder(props: {
         </span>
         <span className="cb-bar__spacer" />
         <button type="button" className="cb-btn" onClick={() => { setPanel(panel === 'targets' ? null : 'targets'); setSelection(null); }}>Targets</button>
-        <button type="button" className={`cb-btn${problems + flagged > 0 ? ' cb-btn--alert' : ''}`} onClick={() => { setPanel(panel === 'checks' ? null : 'checks'); setSelection(null); }}>
-          Checks{problems + flagged > 0 ? ` (${problems + flagged})` : ''}
+        <button type="button" className={`cb-btn${problems + flagged + genEdShort > 0 ? ' cb-btn--alert' : ''}`} onClick={() => { setPanel(panel === 'checks' ? null : 'checks'); setSelection(null); }}>
+          Checks{problems + flagged + genEdShort > 0 ? ` (${problems + flagged + genEdShort})` : ''}
         </button>
         <button type="button" className="cb-btn" onClick={stepBack} disabled={undo.length === 0} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
         <button type="button" className="cb-btn" aria-pressed={!libraryOpen} onClick={() => changeView({ library: !libraryOpen })}
@@ -383,7 +390,10 @@ export function Builder(props: {
           />
         </main>
 
-        {selection?.kind === 'course' && (
+        {selection?.kind === 'course' && allCourses.find(c => c.ref === selection.ref)?.requirement && (
+          <RequirementDrawer key={selection.ref} placed={allCourses.find(c => c.ref === selection.ref)!} onRemove={remove} onClose={() => setSelection(null)} />
+        )}
+        {selection?.kind === 'course' && !allCourses.find(c => c.ref === selection.ref)?.requirement && (
           <CourseDrawer key={selection.ref} courseRef={selection.ref} library={library} plan={plan} result={result} allCourses={allCourses}
             slug={props.slug} update={update} onRemove={remove} onClose={() => setSelection(null)} onSelect={setSelection} />
         )}
@@ -396,7 +406,7 @@ export function Builder(props: {
           <ActTargetsDrawer act={panel.act} library={library} plan={plan} result={result} update={update}
             onClose={() => setPanel(null)} onSelect={s => setSelection(s)} onOpenTargets={() => setPanel('targets')} />
         )}
-        {panel === 'checks' && !selection && <ChecksPanel result={result} onClose={() => setPanel(null)} onSelect={s => { setSelection(s); setPanel(null); }} />}
+        {panel === 'checks' && !selection && <ChecksPanel result={result} genEd={{ year: props.genEd.year, rows: genEdRows }} onClose={() => setPanel(null)} onSelect={s => { setSelection(s); setPanel(null); }} />}
       </div>
     </div>
   );

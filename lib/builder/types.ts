@@ -124,6 +124,14 @@ export const termOf = (act: Act, slot: Slot): number => (act - 1) * TERMS_PER_AC
  */
 export interface Placement { ref: string; act: Act; branch: string | null; slot?: Slot; x?: number }
 
+/**
+ * A placeholder from a catalog plan: a requirement slot ("Arts and Humanities (Literature)", "Elective") or a
+ * choice ("One of STAT 2220, STAT 2300"). It counts toward credit hours and, when it stands for a General
+ * Education category (or every option of a choice is allowed in one), toward that category as planned.
+ * It has no competency reading.
+ */
+export interface Requirement { id: string; label: string; credits: number | null; options: string[]; genEd: string | null; notes: string[] }
+
 /** An alternative pathway that splits from the trunk and builds toward some of the plan's career paths. */
 export interface Branch { id: string; name: string; targetIds: string[] }
 
@@ -185,6 +193,10 @@ export interface PlanState {
   placements: Placement[];
   /** Credit hours the degree requires (the catalog program's total when the plan started from one); absent = 120. */
   degreeHours?: number;
+  /** The catalog year the plan started from, e.g. "2026-2027"; its General Education rules are the ones checked. Absent = the newest. */
+  catalogYear?: string;
+  /** Placeholders from the catalog plan: requirement slots (Gen Ed, elective, specialty) and course choices. Placed like courses. */
+  requirements?: Requirement[];
   /** Height in map pixels chosen for Act 1, 2 and 3 (null = automatic). Absent on plans saved before it existed. */
   heights?: [number | null, number | null, number | null];
   branches: Branch[];

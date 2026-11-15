@@ -1,6 +1,7 @@
 'use client';
 
 import { FLAG_TEXT, type ObjectiveFlag, type PlanResult } from '@/lib/builder/compute';
+import type { GenEdRow } from '@/lib/builder/degree';
 import type { Selection } from './Map';
 import { Drawer } from './controls';
 
@@ -10,7 +11,7 @@ const FLAG_ORDER: ObjectiveFlag[] = [
 ];
 
 /** Everything the plan should be looked at for: order and dependency problems first, then how each objective is built. */
-export function ChecksPanel(props: { result: PlanResult; onClose: () => void; onSelect: (s: Selection) => void }) {
+export function ChecksPanel(props: { result: PlanResult; genEd: { year: string; rows: GenEdRow[] }; onClose: () => void; onSelect: (s: Selection) => void }) {
   const { result } = props;
   const order = result.checks.filter(c => c.kind !== 'no_reading');
   const silent = result.checks.filter(c => c.kind === 'no_reading');
@@ -25,6 +26,33 @@ export function ChecksPanel(props: { result: PlanResult; onClose: () => void; on
   return (
     <Drawer title="Checks" kicker="What to look at in this plan" onClose={props.onClose}>
       {nothing && <section className="cb-sec"><p>{result.objectives.length === 0 ? 'Choose a career path under Targets and the checks will appear here.' : 'Nothing to flag: every target is reached and the order holds.'}</p></section>}
+
+      <section className="cb-sec">
+        <h3>General Education ({props.genEd.year.replace('-', '–')} catalog)</h3>
+        <p className="cb-muted">Credits from courses on the map that the catalog lists for each category (shared courses only; each course counts once), and placeholders standing for it. Rules the catalog states in words are shown, not checked.</p>
+        <table className="cb-table cb-table--gened">
+          <tbody>
+            {props.genEd.rows.map(r => {
+              const got = r.courses.reduce((s, c) => s + c.credits, 0);
+              const planned = r.planned.reduce((s, c) => s + c.credits, 0);
+              return (
+                <tr key={r.name}>
+                  <td><b>{r.name}</b>{r.need != null && <span className="cb-muted"> {r.need} cr</span>}
+                    {r.rules && <div className="cb-muted cb-small">{r.rules}</div>}</td>
+                  <td>
+                    {r.courses.length > 0 && <div>{r.courses.map(c => `${c.code} (${c.credits})`).join(', ')}</div>}
+                    {r.planned.length > 0 && <div className="cb-muted">Planned: {r.planned.map(p => `${p.label} (${p.credits})`).join(', ')}</div>}
+                    {r.courses.length + r.planned.length === 0 && <span className="cb-muted">Nothing on the map yet</span>}
+                  </td>
+                  <td className={`cb-t-${r.status === 'met' ? 'reached' : r.status === 'planned' ? 'fading' : 'short'}`}>
+                    {r.status === 'met' ? 'Met' : r.status === 'planned' ? `Met once placeholders are filled (${got} + ${planned})` : `Short: ${got + planned} of ${r.need}`}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
 
       {order.length > 0 && (
         <section className="cb-sec cb-alerts">

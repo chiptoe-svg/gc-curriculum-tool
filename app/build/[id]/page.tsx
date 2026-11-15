@@ -7,6 +7,7 @@ import { loadLibrary } from '@/lib/builder/library';
 import { parsePlanState } from '@/lib/builder/plan-schema';
 import { EMPTY_PLAN } from '@/lib/builder/types';
 import { Builder } from './Builder';
+import { genEdFor } from '@/lib/builder/degree-data';
 import '../build.css';
 
 export const dynamic = 'force-dynamic';
@@ -52,6 +53,7 @@ export default async function BuildPlanPage({ params, searchParams }: {
       initialVersion={plan.version}
       lastEditedBy={plan.updatedBy}
       knownName={personalName(grant)}
+      genEd={genEdFor(state.catalogYear)}
     />
   );
 }

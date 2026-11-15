@@ -117,6 +117,13 @@ function TrackedCourse(props: {
   const apart = (a?: CompetencyDepth, b?: CompetencyDepth) =>
     !!a && !!b && (['k', 'u', 'd'] as const).some(dim => a[dim] != null && b[dim] != null && Math.abs(a[dim]! - b[dim]!) >= 2);
   const inUse = placed.reading.basis;
+  const [compare, setCompare] = useState(false);
+  const above0 = (x?: CompetencyDepth) => !!x && (['k', 'u', 'd'] as const).some(dim => (x[dim] ?? 0) > 0);
+  // The reading the map uses: the what-if when one is chosen, otherwise discovered or stated as the course's reading says.
+  const inUseMap = whatIf ? whatIfDepths : inUse === 'stated' ? stated : discovered;
+  const rows = ids.filter(id => above0(inUseMap.get(id)) || (compare && (above0(stated.get(id)) || above0(discovered.get(id)))));
+  const hiddenZero = ids.filter(id => inUseMap.has(id) && !rows.includes(id)).length;
+  const differ = ids.filter(id => apart(stated.get(id), discovered.get(id))).length;
   const date = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
   return (
@@ -154,29 +161,34 @@ function TrackedCourse(props: {
       )}
 
       <section className="cb-sec">
-        <h3>What it says, and what was found</h3>
+        <h3>Competency levels</h3>
         <p className="cb-muted">
-          {inUse ? `The map is using its ${BASIS_WORD[inUse].toLowerCase()} reading${placed.reading.filled ? ', because it has no reading under the chosen input' : ''}.` : 'It has no reading under the chosen input, so it adds nothing to the map.'}
-          {' '}A dagger marks a competency where the two readings sit two or more levels apart.
+          {inUse ? `The map uses its ${BASIS_WORD[inUse].toLowerCase()} reading${placed.reading.filled ? ', because it has no reading under the chosen input' : ''}.` : 'It has no reading under the chosen input, so it adds nothing to the map.'}
+          {hiddenZero > 0 && ` ${hiddenZero} competenc${hiddenZero === 1 ? 'y' : 'ies'} read at level 0 ${hiddenZero === 1 ? 'is' : 'are'} not listed.`}
+          {differ > 0 && ` A dagger marks ${differ === 1 ? 'the one' : `the ${differ}`} where the stated and discovered readings sit two or more levels apart.`}
         </p>
-        {ids.length === 0 ? <p className="cb-muted">No competency levels have been read for this course yet.</p> : (
+        {rows.length === 0 ? <p className="cb-muted">No competency levels above 0 have been read for this course.</p> : (
           <table className="cb-table">
-            <thead><tr><th>Competency</th><th>Stated</th><th>Discovered</th>{whatIf && <th>What-if</th>}</tr></thead>
+            <thead><tr><th>Competency</th><th>{compare ? 'Discovered' : 'Level'}</th>{compare && <th>Stated</th>}{compare && whatIf && <th>What-if</th>}</tr></thead>
             <tbody>
-              {ids.map(id => {
+              {rows.map(id => {
                 const c = comp.get(id)!;
                 const s = stated.get(id), d = discovered.get(id), w = whatIfDepths.get(id);
+                const used = inUseMap.get(id);
                 return (
                   <tr key={id} className={props.objectiveIds.has(id) ? 'is-objective' : ''}>
-                    <td>{c.name}{apart(s, d) && <sup title="Stated and discovered differ by two or more levels"> †</sup>}</td>
-                    <td className="cb-mono">{s ? fmtDepth(s, c.foundational) : '–'}</td>
-                    <td className="cb-mono">{d ? fmtDepth(d, c.foundational) : '–'}</td>
-                    {whatIf && <td className="cb-mono">{w ? fmtDepth(w, c.foundational) : '–'}</td>}
+                    <td>{c.name}{apart(s, d) && <sup title={`Stated ${s ? fmtDepth(s, c.foundational) : ''}, discovered ${d ? fmtDepth(d, c.foundational) : ''}: two or more levels apart`}> †</sup>}</td>
+                    {compare ? <td className="cb-mono">{d ? fmtDepth(d, c.foundational) : '–'}</td> : <td className="cb-mono">{used ? fmtDepth(used, c.foundational) : '–'}</td>}
+                    {compare && <td className="cb-mono">{s ? fmtDepth(s, c.foundational) : '–'}</td>}
+                    {compare && whatIf && <td className="cb-mono">{w ? fmtDepth(w, c.foundational) : '–'}</td>}
                   </tr>
                 );
               })}
             </tbody>
           </table>
+        )}
+        {lc.stated.length > 0 && discovered.size > 0 && (
+          <label className="cb-check"><input type="checkbox" checked={compare} onChange={e => setCompare(e.target.checked)} /> Compare with the stated-objective reading</label>
         )}
         {lc.stated.length === 0 && <p className="cb-muted">No stated-objective reading: the syllabus pass has not been run for this course.</p>}
         {lc.versions.length === 0 && <p className="cb-muted">Not captured yet, so there are no discovered outcomes.</p>}

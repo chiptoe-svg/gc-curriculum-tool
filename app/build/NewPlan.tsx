@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 /** Start a plan: a name, and whether to begin from today's GC core or from nothing. */
-export function NewPlan({ slug, knownName }: { slug: string; knownName: string | null }) {
+export function NewPlan({ slug, knownName, years }: { slug: string; knownName: string | null; years: string[] }) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [author, setAuthor] = useState('');
-  const [start, setStart] = useState<'core' | 'blank'>('core');
+  const [start, setStart] = useState<'core' | 'blank' | 'catalog'>(years.length ? 'catalog' : 'core');
+  const [year, setYear] = useState(years[0] ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +20,7 @@ export function NewPlan({ slug, knownName }: { slug: string; knownName: string |
     try {
       const res = await fetch('/api/build/plans', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, start, authorName: author }),
+        body: JSON.stringify({ name, start, year, authorName: author }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? 'The plan could not be created.');
@@ -45,6 +46,15 @@ export function NewPlan({ slug, knownName }: { slug: string; knownName: string |
       )}
       <fieldset>
         <legend>Start from</legend>
+        {years.length > 0 && (
+          <label>
+            <input type="radio" checked={start === 'catalog'} onChange={() => setStart('catalog')} /> The catalog&rsquo;s recommended plan for
+            <select value={year} onChange={e => { setYear(e.target.value); setStart('catalog'); }} aria-label="Catalog year">
+              {years.map(y => <option key={y} value={y}>{y.replace('-', '–')}</option>)}
+            </select>
+            <span className="cb-muted"> (required courses in their recommended terms; Gen Ed, electives and choices as placeholders)</span>
+          </label>
+        )}
         <label><input type="radio" checked={start === 'core'} onChange={() => setStart('core')} /> Today&rsquo;s GC core, placed in acts by level</label>
         <label><input type="radio" checked={start === 'blank'} onChange={() => setStart('blank')} /> An empty map</label>
       </fieldset>

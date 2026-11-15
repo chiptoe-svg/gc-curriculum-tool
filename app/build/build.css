@@ -202,6 +202,10 @@
 .cb-card--stated .cb-card__mark { background: radial-gradient(var(--cb-ink) 38%, transparent 42%) 0 0 / 4px 4px; }
 .cb-card--proposed { border-style: dashed; }
 .cb-card--proposed .cb-card__mark { background: radial-gradient(var(--cb-ink) 38%, transparent 42%) 0 0 / 4px 4px; border-style: dashed; }
+.cb-card--requirement { border-style: dashed; border-color: var(--cb-ink-soft); background: repeating-linear-gradient(135deg, var(--cb-paper) 0 6px, #f4f5f6 6px 12px); }
+.cb-card--requirement .cb-card__mark { border-style: dashed; border-color: var(--cb-ink-soft); }
+.cb-card--requirement .cb-card__code { font-weight: 500; color: var(--cb-ink-soft); }
+.cb-table--gened td { vertical-align: top; }
 .cb-card--none { border-color: var(--cb-untouched); color: var(--cb-ink-soft); }
 .cb-card--none .cb-card__mark { border-color: var(--cb-untouched); border-style: dashed; }
 /* The course code is never cut; the 'other reading' note gives way to it. */

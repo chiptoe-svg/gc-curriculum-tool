@@ -17,7 +17,7 @@ import { MEMBERSHIP_CUTOFF } from '@/lib/catalog/membership';
 import { PLAN_SCOPE, TERMS_PER_ACT, termOf } from './types';
 import { layoutLanes } from './layout';
 import type {
-  Act, ActLevels, Basis, CompetencyDepth, Depth, Library, LibraryCompetency, LibraryCourse, PlanState, ProposedCourse,
+  Act, ActLevels, Basis, CompetencyDepth, Depth, Library, LibraryCompetency, LibraryCourse, PlanState, ProposedCourse, Requirement,
 } from './types';
 
 const maxN = (a: number | null, b: number | null): number | null =>
@@ -197,6 +197,8 @@ export interface PlacedCourse {
   /** Credit hours from the catalog (the low end of a range such as "1-3"); null when unknown. */
   credits: number | null;
   proposed: boolean;
+  /** Set when the card is a catalog-plan placeholder (a requirement slot or a choice), not a course. */
+  requirement?: Requirement;
   reading: CourseReading;
 }
 
@@ -312,6 +314,7 @@ export function hoursOf(courses: readonly PlacedCourse[]): Hours {
 export function placeCourses(lib: Library, plan: PlanState): PlacedCourse[] {
   const byCode = new Map(lib.courses.map(c => [c.code, c]));
   const proposed = new Map(plan.proposed.map(p => [p.id, p]));
+  const requirements = new Map((plan.requirements ?? []).map(r => [r.id, r]));
   const branchIds = new Set(plan.branches.map(b => b.id));
   const pos = layoutLanes(plan.placements, branchIds);
   const out: PlacedCourse[] = [];
@@ -321,6 +324,14 @@ export function placeCourses(lib: Library, plan: PlanState): PlacedCourse[] {
       if (p.act !== act || seen.has(p.ref)) continue;
       const lc = byCode.get(p.ref);
       const pc: ProposedCourse | undefined = proposed.get(p.ref);
+      const rq = !lc && !pc ? requirements.get(p.ref) : undefined;
+      if (rq) {
+        seen.add(p.ref);
+        const branch = p.branch && branchIds.has(p.branch) ? p.branch : null;
+        out.push({ ref: p.ref, code: rq.genEd ? 'Gen Ed' : rq.options.length ? 'Choice' : 'Slot', title: rq.label, act, branch, seq: out.length,
+          term: termOf(act, pos[p.ref]?.slot ?? 0), credits: rq.credits, proposed: false, requirement: rq, reading: { depths: [], basis: null, filled: false } });
+        continue;
+      }
       if (!lc && !pc) continue; // a course that left the library, or a deleted proposal
       seen.add(p.ref);
       const branch = p.branch && branchIds.has(p.branch) ? p.branch : null; // a deleted branch's courses fall back to the trunk
@@ -541,6 +552,7 @@ export function computePlan(lib: Library, plan: PlanState, view: string[] | 'all
   const checks: CourseCheck[] = [];
   const unscored = new Set(lib.courses.filter(c => c.versions.length > 0 && c.versions.every(v => v.depths.length === 0)).map(c => c.code));
   for (const c of all) {
+    if (c.requirement) continue; // a placeholder has no reading and no prerequisites
     if (!c.reading.basis) {
       checks.push({ ref: c.ref, code: c.code, kind: 'no_reading', detail: c.proposed
         ? 'No competency levels entered yet, so it adds nothing to the plan.'
