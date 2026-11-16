@@ -181,6 +181,33 @@ export function durable(
   return out;
 }
 
+/**
+ * One thread's supplier level carried to `atTerm`, whole levels (Math.floor). Same per-term rule as durable()
+ * (loss of fadePerAct / 3 per term; a contribution within a level of the peak restores to the peak) for one
+ * dimension, without the competency-support option. Threads only: competency levels do not fade.
+ */
+export function heldAt(contributions: Array<{ term: number; level: number }>, atTerm: number, fadePerAct: number): number {
+  const rate = fadePerAct / TERMS_PER_ACT;
+  let held: number | null = null;
+  let peak = 0;
+  let reinforcers = 0;
+  for (let term = 1; term <= atTerm; term++) {
+    const here = contributions.filter(c => c.term === term).map(c => c.level);
+    const top = here.length ? Math.max(...here) : null;
+    const nearPeak = top != null && top >= peak - 1 && top >= 1;
+    if (held != null && rate > 0 && !nearPeak) {
+      const touched = here.some(v => v >= 1);
+      held = Math.max(0, held - rate * 0.5 ** Math.max(0, reinforcers - 1) * (touched ? 0.5 : 1));
+    }
+    if (top != null) {
+      peak = Math.max(peak, top);
+      held = nearPeak ? peak : Math.max(held ?? 0, top);
+      reinforcers += here.filter(v => v >= 1 && v >= peak - 1).length;
+    }
+  }
+  return held == null ? 0 : Math.floor(Math.round(held * 1e6) / 1e6);
+}
+
 // ---------------------------------------------------------------------------
 // The whole plan
 // ---------------------------------------------------------------------------
