@@ -3,7 +3,7 @@
  *
  *   pnpm tsx scripts/catalog/judge-required-skills.ts --expect-db <database name> [--apply] [--limit N]
  *
- * For every live capture (newest non-retired snapshot per course + instructor), each incoming expectation is a
+ * For every live capture (one per course + instructor, chosen as the builder chooses: lib/db/live-captures.ts), each incoming expectation is a
  * required skill. Its top 8 developed skills (profile.competencies) from OTHER courses by embedding cosine are
  * judged by both models in MODELS; pairs already cached for a model (same prompt version) are skipped.
  * Dry run (default) embeds and judges nothing and writes nothing; it reports counts. --apply embeds missing
@@ -32,6 +32,7 @@ async function main(): Promise<number> {
   const { normalizeStatement } = await import('@/lib/catalog/project-trail');
   const { embedBatch, DEFAULT_EMBEDDING_MODEL } = await import('@/lib/ai/embeddings');
   const { readJudgments, writeJudgments } = await import('@/lib/db/match-queries');
+  const { liveCaptures } = await import('@/lib/db/live-captures');
   const { MODELS, PROMPT_VERSION, judgePairs } = await import('@/lib/ai/match-judge');
 
   const expect = argValue('--expect-db');
@@ -43,10 +44,8 @@ async function main(): Promise<number> {
   if (current !== expect) { console.error(`refusing: connected to ${current}, expected ${expect}`); return 2; }
 
   const hash = (s: string) => textHash(normalizeStatement(s));
-  const snaps = (await db.execute(sql`
-    SELECT DISTINCT ON (course_code, coalesce(instructor_name, '')) course_code, profile
-    FROM course_capture_snapshots WHERE retired_at IS NULL
-    ORDER BY course_code, coalesce(instructor_name, ''), created_at DESC`)).rows as Array<{ course_code: string; profile: Profile }>;
+  // The same captures the builder reads (newest scored one per course + instructor), so its candidates have judgments.
+  const snaps = (await liveCaptures()) as unknown as Array<{ course_code: string; profile: Profile }>;
   const titles = new Map(((await db.execute(sql`SELECT code, title FROM courses`)).rows as Array<{ code: string; title: string }>).map(r => [r.code, r.title]));
 
   const uniq = (xs: Array<{ statement?: string }> | undefined) => [...new Set((xs ?? []).map(x => x.statement?.trim() ?? '').filter(Boolean))];

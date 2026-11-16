@@ -27,6 +27,8 @@ import { isNotNull } from 'drizzle-orm';
 import { pickCandidates } from './candidates';
 import { readVectors } from '@/lib/db/bundle-queries';
 import { readJudgments, latestDecisions } from '@/lib/db/match-queries';
+import { liveCaptures } from '@/lib/db/live-captures';
+import { isUndefinedTable } from '@/lib/db/pg-errors';
 import { MODEL_IN_USE, PROMPT_VERSION } from '@/lib/ai/match-judge';
 import { DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
 import type { Candidate, CompetencyDepth, Library, MatchDecision, RequiredSkill, LibraryCourse, LibraryVersion, LibraryWhatIf, Skill } from './types';
@@ -50,17 +52,8 @@ export async function loadLibrary(): Promise<Library> {
   const live = new Set(compRows.map(c => c.id));
   const related = await loadCompetencyRelations();
 
-  // One approved capture per (course, instructor): the newest one that has been scored against the
-  // competency catalog, or, when none has, the newest (it then has no depths and cannot be stacked).
-  // /program scores only on request, so a recent capture can sit unscored.
-  const snapRows = (await db.execute(sql`
-    SELECT DISTINCT ON (s.course_code, s.instructor_name)
-      s.id, s.course_code, s.instructor_name, s.created_at, s.profile
-    FROM course_capture_snapshots s
-    WHERE s.retired_at IS NULL
-    ORDER BY s.course_code, s.instructor_name,
-      EXISTS (SELECT 1 FROM snapshot_competency_coverage c WHERE c.snapshot_id = s.id) DESC, s.created_at DESC
-  `)).rows as Array<{ id: string; course_code: string; instructor_name: string | null; created_at: Date | string; profile: CaptureProfile }>;
+  // One approved capture per (course, instructor), chosen as the required-skill judge chooses (liveCaptures).
+  const snapRows = await liveCaptures();
   const coverage = await db.select({
     snapshotId: snapshotCompetencyCoverage.snapshotId, competencyId: snapshotCompetencyCoverage.competencyId,
     k: snapshotCompetencyCoverage.kDepth, u: snapshotCompetencyCoverage.uDepth, d: snapshotCompetencyCoverage.dDepth,
@@ -218,8 +211,11 @@ export async function loadLibrary(): Promise<Library> {
     for (const [key, d] of await latestDecisions()) {
       decisions[key] = { requiredRef: d.requiredHash, suppliedRef: d.suppliedHash, label: d.label, by: d.decidedBy, at: new Date(d.decidedAt).toISOString(), draft: d.draft } satisfies MatchDecision;
     }
-  } catch { /* 0069 not applied on this database: no candidates or decisions */
+  } catch (err) {
+    // 0069 not applied on this database: no candidates or decisions, silently. Anything else is logged and the map loads without them.
+    if (!isUndefinedTable(err)) console.error('[builder/library] match candidates failed:', err instanceof Error ? err.message : err);
     for (const k of Object.keys(candidates)) delete candidates[k];
+    for (const k of Object.keys(decisions)) delete decisions[k];
   }
 
   return {
