@@ -477,7 +477,7 @@ export function CurriculumMap(props: {
         <>
           <svg className="cb-svg cb-svg--back" width={geom.width} height={geom.height} aria-hidden={empty}>
             <defs>
-              {(['reached', 'fading', 'short', 'untouched', 'plain'] as const).map(t => (
+              {(['reached', 'amber', 'short', 'untouched', 'plain'] as const).map(t => (
                 <pattern key={t} id={`cb-dots-${t}`} width="5" height="5" patternUnits="userSpaceOnUse">
                   <rect width="5" height="5" fill="var(--cb-paper)" />
                   <circle cx="2.5" cy="2.5" r="1.45" fill={TONE_VAR[t]} />

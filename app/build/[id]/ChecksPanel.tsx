@@ -43,7 +43,7 @@ export function ChecksPanel(props: { result: PlanResult; genEd: { year: string; 
                     {r.planned.length > 0 && <div className="cb-muted">Planned: {r.planned.map(p => `${p.label} (${p.credits})`).join(', ')}</div>}
                     {r.courses.length + r.planned.length === 0 && <span className="cb-muted">Nothing on the map yet</span>}
                   </td>
-                  <td className={`cb-t-${r.status === 'met' ? 'reached' : r.status === 'planned' ? 'fading' : 'short'}`}>
+                  <td className={`cb-t-${r.status === 'met' ? 'reached' : r.status === 'planned' ? 'amber' : 'short'}`}>
                     {r.status === 'met' ? 'Met' : r.status === 'planned' ? `Met once placeholders are filled (${got} + ${planned})` : `Short: ${got + planned} of ${r.need}`}
                   </td>
                 </tr>

@@ -10,7 +10,7 @@
   --cb-ground: #f4f6f5;
   --cb-rule: #d5dadd;
   --cb-reached: #1f6f54;
-  --cb-fading: #a8770b;
+  --cb-amber: #a8770b;
   --cb-short: #d9520a;
   --cb-untouched: #98a2ab;
   --cb-plain: #55616d;
@@ -52,7 +52,7 @@
 .cb-chip:hover { border-color: var(--cb-ink); }
 .cb-chip--off { color: var(--cb-ink-soft); cursor: default; border-style: dashed; }
 .cb-t-reached { color: var(--cb-reached); }
-.cb-t-fading { color: var(--cb-fading); }
+.cb-t-amber { color: var(--cb-amber); }
 .cb-t-short { color: var(--cb-short); }
 .cb-t-untouched { color: var(--cb-untouched); }
 .cb-t-plain { color: var(--cb-plain); }
@@ -179,12 +179,10 @@
 /* Act heading: how this act's targets stand, as one stacked bar and its counts. */
 .cb-statusbar { display: flex; height: 8px; margin: 0.35rem 0 0.2rem; border-radius: 2px; overflow: hidden; background: var(--cb-rule); }
 .cb-statusbar__seg--met { background: var(--cb-reached); }
-.cb-statusbar__seg--fading { background: var(--cb-fading); }
 .cb-statusbar__seg--short { background: var(--cb-short); }
 .cb-statusbar__seg--untouched { background: var(--cb-untouched); }
 .cb-statuskey { display: flex; flex-wrap: wrap; gap: 0 0.5rem; font-size: 0.875rem; }
 .cb-statuskey__item--met { color: var(--cb-reached); }
-.cb-statuskey__item--fading { color: var(--cb-fading); }
 .cb-statuskey__item--short { color: var(--cb-short); }
 .cb-statuskey__item--untouched { color: var(--cb-ink-soft); }
 
@@ -214,7 +212,7 @@
 /* The course code is never cut; the 'other reading' note gives way to it. */
 .cb-card__code { grid-column: 2; grid-row: 1; font-size: 0.9375rem; font-weight: 500; white-space: nowrap; }
 .cb-card__title { grid-column: 2 / 4; grid-row: 2; font-size: 0.875rem; color: var(--cb-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cb-card__tag { grid-column: 3; grid-row: 1; font-size: 0.75rem; color: var(--cb-fading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: right; }
+.cb-card__tag { grid-column: 3; grid-row: 1; font-size: 0.75rem; color: var(--cb-amber); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: right; }
 .cb-card__warn { position: absolute; top: -0.5rem; right: -0.5rem; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--cb-short); color: #fff; font-size: 0.875rem; font-weight: 700; display: grid; place-items: center; }
 .cb-svg { position: absolute; left: 0; top: 0; }
 .cb-svg--back { z-index: 1; }
@@ -275,7 +273,7 @@ details.cb-sec summary { cursor: pointer; font-weight: 500; }
 .cb-steps { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.25rem; }
 .cb-status { font-weight: 600; }
 .cb-status--reached { color: var(--cb-reached); }
-.cb-status--fading { color: var(--cb-fading); }
+.cb-status--amber { color: var(--cb-amber); }
 .cb-status--short { color: var(--cb-short); }
 .cb-status--untouched, .cb-status--plain { color: var(--cb-ink-soft); }
 .cb-descr { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.8rem; font-size: 0.9375rem; }

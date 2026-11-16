@@ -3,10 +3,10 @@ import type { CheckpointStatus, ObjectiveResult, ObjectiveStatus } from '@/lib/b
 import type { Basis, Depth, LibraryCompetency } from '@/lib/builder/types';
 import { BAND_LABELS, bandOf } from '@/lib/catalog/membership';
 
-export type Tone = 'reached' | 'fading' | 'short' | 'untouched' | 'plain';
+export type Tone = 'reached' | 'amber' | 'short' | 'untouched' | 'plain';
 
 export const TONE_VAR: Record<Tone, string> = {
-  reached: 'var(--cb-reached)', fading: 'var(--cb-fading)', short: 'var(--cb-short)',
+  reached: 'var(--cb-reached)', amber: 'var(--cb-amber)', short: 'var(--cb-short)',
   untouched: 'var(--cb-untouched)', plain: 'var(--cb-plain)',
 };
 

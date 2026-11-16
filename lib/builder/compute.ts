@@ -609,7 +609,7 @@ export const FLAG_TEXT: Record<ObjectiveFlag, { label: string; detail: string }>
   brittle: { label: 'Brittle scaffold', detail: 'A course works this at integration depth before any course has introduced or practiced it.' },
   no_introduction: { label: 'Never introduced', detail: 'Courses practice or integrate this, but none introduces it.' },
   top_heavy: { label: 'No practice step', detail: 'Introduced and then integrated, with no course practicing it in between.' },
-  lone_peak: { label: 'Lone peak', detail: 'One course takes this to depth and nothing else works it near that level, so it is likely to fade.' },
+  lone_peak: { label: 'Lone peak', detail: 'One course takes this to depth and nothing else works it near that level, so it rests on that one course.' },
   mention_only: { label: 'Mentioned only', detail: 'Know 1 with no Understand or Do: the topic is named but students never engage with it.' },
   jargon: { label: 'Terms without reasons', detail: 'Know is well ahead of Understand.' },
   theory_without_craft: { label: 'Theory without craft', detail: 'Understand is well ahead of Do.' },

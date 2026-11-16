@@ -5,7 +5,7 @@
  * nearest bundle cards in the same stratum, above a similarity floor. The
  * same-stratum rule is the spec's "never generalized across domain-distant
  * pairs". What a neighbor then does is fixed and small (see durable() in
- * compute.ts): worked at integration depth, it slows a related competency's
+ * compute.ts): shortlist only; it does not change any level.
  * fade; it never raises a level.
  */
 import { eq } from 'drizzle-orm';

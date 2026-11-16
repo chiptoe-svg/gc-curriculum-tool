@@ -9,7 +9,7 @@ import { BASIS_WORD, CHECKPOINT_WORD, STATUS_WORD, dimNote, dimName, dimsOf, imp
 
 const THREAD_WORD = {
   reinforced: 'Reinforced: more than one course works it near its peak, so it is likely to hold.',
-  lone_peak: 'Lone peak: one course takes it to depth and nothing else works it near that level, so it is likely to fade.',
+  lone_peak: 'Lone peak: one course takes it to depth and nothing else works it near that level, so it rests on that one course.',
   light: 'Light: no course takes it past level 2.',
   none: 'No course in the plan works it.',
 } as const;
