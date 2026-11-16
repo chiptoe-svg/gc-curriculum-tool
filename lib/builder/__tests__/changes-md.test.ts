@@ -4,7 +4,7 @@ import { normalizeStatement } from '@/lib/catalog/project-trail';
 import { CUTOFFS, MODEL_IN_USE } from '@/lib/ai/match-judge';
 import { placeCourses } from '../compute';
 import { requiredByCourse } from '../threads';
-import { draftPairs, esc, renderChangesMarkdown } from '../changes-md';
+import { capturedUnjudgedPairs, draftPairs, esc, renderChangesMarkdown } from '../changes-md';
 import { EMPTY_PLAN, type Candidate, type CourseEdits, type Library, type LibraryCourse, type MatchDecision, type PlanState } from '../types';
 
 const hash = (s: string) => textHash(normalizeStatement(s));
@@ -82,6 +82,21 @@ describe('renderChangesMarkdown', () => {
     expect(md).toContain(`- Accepted fully: "${NEED} fast" ← GC 1: "${SUP}" (Dr Lee, 2026-11-15)`);
   });
 
+  it('lists a course with no edits when a match decision is in force on it', () => {
+    const d: MatchDecision = { requiredRef: hash(NEED), suppliedRef: hash(SUP), label: 'partly', by: 'Dr Lee', at: '2026-11-15T09:00:00Z', draft: false };
+    const md = render(place(), [d]);
+    expect(md).not.toContain('No changes: nothing on this map differs');
+    expect(md).toContain('## GC 2 Prepress');
+    expect(md).toContain('- Match decisions: 1');
+    expect(md.split('## GC 2')[1]!.split('### Match decisions')[1]).toContain('- Partly: "Read a job ticket" ← GC 1: "Mix ink" (Dr Lee, 2026-11-15)');
+    expect(md).not.toContain('## GC 1'); // the supplier holds no decision of its own
+  });
+
+  it('a decision whose supplier is not on the map does not list the course', () => {
+    const d: MatchDecision = { requiredRef: hash(NEED), suppliedRef: hash('Not on this map'), label: 'fully', by: 'Dr Lee', at: '2026-11-15T09:00:00Z', draft: false };
+    expect(render(place(), [d])).toContain('No changes: nothing on this map differs');
+  });
+
   it('escapes Markdown in user text so a statement cannot break the layout', () => {
     expect(esc('a *b* _c_ `d` [e](f) <g>\nh')).toBe('a \\*b\\* \\_c\\_ \\`d\\` \\[e\\](f) \\<g\\> h');
     const plan = place({ courseEdits: { 'GC 1': { ...none, developed: [{ ...edit, action: 'add', target: null, statement: '# Heading *bold* [x](y)', levels: { k: 1, u: null, d: 2 } }] } } });
@@ -102,5 +117,18 @@ describe('draftPairs', () => {
   });
   it('captured-only pairs are not listed', () => {
     expect(draftPairs(lib, place())).toEqual([]);
+  });
+});
+
+describe('capturedUnjudgedPairs', () => {
+  it('pairs a captured required skill with no judged candidate against every other course\'s developed skills', () => {
+    const unjudged: Library = { ...lib, candidates: { [`GC 2|${hash(NEED)}`]: [{ ...cand, pFully: null, pPartly: null }] } };
+    const plan = place();
+    const req = requiredByCourse(unjudged, plan, placeCourses(unjudged, plan), {});
+    expect(capturedUnjudgedPairs(unjudged, plan, req)).toEqual([{ requiredHash: hash(NEED), suppliedHash: hash(SUP) }]);
+  });
+  it('lists nothing once a candidate has a judgment', () => {
+    const plan = place();
+    expect(capturedUnjudgedPairs(lib, plan, requiredByCourse(lib, plan, placeCourses(lib, plan), {}))).toEqual([]);
   });
 });

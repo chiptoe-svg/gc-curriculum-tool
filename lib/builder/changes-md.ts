@@ -63,17 +63,23 @@ export function renderChangesMarkdown(input: ChangesInput): string {
     return { lc, version, e: effectiveCourse(lc, version, plan.courseEdits?.[ref]) };
   };
 
-  // Courses with a change, in code order.
+  // Skill texts anywhere on the map, to name a decision's two sides.
+  const supplied = new Map<string, { course: string; text: string }>();
+  for (const c of placed) for (const s of eff(c.ref)?.e.developed ?? []) supplied.set(s.skillRef, { course: c.code, text: s.statement });
+  /** A decision in force on a course: one of its required skills, supplied by a skill on this map. */
+  const inForce = (d: MatchDecision, reqRefs: { has: (ref: string) => boolean }) => reqRefs.has(d.requiredRef) && supplied.has(d.suppliedRef);
+
+  // Courses with a change or a match decision in force, in code order.
   const named = (l: { from: string; to: string }, ref: string) => l.from === ref || l.to === ref;
   const refs = new Set<string>(Object.entries(plan.courseEdits ?? {})
     .filter(([, e]) => e.objectives.length + e.required.length + e.developed.length > 0).map(([r]) => r));
   for (const l of [...plan.links, ...plan.unlinked]) { refs.add(l.from); refs.add(l.to); }
+  for (const c of placed) {
+    const own = new Set((eff(c.ref)?.e.required ?? []).map(r => r.ref));
+    if (decisions.some(d => inForce(d, own))) refs.add(c.ref);
+  }
   const changed = [...refs].filter(r => byCode.has(r) || proposed.has(r))
     .sort((a, b) => codeOf(a).localeCompare(codeOf(b)));
-
-  // Skill texts anywhere on the map, to name a decision's two sides.
-  const supplied = new Map<string, { course: string; text: string }>();
-  for (const c of placed) for (const s of eff(c.ref)?.e.developed ?? []) supplied.set(s.skillRef, { course: c.code, text: s.statement });
 
   const lines: string[] = [];
   const toConfirm: string[] = [];
@@ -140,7 +146,7 @@ export function renderChangesMarkdown(input: ChangesInput): string {
     // Match decisions on this course's required skills that appear in this plan
     const reqRefs = new Map(x.e.required.map(r => [r.ref, r.statement]));
     const decLines = decisions
-      .filter(d => reqRefs.has(d.requiredRef) && supplied.has(d.suppliedRef))
+      .filter(d => inForce(d, reqRefs))
       .map(d => {
         counts.decisions++;
         const s = supplied.get(d.suppliedRef)!;
@@ -199,4 +205,28 @@ export function draftPairs(lib: Library, plan: PlanState): Array<{ requiredHash:
     }
   }
   return out;
+}
+
+/**
+ * The pairs the builder judges for a captured required skill none of whose eligible candidates has a judgment
+ * (Builder.tsx judgeJobs): that skill against every developed skill on the map. The judge stores what it asked by
+ * text hash, so the export reads these back to match the map. As in draftPairs, threads.ts applies eligibility.
+ */
+export function capturedUnjudgedPairs(lib: Library, plan: PlanState, required: ReturnType<typeof requiredByCourse>): Array<{ requiredHash: string; suppliedHash: string }> {
+  const byCode = new Map<string, LibraryCourse>(lib.courses.map(c => [c.code, c]));
+  const proposed = new Map<string, ProposedCourse>(plan.proposed.map(p => [p.id, p]));
+  const developed = placeCourses(lib, plan).filter(c => !c.requirement).flatMap(c => {
+    const lc = byCode.get(c.ref) ?? proposed.get(c.ref);
+    if (!lc) return [];
+    const e = effectiveCourse(lc, byCode.has(c.ref) ? versionOf(lc as LibraryCourse, plan) : null, plan.courseEdits?.[c.ref]);
+    return e.developed.map(s => ({ course: c.ref, ref: s.skillRef }));
+  });
+  const out = new Map<string, { requiredHash: string; suppliedHash: string }>();
+  for (const [course, { results }] of Object.entries(required)) {
+    for (const r of results) {
+      if (r.required.draft || r.candidates.some(c => c.pFully != null)) continue;
+      for (const d of developed) if (d.course !== course) out.set(`${r.required.ref}|${d.ref}`, { requiredHash: r.required.ref, suppliedHash: d.ref });
+    }
+  }
+  return [...out.values()];
 }
