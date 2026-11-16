@@ -72,6 +72,19 @@ Competency levels, act checkpoints and targets no longer fade: the builder's com
 - **Changed courses:** a pencil mark and change count on the card; edited items in italics with an asterisk; a "Changes on this map" section in the course panel, and "To confirm through capture".
 - **Course panel editors** for each kind in §1.
 
+## 4b. Courses drafted from a syllabus (owner, 2026-11-16)
+
+A course with no capture can be brought onto a map from its syllabus, so it takes part in mapping like any other course. A syllabus is required: there is no drafting from a title or description alone.
+
+- **Where:** "Import a course from a syllabus" in the library panel, for a catalog course with no capture, a course already proposed on the plan, or a new course. Upload a PDF, Word file or pasted text.
+- **Reading the file:** the existing extractor (`getExtractorFor`, Docling for PDF and Word). The extracted text is stored with the plan (`plan_syllabus_drafts`, migration 0069: plan, course, file name, text, who, when, model), not as a course material, so it never enters captures.
+- **Drafting:** a free campus model reads the syllabus and drafts, as structured output: learning objectives (each with its Bloom process), developed skills with K/U/D goals, required skills with needed K/U/D, and the prerequisites and corequisites the syllabus names. The prompt carries the framework's depth scale and evidence rule: a syllabus states intentions, so every drafted level is a **goal**, never evidence, and Do levels follow the condition the syllabus states (none stated → the model proposes at most D2 and flags "condition missing").
+- **Same warnings as an edited course:** every drafted item is a draft (italic, asterisk), counts toward "met" only as **Met\*** (yellow), and appears under "To confirm through capture". The card is marked **Drafted from syllabus**, and the course panel shows the source file and date.
+- **Faculty review:** the drafted items are ordinary map edits, so faculty can keep, change or remove each one; changes are logged and exported like any other.
+- **Judging:** drafted skills are judged against the map's other courses on import (both directions: what the course needs, and what it supplies to later courses), cached like any draft.
+- **When the course is captured:** the capture interview can be given the syllabus draft as context, and the capture's evidence replaces the draft; the "To confirm through capture" list is checked off against it.
+- **Cost:** campus models are free. If the provider ever has to be a paid one, the import shows an estimate and needs the owner's yes first.
+
 ## 5. Export
 
 `GET /api/build/plans/<id>/changes.md` (plan read rule), a download named `<plan-name>-changes-<date>.md`:
@@ -79,6 +92,7 @@ Competency levels, act checkpoints and targets no longer fade: the builder's com
 - Header: plan name, date, catalog year, who exported.
 - Summary: courses changed; counts per kind; required skills met / met* / partly / not met across the map.
 - One section per changed course: Objectives, Required skills (with status and supplier), Developed skills, Prerequisites and corequisites, Match decisions. Each change shows before → after, who and when.
+- Courses drafted from a syllabus are marked as such, with the file name and date.
 - Closing list: every draft that needs a capture to confirm it.
 
 ## 6. Not in this design
@@ -88,8 +102,9 @@ Changing captures; storing threads outside a plan; the AI roll-up; the needed-sh
 ## 7. Build order
 
 1. **Spike (free):** judge ~40 real pairs from captured courses; owner labels them; set provisional cut-offs and the question wording.
-2. Migration 0069 (`skill_match_judgments`, `skill_match_decisions`) on scratch; judge library and batch over captured courses (free).
+2. Migration 0069 (`skill_match_judgments`, `skill_match_decisions`, `plan_syllabus_drafts`) on scratch; judge library and batch over captured courses (free).
 3. Plan edits in `PlanState` and the met computation (pure, tested).
 4. Map UI: bar, list, editors, change marks.
 5. Markdown export.
+5b. Syllabus import and drafting (one course probe on the campus model first).
 6. Live: backup, migration, batch, deploy (owner go-ahead required for the live migration).

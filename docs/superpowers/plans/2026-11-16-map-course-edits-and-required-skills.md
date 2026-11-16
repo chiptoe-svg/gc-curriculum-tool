@@ -48,6 +48,7 @@
 - Produces tables:
   - `skill_match_judgments(required_hash text, supplied_hash text, model text, prompt_version text, p_fully real, p_partly real, -- one row per model created_at timestamptz default now(), PK(required_hash, supplied_hash, model, prompt_version))`
   - `skill_match_decisions(id uuid PK default gen_random_uuid(), required_hash text not null, supplied_hash text not null, required_text text not null, supplied_text text not null, required_course text not null, required_course_title text, supplied_course text not null, supplied_course_title text, required_snapshot_id uuid null, supplied_snapshot_id uuid null, label text not null check in ('fully','partly','not'), draft boolean not null default false, plan_id uuid null, source text not null check in ('map','labeling_sheet'), reason text, decided_by text not null, decided_at timestamptz not null default now(), judge_model text, prompt_version text, judge_p_fully real, judge_p_partly real)`, index on `(required_hash, supplied_hash, decided_at desc)`. Rows are only ever inserted.
+  - `plan_syllabus_drafts(id uuid PK default gen_random_uuid(), plan_id uuid not null references curriculum_plans(id) on delete cascade, course_ref text not null, file_name text not null, text text not null, model text not null, drafted_by text not null, drafted_at timestamptz not null default now(), draft jsonb not null)` — `draft` holds the model's structured output as returned.
 - Produces in `match-queries.ts`:
   - `readJudgments(pairs: Array<{ requiredHash: string; suppliedHash: string }>): Promise<Map<string, { pFully: number; pPartly: number }>>` keyed `${requiredHash}|${suppliedHash}` for `MODEL`/`PROMPT_VERSION`
   - `writeJudgments(rows: Array<{ requiredHash; suppliedHash; pFully; pPartly }>): Promise<void>` (upsert)
@@ -164,10 +165,27 @@
 
 **Interfaces:**
 - `renderChangesMarkdown(input: { planName: string; catalogYear: string | null; exportedBy: string; date: string; lib: Library; plan: PlanState; required: ReturnType<typeof requiredByCourse>; decisions: MatchDecision[] }): string`
-- Layout: `# <plan> — changes (<date>)`; summary list (courses changed; counts per kind; required skills met / met\* / partly / not); `## <code> <title>` per changed course with `### Objectives`, `### Required skills`, `### Developed skills`, `### Prerequisites and corequisites`, `### Match decisions` — each change as `- Added | Changed | Removed: <before> → <after> (<by>, <date>)`; `## To confirm through capture` listing every draft.
+- Layout: `# <plan> — changes (<date>)`; summary list (courses changed; counts per kind; required skills met / met\* / partly / not); `## <code> <title>` per changed course with `### Objectives`, `### Required skills`, `### Developed skills`, `### Prerequisites and corequisites`, `### Match decisions` — each change as `- Added | Changed | Removed: <before> → <after> (<by>, <date>)`; `## To confirm through capture` listing every draft; a syllabus-drafted course is headed `(drafted from syllabus: <file>, <date>)`.
 
 - [ ] **Step 1:** Tests: `an unchanged plan says "No changes"`; `an edited objective shows before → after with its Bloom process`; `a coreq added appears under Prerequisites and corequisites`.
 - [ ] **Step 2:** FAIL → implement → PASS. Commit.
+
+### Task 7b: Import a course from a syllabus
+
+**Files:**
+- Create: `lib/builder/syllabus-draft.ts` (prompt, zod schema, `toCourseEdits`), `app/api/build/plans/[id]/syllabus/route.ts` (POST multipart: file or text, `courseRef`, optional `title`/`code` for a new course)
+- Modify: `LibraryPanel.tsx` (import button), `CourseDrawer.tsx` ("Drafted from syllabus" with file and date), `Map.tsx` (card mark), `lib/auth/authorize.ts` (`plans/<id>/syllabus` is plan-write), `types.ts` (`CourseEdits.source?: { kind: 'syllabus'; draftId: string; fileName: string; at: string }`; each edit gains optional `origin: 'syllabus' | 'faculty'`)
+- Test: `lib/builder/__tests__/syllabus-draft.test.ts`
+
+**Interfaces:**
+- `syllabusDraftSchema` (zod; OpenAI-strict-safe: every property required, optional ones nullable): `{ objectives: Array<{ text: string; bloom: BloomProcess }>, developed: Array<{ statement: string; k: number|null; u: number|null; d: number|null; condition_missing: boolean }>, required: Array<{ statement: string; k: number|null; u: number|null; d: number|null }>, prerequisites: Array<{ code: string; kind: 'prereq' | 'coreq' }> }`, levels 0–5, max 15 developed, 10 required, 12 objectives.
+- `buildSyllabusPrompt(text: string, course: { code: string; title: string }): string` — includes `lib/ai/prompts/shared/depth-scale.md` and the rules: levels are goals from stated intentions; Do above 2 only when the syllabus states the condition; foundational competencies D only.
+- `toCourseEdits(draft, meta: { by: string; at: string; draftId: string; fileName: string }): CourseEdits` — every item an `add` edit with `origin: 'syllabus'`; prerequisites become plan `links` with `kind`.
+- The route extracts with `getExtractorFor(mime)`, caps text at 60,000 characters, calls the campus model (`CAMPUS_LLM_DEFAULT_MODEL`, JSON mode), validates with the schema, inserts `plan_syllabus_drafts`, returns `{ draftId, edits, links }`; the client merges them into the plan and saves; then posts `judge` for the drafted skills (Task 5).
+
+- [ ] **Step 1:** Tests: `toCourseEdits marks every item origin syllabus and draft`; `a developed skill with D4 and condition_missing is capped at D2 with the flag kept`; `schema rejects a level of 6`; `the prompt contains the depth scale and the goal-not-evidence rule`.
+- [ ] **Step 2:** FAIL → implement → PASS. Probe one real syllabus from `courses`' materials on scratch (free campus model) and read the draft before wiring the UI.
+- [ ] **Step 3:** UI: import, see the course on the map with "Drafted from syllabus", its skills judged, its bar showing Met\* in yellow. Commit.
 
 ### Task 8: Docs and live
 
