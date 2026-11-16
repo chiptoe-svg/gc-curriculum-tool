@@ -205,8 +205,8 @@ describe('computePlan', () => {
     const r = computePlan(l, p);
     expect(obj(r, 'color').required[2]).toEqual(all(4));
     expect(obj(r, 'color').status).toBe('short');
-    expect(r.targets.find(t => t.id === 'b')!.acts[2]).toEqual({ required: 1, met: 1, fading: 0 });
-    expect(r.targets.find(t => t.id === 't')!.acts[2]).toEqual({ required: 1, met: 0, fading: 0 });
+    expect(r.targets.find(t => t.id === 'b')!.acts[2]).toEqual({ required: 1, met: 1 });
+    expect(r.targets.find(t => t.id === 't')!.acts[2]).toEqual({ required: 1, met: 0 });
   });
 
   it('marks a target reached only through a stated objective as mixed and soft', () => {
@@ -238,8 +238,8 @@ describe('computePlan', () => {
 
   it('weights career-path fit by importance at the final checkpoint', () => {
     const t = computePlan(lib([captured('A', [['color', 3, 3, 3]])]), plan([['A', 1]])).targets[0]!;
-    expect(t.acts[2]).toEqual({ required: 3, met: 1, fading: 0 });
-    expect(t.acts[0]).toEqual({ required: 0, met: 0, fading: 0 });
+    expect(t.acts[2]).toEqual({ required: 3, met: 1 });
+    expect(t.acts[0]).toEqual({ required: 0, met: 0 });
     expect(t.fit).toBeCloseTo(1 / (1 + 0.5 + 0.5)); // an unweighted member counts at the membership cutoff
   });
 
@@ -283,7 +283,7 @@ describe('computePlan', () => {
     expect(r.courses.map(c => c.code)).toEqual(['A']);
     // Whatever is in view, each career path is judged on the trunk plus its own branches.
     expect(r.targets.find(t => t.id === 'b')!.acts[2].met).toBe(1);
-    expect(r.targets.find(t => t.id === 't')!.acts[2]).toEqual({ required: 1, met: 0, fading: 0 }); // color is short without the branch
+    expect(r.targets.find(t => t.id === 't')!.acts[2]).toEqual({ required: 1, met: 0 }); // color is short without the branch
   });
 
   it('a competency reached early stays met at later checkpoints whatever the fade', () => {
