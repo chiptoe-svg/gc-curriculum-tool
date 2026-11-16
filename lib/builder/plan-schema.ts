@@ -8,7 +8,15 @@ const text = (max: number) => z.string().max(max);
 const level = z.number().int().min(0).max(5).nullable();
 const depth = z.object({ k: level, u: level, d: level });
 const act = z.union([z.literal(1), z.literal(2), z.literal(3)]);
-const link = z.object({ from: id, to: id });
+const link = z.object({ from: id, to: id, kind: z.enum(['prereq', 'coreq']).optional() });
+const bloom = z.enum(['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create']);
+const editBase = { id, by: text(120), at: text(40) };
+const action = z.enum(['add', 'edit', 'remove']);
+const objectiveEdit = z.object({ ...editBase, action, target: text(600).nullable(), text: text(600).nullable(), bloom: bloom.nullable() });
+const skillEdit = z.object({ ...editBase, action, target: id.nullable(), statement: text(600).nullable(), levels: depth.nullable() });
+const courseEdits = z.object({
+  objectives: z.array(objectiveEdit).max(50), required: z.array(skillEdit).max(50), developed: z.array(skillEdit).max(50),
+});
 /** A card position in map pixels; generous, but bounded. */
 const coord = z.number().finite().min(0).max(20000);
 const slot = z.union([z.literal(0), z.literal(1), z.literal(2)]);
@@ -45,6 +53,7 @@ export const planStateSchema = z.object({
     description: text(4000), objectives: z.array(text(500)).max(40),
     depths: z.array(depth.extend({ competencyId: id })).max(100),
   })).max(60),
+  courseEdits: z.record(id, courseEdits).refine(r => Object.keys(r).length <= 200).optional(),
   versions: z.record(id, id),
 });
 

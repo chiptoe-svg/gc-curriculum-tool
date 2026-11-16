@@ -386,7 +386,7 @@ export function planEdges(lib: Library, plan: PlanState): PlanEdge[] {
   for (const l of plan.links) {
     if (l.from === l.to || have.has(`${l.from}>${l.to}`)) continue;
     have.add(`${l.from}>${l.to}`);
-    out.push({ from: l.from, to: l.to, kind: 'prereq', source: 'plan', anyOfGroup: null });
+    out.push({ from: l.from, to: l.to, kind: l.kind === 'coreq' ? 'concurrent_ok' : 'prereq', source: 'plan', anyOfGroup: null });
   }
   return out;
 }

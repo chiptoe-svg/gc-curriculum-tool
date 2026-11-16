@@ -24,7 +24,19 @@ import { loadCompetencyRelations } from './relations';
 import { courseWhatIfs } from '@/lib/db/schema';
 import { resolveWhatIfDepths } from '@/lib/what-if/knock-on';
 import { isNotNull } from 'drizzle-orm';
-import type { CompetencyDepth, Library, LibraryCourse, LibraryVersion, LibraryWhatIf, Skill } from './types';
+import { readVectors } from '@/lib/db/bundle-queries';
+import { readJudgments, latestDecisions } from '@/lib/db/match-queries';
+import { MODEL_IN_USE, PROMPT_VERSION } from '@/lib/ai/match-judge';
+import { DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
+import type { Candidate, CompetencyDepth, Library, MatchDecision, RequiredSkill, LibraryCourse, LibraryVersion, LibraryWhatIf, Skill } from './types';
+
+const TOP_CANDIDATES = 8;
+
+function cosine(a: number[], b: number[]): number {
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) { dot += a[i]! * b[i]!; na += a[i]! * a[i]!; nb += b[i]! * b[i]!; }
+  return dot / (Math.sqrt(na) * Math.sqrt(nb) || 1);
+}
 
 const norm = (s: string) => s.trim().toUpperCase().replace(/\s+/g, ' ');
 
@@ -98,6 +110,17 @@ export async function loadLibrary(): Promise<Library> {
     });
   };
 
+  const requiredOf = (p: CaptureProfile): RequiredSkill[] => {
+    const seen = new Set<string>();
+    return (p.incoming_expectations ?? []).flatMap(e => {
+      const statement = (e.statement ?? '').trim();
+      const ref = statement ? textHash(normalizeStatement(statement)) : '';
+      if (!statement || seen.has(ref)) return [];
+      seen.add(ref);
+      return [{ ref, statement, need: { k: e.expected_depth?.k ?? null, u: e.expected_depth?.u ?? null, d: e.expected_depth?.d ?? null } }];
+    });
+  };
+
   const versionsByCourse = new Map<string, LibraryVersion[]>();
   for (const s of snapRows) {
     const createdAt = new Date(s.created_at).toISOString();
@@ -112,6 +135,7 @@ export async function loadLibrary(): Promise<Library> {
         const r = rollUp(skills, linksBySnap.get(s.id) ?? [], rollupsBySnap.get(s.id) ?? [], foundationalIds);
         return { depths: r.depths, skills, unmapped: r.unmapped, suggestions: r.suggestions, linked: true };
       })(),
+      required: requiredOf(s.profile),
       outcomes: ev.rows.map(r => ({ statement: r.statement, k: r.k, u: r.u, d: r.d })),
       disagreements: ev.disagreements,
       projects: (s.profile.major_projects ?? []).map(p => ({ title: p.title, description: p.description, deliverables: p.deliverables ?? [] })),
@@ -168,6 +192,50 @@ export async function loadLibrary(): Promise<Library> {
     };
   });
 
+  // Match candidates and faculty decisions (migration 0069). The same choice as scripts/catalog/judge-required-skills.ts:
+  // a required skill's top developed skills from OTHER courses by embedding cosine. A database without 0069 loads without them.
+  const candidates: Record<string, Candidate[]> = {};
+  const decisions: Library['decisions'] = {};
+  try {
+    const developed: Array<{ course: string; statement: string; ref: string }> = [];
+    const required: Array<{ course: string; statement: string; ref: string }> = [];
+    for (const s of snapRows) {
+      for (const k of skillsOf(s.profile)) developed.push({ course: s.course_code, statement: k.statement, ref: k.skillRef });
+      for (const r of requiredOf(s.profile)) required.push({ course: s.course_code, statement: r.statement, ref: r.ref });
+    }
+    const items = [...new Map([...required, ...developed].map(x => [x.ref, { ref: x.ref, text: x.statement }])).values()];
+    const vecs = await readVectors(db, 'course_skill', items, DEFAULT_EMBEDDING_MODEL);
+    const pairs: Array<{ requiredHash: string; suppliedHash: string }> = [];
+    const raw: Candidate[] = [];
+    for (const r of required) {
+      const rv = vecs.get(r.ref);
+      if (!rv || candidates[r.ref]) continue;
+      const seen = new Set<string>();
+      const top: Candidate[] = [];
+      const ranked = developed.filter(d => d.course !== r.course && vecs.has(d.ref))
+        .map(d => ({ d, similarity: cosine(rv, vecs.get(d.ref)!) })).sort((a, b) => b.similarity - a.similarity);
+      for (const { d, similarity } of ranked) {
+        if (seen.has(d.ref)) continue;
+        seen.add(d.ref);
+        if (seen.size > TOP_CANDIDATES) break;
+        top.push({ requiredRef: r.ref, suppliedRef: d.ref, suppliedCourse: d.course, suppliedStatement: d.statement, similarity, pFully: null, pPartly: null });
+        pairs.push({ requiredHash: r.ref, suppliedHash: d.ref });
+      }
+      candidates[r.ref] = top;
+      raw.push(...top);
+    }
+    const judged = await readJudgments(pairs, MODEL_IN_USE, PROMPT_VERSION);
+    for (const c of raw) {
+      const j = judged.get(`${c.requiredRef}|${c.suppliedRef}`);
+      if (j) { c.pFully = j.pFully; c.pPartly = j.pPartly; }
+    }
+    for (const [key, d] of await latestDecisions()) {
+      decisions[key] = { requiredRef: d.requiredHash, suppliedRef: d.suppliedHash, label: d.label, by: d.decidedBy, at: new Date(d.decidedAt).toISOString(), draft: d.draft } satisfies MatchDecision;
+    }
+  } catch { /* 0069 not applied on this database: no candidates or decisions */
+    for (const k of Object.keys(candidates)) delete candidates[k];
+  }
+
   return {
     courses: libraryCourses,
     competencies: compRows.map(c => ({
@@ -182,6 +250,7 @@ export async function loadLibrary(): Promise<Library> {
         .map(m => ({ competencyId: m.competencyId, weight: m.effectiveWeight })),
     })),
     prereqs: prereqMap.edges.map(e => ({ courseCode: e.focal, prereqCode: e.prereq, kind: e.kind, anyOfGroup: e.anyOfGroup })),
+    candidates, decisions,
   };
 }
 

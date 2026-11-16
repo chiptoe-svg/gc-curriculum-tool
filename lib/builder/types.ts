@@ -13,6 +13,18 @@ export const ACTS: ReadonlyArray<{ act: Act; name: string; verb: string; span: s
 export interface Depth { k: number | null; u: number | null; d: number | null }
 /** A captured skill: one statement in a capture profile, with the level the capture gave it. Never changed downstream. */
 export interface Skill { skillRef: string; statement: string; k: number | null; u: number | null; d: number | null }
+/** A skill a course expects of students on entry: `ref` is the hash of its normalized statement. */
+export interface RequiredSkill { ref: string; statement: string; need: Depth }
+/** A developed skill that may supply a required one: top matches by embedding, with the judge's probabilities. */
+export interface Candidate {
+  requiredRef: string; suppliedRef: string; suppliedCourse: string; suppliedStatement: string;
+  similarity: number; pFully: number | null; pPartly: number | null;
+}
+/** A faculty decision on a (required, supplied) pair. Keyed in Library.decisions by `${requiredRef}|${suppliedRef}`. */
+export interface MatchDecision {
+  requiredRef: string; suppliedRef: string; label: 'fully' | 'partly' | 'not'; by: string; at: string; draft: boolean;
+}
+
 /** A skill as linked to a catalog competency (spec 2026-11-15-skill-competency-links-design.md). */
 export interface LinkedSkill extends Skill {
   source: 'embedding' | 'ai' | 'scoring' | 'faculty';
@@ -55,6 +67,8 @@ export interface LibraryVersion {
   conditions: Area7Block | null;
   /** Every skill in the capture, and those with no counting link (links in use only; empty otherwise). */
   skills: Skill[];
+  /** What the capture says students must bring in (incoming expectations). */
+  required: RequiredSkill[];
   unmapped: Skill[];
   /** Embedding matches awaiting a decision: shown as suggestions, not counted. */
   suggestions: Array<LinkedSkill & { competencyId: string }>;
@@ -127,6 +141,10 @@ export interface Library {
   competencies: LibraryCompetency[];
   targets: LibraryTarget[];
   prereqs: LibraryPrereq[];
+  /** Top matches per required skill, by `requiredRef`; empty before migration 0069. */
+  candidates: Record<string, Candidate[]>;
+  /** Faculty decisions (non-draft), by `${requiredRef}|${suppliedRef}`; empty before migration 0069. */
+  decisions: Record<string, MatchDecision>;
 }
 
 export interface ProposedCourse {
@@ -170,8 +188,18 @@ export interface Requirement { id: string; label: string; credits: number | null
 /** An alternative pathway that splits from the trunk and builds toward some of the plan's career paths. */
 export interface Branch { id: string; name: string; targetIds: string[] }
 
-/** "from must come before to", by course ref. */
-export interface Link { from: string; to: string }
+/** "from must come before to", by course ref. `kind` absent = prerequisite; 'coreq' = may be taken together. */
+export interface Link { from: string; to: string; kind?: 'prereq' | 'coreq' }
+
+export const BLOOM = ['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create'] as const;
+export type BloomProcess = (typeof BLOOM)[number];
+
+export interface EditBase { id: string; by: string; at: string }
+/** A map-scoped change to a course objective; `target` is the original text (null for an add). Captures are never changed. */
+export type ObjectiveEdit = EditBase & { action: 'add' | 'edit' | 'remove'; target: string | null; text: string | null; bloom: BloomProcess | null };
+/** A map-scoped change to a required or developed skill; `target` is the original ref (null for an add). */
+export type SkillEdit = EditBase & { action: 'add' | 'edit' | 'remove'; target: string | null; statement: string | null; levels: Depth | null };
+export interface CourseEdits { objectives: ObjectiveEdit[]; required: SkillEdit[]; developed: SkillEdit[] }
 
 /** Required depth at the end of Act 1, 2 and 3; null = nothing required at that checkpoint. */
 export type ActLevels = [Depth | null, Depth | null, Depth | null];
@@ -240,6 +268,8 @@ export interface PlanState {
   /** Catalog prerequisites this plan sets aside. */
   unlinked: Link[];
   proposed: ProposedCourse[];
+  /** Map-scoped edits per course ref (course code or proposed id). Absent on plans saved before they existed. */
+  courseEdits?: Record<string, CourseEdits>;
   /** Chosen version per course code: a captured snapshot id, or `whatif:<id>` for a what-if; absent = newest capture. */
   versions: Record<string, string>;
 }

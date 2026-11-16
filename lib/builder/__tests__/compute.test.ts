@@ -7,7 +7,7 @@ const course = (code: string, over: Partial<LibraryCourse> = {}): LibraryCourse 
   objectives: [], sheetProjects: [], stated: [], versions: [], whatIfs: [], ...over,
 });
 const version = (id: string, depths: Array<[string, number | null, number | null, number]>) => ({
-  snapshotId: id, instructorName: null, createdAt: '2026-01-01T00:00:00.000Z', outcomes: [], disagreements: [], projects: [], conditions: null, skills: [], unmapped: [], suggestions: [], linked: false,
+  snapshotId: id, instructorName: null, createdAt: '2026-01-01T00:00:00.000Z', outcomes: [], disagreements: [], projects: [], conditions: null, skills: [], required: [], unmapped: [], suggestions: [], linked: false,
   depths: depths.map(([competencyId, k, u, d]) => ({ competencyId, k, u, d })),
 });
 const captured = (code: string, depths: Array<[string, number | null, number | null, number]>) =>
@@ -25,7 +25,7 @@ const lib = (courses: LibraryCourse[], prereqs: Library['prereqs'] = []): Librar
     ] },
     { id: 'b', name: 'Brand', shortDefinition: '', members: [{ competencyId: 'color', weight: 0.5 }] },
   ],
-  prereqs,
+  prereqs, candidates: {}, decisions: {},
 });
 const all = (n: number) => ({ k: n, u: n, d: n });
 /** Require `n` on every dimension at the end of Act 3 only. */
