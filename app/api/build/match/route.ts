@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { authorizeRequest } from '@/lib/auth/route-auth';
 import { personalName } from '@/lib/auth/viewer';
 import { db } from '@/lib/db/client';
-import { courseCaptureSnapshots, curriculumPlans } from '@/lib/db/schema';
+import { courseCaptureSnapshots, courses, curriculumPlans } from '@/lib/db/schema';
 import { textHash } from '@/lib/catalog/bundles';
 import { normalizeStatement } from '@/lib/catalog/project-trail';
 import { NAME_MAX } from '@/lib/builder/plan-schema';
@@ -16,6 +16,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TEXT_MAX = 600;
 const OTHERS_MAX = 400;
 const TOP = 5;
+const COURSE_MAX = 40, TITLE_MAX = 200, REF_MAX = 64;
 const bad = (error: string) => NextResponse.json({ error }, { status: 400 });
 const hashOf = (s: string) => textHash(normalizeStatement(s));
 
@@ -32,11 +33,11 @@ function readSide(v: unknown): Side | null {
   const o = v as Record<string, unknown>;
   const text = typeof o.text === 'string' ? o.text.trim() : '';
   const snapshotId = o.snapshotId === null || o.snapshotId === undefined ? null : o.snapshotId;
-  if (typeof o.course !== 'string' || !o.course.trim() || o.course.length > 40) return null;
-  if (typeof o.ref !== 'string' || !o.ref) return null;
+  if (typeof o.course !== 'string' || !o.course.trim() || o.course.length > COURSE_MAX) return null;
+  if (typeof o.ref !== 'string' || !o.ref || o.ref.length > REF_MAX) return null;
   if (snapshotId !== null && (typeof snapshotId !== 'string' || !UUID.test(snapshotId))) return null;
   if (snapshotId === null && (!text || text.length > TEXT_MAX)) return null;
-  return { course: o.course.trim(), title: typeof o.title === 'string' ? o.title.trim().slice(0, 200) : '', snapshotId, ref: o.ref, text };
+  return { course: o.course.trim(), title: typeof o.title === 'string' ? o.title.trim().slice(0, TITLE_MAX) : '', snapshotId, ref: o.ref, text };
 }
 
 /** A captured side's text comes from the capture itself (required skills: incoming expectations; supplied: developed skills). */
@@ -77,7 +78,7 @@ async function decide(body: Record<string, unknown>, who: string): Promise<Respo
   if (label !== 'fully' && label !== 'partly' && label !== 'not') return bad('Label must be fully, partly or not.');
   const req = readSide(body.required), sup = readSide(body.supplied);
   if (!req || !sup) return bad('Both skills are required, each with a course and (for a new skill) its text.');
-  const [plan] = await db.select({ id: curriculumPlans.id }).from(curriculumPlans).where(eq(curriculumPlans.id, planId));
+  const [plan] = await db.select({ id: curriculumPlans.id, state: curriculumPlans.state }).from(curriculumPlans).where(eq(curriculumPlans.id, planId));
   if (!plan) return NextResponse.json({ error: 'That plan does not exist.' }, { status: 404 });
 
   const resolve = async (side: Side, kind: 'required' | 'supplied') => {
@@ -88,10 +89,17 @@ async function decide(body: Record<string, unknown>, who: string): Promise<Respo
   const r = await resolve(req, 'required'), s = await resolve(sup, 'supplied');
   if (!r || !s) return NextResponse.json({ error: 'That skill is not in the capture.' }, { status: 404 });
 
+  // Titles come from the courses table, never the body. A draft side's course must be a real course or one this plan proposes.
+  const known = new Map((await db.select({ code: courses.code, title: courses.title }).from(courses).where(inArray(courses.code, [r.course, s.course]))).map((c) => [c.code, c.title]));
+  const proposed = new Set(((plan.state as { proposed?: Array<{ id: string }> } | null)?.proposed ?? []).map((c) => c.id));
+  for (const side of [r, s]) {
+    if (side.draft && !known.has(side.course) && !side.course.startsWith('new:') && !proposed.has(side.course)) return bad('That course is not in the catalog or on this plan.');
+  }
+
   const cached = (await readJudgments([{ requiredHash: r.hash, suppliedHash: s.hash }], MODEL_IN_USE, PROMPT_VERSION)).get(`${r.hash}|${s.hash}`);
   await insertDecision({
     requiredHash: r.hash, suppliedHash: s.hash, requiredText: r.text, suppliedText: s.text,
-    requiredCourse: r.course, requiredCourseTitle: req.title || null, suppliedCourse: s.course, suppliedCourseTitle: sup.title || null,
+    requiredCourse: r.course, requiredCourseTitle: known.get(r.course) ?? null, suppliedCourse: s.course, suppliedCourseTitle: known.get(s.course) ?? null,
     requiredSnapshotId: req.snapshotId, suppliedSnapshotId: sup.snapshotId,
     label, draft: r.draft || s.draft, planId, source: 'map',
     reason: typeof body.reason === 'string' && body.reason.trim() ? body.reason.trim().slice(0, 1000) : null,
@@ -105,32 +113,35 @@ async function judge(body: Record<string, unknown>): Promise<Response> {
   const a = body.anchor as Record<string, unknown> | undefined;
   const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
   if (!a || !text(a.text) || text(a.text).length > TEXT_MAX || (a.side !== 'required' && a.side !== 'supplied')) return bad('An anchor skill and its side are required.');
+  const capped = (o: Record<string, unknown>) => typeof o.course === 'string' && o.course.length <= COURSE_MAX && (o.title === undefined || (typeof o.title === 'string' && o.title.length <= TITLE_MAX));
+  if (!capped(a)) return bad('A course code is at most 40 characters and a title at most 200.');
   if (!Array.isArray(body.others) || body.others.length === 0) return bad('Nothing to compare with.');
   if (body.others.length > OTHERS_MAX) return bad(`At most ${OTHERS_MAX} skills to compare.`);
-  const others: Array<{ ref: string; text: string; course: string; title: string }> = [];
+  const others: Array<{ ref: string; key: string; text: string; course: string; title: string }> = [];
   for (const o of body.others as Array<Record<string, unknown>>) {
-    if (!o || typeof o.ref !== 'string' || !o.ref || !text(o.text) || text(o.text).length > TEXT_MAX || typeof o.course !== 'string') return bad('Each skill needs a ref, text (up to 600 characters) and a course.');
-    others.push({ ref: o.ref, text: text(o.text), course: o.course, title: typeof o.title === 'string' ? o.title : '' });
+    if (!o || typeof o.ref !== 'string' || !o.ref || !text(o.text) || text(o.text).length > TEXT_MAX || typeof o.course !== 'string' || o.ref.length > REF_MAX || !capped(o)) return bad('Each skill needs a ref, text (up to 600 characters) and a course.');
+    others.push({ ref: o.ref, key: hashOf(text(o.text)), text: text(o.text), course: o.course, title: typeof o.title === 'string' ? o.title : '' });
   }
   const anchorText = text(a.text), anchorRef = hashOf(anchorText);
 
   const sink = { message: null as string | null };
   const unreachable = (why: string) => NextResponse.json({ error: `The campus model is not reachable right now (${why}). Try again in a few minutes.` }, { status: 502 });
   try {
-    const items = [...new Map([{ ref: anchorRef, text: anchorText }, ...others].map((x) => [x.ref, { kind: 'course_skill' as const, ref: x.ref, text: x.text }])).values()];
+    const items = [...new Map([{ key: anchorRef, text: anchorText }, ...others].map((x) => [x.key, { kind: 'course_skill' as const, ref: x.key, text: x.text }])).values()];
     await embedMissing(db, items, DEFAULT_EMBEDDING_MODEL, (t) => viaCampus(() => embedBatch(t)));
     const vecs = await readVectors(db, 'course_skill', items, DEFAULT_EMBEDDING_MODEL);
     const av = vecs.get(anchorRef);
     const seen = new Set<string>();
     const top = others
-      .filter((o) => vecs.has(o.ref) && !seen.has(o.ref) && !!seen.add(o.ref))
-      .map((o) => ({ o, sim: av ? cosineSimilarity(av, vecs.get(o.ref)!) : 0 }))
+      .filter((o) => vecs.has(o.key) && !seen.has(o.key) && !!seen.add(o.key))
+      .map((o) => ({ o, sim: av ? cosineSimilarity(av, vecs.get(o.key)!) : 0 }))
       .sort((x, y) => y.sim - x.sim)
       .slice(0, TOP);
 
     const asRequired = a.side === 'required';
     const pairs = top.map(({ o }) => ({
-      requiredHash: asRequired ? anchorRef : o.ref, suppliedHash: asRequired ? o.ref : anchorRef,
+      // Keyed by the hash of the text, never the client's ref, so the cache cannot be poisoned.
+      requiredHash: asRequired ? anchorRef : o.key, suppliedHash: asRequired ? o.key : anchorRef,
       text: {
         requiredText: asRequired ? anchorText : o.text, requiredCourse: asRequired ? text(a.course) : o.course, requiredTitle: asRequired ? text(a.title) : o.title,
         suppliedText: asRequired ? o.text : anchorText, suppliedCourse: asRequired ? o.course : text(a.course), suppliedTitle: asRequired ? o.title : text(a.title),

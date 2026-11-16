@@ -24,6 +24,14 @@ describe('export format', () => {
     const recs = toRecords([row({ id: 'a' }), row({ id: 'b', label: 'not', decidedAt: new Date('2026-01-02T00:00:00Z') }), row({ id: 'c', draft: true, decidedAt: new Date('2026-01-03T00:00:00Z') })]);
     expect(recs.map((r) => r.latest)).toEqual([false, true, true]);
   });
+  it('defuses spreadsheet formulas in CSV only', () => {
+    const recs = toRecords([row({ requiredText: '=HYPERLINK("x")', suppliedText: '+1', requiredCourseTitle: '@sum', decidedBy: '-cmd' })]);
+    const csv = toCsv(recs);
+    expect(csv).toContain(`"'=HYPERLINK(""x"")",'+1`);
+    expect(csv).toContain(",'@sum,");
+    expect(csv).toContain(",'-cmd,");
+    expect(toJsonl(recs)).toContain('"required_text":"=HYPERLINK(\\"x\\")"');
+  });
   it('quotes CSV cells and emits one JSON object per line', () => {
     const recs = toRecords([row({})]);
     const csv = toCsv(recs);

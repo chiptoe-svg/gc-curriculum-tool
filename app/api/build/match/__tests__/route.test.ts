@@ -65,6 +65,7 @@ describe('POST /api/build/match decide', () => {
       [{ id: PLAN }],
       [{ courseCode: 'GC 3460', profile: { incoming_expectations: [{ statement: reqText }] } }],
       [{ courseCode: 'GC 1020', profile: { competencies: [{ statement: supText }] } }],
+      [{ code: 'GC 3460', title: 'Print Real' }, { code: 'GC 1020', title: 'Intro Real' }],
     ];
     state.cache.set(`qwen3.8-27b-fp8|${h(reqText)}|${h(supText)}`, { pFully: 0.7, pPartly: 0.95 });
     const res = await post({
@@ -75,7 +76,7 @@ describe('POST /api/build/match decide', () => {
     expect(res.status).toBe(200);
     expect(state.inserted).toHaveLength(1);
     expect(state.inserted[0]).toMatchObject({
-      requiredText: reqText, suppliedText: supText, requiredCourse: 'GC 3460', suppliedCourse: 'GC 1020',
+      requiredText: reqText, suppliedText: supText, requiredCourse: 'GC 3460', suppliedCourse: 'GC 1020', requiredCourseTitle: 'Print Real', suppliedCourseTitle: 'Intro Real',
       draft: false, label: 'partly', reason: 'close', decidedBy: 'Dr Who', source: 'map', planId: PLAN,
       judgeModel: 'qwen3.8-27b-fp8', promptVersion: 'm1', judgePFully: 0.7, judgePPartly: 0.95,
     });
@@ -93,7 +94,7 @@ describe('POST /api/build/match decide', () => {
   });
 
   it('a side without a snapshot is a draft and uses the body text', async () => {
-    state.selects = [[{ id: PLAN }], [{ courseCode: 'GC 3460', profile: { incoming_expectations: [{ statement: reqText }] } }]];
+    state.selects = [[{ id: PLAN }], [{ courseCode: 'GC 3460', profile: { incoming_expectations: [{ statement: reqText }] } }], [{ code: 'GC 3460', title: 'Print' }, { code: 'GC 1020', title: 'Intro' }]];
     const res = await post({
       action: 'decide', planId: PLAN, label: 'not',
       required: { course: 'GC 3460', title: 'Print', snapshotId: SNAP_A, ref: h(reqText), text: reqText },
@@ -101,6 +102,21 @@ describe('POST /api/build/match decide', () => {
     });
     expect(res.status).toBe(200);
     expect(state.inserted[0]).toMatchObject({ draft: true, suppliedText: 'a brand new skill', suppliedHash: h('a brand new skill'), judgePFully: null });
+  });
+
+  it('400 for a draft side whose course is neither in the catalog nor proposed on the plan; accepts new: and plan-proposed ids', async () => {
+    const mk = (course: string) => ({
+      action: 'decide', planId: PLAN, label: 'fully',
+      required: { course, title: '', snapshotId: null, ref: 'r', text: 'a new required skill' },
+      supplied: { course: 'GC 1020', title: '', snapshotId: null, ref: 's', text: 'a new supplied skill' },
+    });
+    const real = [{ code: 'GC 1020', title: 'Intro' }];
+    state.selects = [[{ id: PLAN, state: { proposed: [] } }], real];
+    expect((await post(mk('GC 9999'))).status).toBe(400);
+    state.selects = [[{ id: PLAN, state: { proposed: [] } }], real];
+    expect((await post(mk('new:abc'))).status).toBe(200);
+    state.selects = [[{ id: PLAN, state: { proposed: [{ id: 'prop-1' }] } }], real];
+    expect((await post(mk('prop-1'))).status).toBe(200);
   });
 
   it('404 when the plan does not exist; 400 for a bad label', async () => {
@@ -116,13 +132,13 @@ describe('POST /api/build/match judge', () => {
   const anchor = { text: 'lay out a page', course: 'GC 3460', title: 'Print', side: 'required' as const };
   const setVectors = () => {
     state.vectors = new Map([[h(anchor.text), [1, 0]]]);
-    others.forEach((o, i) => state.vectors.set(o.ref, [1 - i * 0.1, i * 0.1])); // o0 most similar
+    others.forEach((o, i) => state.vectors.set(h(o.text), [1 - i * 0.1, i * 0.1])); // o0 most similar
   };
 
   it('judges the top 5 by similarity and asks only uncached pairs', async () => {
     setVectors();
     // o0's pair is already cached for both models.
-    for (const m of ['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017']) state.cache.set(`${m}|${h(anchor.text)}|o0`, { pFully: 0.5, pPartly: 0.6 });
+    for (const m of ['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017']) state.cache.set(`${m}|${h(anchor.text)}|${h(others[0]!.text)}`, { pFully: 0.5, pPartly: 0.6 });
     const res = await post({ action: 'judge', anchor, others });
     expect(res.status).toBe(200);
     const { results } = await res.json();
@@ -142,6 +158,24 @@ describe('POST /api/build/match judge', () => {
     state.judgeImpl = async (pairs) => { first ??= pairs[0] as typeof first; return pairs.map(() => ({ pFully: 0.1, pPartly: 0.2 })); };
     await post({ action: 'judge', anchor: { ...anchor, side: 'supplied' }, others });
     expect(first).toMatchObject({ suppliedText: anchor.text, requiredText: 'other skill 0' });
+  });
+
+  it('caches under the hash of the text, not the client ref', async () => {
+    setVectors();
+    state.vectors.set(h('forged text'), [1, 0]);
+    const forged = [{ ref: h('some other skill'), text: 'forged text', course: 'GC 1', title: '' }];
+    const res = await post({ action: 'judge', anchor, others: forged });
+    expect(res.status).toBe(200);
+    expect(state.cache.has(`qwen3.8-27b-fp8|${h(anchor.text)}|${h('forged text')}`)).toBe(true);
+    expect(state.cache.has(`qwen3.8-27b-fp8|${h(anchor.text)}|${h('some other skill')}`)).toBe(false);
+    expect((await res.json()).results[0].ref).toBe(h('some other skill'));
+  });
+
+  it('400 for an over-long course, title or ref', async () => {
+    const long = (n: number) => 'x'.repeat(n);
+    expect((await post({ action: 'judge', anchor: { ...anchor, course: long(41) }, others })).status).toBe(400);
+    expect((await post({ action: 'judge', anchor, others: [{ ...others[0], title: long(201) }] })).status).toBe(400);
+    expect((await post({ action: 'judge', anchor, others: [{ ...others[0], ref: long(65) }] })).status).toBe(400);
   });
 
   it('refuses more than 400 others', async () => {

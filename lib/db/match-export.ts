@@ -33,7 +33,9 @@ export const toJsonl = (recs: ExportRecord[]): string => recs.map((r) => JSON.st
 
 const cell = (v: string | number | boolean | null): string => {
   if (v === null) return '';
-  const s = String(v);
+  let s = String(v);
+  // A spreadsheet reads a leading = + - @ (or tab / CR) as a formula; a leading quote makes it text.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
