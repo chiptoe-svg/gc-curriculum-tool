@@ -98,7 +98,8 @@ export function JudgeStatus(props: { threads: Threads; judgeKey: string }) {
   return <div className="cb-error cb-small" role="alert">{state} <button type="button" className="cb-linkbtn" onClick={() => props.threads.retryJudge(props.judgeKey)}>Try again</button></div>;
 }
 
-export function DevelopedSkillsEditor(props: { eff: EffectiveCourse; ops: EditOps; courseRef: string; threads: Threads }) {
+/** `conditionMissing`: drafted statements whose syllabus states no condition for Do, so their Do goal was held at 2. */
+export function DevelopedSkillsEditor(props: { eff: EffectiveCourse; ops: EditOps; courseRef: string; threads: Threads; conditionMissing?: Set<string> }) {
   const [editing, setEditing] = useState<string | 'new' | null>(null);
   const items = props.eff.developed;
   return (
@@ -113,6 +114,7 @@ export function DevelopedSkillsEditor(props: { eff: EffectiveCourse; ops: EditOp
             ) : (
               <>
                 <span><span className={s.draft ? 'cb-draft' : undefined}>{s.statement}</span> <span className="cb-mono cb-muted">{fmtDepth(s)}</span>
+                  {s.draft && props.conditionMissing?.has(s.statement) && <span className="cb-muted cb-small" title="The syllabus states no condition (independently, in new conditions…) for this skill, so its Do goal is held at 2"> · no condition stated</span>}
                   {s.draft && <JudgeStatus threads={props.threads} judgeKey={`${props.courseRef}|supplied|${s.skillRef}`} />}</span>
                 <span>
                   <button type="button" className="cb-linkbtn" onClick={() => setEditing(s.skillRef)}>Edit</button>{' '}

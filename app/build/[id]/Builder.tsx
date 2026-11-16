@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { computePlan, defaultAct, hoursOf, placeCourses, planEdges, versionOf, type PlacedCourse } from '@/lib/builder/compute';
 import { changeCount, effectiveCourse, type EffectiveCourse } from '@/lib/builder/edits';
+import { mergeSyllabusDraft } from '@/lib/builder/edit-ops';
 import { requiredByCourse, type DraftJudgments, type ReqResult } from '@/lib/builder/threads';
 import { genEdCheck, type GenEdCategory } from '@/lib/builder/degree';
 import { problemSolvingByAct } from '@/lib/builder/problem-solving';
@@ -19,6 +20,7 @@ import { ChecksPanel } from './ChecksPanel';
 import { ActTargetsDrawer } from './ActTargetsDrawer';
 import { RequirementDrawer } from './RequirementDrawer';
 import { ProblemSolvingDrawer } from './ProblemSolvingDrawer';
+import { SyllabusImport, type SyllabusImported } from './SyllabusImport';
 import { newId } from './ui';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict' | 'error' | 'refused';
@@ -411,6 +413,25 @@ export function Builder(props: {
     setSelection({ kind: 'course', ref: id });
   };
 
+  const [importing, setImporting] = useState(false);
+  /** A syllabus draft came back: add the course if new, merge its drafted items and links, place it if needed. Saving and judging follow on their own. */
+  const imported = (r: SyllabusImported) => {
+    if (r.created && plan.proposed.length >= MAX_PROPOSED) { window.alert(`A plan can hold ${MAX_PROPOSED} new or catalog-only courses. Remove one to add another.`); return; }
+    update(p => {
+      let next = r.created ? { ...p, proposed: [...p.proposed, r.created] } : p;
+      const lc = library.courses.find(c => c.code === r.ref);
+      const pc = next.proposed.find(c => c.id === r.ref);
+      const eff = lc || pc ? effectiveCourse((lc ?? pc)!, lc ? versionOf(lc, next) : null, next.courseEdits?.[r.ref]) : null;
+      next = mergeSyllabusDraft(next, r.ref, r.draft, {
+        objectives: eff?.objectives.map(o => o.text) ?? [], required: eff?.required.map(x => x.statement) ?? [], developed: eff?.developed.map(x => x.statement) ?? [],
+      }, library.prereqs.map(x => ({ from: x.prereqCode, to: x.courseCode })));
+      if (!next.placements.some(x => x.ref === r.ref)) next = { ...next, placements: [...next.placements, { ref: r.ref, act: r.act, branch: null }] };
+      return next;
+    });
+    setImporting(false);
+    setSelection({ kind: 'course', ref: r.ref });
+  };
+
   const onDropCourse = (payload: string, target: DropTarget) => {
     if (payload.startsWith('catalog:')) {
       try { addCatalog(JSON.parse(payload.slice(8)) as CatalogHit, target); } catch { /* not ours */ }
@@ -530,7 +551,12 @@ export function Builder(props: {
           library={library} plan={plan} placed={placedRefs} open={libraryOpen} onToggle={() => changeView({ library: !libraryOpen })}
           onAdd={code => { const c = library.courses.find(x => x.code === code)!; place(code, { act: defaultAct(c), branch: null, before: null }); setSelection({ kind: 'course', ref: code }); }}
           onAddCatalog={hit => addCatalog(hit)} onAddNew={addNew} onSelect={ref => setSelection({ kind: 'course', ref })}
+          onImportSyllabus={() => setImporting(true)}
         />
+        {importing && (
+          <SyllabusImport planId={props.planId} library={library} plan={plan} placed={placedRefs} author={who}
+            onClose={() => setImporting(false)} onImported={imported} />
+        )}
         <main className="cb-main">
           <CurriculumMap
             library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} arrows={arrows} courseWidth={courseWidth} onCourseWidth={w => changeView({ courseWidth: w })} selection={selection}

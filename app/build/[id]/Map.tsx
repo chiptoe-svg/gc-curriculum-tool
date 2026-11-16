@@ -225,7 +225,9 @@ export function CurriculumMap(props: {
         <span className="cb-card__mark" aria-hidden />
         <span className="cb-card__code">{c.code}{c.requirement && c.credits != null ? ` · ${c.credits} cr` : ''}
           {(props.changes[c.ref] ?? 0) > 0 && <span className="cb-card__edits" title={`${props.changes[c.ref]} change${props.changes[c.ref] === 1 ? '' : 's'} on this map`}> ✎{props.changes[c.ref]}</span>}</span>
-        {c.reading.filled && <span className="cb-card__tag">other reading</span>}
+        {props.plan.courseEdits?.[c.ref]?.source
+          ? <span className="cb-card__tag" title={`Drafted from syllabus: ${props.plan.courseEdits[c.ref]!.source!.fileName}`} aria-label="Drafted from syllabus">syllabus</span>
+          : c.reading.filled && <span className="cb-card__tag">other reading</span>}
         <span className="cb-card__title">{c.title}</span>
         {checkRefs.has(c.ref) && <span className="cb-card__warn" title="Order or dependency problem: open the course for details">!</span>}
         {props.threads[c.ref] && <ReqBar counts={props.threads[c.ref]!.counts} onOpen={() => props.onOpenRequired(c.ref)} />}

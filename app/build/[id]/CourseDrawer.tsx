@@ -36,6 +36,8 @@ export function CourseDrawer(props: {
   const version = lc ? versionOf(lc, plan) : null;
   const eff = effectiveCourse((lc ?? pc)!, version, plan.courseEdits?.[courseRef]);
   const ops = courseEditOps(courseRef, update, props.threads.stamp);
+  const source = plan.courseEdits?.[courseRef]?.source;
+  const conditionMissing = new Set((plan.courseEdits?.[courseRef]?.developed ?? []).filter(e => e.conditionMissing && e.statement).map(e => e.statement!));
   const reqResults = props.threads.byCourse[courseRef]?.results ?? [];
   const counts = props.threads.byCourse[courseRef]?.counts;
   const original = {
@@ -66,6 +68,13 @@ export function CourseDrawer(props: {
         </section>
       )}
 
+      {source && (
+        <section className="cb-sec">
+          <p className="cb-syl">Drafted from syllabus: <b>{source.fileName}</b>, {new Date(source.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.
+            {' '}Its drafted items are goals read from the syllabus, not evidence; each stays a draft (<span className="cb-draft">italic</span>) until a capture confirms it.</p>
+        </section>
+      )}
+
       {checks.length > 0 && (
         <section className="cb-sec cb-alerts">
           {checks.map((c, i) => <p key={i}>{c.detail}</p>)}
@@ -84,7 +93,7 @@ export function CourseDrawer(props: {
       <details className="cb-sec">
         <summary>Developed skills on this map ({eff.developed.length})</summary>
         <p className="cb-muted cb-small">The skills this course supplies to later courses. Changes here count toward later courses&rsquo; required skills on this map only.</p>
-        <DevelopedSkillsEditor eff={eff} ops={ops} courseRef={courseRef} threads={props.threads} />
+        <DevelopedSkillsEditor eff={eff} ops={ops} courseRef={courseRef} threads={props.threads} conditionMissing={conditionMissing} />
       </details>
 
       <section className="cb-sec">

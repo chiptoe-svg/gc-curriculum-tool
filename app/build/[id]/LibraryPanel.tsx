@@ -19,6 +19,7 @@ const sourceNote = (c: LibraryCourse): { text: string; mark: string } => {
 export function LibraryPanel(props: {
   library: Library; plan: PlanState; placed: Set<string>; open: boolean; onToggle: () => void;
   onAdd: (code: string) => void; onAddCatalog: (hit: CatalogHit) => void; onAddNew: () => void; onSelect: (ref: string) => void;
+  onImportSyllabus: () => void;
 }) {
   const [q, setQ] = useState('');
   const [hits, setHits] = useState<CatalogHit[]>([]);
@@ -59,6 +60,8 @@ export function LibraryPanel(props: {
       <input className="cb-lib__search" type="search" value={q} onChange={e => setQ(e.target.value)}
         placeholder="Search by code or title, e.g. MKT or packaging" aria-label="Search courses" />
       <button type="button" className="cb-btn cb-btn--wide" onClick={props.onAddNew}>Add a new course</button>
+      <button type="button" className="cb-btn cb-btn--wide" onClick={props.onImportSyllabus}
+        title="Bring a course with no capture onto the map from its syllabus: a free campus model drafts its objectives, skills and prerequisites as drafts">Import a course from a syllabus</button>
       <p className="cb-lib__hint">Drag a course onto an act, or use Add.</p>
 
       <div className="cb-lib__scroll">

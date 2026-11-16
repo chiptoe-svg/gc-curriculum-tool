@@ -350,3 +350,15 @@ details.cb-sec summary { cursor: pointer; font-weight: 500; }
 .cb-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; font-size: 0.9375rem; }
 .cb-items li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.4rem; align-items: baseline; }
 .cb-changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.875rem; }
+
+/* ---- import a course from a syllabus ----------------------------------------- */
+.cb-modal { position: fixed; inset: 0; z-index: 50; background: rgba(23, 33, 43, 0.35); display: grid; place-items: center; padding: 1rem; }
+.cb-modal__box { background: var(--cb-paper); border-radius: 4px; padding: 1.2rem 1.4rem; width: min(36rem, 100%); max-height: calc(100vh - 2rem); overflow: auto; display: grid; gap: 0.75rem; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2); }
+.cb-modal__box h2 { margin: 0; font-size: 1.25rem; }
+.cb-modal__box p { margin: 0; }
+.cb-modal__actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.cb-field { display: grid; gap: 0.25rem; font-size: 0.9375rem; color: var(--cb-ink-soft); }
+.cb-field input:not([type='file']), .cb-field select, .cb-field textarea { border: 1px solid var(--cb-rule); border-radius: 3px; padding: 0.35rem 0.5rem; color: var(--cb-ink); font-size: 0.9375rem; width: 100%; }
+.cb-field--grow { flex: 1; }
+.cb-btn--primary { background: var(--cb-ink); color: var(--cb-paper); }
+.cb-syl { font-size: 0.875rem; color: var(--cb-ink-soft); border-left: 3px solid var(--cb-req-met-draft); padding-left: 0.6rem; }
