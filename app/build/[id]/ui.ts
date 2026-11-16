@@ -42,7 +42,7 @@ export function dimNote(o: ObjectiveResult, actIndex: number, dim: 'k' | 'u' | '
   }
   if (reached == null) return { text: `${letter}·/${need}`, tone: 'untouched', title: `${name}: nothing yet, target ${need}` };
   if (reached < need) return { text: `${letter}${reached}/${need}`, tone: 'short', title: `${name} ${reached}, target ${need}` };
-  if (held != null && held < need - 0.5) {
+  if (held != null && Math.floor(held) < need) { // truncated, as in checkpoint()
     return { text: `${letter}${reached}▾`, tone: 'fading', title: `${name} reached ${reached} earlier; with nothing reinforcing it, it is estimated to have slipped below the target of ${need} by this point` };
   }
   return { text: `${letter}${reached}`, tone: 'reached', title: `${name} ${reached}, target ${need}` };

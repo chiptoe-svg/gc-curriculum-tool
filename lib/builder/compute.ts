@@ -119,14 +119,15 @@ export interface Checkpoint {
  * One checkpoint: what is reached against what is required. A dimension no
  * course reads counts as not reached. `held` is the estimated depth still
  * held at this point (see durable()); when given, a requirement reached
- * earlier but no longer held to within half a level reads 'fading'.
+ * earlier whose held level, truncated to a whole level, is below it reads 'fading'.
  */
 export function checkpoint(at: Depth, req: Depth | null, held?: Depth): Checkpoint {
   const dims = req ? DIMS.filter(dim => (req[dim] ?? 0) > 0) : []; // a level of 0 asks for nothing
   if (dims.length === 0) return { status: 'none', completion: 1 };
   const share = (src: Depth) => dims.reduce((s, dim) => s + Math.min(src[dim] ?? 0, req![dim]!) / req![dim]!, 0) / dims.length;
   if (dims.every(dim => (at[dim] ?? -1) >= req![dim]!)) {
-    if (held && dims.some(dim => (held[dim] ?? 0) < req![dim]! - 0.5)) return { status: 'fading', completion: share(held) };
+    // Truncated, never rounded (owner, 2026-11-16): a held 2.5 against a 3 has slipped below it.
+    if (held && dims.some(dim => Math.floor(held[dim] ?? 0) < req![dim]!)) return { status: 'fading', completion: share(held) };
     return { status: 'met', completion: 1 };
   }
   return { status: DIMS.every(dim => at[dim] == null) ? 'untouched' : 'short', completion: share(held ?? at) };

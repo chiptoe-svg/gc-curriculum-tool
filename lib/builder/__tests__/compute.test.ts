@@ -88,6 +88,12 @@ describe('checkpoint', () => {
     expect(checkpoint({ k: null, u: null, d: 3 }, all(3)).status).toBe('short');
     expect(checkpoint({ k: null, u: null, d: null }, all(3))).toEqual({ status: 'untouched', completion: 0 });
   });
+  it('truncates the held level: any slip below the requirement is fading, never rounded back up (owner, 2026-11-16)', () => {
+    const at = { k: null, u: null, d: 3 }, req = { k: null, u: null, d: 3 };
+    expect(checkpoint(at, req, { k: null, u: null, d: 2.5 }).status).toBe('fading');
+    expect(checkpoint(at, req, { k: null, u: null, d: 2.9 }).status).toBe('fading');
+    expect(checkpoint(at, req, { k: null, u: null, d: 3 }).status).toBe('met');
+  });
 });
 
 describe('durable (reinforcement and fade)', () => {
@@ -320,7 +326,10 @@ describe('computePlan', () => {
     expect(off.status).toBe('fading');
     const supported = obj(computePlan(l, lastTerm(plan([['A', 1], ['B', 2]], { fade: 1, support: true }, { levels }))), 'color');
     expect(alone.status).toBe('fading');      // 4, 3, 2
-    expect(supported.status).toBe('met');     // 4, 3.5, 2.5: still within half a level of 3
+    expect(alone.heldByAct[2].d).toBe(2);
+    expect(off.heldByAct[2].d).toBe(2);
+    expect(supported.heldByAct[2].d).toBe(2.5); // 4, 3.5, 2.5: support halves the loss...
+    expect(supported.status).toBe('fading');  // ...but 2.5 truncates to 2, below the 3 required (owner, 2026-11-16)
   });
 
   it('checks written objectives through their linked competencies', () => {
