@@ -432,7 +432,12 @@ export function Builder(props: {
   const [importing, setImporting] = useState(false);
   /** A syllabus draft came back: add the course if new, merge its drafted items and links, place it if needed. Saving and judging follow on their own. */
   const imported = (r: SyllabusImported) => {
-    if (r.created && plan.proposed.length >= MAX_PROPOSED) { window.alert(`A plan can hold ${MAX_PROPOSED} new or catalog-only courses. Remove one to add another.`); return; }
+    if (r.created && plan.proposed.length >= MAX_PROPOSED) {
+      // The dialog checks before it sends; this catches a course added meanwhile. Close the dialog either way.
+      window.alert(`A plan can hold ${MAX_PROPOSED} new or catalog-only courses. Remove one to add another.`);
+      setImporting(false);
+      return;
+    }
     update(p => {
       let next = r.created ? { ...p, proposed: [...p.proposed, r.created] } : p;
       const lc = library.courses.find(c => c.code === r.ref);
@@ -570,7 +575,7 @@ export function Builder(props: {
           onImportSyllabus={() => setImporting(true)}
         />
         {importing && (
-          <SyllabusImport planId={props.planId} library={library} plan={plan} placed={placedRefs} author={who}
+          <SyllabusImport planId={props.planId} library={library} plan={plan} placed={placedRefs} author={who} maxProposed={MAX_PROPOSED}
             onClose={() => setImporting(false)} onImported={imported} />
         )}
         <main className="cb-main">

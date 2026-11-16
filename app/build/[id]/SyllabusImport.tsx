@@ -22,6 +22,8 @@ const MIN = 300; // the server's minimum (lib/builder/syllabus-draft.ts)
 
 export function SyllabusImport(props: {
   planId: string; library: Library; plan: PlanState; placed: Set<string>; author: () => string;
+  /** How many new or catalog-only courses a plan can hold (the server's limit). */
+  maxProposed: number;
   onClose: () => void; onImported: (r: SyllabusImported) => void;
 }) {
   const uncaptured = props.library.courses.filter(c => c.versions.length === 0);
@@ -41,6 +43,10 @@ export function SyllabusImport(props: {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!ready || busy) return;
+    if (choice === 'new' && props.plan.proposed.length >= props.maxProposed) {
+      setError(`This plan already holds ${props.maxProposed} new or catalog-only courses. Remove one, or import into a course already on the plan.`);
+      return;
+    }
     setBusy(true);
     setError(null);
     const created: ProposedCourse | null = choice === 'new'

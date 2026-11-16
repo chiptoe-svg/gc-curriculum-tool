@@ -9,6 +9,7 @@ const state = vi.hoisted(() => ({
   inserted: [] as Array<Record<string, unknown>>,
   asked: [] as Array<{ text: string; course: { code: string; title: string } }>,
   draft: null as null | SyllabusDraft,
+  captured: new Set<string>(),
 }));
 
 vi.mock('@/lib/auth/route-auth', () => ({ authorizeRequest: async () => ({ grant: { id: 'g', label: 'Dr Who', scope: ['*'], can: ['capture'] } }) }));
@@ -22,6 +23,7 @@ vi.mock('@/lib/db/client', () => ({
 vi.mock('@/lib/db/curriculum-plan-queries', () => ({
   getPlan: async (id: string) => (id === PLAN ? { id, state: { proposed: [{ id: 'new:abc', code: 'GC 1040', title: 'x' }] } } : null),
 }));
+vi.mock('@/lib/db/live-captures', () => ({ hasLiveCapture: async (code: string) => state.captured.has(code) }));
 vi.mock('@/lib/builder/syllabus-draft', async (orig) => ({
   ...(await orig<typeof import('@/lib/builder/syllabus-draft')>()),
   draftSyllabus: async (text: string, course: { code: string; title: string }) => {
@@ -41,7 +43,7 @@ const post = (fields: Record<string, string | Blob>, id = PLAN) => {
 };
 
 beforeEach(() => {
-  state.selects = []; state.inserted = []; state.asked = [];
+  state.selects = []; state.inserted = []; state.asked = []; state.captured = new Set();
   state.draft = {
     objectives: [{ text: 'Prepare print-ready files', bloom: 'Apply' }],
     developed: [{ statement: 'Prepare a print-ready PDF', k: 2, u: 1, d: 4, condition_missing: true }],
@@ -86,6 +88,15 @@ describe('POST /api/build/plans/[id]/syllabus', () => {
     expect(state.asked[0]!.course).toEqual({ code: 'GC 3020', title: 'Package Printing' });
     const missing = await post({ courseRef: 'GC 9999', text: TEXT });
     expect(missing.status).toBe(404);
+  });
+  it('is 409 for a tracked course that already has a capture, and asks nothing', async () => {
+    state.captured.add('GC 3020');
+    state.selects.push([{ code: 'GC 3020', title: 'Package Printing' }]);
+    const res = await post({ courseRef: 'GC 3020', text: TEXT });
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe('This course already has a capture');
+    expect(state.asked).toHaveLength(0);
+    expect(state.inserted).toHaveLength(0);
   });
   it('is 502 when the campus model fails, and stores nothing', async () => {
     state.draft = null;

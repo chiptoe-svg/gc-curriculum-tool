@@ -5,6 +5,7 @@ import { personalName } from '@/lib/auth/viewer';
 import { db } from '@/lib/db/client';
 import { courses, planSyllabusDrafts } from '@/lib/db/schema';
 import { getPlan } from '@/lib/db/curriculum-plan-queries';
+import { hasLiveCapture } from '@/lib/db/live-captures';
 import { getExtractorFor } from '@/lib/courses/material-extractor';
 import { NAME_MAX } from '@/lib/builder/plan-schema';
 import {
@@ -30,7 +31,7 @@ const field = (f: FormData, k: string, max: number) => { const v = f.get(k); ret
  * and either `file` (PDF, Word or plain text) or `text` (pasted, at least 300 characters), optional authorName.
  * A free campus model drafts it; the draft and the text are kept in plan_syllabus_drafts. The plan itself is not
  * changed here: the client merges the returned edits and links and saves.
- * → 200 { draftId, fileName, at, edits, links } | 400 | 404 | 502 (the campus model failed) | 503 (not configured)
+ * → 200 { draftId, fileName, at, edits, links } | 400 | 404 | 409 (the course already has a capture) | 502 (the campus model failed) | 503 (not configured)
  */
 export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   const auth = await authorizeRequest(req);
@@ -54,6 +55,8 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   if (!NEW_REF.test(courseRef)) {
     const [row] = await db.select({ code: courses.code, title: courses.title }).from(courses).where(eq(courses.code, courseRef));
     if (!row) return bad('That course is not in the tool.', 404);
+    // A captured course is read from its capture, never drafted over (the same test the library uses).
+    if (await hasLiveCapture(row.code)) return bad('This course already has a capture', 409);
     course = row;
   }
   if (!course.code || !course.title) return bad('A new course needs a code and a title.');
