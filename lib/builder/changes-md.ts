@@ -14,7 +14,9 @@ export function esc(text: string): string {
 }
 
 const hash = (t: string) => textHash(normalizeStatement(t));
-const day = (iso: string) => iso.slice(0, 10);
+const NY_DATE = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' });
+/** The local (Clemson) date of an ISO time, like the export header; a malformed value falls back to its first ten characters. */
+const day = (iso: string) => { const t = new Date(iso); return Number.isNaN(t.getTime()) ? iso.slice(0, 10) : NY_DATE.format(t); };
 const DRAFT = '*';
 const levels = (d: Depth | null) => d ? ` (K${d.k ?? '–'} U${d.u ?? '–'} D${d.d ?? '–'})` : '';
 const stamp = (e: { by: string; at: string }) => ` (${esc(e.by)}, ${day(e.at)})`;
@@ -34,7 +36,7 @@ export interface ChangesInput {
   required: ReturnType<typeof requiredByCourse>;
   /** Draft decisions for this plan plus the non-draft ones the library holds. */
   decisions: MatchDecision[];
-  /** Hook for syllabus-drafted courses (Task 7b), by course ref: the file and date it was drafted from. */
+  /** Syllabus-drafted courses by ref: the file and date it was drafted from. Absent = read from courseEdits[ref].source. */
   syllabusDrafts?: Record<string, { file: string; date: string }>;
 }
 
@@ -82,7 +84,8 @@ export function renderChangesMarkdown(input: ChangesInput): string {
     const x = eff(ref)!;
     const edits = plan.courseEdits?.[ref];
     const code = codeOf(ref);
-    const draftFrom = input.syllabusDrafts?.[ref];
+    const src = edits?.source;
+    const draftFrom = input.syllabusDrafts?.[ref] ?? (src?.kind === 'syllabus' ? { file: src.fileName, date: src.at } : undefined);
     body.push(`## ${esc(code)} ${esc(titleOf(ref))}${draftFrom ? ` (drafted from syllabus: ${esc(draftFrom.file)}, ${day(draftFrom.date)})` : ''}`, '');
 
     // Objectives

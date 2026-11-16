@@ -54,6 +54,19 @@ describe('renderChangesMarkdown', () => {
     expect(md).toContain('- GC 1, objective: Explain press parts');
   });
 
+  it('stamps a change with its New York date, not the UTC one', () => {
+    const late = { ...edit, at: '2026-11-17T02:30:00.000Z' }; // 9:30 pm on Nov 16 in Clemson
+    const md = render(place({ courseEdits: { 'GC 1': { ...none, objectives: [{ ...late, action: 'add', target: null, text: 'Explain press parts', bloom: 'Understand' }] } } }));
+    expect(md).toContain('(Dr Ruiz, 2026-11-16)');
+    expect(md).not.toContain('2026-11-17');
+  });
+
+  it('a course drafted from a syllabus says so in its heading, from its edits\' source', () => {
+    const source = { kind: 'syllabus' as const, draftId: 'd1', fileName: 'gc2.pdf', at: '2026-11-17T02:30:00.000Z' };
+    const md = render(place({ courseEdits: { 'GC 2': { ...none, source, objectives: [{ ...edit, origin: 'syllabus', action: 'add', target: null, text: 'Read a ticket', bloom: 'Understand' }] } } }));
+    expect(md).toContain('## GC 2 Prepress (drafted from syllabus: gc2.pdf, 2026-11-16)');
+  });
+
   it('a coreq added appears under Prerequisites and corequisites', () => {
     const md = render(place({ links: [{ from: 'GC 1', to: 'GC 2', kind: 'coreq' }], unlinked: [{ from: 'GC 1', to: 'GC 3' }] }));
     const sec = md.split('## GC 2')[1]!.split('### Prerequisites and corequisites')[1]!;
