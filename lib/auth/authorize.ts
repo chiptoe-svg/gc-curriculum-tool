@@ -83,7 +83,8 @@ const WHAT_IF_WRITE = /^\/api\/explore\/[^/]+\/what-ifs(?:\/[^/]+(?:\/(?:chat|at
 // shared working document that never writes to a real course, so it is not bound to a course scope.
 // POST /api/build/links: decisions on skill -> competency links and roll-ups (spec 2026-11-15-skill-competency-links).
 // They never change a capture's skills; any faculty member may make them (owner), recorded with who and when.
-const PLAN_WRITE = /^\/api\/build\/(?:plans(?:\/[0-9a-f-]{36})?|suggest|links|match)$/i;
+// POST /api/build/plans/<id>/syllabus: import a course from a syllabus onto the plan (a free campus model drafts map edits).
+const PLAN_WRITE = /^\/api\/build\/(?:plans(?:\/[0-9a-f-]{36}(?:\/syllabus)?)?|suggest|links|match)$/i;
 
 export function classify(method: string, pathname: string): Kind {
   const m = method.toUpperCase();
