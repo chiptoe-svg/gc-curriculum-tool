@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { textHash } from '@/lib/catalog/bundles';
 import { normalizeStatement } from '@/lib/catalog/project-trail';
-import { CUTOFFS, MODEL_IN_USE } from '@/lib/ai/match-judge';
 import { heldAt, placeCourses } from '../compute';
 import { requiredByCourse } from '../threads';
 import {
@@ -9,7 +8,6 @@ import {
 } from '../types';
 
 const hash = (s: string) => textHash(normalizeStatement(s));
-const FULLY = CUTOFFS[MODEL_IN_USE].fully;
 const NEED = 'Read a job ticket';
 const SUP = 'Mix ink';
 

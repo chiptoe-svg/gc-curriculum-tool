@@ -33,8 +33,8 @@ export default async function BuildIndex({ searchParams }: { searchParams: Promi
         <h1>Curriculum builder</h1>
         <p>
           Stack courses across the three acts and watch how they build toward a career path. Set the Know, Understand and Do
-          level each competency should reach by the end of Act 1, 2 and 3, then see which targets the stack reaches, which it
-          and misses. A plan never changes a real course.
+          level each competency should reach by the end of Act 1, 2 and 3, then see which targets the stack reaches and which it
+          misses. A plan never changes a real course.
         </p>
       </header>
 

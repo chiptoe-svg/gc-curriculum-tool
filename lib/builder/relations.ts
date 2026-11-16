@@ -4,8 +4,8 @@
  * ("embeddings shortlist, don't adjudicate"): a neighbor is one of the few
  * nearest bundle cards in the same stratum, above a similarity floor. The
  * same-stratum rule is the spec's "never generalized across domain-distant
- * pairs". What a neighbor then does is fixed and small
- * shortlist only; it does not change any level.
+ * pairs". A neighbor is only listed as related (the objective drawer shows
+ * it); it does not change any level.
  */
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
