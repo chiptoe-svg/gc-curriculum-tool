@@ -42,6 +42,8 @@ Faculty can overrule the judge during mapping: accept a match, reject it, rate i
 - **Where it applies:** a decision about two **captured** skills is a fact about those skills, so it applies on **every** map, shown as "confirmed (or rejected) by <name>, <date>". A decision that involves a **draft** skill applies only on the map where the draft lives, but is kept all the same.
 - **What it is used for:** it outranks the judge wherever it applies; it is the labeled set the judge's cut-offs are fitted on; and it carries across re-captures through the identity rule in the re-capture test (decisions follow a skill whose wording carries over).
 - **In the export:** each map's decisions are listed with who and when.
+- **Retrievable as pairs (owner, 2026-11-16):** the whole decision set can be pulled as a labeled-pair dataset for later use (calibration, training or testing a matcher, research). `GET /api/build/match-decisions.jsonl` (faculty login) and `pnpm tsx scripts/catalog/export-match-decisions.ts` write one record per pair: `required_text`, `supplied_text`, both courses' codes and titles (the context the judge saw), `label` (fully / partly / not), `latest` (whether it is the decision that counts), `decided_by`, `decided_at`, `plan_id`, `source` (map, labeling sheet), and the judge's model, prompt version and P(yes) at the time. Options: latest decisions only, or the full history; CSV as well as JSON Lines. The owner's 48-pair labeling sheet (2026-11-16) is loaded as the first batch, `source: labeling_sheet`.
+- **Kept fit for reuse:** pair texts are stored as written at the time of the decision, so a later re-capture or rewording never changes a stored pair.
 
 ## 3. Status of a required skill (first match wins)
 
