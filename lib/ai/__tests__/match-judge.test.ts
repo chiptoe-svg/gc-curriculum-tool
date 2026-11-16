@@ -23,8 +23,8 @@ describe('constants', () => {
     expect(MODELS).toEqual(['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017']);
     expect(MODEL_IN_USE).toBe('qwen3.8-27b-fp8');
     expect(PROMPT_VERSION).toBe('m1');
-    expect(CUTOFFS['qwen3.8-27b-fp8']).toEqual({ fully: 0.6, partly: 0.9 });
-    expect(CUTOFFS['deepseek-v4.1-flash-1017']).toEqual({ fully: 0.75, partly: 0.95 });
+    expect(CUTOFFS['qwen3.8-27b-fp8']).toEqual({ fully: 0.7, partly: 0.05 });
+    expect(CUTOFFS['deepseek-v4.1-flash-1017']).toEqual({ fully: 0.35, partly: 0.9 });
   });
   it('prompt carries the context and the question', () => {
     const t = judgePrompt('fully', pair);

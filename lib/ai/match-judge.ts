@@ -6,15 +6,23 @@
 
 export const MODELS = ['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017'] as const;
 export type Model = (typeof MODELS)[number];
-/** The model whose judgments the map reads; the other is stored for comparison once owner labels exist. */
+/**
+ * The model whose judgments the map reads. Chosen on the owner's 48 labels (2026-11-16): qwen 36/48 right with
+ * leave-one-out cut-offs, deepseek 18/48; deepseek is still stored for comparison.
+ */
 export const MODEL_IN_USE: Model = MODELS[0];
 /** Bump when the prompt text changes so old cached judgments are not reused. */
 export const PROMPT_VERSION = 'm1';
 
-/** PROVISIONAL (spike 2026-11-16, before owner labels): P(yes) at or above these counts as fully / partly. */
+/**
+ * P(yes) at or above these counts as fully / partly. Fit to the owner's 48 labeled spike pairs (21 fully, 20 partly,
+ * 7 not; 2026-11-16) by grid search, checked by leave-one-out. qwen: the "partly" question says yes to nearly every
+ * shortlisted pair, so only a near-zero P(partly) means "not"; that rests on 7 "not" pairs, so re-check as decisions
+ * accrue. Its misses are mostly cautious (partly where the owner said fully). deepseek's fit is weak (18/48).
+ */
 export const CUTOFFS: Record<Model, { fully: number; partly: number }> = {
-  'qwen3.8-27b-fp8': { fully: 0.6, partly: 0.9 },
-  'deepseek-v4.1-flash-1017': { fully: 0.75, partly: 0.95 },
+  'qwen3.8-27b-fp8': { fully: 0.7, partly: 0.05 },
+  'deepseek-v4.1-flash-1017': { fully: 0.35, partly: 0.9 },
 };
 
 export type PairText = {
