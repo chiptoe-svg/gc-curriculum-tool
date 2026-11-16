@@ -10,12 +10,15 @@ const depth = z.object({ k: level, u: level, d: level });
 const act = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const link = z.object({ from: id, to: id, kind: z.enum(['prereq', 'coreq']).optional() });
 const bloom = z.enum(['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create']);
-const editBase = { id, by: text(120), at: text(40) };
+const editBase = { id, by: text(120), at: text(40), origin: z.enum(['syllabus', 'faculty']).optional() };
 const action = z.enum(['add', 'edit', 'remove']);
 const objectiveEdit = z.object({ ...editBase, action, target: text(600).nullable(), text: text(600).nullable(), bloom: bloom.nullable() });
-const skillEdit = z.object({ ...editBase, action, target: id.nullable(), statement: text(600).nullable(), levels: depth.nullable() });
+const skillEdit = z.object({
+  ...editBase, action, target: id.nullable(), statement: text(600).nullable(), levels: depth.nullable(), conditionMissing: z.boolean().optional(),
+});
 const courseEdits = z.object({
   objectives: z.array(objectiveEdit).max(50), required: z.array(skillEdit).max(50), developed: z.array(skillEdit).max(50),
+  source: z.object({ kind: z.literal('syllabus'), draftId: id, fileName: text(200), at: text(40) }).optional(),
 });
 /** A card position in map pixels; generous, but bounded. */
 const coord = z.number().finite().min(0).max(20000);

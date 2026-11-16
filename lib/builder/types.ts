@@ -194,12 +194,20 @@ export interface Link { from: string; to: string; kind?: 'prereq' | 'coreq' }
 export const BLOOM = ['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create'] as const;
 export type BloomProcess = (typeof BLOOM)[number];
 
-export interface EditBase { id: string; by: string; at: string }
+/** `origin`: 'syllabus' = drafted by the campus model from an uploaded syllabus; absent or 'faculty' = made by hand. */
+export interface EditBase { id: string; by: string; at: string; origin?: 'syllabus' | 'faculty' }
 /** A map-scoped change to a course objective; `target` is the original text (null for an add). Captures are never changed. */
 export type ObjectiveEdit = EditBase & { action: 'add' | 'edit' | 'remove'; target: string | null; text: string | null; bloom: BloomProcess | null };
-/** A map-scoped change to a required or developed skill; `target` is the original ref (null for an add). */
-export type SkillEdit = EditBase & { action: 'add' | 'edit' | 'remove'; target: string | null; statement: string | null; levels: Depth | null };
-export interface CourseEdits { objectives: ObjectiveEdit[]; required: SkillEdit[]; developed: SkillEdit[] }
+/**
+ * A map-scoped change to a required or developed skill; `target` is the original ref (null for an add).
+ * `conditionMissing`: a syllabus-drafted developed skill whose syllabus states no condition for Do, so its Do goal was held at 2.
+ */
+export type SkillEdit = EditBase & {
+  action: 'add' | 'edit' | 'remove'; target: string | null; statement: string | null; levels: Depth | null; conditionMissing?: boolean;
+};
+/** Where a course's drafted items came from: a syllabus imported onto this map (plan_syllabus_drafts.id). */
+export interface CourseEditsSource { kind: 'syllabus'; draftId: string; fileName: string; at: string }
+export interface CourseEdits { objectives: ObjectiveEdit[]; required: SkillEdit[]; developed: SkillEdit[]; source?: CourseEditsSource }
 
 /** Required depth at the end of Act 1, 2 and 3; null = nothing required at that checkpoint. */
 export type ActLevels = [Depth | null, Depth | null, Depth | null];

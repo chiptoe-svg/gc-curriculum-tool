@@ -14,6 +14,11 @@ describe('campusReasoningParams', () => {
     }
   });
 
+  it('turns thinking off for Qwen3.6 and accepts no other level (only off probed, 2026-11-16)', () => {
+    expect(campusReasoningParams('qwen3.6-35b-a3b-fp8', 'off')).toEqual({ chat_template_kwargs: { enable_thinking: false } });
+    expect(() => campusReasoningParams('qwen3.6-35b-a3b-fp8', 'low')).toThrow(/low/);
+  });
+
   it('sends GLM, DeepSeek and gpt-oss levels as top-level reasoning_effort', () => {
     expect(campusReasoningParams('glm-5.3', 'medium')).toEqual({ reasoning_effort: 'medium' });
     expect(campusReasoningParams('deepseek-v4.1-flash-1017', 'high')).toEqual({ reasoning_effort: 'high' });

@@ -41,6 +41,8 @@ const CAMPUS_REASONING_FAMILIES: Array<{
   { name: 'DeepSeek', match: /deepseek/i, levels: ['off', 'low', 'high', 'xhigh', 'max'], wire: 'top-level' },
   { name: 'gpt-oss', match: /gpt-?oss/i, levels: ['low', 'medium', 'high'], wire: 'top-level' },
   { name: 'Qwen3.8', match: /qwen3\.8/i, levels: ['off', 'low', 'medium', 'xhigh'], wire: 'template' },
+  // Only 'off' probed (2026-11-16: enable_thinking false honored, 7 tokens vs 421 with thinking on).
+  { name: 'Qwen3.6', match: /qwen3\.6/i, levels: ['off'], wire: 'template' },
 ];
 
 /** Request-body fields that set `level` on `model`. Throws for a moving alias
