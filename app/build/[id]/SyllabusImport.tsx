@@ -7,6 +7,7 @@
  */
 import { useState } from 'react';
 import type { Act, CourseEdits, Library, Link, PlanState, ProposedCourse } from '@/lib/builder/types';
+import { newCourseConflict } from '@/lib/builder/syllabus-codes';
 import { newId } from './ui';
 
 export interface SyllabusImported {
@@ -38,7 +39,11 @@ export function SyllabusImport(props: {
 
   const ref = choice === 'new' ? null : choice.slice(choice.indexOf(':') + 1);
   const onMap = ref != null && props.placed.has(ref);
-  const ready = (choice !== 'new' || (code.trim() && title.trim())) && (file || text.trim().length >= MIN);
+  // A new course may not reuse a tracked course's code or one already proposed here (the server repeats the tracked check).
+  const conflict = choice === 'new' && code.trim()
+    ? newCourseConflict(code, props.library.courses.map(c => ({ code: c.code, captured: c.versions.length > 0 })), props.plan.proposed)
+    : null;
+  const ready = (choice !== 'new' || (code.trim() && title.trim() && !conflict)) && (file || text.trim().length >= MIN);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -107,6 +112,7 @@ export function SyllabusImport(props: {
             <label className="cb-field cb-field--grow"><span>Title</span><input value={title} onChange={e => setTitle(e.target.value)} maxLength={160} disabled={busy} /></label>
           </div>
         )}
+        {conflict && <p className="cb-error" role="alert">{conflict}</p>}
 
         <label className="cb-field">
           <span>Syllabus file (PDF, Word or text)</span>

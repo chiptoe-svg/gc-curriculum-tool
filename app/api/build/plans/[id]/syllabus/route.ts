@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { authorizeRequest } from '@/lib/auth/route-auth';
 import { personalName } from '@/lib/auth/viewer';
 import { db } from '@/lib/db/client';
@@ -11,6 +11,7 @@ import { NAME_MAX } from '@/lib/builder/plan-schema';
 import {
   SYLLABUS_TEXT_MAX, SYLLABUS_TEXT_MIN, draftSyllabus, normalizeCourseCode, prereqLinks, syllabusModel, toCourseEdits,
 } from '@/lib/builder/syllabus-draft';
+import { capturedMessage, trackedMessage } from '@/lib/builder/syllabus-codes';
 import type { PlanState } from '@/lib/builder/types';
 
 interface Ctx { params: Promise<{ id: string }> }
@@ -60,6 +61,14 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
     course = row;
   }
   if (!course.code || !course.title) return bad('A new course needs a code and a title.');
+  // A new course must not duplicate a tracked one: drafts attach to the real course, and a captured course is never
+  // drafted over. Matched ignoring case and spacing ("gc4800" = "GC 4800"); checked before any file is read.
+  const typed = NEW_REF.test(courseRef) ? normalizeCourseCode(course.code) : null;
+  if (typed) {
+    const [dup] = await db.select({ code: courses.code }).from(courses)
+      .where(sql`upper(regexp_replace(${courses.code}, '\s+', ' ', 'g')) = ${typed}`);
+    if (dup) return bad(await hasLiveCapture(dup.code) ? capturedMessage(dup.code) : trackedMessage(dup.code), 409);
+  }
 
   // The text: an uploaded file (read with the materials extractor) or pasted text.
   let text = '';

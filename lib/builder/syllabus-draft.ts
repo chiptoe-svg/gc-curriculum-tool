@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { normalizeStatement } from '@/lib/catalog/project-trail';
 import { CampusProvider, campusReasoningParams } from '@/lib/ai/campus';
+import { normalizeCourseCode } from './syllabus-codes';
 import { BLOOM, type CourseEdits, type Depth, type Link, type ObjectiveEdit, type SkillEdit } from './types';
 
 export const SYLLABUS_TEXT_MIN = 300;
@@ -50,11 +51,7 @@ export function parseSyllabusDraft(raw: unknown): SyllabusDraft {
   });
 }
 
-/** "gc1040" / "GC-1040" → "GC 1040"; null when the text is not a course code. */
-export function normalizeCourseCode(raw: string): string | null {
-  const m = /^\s*([A-Za-z]{2,5})\s*[- ]?\s*(\d{4}[A-Za-z]{0,3})\s*$/.exec(raw);
-  return m ? `${m[1]!.toUpperCase()} ${m[2]!.toUpperCase()}` : null;
-}
+export { normalizeCourseCode } from './syllabus-codes';
 
 let depthScale: string | null = null;
 const readDepthScale = () => (depthScale ??= readFileSync(join(process.cwd(), 'lib/ai/prompts/shared/depth-scale.md'), 'utf-8').trim());

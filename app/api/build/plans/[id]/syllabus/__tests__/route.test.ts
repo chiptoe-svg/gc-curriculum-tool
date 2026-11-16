@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
   asked: [] as Array<{ text: string; course: { code: string; title: string } }>,
   draft: null as null | SyllabusDraft,
   captured: new Set<string>(),
+  extracted: 0,
 }));
 
 vi.mock('@/lib/auth/route-auth', () => ({ authorizeRequest: async () => ({ grant: { id: 'g', label: 'Dr Who', scope: ['*'], can: ['capture'] } }) }));
@@ -22,6 +23,9 @@ vi.mock('@/lib/db/client', () => ({
 }));
 vi.mock('@/lib/db/curriculum-plan-queries', () => ({
   getPlan: async (id: string) => (id === PLAN ? { id, state: { proposed: [{ id: 'new:abc', code: 'GC 1040', title: 'x' }] } } : null),
+}));
+vi.mock('@/lib/courses/material-extractor', () => ({
+  getExtractorFor: () => ({ extract: async () => { state.extracted++; return { text: 'x'.repeat(400), pageCount: 1 }; } }),
 }));
 vi.mock('@/lib/db/live-captures', () => ({ hasLiveCapture: async (code: string) => state.captured.has(code) }));
 vi.mock('@/lib/builder/syllabus-draft', async (orig) => ({
@@ -43,7 +47,7 @@ const post = (fields: Record<string, string | Blob>, id = PLAN) => {
 };
 
 beforeEach(() => {
-  state.selects = []; state.inserted = []; state.asked = []; state.captured = new Set();
+  state.selects = []; state.inserted = []; state.asked = []; state.captured = new Set(); state.extracted = 0;
   state.draft = {
     objectives: [{ text: 'Prepare print-ready files', bloom: 'Apply' }],
     developed: [{ statement: 'Prepare a print-ready PDF', k: 2, u: 1, d: 4, condition_missing: true }],
@@ -103,5 +107,21 @@ describe('POST /api/build/plans/[id]/syllabus', () => {
     const res = await post({ courseRef: 'new:x1', code: 'GC 5000', title: 'New', text: TEXT });
     expect(res.status).toBe(502);
     expect(state.inserted).toHaveLength(0);
+  });
+  it('refuses a new course whose code is a captured course, before reading the file or asking the model', async () => {
+    state.selects.push([{ code: 'GC 4800', title: 'Senior Seminar' }]);
+    state.captured.add('GC 4800');
+    const pdf = new File(['%PDF'], 'syl.pdf', { type: 'application/pdf' });
+    const res = await post({ courseRef: 'new:x1', code: 'gc4800', title: 'Dup', file: pdf });
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe('GC 4800 already has a capture, so it cannot be drafted from a syllabus.');
+    expect(state.extracted).toBe(0); expect(state.asked).toHaveLength(0); expect(state.inserted).toHaveLength(0);
+  });
+  it('refuses a new course whose code is a tracked course without a capture: choose it from the list', async () => {
+    state.selects.push([{ code: 'GC 3020', title: 'Package Printing' }]);
+    const res = await post({ courseRef: 'new:x1', code: 'GC  3020', title: 'Dup', file: new File(['%PDF'], 'syl.pdf', { type: 'application/pdf' }) });
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe('GC 3020 is already in the catalog; choose it from the list instead.');
+    expect(state.extracted).toBe(0); expect(state.asked).toHaveLength(0); expect(state.inserted).toHaveLength(0);
   });
 });
