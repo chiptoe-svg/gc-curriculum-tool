@@ -17,8 +17,9 @@
 - Map edits count toward "met" only as **Met\*** (yellow), shown in italics with an asterisk, and are listed under "To confirm through capture".
 - Bar colors: Met `green`, Met\* `yellow`, Partly met `orange`, Not met `red`; all green only at 100%.
 - Levels are whole numbers; never round up.
-- Judge: model `qwen3.8-27b-fp8`, `max_tokens: 1`, `temperature: 0`, `logprobs: true`, `top_logprobs: 20`, `chat_template_kwargs: { enable_thinking: false }`; P(yes) = Σyes / (Σyes + Σno) over top tokens, trimmed and lowercased; `PROMPT_VERSION = 'm1'`.
-- Provisional cut-offs (spike 2026-11-16, before owner labels): `FULLY_CUTOFF = 0.6`, `PARTLY_CUTOFF = 0.9`, exported constants marked provisional.
+- Judge: models `qwen3.8-27b-fp8` (in use) and `deepseek-v4.1-flash-1017` (stored, compared once labels exist); each call `max_tokens: 1`, `temperature: 0`, `logprobs: true`, `top_logprobs: 20`, `chat_template_kwargs: { enable_thinking: false }`; P(yes) = Σyes / (Σyes + Σno) over top tokens, trimmed and lowercased; `PROMPT_VERSION = 'm1'`.
+- Provisional cut-offs (spike 2026-11-16, before owner labels), per model: qwen `FULLY 0.6`, `PARTLY 0.9`; deepseek `FULLY 0.75`, `PARTLY 0.95`; exported as `CUTOFFS[model]`, marked provisional.
+- Fade applies to threads only: competency levels, checkpoints and targets do not fade; a thread's supplier level fades per term at `plan.fade / 3`, truncated, restored by a later fully matching supplier.
 - Candidates: developed skills of courses in an earlier term, or the same term when the pair is a corequisite on the map; top 5 by embedding similarity among those.
 - Text hashes: `textHash(normalizeStatement(s))` (`lib/catalog/bundles`, `lib/catalog/project-trail`).
 - Who: `personalName(grant)` or the plan's author name, else `'Department login'`; US spelling; no localhost in user copy.
@@ -45,7 +46,7 @@
 
 **Interfaces:**
 - Produces tables:
-  - `skill_match_judgments(required_hash text, supplied_hash text, model text, prompt_version text, p_fully real, p_partly real, created_at timestamptz default now(), PK(required_hash, supplied_hash, model, prompt_version))`
+  - `skill_match_judgments(required_hash text, supplied_hash text, model text, prompt_version text, p_fully real, p_partly real, -- one row per model created_at timestamptz default now(), PK(required_hash, supplied_hash, model, prompt_version))`
   - `skill_match_decisions(id uuid PK default gen_random_uuid(), required_hash text not null, supplied_hash text not null, required_text text not null, supplied_text text not null, required_course text not null, required_course_title text, supplied_course text not null, supplied_course_title text, required_snapshot_id uuid null, supplied_snapshot_id uuid null, label text not null check in ('fully','partly','not'), draft boolean not null default false, plan_id uuid null, source text not null check in ('map','labeling_sheet'), reason text, decided_by text not null, decided_at timestamptz not null default now(), judge_model text, prompt_version text, judge_p_fully real, judge_p_partly real)`, index on `(required_hash, supplied_hash, decided_at desc)`. Rows are only ever inserted.
 - Produces in `match-queries.ts`:
   - `readJudgments(pairs: Array<{ requiredHash: string; suppliedHash: string }>): Promise<Map<string, { pFully: number; pPartly: number }>>` keyed `${requiredHash}|${suppliedHash}` for `MODEL`/`PROMPT_VERSION`
@@ -68,12 +69,12 @@
 - Test: `lib/ai/__tests__/match-judge.test.ts`
 
 **Interfaces:**
-- Produces: `MODEL`, `PROMPT_VERSION`, `FULLY_CUTOFF`, `PARTLY_CUTOFF`; `pYes(topLogprobs: Array<{ token: string; logprob: number }>): number | null`; `judgePrompt(q: 'fully' | 'partly', p: PairText): string` where `PairText = { requiredText; requiredCourse; requiredTitle; suppliedText; suppliedCourse; suppliedTitle }`; `judgePairs(pairs: PairText[], opts?: { fetchImpl?: typeof fetch; concurrency?: number }): Promise<Array<{ pFully: number | null; pPartly: number | null }>>` (reads `CAMPUS_LLM_BASE_URL`/`CAMPUS_LLM_API_KEY`, 4 retries with backoff).
+- Produces: `MODELS = ['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017'] as const`, `MODEL_IN_USE = MODELS[0]`, `PROMPT_VERSION`, `CUTOFFS: Record<Model, { fully: number; partly: number }>`; `pYes(topLogprobs: Array<{ token: string; logprob: number }>): number | null`; `judgePrompt(q: 'fully' | 'partly', p: PairText): string` where `PairText = { requiredText; requiredCourse; requiredTitle; suppliedText; suppliedCourse; suppliedTitle }`; `judgePairs(pairs: PairText[], opts?: { model?: Model; fetchImpl?: typeof fetch; concurrency?: number }): Promise<Array<{ pFully: number | null; pPartly: number | null }>>` (reads `CAMPUS_LLM_BASE_URL`/`CAMPUS_LLM_API_KEY`, 4 retries with backoff).
 - Prompt text (exact):
   - context: `Earlier course: {suppliedCourse} {suppliedTitle}. It develops: "{suppliedText}"\nLater course: {requiredCourse} {requiredTitle}. Students must arrive able to: "{requiredText}"\n\n`
   - fully: `Does the earlier course develop the activity that the later course requires on arrival? Judge the activity only, not the level or the wording of conditions. Answer Yes or No.`
   - partly: `Does the earlier course develop at least part of the activity that the later course requires on arrival (a component of it, or a closely related narrower activity)? Answer Yes or No.`
-- The batch script: for every live capture's incoming expectations, embed (existing `embedMissing` cache) and take the top 8 developed skills from **other** courses by cosine; judge the pairs not yet cached; `--apply` writes judgments. Prints counts; free.
+- The batch script: for every live capture's incoming expectations, embed (existing `embedMissing` cache) and take the top 8 developed skills from **other** courses by cosine; judge the pairs not yet cached with both models; `--apply` writes judgments. Prints counts; free.
 
 - [ ] **Step 1:** Tests: `pYes` on `[["No",-0.672],["Yes",-0.797]]` → ≈0.469; on no yes/no tokens → `null`; `judgePairs` with a stub `fetchImpl` returns both Ps and sends the exact body fields from Global Constraints.
 - [ ] **Step 2:** Run → FAIL. Implement. Run → PASS.
@@ -109,10 +110,19 @@
 **Interfaces:**
 - Consumes: Task 3 types; `computePlan`'s `PlacedCourse` (`term`, `act`, `ref`) and plan edges.
 - Produces: `type ReqStatus = 'met' | 'met_draft' | 'partly' | 'not'`; `interface ReqResult { required: RequiredSkill & { draft: boolean }; status: ReqStatus; supplier: { course: string; statement: string; draft: boolean; source: 'decision' | 'judge'; label: 'fully' | 'partly' } | null; short: Array<'k' | 'u' | 'd'>; mayFade: boolean; candidates: Candidate[] }`; `requiredByCourse(lib: Library, plan: PlanState, courses: PlacedCourse[], drafts: DraftJudgments): Record<string, { results: ReqResult[]; counts: Record<ReqStatus, number> }>` where `DraftJudgments = Record<string, { pFully: number | null; pPartly: number | null }>` (judgments fetched for draft texts, keyed like decisions).
-- Rule (first match): Met — a non-draft supplier with label fully (decision, else judge `pFully ≥ FULLY_CUTOFF`) whose captured levels ≥ every named need; Met\* — same but the required skill, the supplier, or the coreq that makes it eligible is a draft; Partly — any non-rejected candidate with fully but short levels, or partly (decision, or `pPartly ≥ PARTLY_CUTOFF`); Not — otherwise. Decisions override the judge; `not` excludes the pair. `mayFade` when supplier act ≤ requirer act − 2.
+- Rule (first match): Met — a non-draft supplier with label fully (decision, else judge `pFully ≥ FULLY_CUTOFF`) whose captured levels ≥ every named need; Met\* — same but the required skill, the supplier, or the coreq that makes it eligible is a draft; Partly — any non-rejected candidate with fully but short levels, or partly (decision, or `pPartly ≥ PARTLY_CUTOFF`); Not — otherwise. Decisions override the judge; `not` excludes the pair. Fade: each eligible fully supplier's level is carried to the requirer's term with `heldAt(contributions, term, fade)` (new, compute.ts: same per-term rule as `durable()`, value at any term, `Math.floor`); captured level meets but held does not → `partly` with `faded: Array<'k'|'u'|'d'>`. Replace `mayFade` with `faded`.
 
-- [ ] **Step 1:** Tests (one each): `met from an earlier term`; `same term without coreq is not eligible`; `same term with a plan coreq is Met*`; `rejected decision beats pFully 0.99`; `accepted decision beats pFully 0.1`; `short on D gives partly with short ['d']`; `a draft developed skill gives Met*`; `supplier removed from the map gives not`; `counts sum to the number of required skills`.
+- [ ] **Step 1:** Tests (one each): `met from an earlier term`; `same term without coreq is not eligible`; `same term with a plan coreq is Met*`; `rejected decision beats pFully 0.99`; `accepted decision beats pFully 0.1`; `short on D gives partly with short ['d']`; `a draft developed skill gives Met*`; `supplier removed from the map gives not`; `counts sum to the number of required skills`; `a D3 supplier four terms back with fade 1 gives partly, faded ['d'], against a D3 need`; `fade 0 never fades`; `a later fully supplier restores the level`.
 - [ ] **Step 2:** FAIL → implement → PASS. Commit.
+
+### Task 4b: Remove fade from competencies
+
+**Files:** Modify `lib/builder/compute.ts` (`checkpoint`, objective status, target counts), `app/build/[id]/ui.ts` (`dimNote`), copy in `Builder.tsx` for the fade control; tests in `lib/builder/__tests__/compute.test.ts`.
+
+**Interfaces:** `checkpoint(at, req)` no longer takes `held`; `ObjectiveStatus` drops `'fading'`; `ActCount` drops `fading`; `heldByAct` is removed from `ObjectiveResult`; `durable()` stays only as the base for `heldAt` (Task 4). The fade control's label reads "Fade (threads): levels a skill loses per act when nothing reinforces it".
+
+- [ ] **Step 1:** Replace the fading tests with: `a competency reached early stays met at later checkpoints whatever the fade`; delete tests that assert competency fading.
+- [ ] **Step 2:** FAIL → implement → PASS (`pnpm vitest run lib/builder app/build`), `tsc` clean. Commit.
 
 ### Task 5: Decisions and draft judging API
 

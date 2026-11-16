@@ -32,8 +32,9 @@ Every edit records who made it (the login's name; "department login" when shared
 - **Required skills** of a captured course are its capture's incoming expectations (statement, expected K/U/D), loaded into the library for the version the plan uses. Map edits add to, change or remove them.
 - **Candidates:** the developed skills (captured, plus map-added) of every course placed in an **earlier term** on the map, or the **same term** when linked as a corequisite. Not limited to listed prerequisites: the map asks what students have had by then.
 - **Shortlist:** the 5 nearest candidates by campus embedding (free).
-- **Judge:** campus `qwen3.8-27b-fp8` (free), one yes/no question per pair, P(yes) from logprobs. The question asks about the **activity only** ("does the earlier skill develop the activity the later course requires?"); levels are compared separately. Course titles and descriptions give context. A second question asks "partly": the earlier skill covers part of it.
+- **Judge:** campus models (free): `qwen3.8-27b-fp8` and `deepseek-v4.1-flash-1017`, both asked and both stored; one yes/no question per pair, P(yes) from logprobs. The question asks about the **activity only** ("does the earlier skill develop the activity the later course requires?"); levels are compared separately. Course titles and descriptions give context. A second question asks "partly": the earlier skill covers part of it.
 - **Cache:** judgments are stored by the texts' hashes, model and prompt version (`skill_match_judgments`, migration 0069), so every map reuses them and a re-capture with unchanged wording costs nothing. Map-added skills are judged on save (a few calls, under a second).
+- **Model choice:** on the 48 spike pairs the two models rank pairs alike (Spearman 0.85) but DeepSeek scores higher (mean P(fully) 0.62 against 0.45), so each needs its own cut-off. Qwen is used until the owner's labels show which model agrees better.
 - **Calibration:** the cut-offs come from a labeled set of department pairs (fit on log-odds or rank, per the results note). Before any labels exist, a spike sets provisional cut-offs; accept/reject decisions on maps become the labels.
 
 ### Faculty decisions are evidence (owner, 2026-11-16)
@@ -56,7 +57,13 @@ Faculty can overrule the judge during mapping: accept a match, reject it, rate i
 | Partly met | orange | a match exists but falls short on a level, or matches only "partly" |
 | Not met | red | none of the above, or every match rejected |
 
-Levels are whole numbers; nothing is rounded up. Fade is not part of the status; a met skill whose supplier sits more than one act back with nothing between shows a "may fade" note in the list.
+Levels are whole numbers; nothing is rounded up.
+
+### Fade applies to threads only (owner, 2026-11-16)
+
+Fade is a property of a thread, not of a competency. A supplier's level is carried forward to the term of the course that requires it, losing the plan's fade rate per term (the plan's per-act setting spread over its three terms), and truncated to a whole level. Another fully matching supplier in a later term restores the level, as a near-peak rework does today. A requirement that the supplier's captured level meets but the faded level does not shows as **Partly met, faded** (orange), naming the dimension that slipped. With fade set to 0, nothing fades.
+
+Competency levels, act checkpoints and targets no longer fade: the builder's competency "fading" status and the fade-held level are removed from them, and the fade setting on the map now governs threads only.
 
 ## 4. On the map
 
