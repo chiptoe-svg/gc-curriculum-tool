@@ -69,6 +69,12 @@ export async function latestDecisions(opts: { planId?: string } = {}): Promise<M
   return newestPerPair(await db.select().from(skillMatchDecisions).where(visible).orderBy(...oldestFirst));
 }
 
+/** This plan's draft decisions, newest per pair (a draft names a skill that exists only on that plan's map). */
+export async function planDraftDecisions(planId: string): Promise<Map<string, Decision>> {
+  return newestPerPair(await db.select().from(skillMatchDecisions)
+    .where(and(eq(skillMatchDecisions.draft, true), eq(skillMatchDecisions.planId, planId))).orderBy(...oldestFirst));
+}
+
 /**
  * Every decision, newest first. `latestOnly` keeps the newest NON-draft decision per pair; draft decisions are kept as
  * their own rows and never shadow a non-draft one (a draft names a skill that is not in a capture yet).

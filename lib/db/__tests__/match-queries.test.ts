@@ -64,6 +64,18 @@ describe.skipIf(!SCRATCH)('match-queries (scratch database)', () => {
     expect((await q.latestDecisions({ planId })).get(`${r2}|${sup}`)?.label).toBe('partly');
   });
 
+  it('planDraftDecisions returns only that plan\'s drafts, newest per pair', async () => {
+    const r5 = `${tag}-req5`, r6 = `${tag}-req6`;
+    const planA = '00000000-0000-4000-8000-0000000000a5', planB = '00000000-0000-4000-8000-0000000000b5';
+    await q.insertDecision(base({ requiredHash: r5, draft: true, planId: planA, label: 'fully', decidedAt: new Date('2026-03-01T00:00:00Z') }));
+    await q.insertDecision(base({ requiredHash: r5, draft: true, planId: planA, label: 'partly', decidedAt: new Date('2026-03-02T00:00:00Z') }));
+    await q.insertDecision(base({ requiredHash: r6, draft: true, planId: planB, label: 'fully' }));
+    await q.insertDecision(base({ requiredHash: r6, draft: false, planId: planA, label: 'not' }));
+    const got = await q.planDraftDecisions(planA);
+    const mine = [...got.values()].filter((d) => d.requiredHash.startsWith(tag));
+    expect(mine.map((d) => [d.requiredHash, d.label, d.draft])).toEqual([[r5, 'partly', true]]);
+  });
+
   it('judgments upsert and read back by model and prompt version', async () => {
     const r3 = `${tag}-req3`;
     await q.writeJudgments([{ requiredHash: r3, suppliedHash: sup, model: 'm', promptVersion: 'v1', pFully: 0.2, pPartly: 0.5 }]);

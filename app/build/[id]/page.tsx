@@ -6,7 +6,8 @@ import { getPlan } from '@/lib/db/curriculum-plan-queries';
 import { loadLibrary } from '@/lib/builder/library';
 import { parsePlanState } from '@/lib/builder/plan-schema';
 import { EMPTY_PLAN, type MatchDecision } from '@/lib/builder/types';
-import { latestDecisions } from '@/lib/db/match-queries';
+import { planDraftDecisions } from '@/lib/db/match-queries';
+import { isUndefinedTable } from '@/lib/db/pg-errors';
 import { Builder } from './Builder';
 import { genEdFor } from '@/lib/builder/degree-data';
 import '../build.css';
@@ -47,11 +48,12 @@ export default async function BuildPlanPage({ params, searchParams }: {
   // Decisions that name a draft skill apply only on this map; the non-draft ones are already in the library.
   const planDecisions: Record<string, MatchDecision> = {};
   try {
-    for (const [key, d] of await latestDecisions({ planId: plan.id })) {
-      if (!d.draft) continue;
+    for (const [key, d] of await planDraftDecisions(plan.id)) {
       planDecisions[key] = { requiredRef: d.requiredHash, suppliedRef: d.suppliedHash, label: d.label, by: d.decidedBy, at: new Date(d.decidedAt).toISOString(), draft: true };
     }
-  } catch { /* 0069 not applied on this database: no decisions */ }
+  } catch (err) { // 0069 not applied on this database: no decisions, silently; anything else is logged
+    if (!isUndefinedTable(err)) console.error('[build] plan decisions failed:', err instanceof Error ? err.message : err);
+  }
 
   return (
     <Builder

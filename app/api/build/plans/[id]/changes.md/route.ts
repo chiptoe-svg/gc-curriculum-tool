@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { authorizeRequest } from '@/lib/auth/route-auth';
 import { personalName } from '@/lib/auth/viewer';
 import { getPlan } from '@/lib/db/curriculum-plan-queries';
-import { latestDecisions, readJudgments } from '@/lib/db/match-queries';
+import { planDraftDecisions, readJudgments } from '@/lib/db/match-queries';
+import { isUndefinedTable } from '@/lib/db/pg-errors';
 import { loadLibrary } from '@/lib/builder/library';
 import { parsePlanState } from '@/lib/builder/plan-schema';
 import { placeCourses } from '@/lib/builder/compute';
@@ -30,17 +31,20 @@ export async function GET(req: Request, { params }: Ctx): Promise<Response> {
   // Draft decisions for this plan, plus the non-draft ones the library holds (same split as the builder page).
   const planDecisions: Record<string, MatchDecision> = {};
   try {
-    for (const [key, d] of await latestDecisions({ planId: plan.id })) {
-      if (!d.draft) continue;
+    for (const [key, d] of await planDraftDecisions(plan.id)) {
       planDecisions[key] = { requiredRef: d.requiredHash, suppliedRef: d.suppliedHash, label: d.label, by: d.decidedBy, at: new Date(d.decidedAt).toISOString(), draft: true };
     }
-  } catch { /* 0069 not applied on this database: no decisions */ }
+  } catch (err) { // 0069 not applied on this database: no decisions, silently; anything else is logged
+    if (!isUndefinedTable(err)) console.error('[build/changes.md] plan decisions failed:', err instanceof Error ? err.message : err);
+  }
 
   // The judgments the builder fetched for draft skills are cached by text hash, so read them back to match the map.
   const drafts: DraftJudgments = {};
   try {
     for (const [k, v] of await readJudgments(draftPairs(lib, state), MODEL_IN_USE, PROMPT_VERSION)) drafts[k] = v;
-  } catch { /* 0069 not applied on this database: no cached judgments */ }
+  } catch (err) { // 0069 not applied: no cached judgments, silently; anything else is logged
+    if (!isUndefinedTable(err)) console.error('[build/changes.md] draft judgments failed:', err instanceof Error ? err.message : err);
+  }
 
   const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
   const required = requiredByCourse(lib, state, placeCourses(lib, state), drafts, planDecisions);
