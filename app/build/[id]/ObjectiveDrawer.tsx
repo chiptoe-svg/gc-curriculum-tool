@@ -131,9 +131,7 @@ export function ObjectiveDrawer(props: {
                 : <span key={n.id} className="cb-chip cb-chip--off" title="Not one of this plan's objectives">{n.name}</span>)}
             </p>
             <p className="cb-muted">
-              {plan.support
-                ? 'Support from related competencies is switched on: when a course works one of these at integration depth (Understand or Do of 4 or more), this one fades more slowly in that act. It never raises the level.'
-                : 'Shown for reference. They are the nearest competencies by description, which is a shortlist and not a finding that one builds the other, so they do not affect the map unless support is switched on in the top bar.'}
+              Shown for reference. They are the nearest competencies by description, which is a shortlist and not a finding that one builds the other, so they do not affect the map.
             </p>
           </>
         )}

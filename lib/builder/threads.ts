@@ -16,6 +16,8 @@ export interface ReqResult {
   supplier: { course: string; statement: string; draft: boolean; source: 'decision' | 'judge'; label: 'fully' | 'partly' } | null;
   short: Dim[];
   faded: Dim[];
+  /** True only when a draft supplier's restoration is what makes a clean supplier meet (Met*); the supplier itself is not a draft. */
+  restoredByDraft: boolean;
   candidates: Candidate[];
 }
 
@@ -25,7 +27,7 @@ export type DraftJudgments = Record<string, { pFully: number | null; pPartly: nu
 const TIER: Record<ReqStatus, number> = { met: 3, met_draft: 2, partly: 1, not: 0 };
 
 interface Path {
-  status: ReqStatus; p: number; short: Dim[]; faded: Dim[];
+  status: ReqStatus; p: number; short: Dim[]; faded: Dim[]; restoredByDraft: boolean;
   supplier: NonNullable<ReqResult['supplier']>;
 }
 
@@ -88,7 +90,7 @@ export function requiredByCourse(
         }
       }
       const labelOf = (p: Pair): { label: 'fully' | 'partly' | 'not'; source: 'decision' | 'judge'; p: number } => {
-        if (p.decision) return { label: p.decision.label, source: 'decision', p: p.decision.label === 'partly' ? 1 : 1 };
+        if (p.decision) return { label: p.decision.label, source: 'decision', p: 1 };
         if ((p.cand.pFully ?? 0) >= cut.fully && p.cand.pFully != null) return { label: 'fully', source: 'judge', p: p.cand.pFully };
         if (p.cand.pPartly != null && p.cand.pPartly >= cut.partly) return { label: 'partly', source: 'judge', p: p.cand.pPartly };
         return { label: 'not', source: 'judge', p: 0 };
@@ -108,7 +110,7 @@ export function requiredByCourse(
         const base = { course: p.sup.s.code, statement: p.skill.statement, draft: supDraft, source: l.source };
         let path: Path;
         if (l.label === 'partly') {
-          path = { status: 'partly', p: l.p, short: [], faded: [], supplier: { ...base, label: 'partly' } };
+          path = { status: 'partly', p: l.p, short: [], faded: [], restoredByDraft: false, supplier: { ...base, label: 'partly' } };
         } else {
           const short = need.filter(d => (p.skill[d] ?? 0) < req.need[d]!);
           const fadedWith = (cleanOnly: boolean) =>
@@ -118,7 +120,7 @@ export function requiredByCourse(
           // Held only by counting a draft supplier's restoration: Met*, not Met.
           const draftRestored = !supDraft && faded.length > 0 && !fadedAll.length;
           const status: ReqStatus = short.length || (faded.length && !draftRestored) ? 'partly' : supDraft || draftRestored ? 'met_draft' : 'met';
-          path = { status, p: l.p, short, faded: draftRestored ? [] : faded, supplier: { ...base, draft: base.draft || draftRestored, label: 'fully' } };
+          path = { status, p: l.p, short, faded: draftRestored ? [] : faded, restoredByDraft: draftRestored, supplier: { ...base, label: 'fully' } };
         }
         if (!best || TIER[path.status] > TIER[best.status] || (TIER[path.status] === TIER[best.status] && path.p > best.p)) best = path;
       }
@@ -128,6 +130,7 @@ export function requiredByCourse(
         supplier: best?.supplier ?? null,
         short: best?.short ?? [],
         faded: best?.faded ?? [],
+        restoredByDraft: best?.restoredByDraft ?? false,
         candidates: pairs.map(x => x.cand).sort((a, b) => (b.pFully ?? 0) - (a.pFully ?? 0)),
       };
     });

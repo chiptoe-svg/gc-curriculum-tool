@@ -107,9 +107,9 @@ export function requiredLevels(plan: Pick<PlanState, 'goal'>, scope: string, com
     : set;
 }
 
-export type CheckpointStatus = 'met' | 'fading' | 'short' | 'untouched' | 'none';
+export type CheckpointStatus = 'met' | 'short' | 'untouched' | 'none';
 export interface Checkpoint {
-  /** 'none' = nothing is required here. 'fading' = reached earlier, but estimated to have slipped below the requirement by now. */
+  /** 'none' = nothing is required here. Competency levels never fade (owner, 2026-11-16): reached is met. */
   status: CheckpointStatus;
   /** 0–1: share of the required depth reached. */
   completion: number;
@@ -117,20 +117,14 @@ export interface Checkpoint {
 
 /**
  * One checkpoint: what is reached against what is required. A dimension no
- * course reads counts as not reached. `held` is the estimated depth still
- * held at this point (see durable()); when given, a requirement reached
- * earlier whose held level, truncated to a whole level, is below it reads 'fading'.
+ * course reads counts as not reached.
  */
-export function checkpoint(at: Depth, req: Depth | null, held?: Depth): Checkpoint {
+export function checkpoint(at: Depth, req: Depth | null): Checkpoint {
   const dims = req ? DIMS.filter(dim => (req[dim] ?? 0) > 0) : []; // a level of 0 asks for nothing
   if (dims.length === 0) return { status: 'none', completion: 1 };
   const share = (src: Depth) => dims.reduce((s, dim) => s + Math.min(src[dim] ?? 0, req![dim]!) / req![dim]!, 0) / dims.length;
-  if (dims.every(dim => (at[dim] ?? -1) >= req![dim]!)) {
-    // Truncated, never rounded (owner, 2026-11-16): a held 2.5 against a 3 has slipped below it.
-    if (held && dims.some(dim => Math.floor(held[dim] ?? 0) < req![dim]!)) return { status: 'fading', completion: share(held) };
-    return { status: 'met', completion: 1 };
-  }
-  return { status: DIMS.every(dim => at[dim] == null) ? 'untouched' : 'short', completion: share(held ?? at) };
+  if (dims.every(dim => (at[dim] ?? -1) >= req![dim]!)) return { status: 'met', completion: 1 };
+  return { status: DIMS.every(dim => at[dim] == null) ? 'untouched' : 'short', completion: share(at) };
 }
 
 /**
@@ -241,7 +235,7 @@ export interface Contribution extends Depth {
   raised: Array<'k' | 'u' | 'd'>;
 }
 
-export type ObjectiveStatus = 'met' | 'fading' | 'short' | 'late' | 'untouched' | 'none';
+export type ObjectiveStatus = 'met' | 'short' | 'late' | 'untouched' | 'none';
 /** Durability by structure (spec §2.5, B1): several courses near the peak, one course alone, or nothing above introduction. */
 export type Thread = 'reinforced' | 'lone_peak' | 'light' | 'none';
 export type EvidenceBasis = 'discovered' | 'mixed' | 'soft' | 'none';
@@ -258,8 +252,6 @@ export interface ObjectiveResult {
   required: ActLevels;
   /** Cumulative depth at the end of each act (index 0 = Act 1). */
   byAct: [Depth, Depth, Depth];
-  /** Estimated depth still held at the end of each act. Internal: show bands or arrows, never these numbers. */
-  heldByAct: [Depth, Depth, Depth];
   checkpoints: [Checkpoint, Checkpoint, Checkpoint];
   status: ObjectiveStatus;
   thread: Thread;
@@ -269,7 +261,7 @@ export interface ObjectiveResult {
   contributions: Contribution[];
 }
 
-export interface ActCount { required: number; met: number; fading: number }
+export interface ActCount { required: number; met: number }
 
 export interface TargetResult {
   id: string;
@@ -303,7 +295,7 @@ export interface CourseCheck {
   from?: string[];
 }
 
-export interface ActMilestone { act: Act; courses: number; introduced: number; integrated: number; required: number; met: number; fading: number }
+export interface ActMilestone { act: Act; courses: number; introduced: number; integrated: number; required: number; met: number }
 
 export interface PlanResult {
   /** The courses in view (trunk plus the viewed branches), in teaching order. */
@@ -418,20 +410,9 @@ export function planEdges(lib: Library, plan: PlanState): PlanEdge[] {
   return out;
 }
 
-type Stack = { byAct: [Depth, Depth, Depth]; heldByAct: [Depth, Depth, Depth]; contributions: Contribution[] };
+type Stack = { byAct: [Depth, Depth, Depth]; contributions: Contribution[] };
 
-/** Per act, the competencies some course works at integration depth (U or D of 4+): the only depth at which a neighbor lends support. */
-function integrationByAct(courses: PlacedCourse[]): [Set<string>, Set<string>, Set<string>] {
-  const out: [Set<string>, Set<string>, Set<string>] = [new Set(), new Set(), new Set()];
-  for (const c of courses) {
-    if (!c.reading.basis) continue;
-    for (const d of c.reading.depths) if ((d.u ?? 0) >= 4 || (d.d ?? 0) >= 4) out[c.act - 1]!.add(d.competencyId);
-  }
-  return out;
-}
-
-function stack(courses: PlacedCourse[], competency: LibraryCompetency, plan: Pick<PlanState, 'fade' | 'support'>, high = integrationByAct(courses)): Stack {
-  const fade = plan.fade;
+function stack(courses: PlacedCourse[], competency: LibraryCompetency): Stack {
   const competencyId = competency.id;
   let running: Depth = NONE;
   const byAct: [Depth, Depth, Depth] = [NONE, NONE, NONE];
@@ -447,8 +428,7 @@ function stack(courses: PlacedCourse[], competency: LibraryCompetency, plan: Pic
     running = maxDepth(running, row);
     for (let a = c.act; a <= 3; a++) byAct[a - 1] = running;
   }
-  const support = high.map(set => plan.support && competency.neighbors.some(n => set.has(n))) as [boolean, boolean, boolean];
-  return { byAct, heldByAct: fade > 0 ? durable(contributions, support, fade) : byAct, contributions };
+  return { byAct, contributions };
 }
 
 function evidenceBasis(contribs: Contribution[], at: Depth): EvidenceBasis {
@@ -487,18 +467,16 @@ export function computePlan(lib: Library, plan: PlanState, view: string[] | 'all
     selected.find(t => t.id === targetId)?.members.find(m => m.competencyId === competencyId)?.weight ?? null;
   const scopeLevels = (scope: string, competency: LibraryCompetency) => requiredLevels(plan, scope, competency);
 
-  const high = integrationByAct(courses);
   const objectives: ObjectiveResult[] = planObjectives(lib, plan).map(({ competency, weight, targetIds }) => {
-    const { byAct, heldByAct, contributions } = stack(courses, competency, plan, high);
+    const { byAct, contributions } = stack(courses, competency);
     const scopes = scopesOf(plan, competency.id, targetIds);
     const required = strictest(scopes.map(s => scopeLevels(s, competency)));
-    const checkpoints = byAct.map((at, i) => checkpoint(at, required[i]!, heldByAct[i]!)) as [Checkpoint, Checkpoint, Checkpoint];
+    const checkpoints = byAct.map((at, i) => checkpoint(at, required[i]!)) as [Checkpoint, Checkpoint, Checkpoint];
     const last = lastRequired(checkpoints);
     const status: ObjectiveStatus = last < 0 ? 'none'
       : contributions.length === 0 ? 'untouched'
       : checkpoints.every(c => c.status === 'met' || c.status === 'none') ? 'met'
       : checkpoints[last]!.status === 'met' ? 'late'
-      : checkpoints[last]!.status === 'fading' ? 'fading'
       : 'short';
 
     const scaffolding = depthScaffoldingStatus(contributions.map(c => ({
@@ -526,22 +504,21 @@ export function computePlan(lib: Library, plan: PlanState, view: string[] | 'all
     }
     if (last >= 0 && checkpoints[last]!.status === 'met' && basis !== 'discovered') flags.push('soft_evidence');
 
-    return { competency, weight, targetIds, required, byAct, heldByAct, checkpoints, status, thread, basis, scaffolding, flags, contributions };
+    return { competency, weight, targetIds, required, byAct, checkpoints, status, thread, basis, scaffolding, flags, contributions };
   });
 
   // Each career path on its own courses (trunk + its branches) and its own levels.
   const pathCheckpoints = (targetId: string, competency: LibraryCompetency): Checkpoint[] => {
     const branches = plan.branches.filter(b => b.targetIds.includes(targetId)).map(b => b.id);
-    const { byAct, heldByAct } = stack(all.filter(c => inView(c, branches)), competency, plan);
+    const { byAct } = stack(all.filter(c => inView(c, branches)), competency);
     const req = scopeLevels(targetId, competency);
-    return byAct.map((at, i) => checkpoint(at, req[i]!, heldByAct[i]!));
+    return byAct.map((at, i) => checkpoint(at, req[i]!));
   };
   const targets: TargetResult[] = selected.map(t => {
     const mine = objectives.filter(o => o.targetIds.includes(t.id)).map(o => ({ o, cps: pathCheckpoints(t.id, o.competency) }));
     const acts = [0, 1, 2].map(i => ({
       required: mine.filter(m => m.cps[i]!.status !== 'none').length,
       met: mine.filter(m => m.cps[i]!.status === 'met').length,
-      fading: mine.filter(m => m.cps[i]!.status === 'fading').length,
     })) as TargetResult['acts'];
     let sumW = 0;
     let sum = 0;
@@ -623,7 +600,6 @@ export function computePlan(lib: Library, plan: PlanState, view: string[] | 'all
     integrated: objectives.filter(o => { const a = o.byAct[act - 1]!; return (a.u ?? 0) >= 4 || (a.d ?? 0) >= 4; }).length,
     required: objectives.filter(o => o.checkpoints[act - 1]!.status !== 'none').length,
     met: objectives.filter(o => o.checkpoints[act - 1]!.status === 'met').length,
-    fading: objectives.filter(o => o.checkpoints[act - 1]!.status === 'fading').length,
   }));
 
   return { courses, objectives, targets, written, edges: edges.filter(e => placed.has(e.to)), checks, milestones };

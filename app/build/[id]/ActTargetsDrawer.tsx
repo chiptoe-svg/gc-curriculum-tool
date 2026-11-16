@@ -28,13 +28,13 @@ export function ActTargetsDrawer(props: {
   return (
     <Drawer wide onClose={props.onClose} kicker={`Act ${act}: ${info.name}`} title={`Targets at the end of Act ${act}`}>
       <section className="cb-sec">
-        <p>{m.required === 0 ? 'Nothing is required at this checkpoint yet.' : <><b>{m.met}</b> of {m.required} targets reached at the end of Act {act}{m.fading > 0 ? `, ${m.fading} more reached earlier and fading` : ''}.</>}</p>
+        <p>{m.required === 0 ? 'Nothing is required at this checkpoint yet.' : <><b>{m.met}</b> of {m.required} targets reached at the end of Act {act}.</>}</p>
         {!plan.goal.program && (
           <p className="cb-muted">Program targets are off, so only competencies added by hand are listed. <button type="button" className="cb-linkbtn" onClick={props.onOpenTargets}>Switch them on in Targets</button>.</p>
         )}
         <p className="cb-muted">
           Target: the program&rsquo;s level for the end of this act (blank or 0 asks for nothing). Reached: the deepest level a course placed up to here
-          reaches; a second number is what is estimated to be held after fade. A chosen career path may ask for more; the stricter target decides the status.
+          reaches; a chosen career path may ask for more; the stricter target decides the status.
         </p>
       </section>
       <section className="cb-sec">
@@ -49,7 +49,6 @@ export function ActTargetsDrawer(props: {
                 const head = i === 0 || rows[i - 1]!.competency.stratum !== c.stratum;
                 const target = requiredLevels(plan, PLAN_SCOPE, c)[act - 1] ?? null;
                 const at = o.byAct[act - 1]!;
-                const held = o.heldByAct[act - 1]!;
                 const cp = o.checkpoints[act - 1]!;
                 const dims = dimsOf(c);
                 return [
@@ -59,10 +58,7 @@ export function ActTargetsDrawer(props: {
                     <td><DepthInputs label={`${c.name}, end of Act ${act}`} foundational={c.foundational} value={target}
                       onChange={v => setLevels(update, library, PLAN_SCOPE, c.id, act - 1, v)} /></td>
                     <td className="cb-mono">
-                      {dims.map(d => {
-                        const slipped = held[d] != null && at[d] != null && held[d]! < at[d]! - 0.05;
-                        return <span key={d} title={slipped ? `Reached ${fmt(at[d])}, estimated ${fmt(held[d])} held after fade` : undefined}>{d.toUpperCase()}{fmt(at[d])}{slipped ? `→${fmt(held[d])}` : ''} </span>;
-                      })}
+                      {dims.map(d => <span key={d}>{d.toUpperCase()}{fmt(at[d])} </span>)}
                     </td>
                     <td className={`cb-t-${toneOfCheckpoint(cp.status)}`}>{CHECKPOINT_WORD[cp.status]}</td>
                   </tr>,

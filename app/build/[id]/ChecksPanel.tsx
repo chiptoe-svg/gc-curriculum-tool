@@ -16,12 +16,11 @@ export function ChecksPanel(props: { result: PlanResult; genEd: { year: string; 
   const order = result.checks.filter(c => c.kind !== 'no_reading');
   const silent = result.checks.filter(c => c.kind === 'no_reading');
   const untouched = result.objectives.filter(o => o.status === 'untouched');
-  const fading = result.objectives.filter(o => o.status === 'fading');
   const short = result.objectives.filter(o => o.status === 'short' || o.status === 'late');
   const objectiveList = (list: typeof result.objectives) => (
     <p>{list.map(o => <button key={o.competency.id} type="button" className="cb-chip" onClick={() => props.onSelect({ kind: 'objective', id: o.competency.id })}>{o.competency.name}</button>)}</p>
   );
-  const nothing = order.length + silent.length + untouched.length + fading.length + short.length === 0 && result.objectives.every(o => o.flags.length === 0);
+  const nothing = order.length + silent.length + untouched.length + short.length === 0 && result.objectives.every(o => o.flags.length === 0);
 
   return (
     <Drawer title="Checks" kicker="What to look at in this plan" onClose={props.onClose}>
@@ -65,13 +64,6 @@ export function ChecksPanel(props: { result: PlanResult; genEd: { year: string; 
 
       {untouched.length > 0 && <section className="cb-sec"><h3>No course works these</h3>{objectiveList(untouched)}</section>}
       {short.length > 0 && <section className="cb-sec"><h3>Short of a target</h3>{objectiveList(short)}</section>}
-      {fading.length > 0 && (
-        <section className="cb-sec">
-          <h3>Reached, then fading</h3>
-          <p className="cb-muted">The level is reached, but nothing reinforces it before the final checkpoint. This rests on the fade setting in the top bar, which is an assumption.</p>
-          {objectiveList(fading)}
-        </section>
-      )}
 
       {FLAG_ORDER.map(flag => {
         const list = result.objectives.filter(o => o.flags.includes(flag));

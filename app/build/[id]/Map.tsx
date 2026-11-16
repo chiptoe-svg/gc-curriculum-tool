@@ -236,10 +236,10 @@ export function CurriculumMap(props: {
           <h3>{info.name}</h3>
           <p className="cb-band__span">{info.span}</p>
           <button type="button" className="cb-band__note" onClick={() => props.onOpenAct(act)}
-            title={`By the end of Act ${act}: ${m.met} of ${m.required} targets reached${m.fading ? `, ${m.fading} more reached earlier and fading` : ''}. ${m.introduced} objectives introduced, ${m.integrated} worked at integration depth. Click to see and set every target for this act.`}>
+            title={`By the end of Act ${act}: ${m.met} of ${m.required} targets reached. ${m.introduced} objectives introduced, ${m.integrated} worked at integration depth. Click to see and set every target for this act.`}>
             {m.required === 0 ? 'No targets set for this act' : <><b>{m.met}</b> of {m.required} targets reached</>}
             {m.required > 0 && (() => {
-              const counts = (['met', 'fading', 'short', 'untouched'] as const).map(st => ({ st, n: result.objectives.filter(o => o.checkpoints[act - 1]!.status === st).length }));
+              const counts = (['met', 'short', 'untouched'] as const).map(st => ({ st, n: result.objectives.filter(o => o.checkpoints[act - 1]!.status === st).length }));
               return (
                 <>
                   <span className="cb-statusbar" aria-hidden>
@@ -441,7 +441,7 @@ export function CurriculumMap(props: {
               </span>
               <span className="cb-target__acts">
                 {t.acts.map((a, ai) => (
-                  <span key={ai} title={`End of Act ${ai + 1}: ${a.met} of ${a.required} of this path's targets reached${a.fading ? `, ${a.fading} fading` : ''}`}>
+                  <span key={ai} title={`End of Act ${ai + 1}: ${a.met} of ${a.required} of this path's targets reached`}>
                     <i>Act {ai + 1}</i> {a.required === 0 ? '–' : `${a.met}/${a.required}`}
                   </span>
                 ))}
@@ -465,7 +465,6 @@ export function CurriculumMap(props: {
         <div className="cb-roots__left">
           <ul className="cb-legend">
             <li><span className="cb-swatch" style={{ background: 'var(--cb-reached)' }} /> Target reached</li>
-            <li><span className="cb-swatch" style={{ background: 'var(--cb-fading)' }} /> Reached earlier, fading (▾)</li>
             <li><span className="cb-swatch" style={{ background: 'var(--cb-short)' }} /> Short of target (reached/target)</li>
             <li><span className="cb-swatch cb-swatch--dots" /> Rests on a stated objective or a proposed course</li>
             <li><span className="cb-dot cb-dot--full" /> Course raises the level <span className="cb-dot" /> Course works it again without raising it</li>
@@ -536,7 +535,7 @@ export function CurriculumMap(props: {
                 </span>
               );
             })}
-            <span className="cb-muted cb-small">Reached/target per Know, Understand, Do; ▾ = reached earlier, fading. Click for more.</span>
+            <span className="cb-muted cb-small">Reached/target per Know, Understand, Do. Click for more.</span>
           </div>
         );
       })()}

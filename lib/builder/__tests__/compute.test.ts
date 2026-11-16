@@ -88,11 +88,8 @@ describe('checkpoint', () => {
     expect(checkpoint({ k: null, u: null, d: 3 }, all(3)).status).toBe('short');
     expect(checkpoint({ k: null, u: null, d: null }, all(3))).toEqual({ status: 'untouched', completion: 0 });
   });
-  it('truncates the held level: any slip below the requirement is fading, never rounded back up (owner, 2026-11-16)', () => {
-    const at = { k: null, u: null, d: 3 }, req = { k: null, u: null, d: 3 };
-    expect(checkpoint(at, req, { k: null, u: null, d: 2.5 }).status).toBe('fading');
-    expect(checkpoint(at, req, { k: null, u: null, d: 2.9 }).status).toBe('fading');
-    expect(checkpoint(at, req, { k: null, u: null, d: 3 }).status).toBe('met');
+  it('takes no held level: a requirement reached stays met', () => {
+    expect(checkpoint({ k: null, u: null, d: 3 }, { k: null, u: null, d: 3 }).status).toBe('met');
   });
 });
 
@@ -289,22 +286,14 @@ describe('computePlan', () => {
     expect(r.targets.find(t => t.id === 't')!.acts[2]).toEqual({ required: 1, met: 0, fading: 0 }); // color is short without the branch
   });
 
-  it('reports a requirement reached early and never reinforced as fading, unless fade is off', () => {
+  it('a competency reached early stays met at later checkpoints whatever the fade', () => {
     const l = lib([captured('A', [['color', 3, 3, 3]])]);
     const levels = { t: { color: [all(3), all(3), all(3)] as ActLevels, press: final(0), agency: final(0) } };
-    const o = obj(computePlan(l, lastTerm(plan([['A', 1]], { fade: 1 }, { levels }))), 'color');
-    expect(o.checkpoints.map(c => c.status)).toEqual(['met', 'fading', 'fading']);
-    expect(o.status).toBe('fading');
-    expect(o.byAct[2].d).toBe(3); // the level reached is still reported as reached
-    expect(obj(computePlan(l, plan([['A', 1]], { fade: 0 }, { levels })), 'color').status).toBe('met');
-  });
-
-  it('counts fade from the term a course sits in: an early term has slipped by the end of its own act', () => {
-    const l = lib([captured('A', [['color', 3, 3, 3]])]);
-    const levels = { t: { color: [all(3), null, null] as ActLevels, press: final(0), agency: final(0) } };
-    const at = (slot: 0 | 2) => obj(computePlan(l, { ...plan([['A', 1]], { fade: 1 }, { levels }), placements: [{ ref: 'A', act: 1, branch: null, slot, x: 0 }] }), 'color');
-    expect(at(2).checkpoints[0]!.status).toBe('met');     // last term of Act 1: nothing has slipped yet
-    expect(at(0).checkpoints[0]!.status).toBe('fading');  // first term: two terms without it, 3 -> 2.33
+    for (const fade of [0, 1, 2]) {
+      const o = obj(computePlan(l, lastTerm(plan([['A', 1]], { fade }, { levels }))), 'color');
+      expect(o.checkpoints.map(c => c.status)).toEqual(['met', 'met', 'met']);
+      expect(o.status).toBe('met');
+    }
   });
 
   it('wants a prerequisite in an earlier term, not just earlier on the page', () => {
@@ -316,20 +305,6 @@ describe('computePlan', () => {
     const earlier = computePlan(l, { ...plan([['A', 1], ['B', 1]]), placements: [
       { ref: 'A', act: 1, branch: null, slot: 0, x: 300 }, { ref: 'B', act: 1, branch: null, slot: 1, x: 0 }] });
     expect(earlier.checks.some(c => c.kind === 'prereq_order')).toBe(false);
-  });
-
-  it('lets a closely related competency worked at integration depth slow the fade, only when switched on', () => {
-    const l = lib([captured('A', [['color', 4, 4, 4]]), captured('B', [['press', 4, 4, 4]])]);
-    const levels = { t: { color: final(3), press: final(0), agency: final(0) } };
-    const alone = obj(computePlan(l, lastTerm(plan([['A', 1]], { fade: 1 }, { levels }))), 'color');
-    const off = obj(computePlan(l, lastTerm(plan([['A', 1], ['B', 2]], { fade: 1 }, { levels }))), 'color');
-    expect(off.status).toBe('fading');
-    const supported = obj(computePlan(l, lastTerm(plan([['A', 1], ['B', 2]], { fade: 1, support: true }, { levels }))), 'color');
-    expect(alone.status).toBe('fading');      // 4, 3, 2
-    expect(alone.heldByAct[2].d).toBe(2);
-    expect(off.heldByAct[2].d).toBe(2);
-    expect(supported.heldByAct[2].d).toBe(2.5); // 4, 3.5, 2.5: support halves the loss...
-    expect(supported.status).toBe('fading');  // ...but 2.5 truncates to 2, below the 3 required (owner, 2026-11-16)
   });
 
   it('checks written objectives through their linked competencies', () => {

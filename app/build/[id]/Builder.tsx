@@ -293,21 +293,14 @@ export function Builder(props: {
           Fill gaps
         </label>
 
-        <label className="cb-select" title="How much a depth nobody revisits is assumed to lose per act, spread evenly over the act's three terms (each counted as a semester), from the term the course sits in. One level is the department's working assumption, not a measurement, and one rate is used for Know, Understand and Do although skills of different kinds fade at different rates.">
-          Fade
+        <label className="cb-select" title="How much a skill nobody revisits is assumed to lose per act, spread evenly over the act's three terms (each counted as a semester), from the term the course sits in. It affects skill threads only, not competency levels or targets. One level is the department's working assumption, not a measurement.">
+          Fade (threads): levels a skill loses per act when nothing reinforces it
           <select value={String(plan.fade)} onChange={e => update(p => ({ ...p, fade: Number(e.target.value) }))}>
             <option value="0">not counted</option>
             <option value="0.5">half a level per act</option>
             <option value="1">one level per act</option>
           </select>
         </label>
-
-        {plan.fade > 0 && (
-          <label className="cb-check" title="When on, a competency fades more slowly in an act where a closely related competency is worked at integration depth. Off by default: the research on transfer argues against assuming it, and 'related' here is only nearness of description.">
-            <input type="checkbox" checked={plan.support} onChange={e => update(p => ({ ...p, support: e.target.checked }))} />
-            Related competencies slow fade
-          </label>
-        )}
 
         {plan.branches.length > 0 && (
           <label className="cb-select" title="Which students the trunks are drawn for">

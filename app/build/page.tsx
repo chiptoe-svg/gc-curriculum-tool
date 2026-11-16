@@ -34,7 +34,7 @@ export default async function BuildIndex({ searchParams }: { searchParams: Promi
         <p>
           Stack courses across the three acts and watch how they build toward a career path. Set the Know, Understand and Do
           level each competency should reach by the end of Act 1, 2 and 3, then see which targets the stack reaches, which it
-          misses, and which it reaches once and lets fade. A plan never changes a real course.
+          and misses. A plan never changes a real course.
         </p>
       </header>
 

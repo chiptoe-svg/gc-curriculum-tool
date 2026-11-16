@@ -173,7 +173,10 @@ describe('requiredByCourse', () => {
     const terms = { 'GC 1': [1, 0], 'GC 3': [2, 0], 'GC 2': [2, 1] } as Record<string, [1 | 2, 0 | 1]>;
     // GC 1 alone: D3 at term 1 held to term 5 = 1, short of D2.
     expect(run(l, terms, { fade: 1 }).results[0]!.status).toBe('partly');
-    expect(run(l, terms, { fade: 1, courseEdits: { 'GC 3': edits } }, { [dk]: { pFully: 0.9, pPartly: null } }).results[0]!.status).toBe('met_draft');
+    const r = run(l, terms, { fade: 1, courseEdits: { 'GC 3': edits } }, { [dk]: { pFully: 0.9, pPartly: null } }).results[0]!;
+    expect(r.status).toBe('met_draft');
+    expect(r.supplier!.draft).toBe(false); // the captured supplier is not italicized
+    expect(r.restoredByDraft).toBe(true);
   });
 
   it('a short dimension does not hide a faded one', () => {

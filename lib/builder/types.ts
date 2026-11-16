@@ -242,11 +242,15 @@ export interface PlanState {
   lens: Lens;
   /** When a course has no reading under the chosen lens, use its other reading. */
   fill: boolean;
-  /** Levels an unreinforced depth is assumed to lose per act (0 = fade not counted). An assumption, not a measurement. */
+  /**
+   * Levels a skill thread is assumed to lose per act when nothing reinforces it (0 = fade not counted). An assumption,
+   * not a measurement. Applies only to skill threads (lib/builder/threads.ts), never to competency levels, act
+   * checkpoints or targets (owner, 2026-11-16).
+   */
   fade: number;
   /**
-   * Whether a closely related competency worked at integration depth slows this one's fade.
-   * Off unless switched on: the transfer literature argues against assuming it (curriculum-map deep dive).
+   * Kept in the stored plan but unused: it once let a related competency slow a competency's fade, and competencies
+   * no longer fade (owner, 2026-11-16). Nothing reads it; the UI no longer offers it.
    */
   support: boolean;
   /**

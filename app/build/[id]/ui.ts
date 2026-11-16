@@ -11,11 +11,10 @@ export const TONE_VAR: Record<Tone, string> = {
 };
 
 export const toneOfCheckpoint = (s: CheckpointStatus): Tone =>
-  s === 'met' ? 'reached' : s === 'fading' ? 'fading' : s === 'short' ? 'short' : s === 'untouched' ? 'untouched' : 'plain';
+  s === 'met' ? 'reached' : s === 'short' ? 'short' : s === 'untouched' ? 'untouched' : 'plain';
 
 export const STATUS_WORD: Record<ObjectiveStatus, string> = {
   met: 'Reached at every checkpoint',
-  fading: 'Reached, then fades below the target',
   late: 'Reached by the end, late at an earlier checkpoint',
   short: 'Falls short of the final target',
   untouched: 'No course in the plan works this',
@@ -23,7 +22,7 @@ export const STATUS_WORD: Record<ObjectiveStatus, string> = {
 };
 
 export const CHECKPOINT_WORD: Record<CheckpointStatus, string> = {
-  met: 'reached', fading: 'reached earlier, fading', short: 'short', untouched: 'not started', none: 'no target',
+  met: 'reached', short: 'short', untouched: 'not started', none: 'no target',
 };
 
 const DIM_NAME = { k: 'Know', u: 'Understand', d: 'Do' } as const;
@@ -34,7 +33,6 @@ export const dimsOf = (c: LibraryCompetency): Array<'k' | 'u' | 'd'> => (c.found
 export function dimNote(o: ObjectiveResult, actIndex: number, dim: 'k' | 'u' | 'd'): { text: string; tone: Tone; title: string } {
   const reached = o.byAct[actIndex]![dim];
   const need = o.required[actIndex]?.[dim] ?? null;
-  const held = o.heldByAct[actIndex]![dim];
   const letter = dim.toUpperCase();
   const name = DIM_NAME[dim];
   if (need == null || need <= 0) {
@@ -42,9 +40,6 @@ export function dimNote(o: ObjectiveResult, actIndex: number, dim: 'k' | 'u' | '
   }
   if (reached == null) return { text: `${letter}·/${need}`, tone: 'untouched', title: `${name}: nothing yet, target ${need}` };
   if (reached < need) return { text: `${letter}${reached}/${need}`, tone: 'short', title: `${name} ${reached}, target ${need}` };
-  if (held != null && Math.floor(held) < need) { // truncated, as in checkpoint()
-    return { text: `${letter}${reached}▾`, tone: 'fading', title: `${name} reached ${reached} earlier; with nothing reinforcing it, it is estimated to have slipped below the target of ${need} by this point` };
-  }
   return { text: `${letter}${reached}`, tone: 'reached', title: `${name} ${reached}, target ${need}` };
 }
 
