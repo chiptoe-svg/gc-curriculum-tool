@@ -24,6 +24,7 @@ import { loadCompetencyRelations } from './relations';
 import { courseWhatIfs } from '@/lib/db/schema';
 import { resolveWhatIfDepths } from '@/lib/what-if/knock-on';
 import { isNotNull } from 'drizzle-orm';
+import { pickCandidates } from './candidates';
 import { readVectors } from '@/lib/db/bundle-queries';
 import { readJudgments, latestDecisions } from '@/lib/db/match-queries';
 import { MODEL_IN_USE, PROMPT_VERSION } from '@/lib/ai/match-judge';
@@ -31,12 +32,6 @@ import { DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
 import type { Candidate, CompetencyDepth, Library, MatchDecision, RequiredSkill, LibraryCourse, LibraryVersion, LibraryWhatIf, Skill } from './types';
 
 const TOP_CANDIDATES = 8;
-
-function cosine(a: number[], b: number[]): number {
-  let dot = 0, na = 0, nb = 0;
-  for (let i = 0; i < a.length; i++) { dot += a[i]! * b[i]!; na += a[i]! * a[i]!; nb += b[i]! * b[i]!; }
-  return dot / (Math.sqrt(na) * Math.sqrt(nb) || 1);
-}
 
 const norm = (s: string) => s.trim().toUpperCase().replace(/\s+/g, ' ');
 
@@ -208,21 +203,12 @@ export async function loadLibrary(): Promise<Library> {
     const pairs: Array<{ requiredHash: string; suppliedHash: string }> = [];
     const raw: Candidate[] = [];
     for (const r of required) {
-      const rv = vecs.get(r.ref);
-      if (!rv || candidates[r.ref]) continue;
-      const seen = new Set<string>();
-      const top: Candidate[] = [];
-      const ranked = developed.filter(d => d.course !== r.course && vecs.has(d.ref))
-        .map(d => ({ d, similarity: cosine(rv, vecs.get(d.ref)!) })).sort((a, b) => b.similarity - a.similarity);
-      for (const { d, similarity } of ranked) {
-        if (seen.has(d.ref)) continue;
-        seen.add(d.ref);
-        if (seen.size > TOP_CANDIDATES) break;
-        top.push({ requiredRef: r.ref, suppliedRef: d.ref, suppliedCourse: d.course, suppliedStatement: d.statement, similarity, pFully: null, pPartly: null });
-        pairs.push({ requiredHash: r.ref, suppliedHash: d.ref });
-      }
-      candidates[r.ref] = top;
+      const key = `${r.course}|${r.ref}`;
+      if (candidates[key]) continue;
+      const top = pickCandidates(r, developed, vecs, TOP_CANDIDATES);
+      candidates[key] = top;
       raw.push(...top);
+      for (const c of top) pairs.push({ requiredHash: c.requiredRef, suppliedHash: c.suppliedRef });
     }
     const judged = await readJudgments(pairs, MODEL_IN_USE, PROMPT_VERSION);
     for (const c of raw) {

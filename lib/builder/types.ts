@@ -141,7 +141,7 @@ export interface Library {
   competencies: LibraryCompetency[];
   targets: LibraryTarget[];
   prereqs: LibraryPrereq[];
-  /** Top matches per required skill, by `requiredRef`; empty before migration 0069. */
+  /** Top matches per required skill, by `${courseCode}|${requiredRef}` (each list excludes that course's own skills); empty before migration 0069. */
   candidates: Record<string, Candidate[]>;
   /** Faculty decisions (non-draft), by `${requiredRef}|${suppliedRef}`; empty before migration 0069. */
   decisions: Record<string, MatchDecision>;

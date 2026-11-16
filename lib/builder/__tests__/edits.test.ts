@@ -5,10 +5,10 @@ import { parsePlanState } from '../plan-schema';
 import { planEdges } from '../compute';
 import { effectiveCourse, changeCount } from '../edits';
 import { proposeBloom } from '../bloom';
+import { pickCandidates } from '../candidates';
 import { EMPTY_PLAN, type CourseEdits, type Library, type LibraryCourse, type LibraryVersion } from '../types';
 
 const hash = (s: string) => textHash(normalizeStatement(s));
-const none = { k: null, u: null, d: null };
 const base = { by: 'Dr X', at: '2026-11-16T00:00:00.000Z' };
 const version: LibraryVersion = {
   snapshotId: 's', instructorName: null, createdAt: '2026-01-01T00:00:00.000Z', depths: [], outcomes: [], disagreements: [], projects: [],
@@ -50,12 +50,23 @@ describe('map course edits', () => {
     const edges = planEdges(lib, { ...EMPTY_PLAN, links: [{ from: 'A', to: 'B', kind: 'coreq' }, { from: 'C', to: 'D' }] });
     expect(edges.map(x => [x.from, x.kind, x.source])).toEqual([['A', 'concurrent_ok', 'plan'], ['C', 'prereq', 'plan']]);
     expect(parsePlanState({ ...EMPTY_PLAN, links: [{ from: 'A', to: 'B', kind: 'coreq' }] })).not.toBeNull();
-    expect(none).toBeDefined();
   });
 
   it('proposes a Bloom process from the leading verb, and only then', () => {
     expect(proposeBloom('Design a package')).toBe('Create');
     expect(proposeBloom('Students will be able to troubleshoot a press')).toBe('Analyze');
     expect(proposeBloom('Students will be great')).toBeNull();
+  });
+
+  it('two courses with the same required statement each get candidates without their own skills', () => {
+    const vecs = new Map([['r', [1, 0]], ['a', [1, 0.1]], ['b', [1, 0.2]], ['c', [0, 1]]]);
+    const developed = [
+      { course: 'GC 1', statement: 'A', ref: 'a' }, { course: 'GC 2', statement: 'B', ref: 'b' }, { course: 'GC 3', statement: 'C', ref: 'c' },
+    ];
+    const one = pickCandidates({ course: 'GC 1', statement: 'R', ref: 'r' }, developed, vecs, 8);
+    const two = pickCandidates({ course: 'GC 2', statement: 'R', ref: 'r' }, developed, vecs, 8);
+    expect(one.map(c => c.suppliedCourse)).toEqual(['GC 2', 'GC 3']);
+    expect(two.map(c => c.suppliedCourse)).toEqual(['GC 1', 'GC 3']);
+    expect(pickCandidates({ course: 'GC 1', statement: 'R', ref: 'r' }, developed, vecs, 1)).toHaveLength(1);
   });
 });
