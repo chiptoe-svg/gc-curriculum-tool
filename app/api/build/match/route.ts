@@ -10,7 +10,7 @@ import { NAME_MAX } from '@/lib/builder/plan-schema';
 import { embedMissing, readVectors } from '@/lib/db/bundle-queries';
 import { insertDecision, readJudgments, writeJudgments } from '@/lib/db/match-queries';
 import { embedBatch, cosineSimilarity, DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
-import { judgePairs, MODELS, MODEL_IN_USE, PROMPT_VERSION, type PairText } from '@/lib/ai/match-judge';
+import { judgePairs, MODEL_IN_USE, PROMPT_VERSION, type PairText } from '@/lib/ai/match-judge';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TEXT_MAX = 600;
@@ -56,9 +56,10 @@ async function captured(side: Side, kind: 'required' | 'supplied'): Promise<{ co
  *   decide: { planId, required: PairSide, supplied: PairSide, label: 'fully'|'partly'|'not', reason?, authorName? }
  *           PairSide = { course, title, snapshotId: string | null, ref, text }. A captured side's text is read from the
  *           capture by ref (never the body); a side without a snapshot is a draft and takes the body text.
- *   judge:  { anchor: { text, course, title, side: 'required'|'supplied' }, others: [{ ref, text, course, title }] }
+ *   judge:  { anchor: { text, course, title, side: 'required'|'supplied' }, others: [{ ref, text, course, title }], planId? }
  *           -> { results: [{ ref, similarity, pFully, pPartly }] } for the top 5 others by embedding similarity,
- *              judged by both models (cached); the probabilities returned are the model in use.
+ *              judged by the model in use (cached; the batch script fills the second model). Course titles in the
+ *              prompt come from the courses table, else from the plan's proposed course, else the body (capped).
  * → 200 | 400 | 404 | 502 (the campus model is unreachable)
  */
 export async function POST(req: Request): Promise<Response> {
@@ -123,10 +124,29 @@ async function judge(body: Record<string, unknown>): Promise<Response> {
     others.push({ ref: o.ref, key: hashOf(text(o.text)), text: text(o.text), course: o.course, title: typeof o.title === 'string' ? o.title : '' });
   }
   const anchorText = text(a.text), anchorRef = hashOf(anchorText);
+  if (body.planId !== undefined && (typeof body.planId !== 'string' || !UUID.test(body.planId))) return bad('That plan id is not valid.');
 
   const sink = { message: null as string | null };
-  const unreachable = (why: string) => NextResponse.json({ error: `The campus model is not reachable right now (${why}). Try again in a few minutes.` }, { status: 502 });
+  // The upstream detail is logged here only; the browser gets a fixed message.
+  const unreachable = (why: string) => {
+    console.warn('[build/match] campus model failed:', why);
+    return NextResponse.json({ error: 'The campus model did not answer; try again.' }, { status: 502 });
+  };
   try {
+    // Titles for the prompt: a tracked course's from the courses table, a proposed course's from this plan, else the body's.
+    const codes = [...new Set([text(a.course), ...others.map((o) => o.course)])].filter(Boolean);
+    const known = new Map(codes.length ? (await db.select({ code: courses.code, title: courses.title }).from(courses).where(inArray(courses.code, codes))).map((c) => [c.code, c.title]) : []);
+    const proposed = new Map<string, string>();
+    if (typeof body.planId === 'string') {
+      const [plan] = await db.select({ state: curriculumPlans.state }).from(curriculumPlans).where(eq(curriculumPlans.id, body.planId));
+      for (const p of (plan?.state as { proposed?: Array<{ id?: unknown; code?: unknown; title?: unknown }> } | null)?.proposed ?? []) {
+        if (typeof p.title !== 'string') continue;
+        if (typeof p.id === 'string') proposed.set(p.id, p.title);
+        if (typeof p.code === 'string' && !proposed.has(p.code)) proposed.set(p.code, p.title);
+      }
+    }
+    const titleOf = (course: string, given: string) => (known.get(course) ?? proposed.get(course) ?? given).slice(0, TITLE_MAX);
+
     const items = [...new Map([{ key: anchorRef, text: anchorText }, ...others].map((x) => [x.key, { kind: 'course_skill' as const, ref: x.key, text: x.text }])).values()];
     await embedMissing(db, items, DEFAULT_EMBEDDING_MODEL, (t) => viaCampus(() => embedBatch(t)));
     const vecs = await readVectors(db, 'course_skill', items, DEFAULT_EMBEDDING_MODEL);
@@ -143,27 +163,25 @@ async function judge(body: Record<string, unknown>): Promise<Response> {
       // Keyed by the hash of the text, never the client's ref, so the cache cannot be poisoned.
       requiredHash: asRequired ? anchorRef : o.key, suppliedHash: asRequired ? o.key : anchorRef,
       text: {
-        requiredText: asRequired ? anchorText : o.text, requiredCourse: asRequired ? text(a.course) : o.course, requiredTitle: asRequired ? text(a.title) : o.title,
-        suppliedText: asRequired ? o.text : anchorText, suppliedCourse: asRequired ? o.course : text(a.course), suppliedTitle: asRequired ? o.title : text(a.title),
+        requiredText: asRequired ? anchorText : o.text, requiredCourse: asRequired ? text(a.course) : o.course,
+        requiredTitle: asRequired ? titleOf(text(a.course), text(a.title)) : titleOf(o.course, o.title),
+        suppliedText: asRequired ? o.text : anchorText, suppliedCourse: asRequired ? o.course : text(a.course),
+        suppliedTitle: asRequired ? titleOf(o.course, o.title) : titleOf(text(a.course), text(a.title)),
       } as PairText,
     }));
     const key = (p: { requiredHash: string; suppliedHash: string }) => `${p.requiredHash}|${p.suppliedHash}`;
 
-    let inUse = new Map<string, { pFully: number; pPartly: number }>();
-    for (const model of MODELS) { // one model at a time: the gateway reloads on a model switch
-      const cached = await readJudgments(pairs, model, PROMPT_VERSION);
-      const missing = pairs.filter((p) => !cached.has(key(p)));
-      if (missing.length) {
-        const out = await viaCampus(() => judgePairs(missing.map((p) => p.text), { model, errorSink: sink }));
-        const fresh = missing.map((p, i) => ({ p, o: out[i]! })).filter((x) => x.o.pFully !== null && x.o.pPartly !== null);
-        await writeJudgments(fresh.map(({ p, o }) => ({ requiredHash: p.requiredHash, suppliedHash: p.suppliedHash, model, promptVersion: PROMPT_VERSION, pFully: o.pFully, pPartly: o.pPartly })));
-        for (const { p, o } of fresh) cached.set(key(p), { pFully: o.pFully!, pPartly: o.pPartly! });
-      }
-      if (model === MODEL_IN_USE) {
-        inUse = cached;
-        if (pairs.some((p) => !cached.has(key(p)))) return unreachable(sink.message ?? 'no answer');
-      }
+    // Only the model in use: asking a second model here would switch models on the gateway, which reloads on a switch.
+    const model = MODEL_IN_USE;
+    const inUse = await readJudgments(pairs, model, PROMPT_VERSION);
+    const missing = pairs.filter((p) => !inUse.has(key(p)));
+    if (missing.length) {
+      const out = await viaCampus(() => judgePairs(missing.map((p) => p.text), { model, errorSink: sink }));
+      const fresh = missing.map((p, i) => ({ p, o: out[i]! })).filter((x) => x.o.pFully !== null && x.o.pPartly !== null);
+      await writeJudgments(fresh.map(({ p, o }) => ({ requiredHash: p.requiredHash, suppliedHash: p.suppliedHash, model, promptVersion: PROMPT_VERSION, pFully: o.pFully, pPartly: o.pPartly })));
+      for (const { p, o } of fresh) inUse.set(key(p), { pFully: o.pFully!, pPartly: o.pPartly! });
     }
+    if (pairs.some((p) => !inUse.has(key(p)))) return unreachable(sink.message ?? 'no answer');
     return NextResponse.json({
       results: top.map(({ o, sim }, i) => ({ ref: o.ref, similarity: sim, pFully: inUse.get(key(pairs[i]!))!.pFully, pPartly: inUse.get(key(pairs[i]!))!.pPartly })),
     });

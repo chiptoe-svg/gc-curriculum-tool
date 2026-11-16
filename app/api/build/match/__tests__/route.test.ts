@@ -135,7 +135,7 @@ describe('POST /api/build/match judge', () => {
     others.forEach((o, i) => state.vectors.set(h(o.text), [1 - i * 0.1, i * 0.1])); // o0 most similar
   };
 
-  it('judges the top 5 by similarity and asks only uncached pairs', async () => {
+  it('judges the top 5 by similarity with the model in use only, and asks only uncached pairs', async () => {
     setVectors();
     // o0's pair is already cached for both models.
     for (const m of ['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017']) state.cache.set(`${m}|${h(anchor.text)}|${h(others[0]!.text)}`, { pFully: 0.5, pPartly: 0.6 });
@@ -145,7 +145,7 @@ describe('POST /api/build/match judge', () => {
     expect(results.map((r: { ref: string }) => r.ref)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
     expect(results[0]).toMatchObject({ pFully: 0.5, pPartly: 0.6 });
     expect(results[1]).toMatchObject({ pFully: 0.8, pPartly: 0.9 });
-    expect(state.asked).toEqual([{ model: 'qwen3.8-27b-fp8', n: 4 }, { model: 'deepseek-v4.1-flash-1017', n: 4 }]);
+    expect(state.asked).toEqual([{ model: 'qwen3.8-27b-fp8', n: 4 }]);
     // A second call asks nothing.
     state.asked = [];
     await post({ action: 'judge', anchor, others });
@@ -183,12 +183,38 @@ describe('POST /api/build/match judge', () => {
     expect((await post({ action: 'judge', anchor, others: many })).status).toBe(400);
   });
 
-  it('502 with a plain message when the campus model fails', async () => {
+  it('502 with a fixed message when the campus model fails; the upstream detail is only logged', async () => {
     setVectors();
-    state.judgeImpl = async (pairs, opts) => { if (opts.errorSink) opts.errorSink.message = 'HTTP 503'; return pairs.map(() => ({ pFully: null, pPartly: null })); };
+    state.judgeImpl = async (pairs, opts) => { if (opts.errorSink) opts.errorSink.message = 'HTTP 503 from http://campus.example/v1'; return pairs.map(() => ({ pFully: null, pPartly: null })); };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const res = await post({ action: 'judge', anchor, others });
     expect(res.status).toBe(502);
-    expect((await res.json()).error).toMatch(/not reachable.*HTTP 503/);
+    expect((await res.json()).error).toBe('The campus model did not answer; try again.');
+    expect(warn.mock.calls.flat().join(' ')).toMatch(/HTTP 503/);
+    warn.mockRestore();
+  });
+
+  it('takes prompt titles from the courses table and the plan, not the body', async () => {
+    setVectors();
+    const mixed = [
+      { ref: 'o0', text: 'other skill 0', course: 'GC 1020', title: 'FORGED' },
+      { ref: 'o1', text: 'other skill 1', course: 'new:abc', title: 'FORGED too' },
+      { ref: 'o2', text: 'other skill 2', course: 'GC 9999', title: 'x'.repeat(200) },
+    ];
+    state.selects = [[{ code: 'GC 3460', title: 'Print Real' }, { code: 'GC 1020', title: 'Intro Real' }], [{ state: { proposed: [{ id: 'new:abc', code: 'GC 4990', title: 'Proposed Lab' }] } }]];
+    const seen: Array<{ requiredTitle: string; suppliedCourse: string; suppliedTitle: string }> = [];
+    state.judgeImpl = async (pairs) => { seen.push(...(pairs as typeof seen)); return pairs.map(() => ({ pFully: 0.1, pPartly: 0.2 })); };
+    const res = await post({ action: 'judge', planId: PLAN, anchor: { ...anchor, title: 'FORGED anchor' }, others: mixed });
+    expect(res.status).toBe(200);
+    const by = new Map(seen.map((p) => [p.suppliedCourse, p]));
+    expect(seen.every((p) => p.requiredTitle === 'Print Real')).toBe(true);
+    expect(by.get('GC 1020')?.suppliedTitle).toBe('Intro Real');
+    expect(by.get('new:abc')?.suppliedTitle).toBe('Proposed Lab');
+    expect(by.get('GC 9999')?.suppliedTitle).toBe('x'.repeat(200));
+  });
+
+  it('400 for a malformed plan id', async () => {
+    expect((await post({ action: 'judge', planId: 'nope', anchor, others })).status).toBe(400);
   });
 
   it('500 with a generic message (not the campus message) when something else fails', async () => {
