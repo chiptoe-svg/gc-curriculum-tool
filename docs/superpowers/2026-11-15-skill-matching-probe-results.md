@@ -22,7 +22,7 @@ Benchmarks: WorkRB graded job-ad/ESCO pairs (grades 0–4, made by an LLM cascad
 
 ## Consequences for the AI judge (proposals; changes to the plan in STATE.md)
 
-- **Judge by calibrated asking on the free Clemson RCD models, with the course's context in the prompt.** This replaces nothing already built; it turns embedding suggestions into proposed `ai` links.
+- **Judge by calibrated asking on the free Clemson RCD models, with the course's context in the prompt (provisional).** This replaces nothing already built; it turns embedding suggestions into proposed `ai` links. The choice stays provisional until the queued asking run on UTC (plain and with course context) and Turaev reports, since the probe's strongest result (0.98 match vs sibling with context) has no asking counterpart yet.
 - **Drop the broader/narrower questions** (finding 5). A link's type (core or part) comes from a graded "is this activity central to the competency, or only a part of it" question with calibrated cutoffs, not from a direction question.
 - **Calibrate on faculty-checked department pairs.** Uncalibrated hosted models sit on the wrong side of 0.5. The confirmed and rejected links faculty make in the course panel are the natural calibration set, and the only real test of the umbrella case. A few dozen decisions spread over several courses are needed before the judge's cutoffs are set.
 - **Expect umbrella competencies to be over-credited** (finding 4). Part-typed AI links should show for faculty review instead of setting a level on their own.
