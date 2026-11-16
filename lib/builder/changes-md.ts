@@ -1,6 +1,8 @@
 // Markdown export of a map's changes: what faculty download to review or carry into capture. Pure.
 // Every map edit is a draft; the renderer marks drafts with a trailing `*` and escapes user text so a skill
 // statement cannot break the layout (a user's own asterisk is escaped, so only the renderer's `*` is bare).
+import { textHash } from '@/lib/catalog/bundles';
+import { normalizeStatement } from '@/lib/catalog/project-trail';
 import { effectiveCourse } from './edits';
 import { placeCourses, type PlacedCourse, versionOf } from './compute';
 import type { requiredByCourse, ReqResult, ReqStatus } from './threads';
@@ -11,6 +13,7 @@ export function esc(text: string): string {
   return text.replace(/\s*\n\s*/g, ' ').replace(/[\\*_`[\]<>]/g, m => `\\${m}`);
 }
 
+const hash = (t: string) => textHash(normalizeStatement(t));
 const day = (iso: string) => iso.slice(0, 10);
 const DRAFT = '*';
 const levels = (d: Depth | null) => d ? ` (K${d.k ?? '–'} U${d.u ?? '–'} D${d.d ?? '–'})` : '';
@@ -108,7 +111,8 @@ export function renderChangesMarkdown(input: ChangesInput): string {
       const what = e.action === 'add' ? after : e.action === 'remove' ? before : `${before} → ${after}`;
       let line = `- ${NAMED[kind]}: ${what}${stamp(e)}`;
       if (side === 'required' && e.action !== 'remove') {
-        const r = required[ref]?.results.find(q => q.required.statement === e.statement);
+        const afterRef = e.action === 'edit' && !e.statement ? e.target : e.statement ? hash(e.statement) : null;
+        const r = required[ref]?.results.find(q => q.required.ref === afterRef);
         if (r) line += ` — ${statusLine(r)}`;
       }
       return line;
@@ -166,4 +170,30 @@ export function renderChangesMarkdown(input: ChangesInput): string {
     lines.push(...(toConfirm.length ? toConfirm.map(t => `- ${t}`) : ['- Nothing: no drafts on this map.']), '');
   }
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
+}
+
+/**
+ * Every (required, developed) pair on the map where either side is a draft: the pairs whose judgments the
+ * judge stored when the builder fetched them (keyed by text hash, like threads.ts). Eligibility is not
+ * re-derived here; reading a few extra cached pairs is harmless.
+ */
+export function draftPairs(lib: Library, plan: PlanState): Array<{ requiredHash: string; suppliedHash: string }> {
+  const byCode = new Map<string, LibraryCourse>(lib.courses.map(c => [c.code, c]));
+  const proposed = new Map<string, ProposedCourse>(plan.proposed.map(p => [p.id, p]));
+  const effs = placeCourses(lib, plan).filter(c => !c.requirement).flatMap(c => {
+    const lc = byCode.get(c.ref) ?? proposed.get(c.ref);
+    if (!lc) return [];
+    return [{ ref: c.ref, e: effectiveCourse(lc, byCode.has(c.ref) ? versionOf(lc as LibraryCourse, plan) : null, plan.courseEdits?.[c.ref]) }];
+  });
+  const seen = new Set<string>();
+  const out: Array<{ requiredHash: string; suppliedHash: string }> = [];
+  for (const r of effs) for (const req of r.e.required) for (const s of effs) {
+    if (s.ref === r.ref) continue;
+    for (const sk of s.e.developed) {
+      if (!req.draft && !sk.draft) continue;
+      const k = `${req.ref}|${sk.skillRef}`;
+      if (!seen.has(k)) { seen.add(k); out.push({ requiredHash: req.ref, suppliedHash: sk.skillRef }); }
+    }
+  }
+  return out;
 }

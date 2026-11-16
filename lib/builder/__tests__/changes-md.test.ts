@@ -4,7 +4,7 @@ import { normalizeStatement } from '@/lib/catalog/project-trail';
 import { CUTOFFS, MODEL_IN_USE } from '@/lib/ai/match-judge';
 import { placeCourses } from '../compute';
 import { requiredByCourse } from '../threads';
-import { esc, renderChangesMarkdown } from '../changes-md';
+import { draftPairs, esc, renderChangesMarkdown } from '../changes-md';
 import { EMPTY_PLAN, type Candidate, type CourseEdits, type Library, type LibraryCourse, type MatchDecision, type PlanState } from '../types';
 
 const hash = (s: string) => textHash(normalizeStatement(s));
@@ -74,5 +74,20 @@ describe('renderChangesMarkdown', () => {
     const plan = place({ courseEdits: { 'GC 1': { ...none, developed: [{ ...edit, action: 'add', target: null, statement: '# Heading *bold* [x](y)', levels: { k: 1, u: null, d: 2 } }] } } });
     const md = render(plan);
     expect(md).toContain('- Added: # Heading \\*bold\\* \\[x\\](y) (K1 U– D2)* (Dr Ruiz, 2026-11-16)');
+  });
+
+  it('a levels-only required edit still shows its status', () => {
+    const plan = place({ courseEdits: { 'GC 2': { ...none, required: [{ ...edit, action: 'edit', target: hash(NEED), statement: null, levels: { k: null, u: null, d: 2 } }] } } });
+    expect(render(plan)).toMatch(/Changed: .*— Met, from GC 1/);
+  });
+});
+
+describe('draftPairs', () => {
+  it('a draft required skill against a captured supplier yields the text-hash key', () => {
+    const plan = place({ courseEdits: { 'GC 2': { ...none, required: [{ ...edit, action: 'add', target: null, statement: 'Proof a job', levels: null }] } } });
+    expect(draftPairs(lib, plan)).toEqual([{ requiredHash: hash('Proof a job'), suppliedHash: hash(SUP) }]);
+  });
+  it('captured-only pairs are not listed', () => {
+    expect(draftPairs(lib, place())).toEqual([]);
   });
 });

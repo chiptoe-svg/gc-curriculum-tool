@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 import { authorizeRequest } from '@/lib/auth/route-auth';
 import { personalName } from '@/lib/auth/viewer';
 import { getPlan } from '@/lib/db/curriculum-plan-queries';
-import { latestDecisions } from '@/lib/db/match-queries';
+import { latestDecisions, readJudgments } from '@/lib/db/match-queries';
 import { loadLibrary } from '@/lib/builder/library';
 import { parsePlanState } from '@/lib/builder/plan-schema';
 import { placeCourses } from '@/lib/builder/compute';
-import { requiredByCourse } from '@/lib/builder/threads';
-import { renderChangesMarkdown } from '@/lib/builder/changes-md';
+import { requiredByCourse, type DraftJudgments } from '@/lib/builder/threads';
+import { draftPairs, renderChangesMarkdown } from '@/lib/builder/changes-md';
+import { MODEL_IN_USE, PROMPT_VERSION } from '@/lib/ai/match-judge';
 import { EMPTY_PLAN, type MatchDecision } from '@/lib/builder/types';
 
 interface Ctx { params: Promise<{ id: string }> }
@@ -35,12 +36,17 @@ export async function GET(req: Request, { params }: Ctx): Promise<Response> {
     }
   } catch { /* 0069 not applied on this database: no decisions */ }
 
-  const date = new Date().toISOString().slice(0, 10);
-  // Judgments fetched for draft skills live in the browser only, so a draft's status here rests on decisions.
-  const required = requiredByCourse(lib, state, placeCourses(lib, state), {}, planDecisions);
+  // The judgments the builder fetched for draft skills are cached by text hash, so read them back to match the map.
+  const drafts: DraftJudgments = {};
+  try {
+    for (const [k, v] of await readJudgments(draftPairs(lib, state), MODEL_IN_USE, PROMPT_VERSION)) drafts[k] = v;
+  } catch { /* 0069 not applied on this database: no cached judgments */ }
+
+  const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const required = requiredByCourse(lib, state, placeCourses(lib, state), drafts, planDecisions);
   const md = renderChangesMarkdown({
     planName: plan.name, catalogYear: state.catalogYear ?? null, exportedBy: personalName(auth.grant) ?? 'Department login',
-    date, lib, plan: state, required, decisions: [...Object.values(lib.decisions), ...Object.values(planDecisions)],
+    date, lib, plan: state, required, decisions: Object.values({ ...lib.decisions, ...planDecisions }),
   });
   const slug = plan.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'plan';
   return new Response(md, {
