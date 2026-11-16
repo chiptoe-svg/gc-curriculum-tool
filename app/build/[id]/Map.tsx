@@ -12,6 +12,7 @@ import type { ObjectiveResult, PlacedCourse, PlanResult } from '@/lib/builder/co
 import { CARD_H, CARD_W, COL_W, ROW_H, slotAt, type Pos } from '@/lib/builder/layout';
 import { CONDITIONS, type ProblemSolvingResult } from '@/lib/builder/problem-solving';
 import { ACTS, TERMS_PER_ACT, termOf, type Act, type Branch, type Library, type PlanState, type Slot } from '@/lib/builder/types';
+import type { ReqStatus, requiredByCourse } from '@/lib/builder/threads';
 import { TONE_VAR, dimNote, dimsOf, stratumName, stratumRank, toneOfCheckpoint, trunkLevel, type Tone } from './ui';
 
 const COL = 44;          // one trunk
@@ -48,6 +49,12 @@ export function CurriculumMap(props: {
   arrows: boolean;
   selection: Selection;
   onSelect: (s: Selection) => void;
+  /** Required-skill status per course ref (lib/builder/threads.ts), for the card bar. */
+  threads: ReturnType<typeof requiredByCourse>;
+  /** Map changes per course ref (lib/builder/edits.ts changeCount), for the pencil mark. */
+  changes: Record<string, number>;
+  /** Open a course at its required skills (the card bar). */
+  onOpenRequired: (ref: string) => void;
   onDropCourse: (payload: string, target: DropTarget) => void;
   /** A new height for an act, in map pixels; null = automatic. */
   onResizeAct: (act: Act, height: number | null) => void;
@@ -216,10 +223,12 @@ export function CurriculumMap(props: {
         title={`${c.code}: ${c.title}${c.reading.filled ? '. No reading under the chosen input, so its other reading is used' : ''}`}
       >
         <span className="cb-card__mark" aria-hidden />
-        <span className="cb-card__code">{c.code}{c.requirement && c.credits != null ? ` · ${c.credits} cr` : ''}</span>
+        <span className="cb-card__code">{c.code}{c.requirement && c.credits != null ? ` · ${c.credits} cr` : ''}
+          {(props.changes[c.ref] ?? 0) > 0 && <span className="cb-card__edits" title={`${props.changes[c.ref]} change${props.changes[c.ref] === 1 ? '' : 's'} on this map`}> ✎{props.changes[c.ref]}</span>}</span>
         {c.reading.filled && <span className="cb-card__tag">other reading</span>}
         <span className="cb-card__title">{c.title}</span>
         {checkRefs.has(c.ref) && <span className="cb-card__warn" title="Order or dependency problem: open the course for details">!</span>}
+        {props.threads[c.ref] && <ReqBar counts={props.threads[c.ref]!.counts} onOpen={() => props.onOpenRequired(c.ref)} />}
       </button>
     );
   };
@@ -541,5 +550,25 @@ export function CurriculumMap(props: {
       })()}
     </div>
     </div>
+  );
+}
+
+const BAR_ORDER: ReqStatus[] = ['met', 'met_draft', 'partly', 'not'];
+
+/** A course's required skills as a segmented bar: Met, Met*, Partly met, Not met, widths in proportion. */
+function ReqBar(props: { counts: Record<ReqStatus, number>; onOpen: () => void }) {
+  const total = BAR_ORDER.reduce((n, k) => n + props.counts[k], 0);
+  if (!total) return null;
+  const title = `${props.counts.met} of ${total} required skill${total === 1 ? '' : 's'} met`
+    + (props.counts.met_draft ? `, ${props.counts.met_draft} met with a map edit` : '')
+    + (props.counts.partly ? `, ${props.counts.partly} partly met` : '');
+  return (
+    <span className="cb-reqbar" role="button" tabIndex={0} title={title} aria-label={`${title}. Show the required skills`}
+      onClick={e => { e.stopPropagation(); props.onOpen(); }}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); props.onOpen(); } }}>
+      {BAR_ORDER.filter(k => props.counts[k] > 0).map(k => (
+        <span key={k} className={`cb-reqbar__seg cb-req--${k}`} style={{ flexGrow: props.counts[k] }} />
+      ))}
+    </span>
   );
 }

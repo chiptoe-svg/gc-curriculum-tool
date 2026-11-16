@@ -15,6 +15,11 @@
   --cb-untouched: #98a2ab;
   --cb-plain: #55616d;
   --cb-accent: #0b7fab;
+  /* Required-skill status (spec 2026-11-16 §3): Met, Met* (counts a map edit), Partly met, Not met. */
+  --cb-req-met: #2e8b57;
+  --cb-req-met-draft: #e3b505;
+  --cb-req-partly: #ee7f1b;
+  --cb-req-not: #c8322b;
   --cb-select: rgba(11, 127, 171, 0.1);
   --cb-act-1: #eef3ef;
   --cb-act-2: #e9f0f3;
@@ -194,11 +199,11 @@
 .cb-ghost { position: absolute; width: 9.6rem; height: 3rem; border: 2px dashed var(--cb-accent); border-radius: 3px; pointer-events: none; }
 .cb-lane__empty { font-size: 0.9375rem; color: var(--cb-untouched); padding: 0.4rem 0.2rem; }
 /* Every card is the same size (CARD_W x CARD_H, set inline from lib/builder/layout.ts); text that does not fit is cut with an ellipsis. */
-.cb-card { position: relative; width: 9.6rem; display: grid; grid-template-columns: auto max-content minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; gap: 0 0.35rem; align-items: center; text-align: left; background: var(--cb-paper); border: 1px solid var(--cb-ink); border-radius: 3px; padding: 0.25rem 0.45rem; cursor: grab; overflow: hidden; }
+.cb-card { position: relative; width: 9.6rem; display: grid; grid-template-columns: auto max-content minmax(0, 1fr); grid-template-rows: auto auto auto; align-content: center; gap: 0 0.35rem; align-items: center; text-align: left; background: var(--cb-paper); border: 1px solid var(--cb-ink); border-radius: 3px; padding: 0.25rem 0.45rem; cursor: grab; overflow: hidden; }
 .cb-card:hover { box-shadow: 2px 2px 0 var(--cb-ink); }
 .cb-card.is-selected { box-shadow: 0 0 0 2px var(--cb-accent); }
 .cb-card.is-dim { opacity: 0.35; }
-.cb-card__mark { grid-column: 1; grid-row: 1 / 3; width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 1.5px solid var(--cb-ink); }
+.cb-card__mark { grid-column: 1; grid-row: 1 / 4; width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 1.5px solid var(--cb-ink); }
 .cb-card--discovered .cb-card__mark { background: var(--cb-ink); }
 .cb-card--stated .cb-card__mark { background: radial-gradient(var(--cb-ink) 38%, transparent 42%) 0 0 / 4px 4px; }
 .cb-card--proposed { border-style: dashed; }
@@ -210,9 +215,17 @@
 .cb-card--none { border-color: var(--cb-untouched); color: var(--cb-ink-soft); }
 .cb-card--none .cb-card__mark { border-color: var(--cb-untouched); border-style: dashed; }
 /* The course code is never cut; the 'other reading' note gives way to it. */
-.cb-card__code { grid-column: 2; grid-row: 1; font-size: 0.9375rem; font-weight: 500; white-space: nowrap; }
-.cb-card__title { grid-column: 2 / 4; grid-row: 2; font-size: 0.875rem; color: var(--cb-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cb-card__code { grid-column: 2; grid-row: 1; line-height: 1.25; font-size: 0.9375rem; font-weight: 500; white-space: nowrap; }
+.cb-card__title { grid-column: 2 / 4; grid-row: 3; line-height: 1.25; font-size: 0.875rem; color: var(--cb-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cb-card__tag { grid-column: 3; grid-row: 1; font-size: 0.75rem; color: var(--cb-amber); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: right; }
+.cb-card__edits { font-family: var(--font-body), system-ui, sans-serif; font-size: 0.75rem; font-weight: 400; color: var(--cb-ink-soft); }
+.cb-reqbar { grid-column: 2 / 4; grid-row: 2; display: flex; height: 6px; margin: 2px 0; border-radius: 2px; overflow: hidden; cursor: pointer; background: var(--cb-rule); }
+.cb-reqbar:hover { outline: 1px solid var(--cb-ink); outline-offset: 1px; }
+.cb-reqbar__seg { display: block; min-width: 3px; }
+.cb-req--met { background: var(--cb-req-met); }
+.cb-req--met_draft { background: var(--cb-req-met-draft); }
+.cb-req--partly { background: var(--cb-req-partly); }
+.cb-req--not { background: var(--cb-req-not); }
 .cb-card__warn { position: absolute; top: -0.5rem; right: -0.5rem; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--cb-short); color: #fff; font-size: 0.875rem; font-weight: 700; display: grid; place-items: center; }
 .cb-svg { position: absolute; left: 0; top: 0; }
 .cb-svg--back { z-index: 1; }
@@ -315,3 +328,25 @@ details.cb-sec summary { cursor: pointer; font-weight: 500; }
   .cb-lib { display: none; }
   .cb-new { grid-template-columns: 1fr; }
 }
+
+/* ---- required skills and map edits ---------------------------------------- */
+.cb-draft { font-style: italic; }
+.cb-draft::after { content: '*'; font-style: normal; }
+.cb-reqlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.cb-req { border-left: 4px solid var(--cb-rule); padding: 0.15rem 0 0.25rem 0.6rem; display: grid; gap: 0.2rem; font-size: 0.9375rem; }
+.cb-req.cb-req--met, .cb-req.cb-req--met_draft, .cb-req.cb-req--partly, .cb-req.cb-req--not { background: none; }
+.cb-req.cb-req--met { border-left-color: var(--cb-req-met); }
+.cb-req.cb-req--met_draft { border-left-color: var(--cb-req-met-draft); }
+.cb-req.cb-req--partly { border-left-color: var(--cb-req-partly); }
+.cb-req.cb-req--not { border-left-color: var(--cb-req-not); }
+.cb-status { display: inline-block; border-radius: 3px; padding: 0 0.4rem; font-size: 0.8125rem; font-weight: 600; color: #fff; margin-right: 0.35rem; }
+.cb-status.cb-req--met_draft, .cb-status.cb-req--partly { color: var(--cb-ink); }
+.cb-req__meta { color: var(--cb-ink-soft); font-size: 0.875rem; }
+.cb-req__actions { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.cb-req__actions select { max-width: 16rem; }
+.cb-edit { display: grid; gap: 0.35rem; padding: 0.4rem 0; }
+.cb-edit textarea { border: 1px solid var(--cb-rule); border-radius: 3px; padding: 0.3rem 0.45rem; width: 100%; font-size: 0.9375rem; }
+.cb-edit__row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; font-size: 0.875rem; color: var(--cb-ink-soft); }
+.cb-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; font-size: 0.9375rem; }
+.cb-items li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.4rem; align-items: baseline; }
+.cb-changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.875rem; }

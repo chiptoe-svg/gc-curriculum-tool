@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { computePlan, defaultAct, hoursOf, placeCourses } from '@/lib/builder/compute';
+import { computePlan, defaultAct, hoursOf, placeCourses, planEdges, versionOf, type PlacedCourse } from '@/lib/builder/compute';
+import { changeCount, effectiveCourse, type EffectiveCourse } from '@/lib/builder/edits';
+import { requiredByCourse, type DraftJudgments, type ReqResult } from '@/lib/builder/threads';
 import { genEdCheck, type GenEdCategory } from '@/lib/builder/degree';
 import { problemSolvingByAct } from '@/lib/builder/problem-solving';
 import { layoutLanes, moveCard } from '@/lib/builder/layout';
-import type { Act, Library, PlanState } from '@/lib/builder/types';
+import type { Act, Candidate, EditBase, Library, MatchDecision, PlanState } from '@/lib/builder/types';
 import type { CatalogHit } from '@/lib/builder/library';
 import { CurriculumMap, type DropTarget, type Selection } from './Map';
 import { LibraryPanel } from './LibraryPanel';
@@ -24,6 +26,23 @@ const MAX_PROPOSED = 60; // the server's limit (lib/builder/plan-schema.ts)
 const ZOOMS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5];
 export type Update = (fn: (p: PlanState) => PlanState) => void;
 
+/** Required-skill threads for the course panel: statuses, decisions, draft judging, and the decide call. */
+export interface Threads {
+  byCourse: ReturnType<typeof requiredByCourse>;
+  /** Every decision in force on this map (captured pairs and this map's draft pairs), by `${requiredRef}|${suppliedRef}`. */
+  decisions: Record<string, MatchDecision>;
+  /** Draft skills being judged or whose judging failed, by `${courseRef}|${side}|${ref}`. */
+  judging: Record<string, 'matching' | string>;
+  retryJudge: (key: string) => void;
+  decide: (courseRef: string, result: ReqResult, cand: Candidate, label: MatchDecision['label']) => Promise<string | null>;
+  /** Who and when, for a map edit. */
+  stamp: () => EditBase;
+}
+
+type JudgeJob = { key: string; courseRef: string; side: 'required' | 'supplied'; ref: string; text: string };
+const JUDGE_OTHERS_MAX = 400; // the server's limit (app/api/build/match/route.ts)
+const CAMPUS_DOWN = 'The campus model did not answer; try again.';
+
 /** This viewer's own view settings (zoom, library shown). Kept in this browser only; never part of the shared plan. */
 type View = { zoom: number; library: boolean; arrows: boolean; courseWidth: number | null };
 function readView(): View {
@@ -40,6 +59,8 @@ function writeView(v: View) {
 export function Builder(props: {
   planId: string; slug: string; library: Library; initialName: string; initialState: PlanState;
   initialVersion: number; lastEditedBy: string; knownName: string | null;
+  /** Latest decisions that name a draft skill on this plan; they apply only here. */
+  planDecisions: Record<string, MatchDecision>;
   /** The plan's catalog year and its General Education categories (lib/builder/degree-data.ts). */
   genEd: { year: string; categories: GenEdCategory[] };
 }) {
@@ -197,6 +218,142 @@ export function Builder(props: {
   const ps = useMemo(() => problemSolvingByAct(library, plan, result.courses, result.objectives), [library, plan, result]);
   const placedRefs = useMemo(() => new Set(plan.placements.map(p => p.ref)), [plan.placements]);
   const positions = useMemo(() => layoutLanes(plan.placements, new Set(plan.branches.map(b => b.id))), [plan.placements, plan.branches]);
+
+  // ---- required-skill threads ---------------------------------------------
+  // Decisions made on this page update these at once, so the bar changes without a reload.
+  const [libDecisions, setLibDecisions] = useState(library.decisions);
+  const [planDecisions, setPlanDecisions] = useState(props.planDecisions);
+  const [drafts, setDrafts] = useState<DraftJudgments>({});
+  const [judging, setJudging] = useState<Record<string, string>>({});
+  const threadLib = useMemo(() => ({ ...library, decisions: libDecisions }), [library, libDecisions]);
+  const byCourse = useMemo(() => requiredByCourse(threadLib, plan, allCourses, drafts, planDecisions), [threadLib, plan, allCourses, drafts, planDecisions]);
+  const changes = useMemo(() => Object.fromEntries(allCourses.map(c => [c.ref, changeCount(plan.courseEdits?.[c.ref], plan.links, plan.unlinked, c.ref)])), [allCourses, plan.courseEdits, plan.links, plan.unlinked]);
+  /** Each placed course as the map reads it, with the capture it comes from. */
+  const effective = useMemo(() => {
+    const out = new Map<string, { placed: PlacedCourse; eff: EffectiveCourse; snapshotId: string | null }>();
+    for (const c of allCourses) {
+      if (c.requirement) continue;
+      const lc = library.courses.find(x => x.code === c.ref);
+      const pc = plan.proposed.find(x => x.id === c.ref);
+      const version = lc ? versionOf(lc, plan) : null;
+      if (lc || pc) out.set(c.ref, { placed: c, eff: effectiveCourse((lc ?? pc)!, version, plan.courseEdits?.[c.ref]), snapshotId: version?.snapshotId ?? null });
+    }
+    return out;
+  }, [library, plan, allCourses]);
+  const effRef = useRef(effective);
+  effRef.current = effective;
+  const edgesRef = useRef(planEdges(library, plan));
+  edgesRef.current = planEdges(library, plan);
+
+  /** Whether `sup` comes before `req` on the map: an earlier term, or the same term as a corequisite. */
+  const supplies = useCallback((sup: PlacedCourse, req: PlacedCourse) => {
+    if (sup.ref === req.ref) return false;
+    if (sup.term !== req.term) return sup.term < req.term;
+    const is = (c: PlacedCourse, id: string) => c.ref === id || c.code === id;
+    return edgesRef.current.some(e => e.kind === 'concurrent_ok' && ((is(sup, e.from) && is(req, e.to)) || (is(req, e.from) && is(sup, e.to))));
+  }, []);
+
+  // Draft skills are judged against the map when added or edited, and again on load (the server caches the answers).
+  const judgeJobs = useMemo(() => {
+    const jobs: JudgeJob[] = [];
+    for (const [ref, { eff }] of effective) {
+      for (const r of eff.required) if (r.draft) jobs.push({ key: `${ref}|required|${r.ref}`, courseRef: ref, side: 'required', ref: r.ref, text: r.statement });
+      for (const s of eff.developed) if (s.draft) jobs.push({ key: `${ref}|supplied|${s.skillRef}`, courseRef: ref, side: 'supplied', ref: s.skillRef, text: s.statement });
+    }
+    return jobs;
+  }, [effective]);
+  const requested = useRef(new Set<string>());
+  const queue = useRef<JudgeJob[]>([]);
+  const pumping = useRef(false);
+  const pump = useCallback(async () => {
+    if (pumping.current) return;
+    pumping.current = true;
+    try {
+      for (let job = queue.current.shift(); job; job = queue.current.shift()) {
+        const me = effRef.current.get(job.courseRef);
+        const others: Array<{ ref: string; text: string; course: string; title: string }> = [];
+        if (me) {
+          for (const { placed, eff } of effRef.current.values()) {
+            if (job.side === 'required' && supplies(placed, me.placed)) for (const s of eff.developed) others.push({ ref: s.skillRef, text: s.statement, course: placed.code, title: placed.title });
+            if (job.side === 'supplied' && supplies(me.placed, placed)) for (const r of eff.required) others.push({ ref: r.ref, text: r.statement, course: placed.code, title: placed.title });
+          }
+        }
+        const list = others.filter(o => o.text.trim()).slice(0, JUDGE_OTHERS_MAX);
+        if (!me || !list.length) { setJudging(j => { const n = { ...j }; delete n[job.key]; return n; }); continue; }
+        let error: string | null = null;
+        try {
+          const res = await fetch('/api/build/match', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'judge', anchor: { text: job.text, course: me.placed.code.slice(0, 40), title: me.placed.title.slice(0, 200), side: job.side }, others: list.map(o => ({ ...o, course: o.course.slice(0, 40), title: o.title.slice(0, 200) })) }),
+          });
+          const body = await res.json().catch(() => ({}));
+          if (res.status === 502) error = CAMPUS_DOWN;
+          else if (!res.ok) error = typeof body.error === 'string' ? body.error : 'Matching failed; try again.';
+          else {
+            const found = body.results as Array<{ ref: string; pFully: number; pPartly: number }>;
+            const j = job;
+            setDrafts(d => {
+              const n = { ...d };
+              for (const r of found) n[j.side === 'required' ? `${j.ref}|${r.ref}` : `${r.ref}|${j.ref}`] = { pFully: r.pFully, pPartly: r.pPartly };
+              return n;
+            });
+          }
+        } catch { error = CAMPUS_DOWN; }
+        const k = job.key;
+        setJudging(j => { const n = { ...j }; if (error) n[k] = error; else delete n[k]; return n; });
+      }
+    } finally { pumping.current = false; }
+  }, [supplies]);
+  const enqueue = useCallback((jobs: JudgeJob[]) => {
+    for (const j of jobs) requested.current.add(j.key);
+    queue.current.push(...jobs);
+    setJudging(s => ({ ...s, ...Object.fromEntries(jobs.map(j => [j.key, 'matching'])) }));
+    void pump();
+  }, [pump]);
+  useEffect(() => {
+    const fresh = judgeJobs.filter(j => !requested.current.has(j.key));
+    if (fresh.length) enqueue(fresh);
+  }, [judgeJobs, enqueue]);
+  const retryJudge = useCallback((key: string) => {
+    const job = judgeJobs.find(j => j.key === key);
+    if (job) enqueue([job]);
+  }, [judgeJobs, enqueue]);
+
+  const who = useCallback(() => author().trim() || 'Department login', [author]);
+  const stamp = useCallback((): EditBase => ({ id: newId('edit'), by: who().slice(0, 120), at: new Date().toISOString() }), [who]);
+
+  /** Record a faculty decision on a (required, supplied) pair; returns an error message, or null when saved. */
+  const decide = useCallback(async (courseRef: string, result: ReqResult, cand: Candidate, label: MatchDecision['label']): Promise<string | null> => {
+    const me = effRef.current.get(courseRef);
+    const sup = [...effRef.current.values()].find(x => x.placed.code === cand.suppliedCourse && x.eff.developed.some(s => s.skillRef === cand.suppliedRef));
+    const skill = sup?.eff.developed.find(s => s.skillRef === cand.suppliedRef);
+    if (!me || !sup || !skill) return 'That skill is no longer on the map.';
+    const side = (c: PlacedCourse, draft: boolean, snapshotId: string | null, ref: string, text: string) =>
+      ({ course: c.proposed ? c.ref : c.code, title: c.title, snapshotId: draft ? null : snapshotId, ref, text });
+    try {
+      const res = await fetch('/api/build/match', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'decide', planId: props.planId, label, authorName: author(),
+          required: side(me.placed, result.required.draft, me.snapshotId, result.required.ref, result.required.statement),
+          supplied: side(sup.placed, skill.draft, sup.snapshotId, skill.skillRef, skill.statement),
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) return typeof body.error === 'string' ? body.error : 'The decision was not saved.';
+    } catch { return 'The decision was not saved. Check the connection and try again.'; }
+    const draft = result.required.draft || skill.draft;
+    const key = `${result.required.ref}|${skill.skillRef}`;
+    const d: MatchDecision = { requiredRef: result.required.ref, suppliedRef: skill.skillRef, label, by: who(), at: new Date().toISOString(), draft };
+    if (draft) setPlanDecisions(x => ({ ...x, [key]: d }));
+    else setLibDecisions(x => ({ ...x, [key]: d }));
+    return null;
+  }, [author, who, props.planId]);
+
+  const threads: Threads = useMemo(() => ({
+    byCourse, decisions: { ...libDecisions, ...planDecisions }, judging, retryJudge, decide, stamp,
+  }), [byCourse, libDecisions, planDecisions, judging, retryJudge, decide, stamp]);
+  const [focus, setFocus] = useState<{ section: 'required'; n: number } | null>(null);
 
   // ---- mutations ----------------------------------------------------------
   const place = (ref: string, target: DropTarget) => update(p => {
@@ -372,7 +529,9 @@ export function Builder(props: {
         <main className="cb-main">
           <CurriculumMap
             library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} arrows={arrows} courseWidth={courseWidth} onCourseWidth={w => changeView({ courseWidth: w })} selection={selection}
-            onSelect={s => { setSelection(s); setPanel(null); }} onDropCourse={onDropCourse} onOpenTargets={() => { setPanel('targets'); setSelection(null); }}
+            onSelect={s => { setSelection(s); setPanel(null); }} threads={byCourse} changes={changes}
+            onOpenRequired={ref => { setSelection({ kind: 'course', ref }); setPanel(null); setFocus(f => ({ section: 'required', n: (f?.n ?? 0) + 1 })); }}
+            onDropCourse={onDropCourse} onOpenTargets={() => { setPanel('targets'); setSelection(null); }}
             onOpenAct={act => { setPanel({ act }); setSelection(null); }}
             problemSolving={ps} onOpenProblemSolving={act => { setPanel({ ps: act }); setSelection(null); }}
             onResizeAct={(act, height) => update(p => {
@@ -389,7 +548,7 @@ export function Builder(props: {
         )}
         {selection?.kind === 'course' && !allCourses.find(c => c.ref === selection.ref)?.requirement && (
           <CourseDrawer key={selection.ref} courseRef={selection.ref} library={library} plan={plan} result={result} allCourses={allCourses}
-            slug={props.slug} update={update} onRemove={remove} onClose={() => setSelection(null)} onSelect={setSelection} />
+            slug={props.slug} update={update} onRemove={remove} onClose={() => setSelection(null)} onSelect={setSelection} threads={threads} focus={focus} />
         )}
         {selectedObjective && (
           <ObjectiveDrawer objective={selectedObjective} library={library} plan={plan} result={result} update={update}
