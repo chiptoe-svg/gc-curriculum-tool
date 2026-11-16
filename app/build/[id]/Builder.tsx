@@ -486,6 +486,8 @@ export function Builder(props: {
         <button type="button" className={`cb-btn${problems + flagged + genEdShort > 0 ? ' cb-btn--alert' : ''}`} onClick={() => { setPanel(panel === 'checks' ? null : 'checks'); setSelection(null); }}>
           Checks{problems + flagged + genEdShort > 0 ? ` (${problems + flagged + genEdShort})` : ''}
         </button>
+        <a className="cb-btn" href={`/api/build/plans/${props.planId}/changes.md`} download
+          title="Download every change made on this map (objectives, required and developed skills, prerequisites, match decisions) as a Markdown file. Save first so the file is current.">Export changes</a>
         <button type="button" className="cb-btn" onClick={stepBack} disabled={undo.length === 0} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
         <button type="button" className="cb-btn" aria-pressed={!libraryOpen} onClick={() => changeView({ library: !libraryOpen })}
           title="Hide or show the course library, to give the map the full width">{libraryOpen ? 'Hide library' : 'Show library'}</button>

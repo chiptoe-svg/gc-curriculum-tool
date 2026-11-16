@@ -1,0 +1,53 @@
+import { NextResponse } from 'next/server';
+import { authorizeRequest } from '@/lib/auth/route-auth';
+import { personalName } from '@/lib/auth/viewer';
+import { getPlan } from '@/lib/db/curriculum-plan-queries';
+import { latestDecisions } from '@/lib/db/match-queries';
+import { loadLibrary } from '@/lib/builder/library';
+import { parsePlanState } from '@/lib/builder/plan-schema';
+import { placeCourses } from '@/lib/builder/compute';
+import { requiredByCourse } from '@/lib/builder/threads';
+import { renderChangesMarkdown } from '@/lib/builder/changes-md';
+import { EMPTY_PLAN, type MatchDecision } from '@/lib/builder/types';
+
+interface Ctx { params: Promise<{ id: string }> }
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const notFound = () => NextResponse.json({ error: 'not found' }, { status: 404 });
+
+/** GET /api/build/plans/[id]/changes.md: the map's changes as a Markdown download. */
+export async function GET(req: Request, { params }: Ctx): Promise<Response> {
+  const auth = await authorizeRequest(req);
+  if (auth.response) return auth.response;
+  const { id } = await params;
+  if (!UUID.test(id)) return notFound();
+  const [plan, lib] = await Promise.all([getPlan(id), loadLibrary()]);
+  if (!plan) return notFound();
+  const stored = (plan.state ?? {}) as Partial<typeof EMPTY_PLAN>;
+  const state = parsePlanState({ ...EMPTY_PLAN, ...stored, goal: { ...EMPTY_PLAN.goal, ...(stored.goal ?? {}) } });
+  if (!state) return NextResponse.json({ error: 'The plan could not be read.' }, { status: 422 });
+
+  // Draft decisions for this plan, plus the non-draft ones the library holds (same split as the builder page).
+  const planDecisions: Record<string, MatchDecision> = {};
+  try {
+    for (const [key, d] of await latestDecisions({ planId: plan.id })) {
+      if (!d.draft) continue;
+      planDecisions[key] = { requiredRef: d.requiredHash, suppliedRef: d.suppliedHash, label: d.label, by: d.decidedBy, at: new Date(d.decidedAt).toISOString(), draft: true };
+    }
+  } catch { /* 0069 not applied on this database: no decisions */ }
+
+  const date = new Date().toISOString().slice(0, 10);
+  // Judgments fetched for draft skills live in the browser only, so a draft's status here rests on decisions.
+  const required = requiredByCourse(lib, state, placeCourses(lib, state), {}, planDecisions);
+  const md = renderChangesMarkdown({
+    planName: plan.name, catalogYear: state.catalogYear ?? null, exportedBy: personalName(auth.grant) ?? 'Department login',
+    date, lib, plan: state, required, decisions: [...Object.values(lib.decisions), ...Object.values(planDecisions)],
+  });
+  const slug = plan.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'plan';
+  return new Response(md, {
+    headers: {
+      'Content-Type': 'text/markdown; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${slug}-changes-${date}.md"`,
+      'Cache-Control': 'no-store',
+    },
+  });
+}
