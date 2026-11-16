@@ -8,7 +8,7 @@ import { loadLibrary } from '@/lib/builder/library';
 import { parsePlanState } from '@/lib/builder/plan-schema';
 import { placeCourses } from '@/lib/builder/compute';
 import { requiredByCourse, type DraftJudgments } from '@/lib/builder/threads';
-import { draftPairs, renderChangesMarkdown } from '@/lib/builder/changes-md';
+import { capturedUnjudgedPairs, draftPairs, renderChangesMarkdown } from '@/lib/builder/changes-md';
 import { MODEL_IN_USE, PROMPT_VERSION } from '@/lib/ai/match-judge';
 import { EMPTY_PLAN, type MatchDecision } from '@/lib/builder/types';
 
@@ -46,8 +46,19 @@ export async function GET(req: Request, { params }: Ctx): Promise<Response> {
     if (!isUndefinedTable(err)) console.error('[build/changes.md] draft judgments failed:', err instanceof Error ? err.message : err);
   }
 
+  // Captured required skills with no judged candidate on this map are judged by the builder too; read those back as well.
+  const placed = placeCourses(lib, state);
+  let required = requiredByCourse(lib, state, placed, drafts, planDecisions);
+  const extra = capturedUnjudgedPairs(lib, state, required);
+  if (extra.length) {
+    try {
+      for (const [k, v] of await readJudgments(extra, MODEL_IN_USE, PROMPT_VERSION)) drafts[k] = v;
+      required = requiredByCourse(lib, state, placed, drafts, planDecisions);
+    } catch (err) {
+      if (!isUndefinedTable(err)) console.error('[build/changes.md] map judgments failed:', err instanceof Error ? err.message : err);
+    }
+  }
   const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
-  const required = requiredByCourse(lib, state, placeCourses(lib, state), drafts, planDecisions);
   const md = renderChangesMarkdown({
     planName: plan.name, catalogYear: state.catalogYear ?? null, exportedBy: personalName(auth.grant) ?? 'Department login',
     date, lib, plan: state, required, decisions: Object.values({ ...lib.decisions, ...planDecisions }),

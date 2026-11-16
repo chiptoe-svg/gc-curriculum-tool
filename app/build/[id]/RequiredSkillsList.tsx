@@ -87,9 +87,10 @@ function ReqRow(props: {
           {!decision && sup.source === 'judge' && <> · suggested by the campus model</>}
           {r.restoredByDraft && <> · met with a map edit (a later draft supplier restores the level)</>}
         </div>
-      ) : (
+      ) : !threads.unasked.has(judgeKey) && !threads.judging[judgeKey] ? (
+        // Only once judging has finished: while it runs (or failed) JudgeStatus says so instead.
         <div className="cb-req__meta">No earlier course on this map supplies it.</div>
-      )}
+      ) : null}
       {rejected.length > 0 && (
         <div className="cb-req__meta">Rejected: {rejected.map(c => `${c.suppliedCourse}, “${c.suppliedStatement.slice(0, 60)}${c.suppliedStatement.length > 60 ? '…' : ''}” (${decisionOf(c)!.by}, ${date(decisionOf(c)!.at)})`).join('; ')}</div>
       )}

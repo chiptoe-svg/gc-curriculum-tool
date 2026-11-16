@@ -33,15 +33,18 @@ export interface Threads {
   byCourse: ReturnType<typeof requiredByCourse>;
   /** Every decision in force on this map (captured pairs and this map's draft pairs), by `${requiredRef}|${suppliedRef}`. */
   decisions: Record<string, MatchDecision>;
-  /** Draft skills being judged or whose judging failed, by `${courseRef}|${side}|${ref}`. */
+  /** Skills being judged or whose judging failed, by `${courseRef}|${side}|${ref}`. */
   judging: Record<string, 'matching' | string>;
+  /** Judge keys queued but not sent yet: their status is not known, so "no supplier" must not show. */
+  unasked: Set<string>;
   retryJudge: (key: string) => void;
   decide: (courseRef: string, result: ReqResult, cand: Candidate, label: MatchDecision['label']) => Promise<string | null>;
   /** Who and when, for a map edit. */
   stamp: () => EditBase;
 }
 
-type JudgeJob = { key: string; courseRef: string; side: 'required' | 'supplied'; ref: string; text: string };
+/** `sig` decides whether a job was already asked: the key, plus (for a captured required skill) the courses that could supply it. */
+type JudgeJob = { key: string; sig: string; courseRef: string; side: 'required' | 'supplied'; ref: string; text: string };
 const JUDGE_OTHERS_MAX = 400; // the server's limit (app/api/build/match/route.ts)
 const CAMPUS_DOWN = 'The campus model did not answer; try again.';
 const SERVER_DOWN = 'Could not reach the server; try again.';
@@ -258,14 +261,24 @@ export function Builder(props: {
   }, []);
 
   // Draft skills are judged against the map when added or edited, and again on load (the server caches the answers).
+  // A captured required skill is judged too when none of its eligible candidates has a judgment: the library's
+  // shortlist is the global top 8, which can miss a real supplier on this map. The same job, so the same cache.
   const judgeJobs = useMemo(() => {
     const jobs: JudgeJob[] = [];
-    for (const [ref, { eff }] of effective) {
-      for (const r of eff.required) if (r.draft) jobs.push({ key: `${ref}|required|${r.ref}`, courseRef: ref, side: 'required', ref: r.ref, text: r.statement });
-      for (const s of eff.developed) if (s.draft) jobs.push({ key: `${ref}|supplied|${s.skillRef}`, courseRef: ref, side: 'supplied', ref: s.skillRef, text: s.statement });
+    for (const [ref, { placed, eff }] of effective) {
+      for (const r of eff.required) if (r.draft) jobs.push({ key: `${ref}|required|${r.ref}`, sig: `${ref}|required|${r.ref}`, courseRef: ref, side: 'required', ref: r.ref, text: r.statement });
+      for (const s of eff.developed) if (s.draft) jobs.push({ key: `${ref}|supplied|${s.skillRef}`, sig: `${ref}|supplied|${s.skillRef}`, courseRef: ref, side: 'supplied', ref: s.skillRef, text: s.statement });
+      const unjudged = (byCourse[ref]?.results ?? []).filter(r => !r.required.draft && !r.candidates.some(c => c.pFully != null));
+      if (!unjudged.length) continue;
+      const from = [...effective.values()].filter(x => x.eff.developed.length > 0 && supplies(x.placed, placed)).map(x => x.placed.ref).sort();
+      if (!from.length) continue; // nothing earlier to compare with: "no supplier" is already the answer
+      for (const r of unjudged) {
+        const key = `${ref}|required|${r.required.ref}`;
+        jobs.push({ key, sig: `${key}|${from.join(',')}`, courseRef: ref, side: 'required', ref: r.required.ref, text: r.required.statement });
+      }
     }
     return jobs;
-  }, [effective]);
+  }, [effective, byCourse, supplies]); // edges change only with the plan, which changes `effective`
   const requested = useRef(new Set<string>());
   const queue = useRef<JudgeJob[]>([]);
   const pumping = useRef(false);
@@ -288,7 +301,7 @@ export function Builder(props: {
         try {
           const res = await fetch('/api/build/match', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'judge', anchor: { text: job.text, course: me.placed.code.slice(0, 40), title: me.placed.title.slice(0, 200), side: job.side }, others: list.map(o => ({ ...o, course: o.course.slice(0, 40), title: o.title.slice(0, 200) })) }),
+            body: JSON.stringify({ action: 'judge', planId: props.planId, anchor: { text: job.text, course: me.placed.code.slice(0, 40), title: me.placed.title.slice(0, 200), side: job.side }, others: list.map(o => ({ ...o, course: o.course.slice(0, 40), title: o.title.slice(0, 200) })) }),
           });
           const body = await res.json().catch(() => null);
           if (res.status === 502) error = CAMPUS_DOWN;
@@ -308,17 +321,20 @@ export function Builder(props: {
         setJudging(j => { const n = { ...j }; if (error) n[k] = error; else delete n[k]; return n; });
       }
     } finally { pumping.current = false; }
-  }, [supplies]);
+  }, [supplies, props.planId]);
   const enqueue = useCallback((jobs: JudgeJob[]) => {
-    for (const j of jobs) requested.current.add(j.key);
+    for (const j of jobs) requested.current.add(j.sig);
     queue.current.push(...jobs);
     setJudging(s => ({ ...s, ...Object.fromEntries(jobs.map(j => [j.key, 'matching'])) }));
     void pump();
   }, [pump]);
   useEffect(() => {
-    const fresh = judgeJobs.filter(j => !requested.current.has(j.key));
+    const fresh = judgeJobs.filter(j => !requested.current.has(j.sig));
     if (fresh.length) enqueue(fresh);
   }, [judgeJobs, enqueue]);
+  // Read during render: the effect above sends these right after this render, which then re-renders through `judging`.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `judging` changes when a job is sent: re-read the ref then
+  const unasked = useMemo(() => new Set(judgeJobs.filter(j => !requested.current.has(j.sig)).map(j => j.key)), [judgeJobs, judging]);
   const retryJudge = useCallback((key: string) => {
     const job = judgeJobs.find(j => j.key === key);
     if (job) enqueue([job]);
@@ -356,8 +372,8 @@ export function Builder(props: {
   }, [author, who, props.planId]);
 
   const threads: Threads = useMemo(() => ({
-    byCourse, decisions: { ...libDecisions, ...planDecisions }, judging, retryJudge, decide, stamp,
-  }), [byCourse, libDecisions, planDecisions, judging, retryJudge, decide, stamp]);
+    byCourse, decisions: { ...libDecisions, ...planDecisions }, judging, unasked, retryJudge, decide, stamp,
+  }), [byCourse, libDecisions, planDecisions, judging, unasked, retryJudge, decide, stamp]);
   const [focus, setFocus] = useState<{ section: 'required'; n: number } | null>(null);
 
   // ---- mutations ----------------------------------------------------------
