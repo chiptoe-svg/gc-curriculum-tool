@@ -42,6 +42,7 @@ export interface Threads {
 type JudgeJob = { key: string; courseRef: string; side: 'required' | 'supplied'; ref: string; text: string };
 const JUDGE_OTHERS_MAX = 400; // the server's limit (app/api/build/match/route.ts)
 const CAMPUS_DOWN = 'The campus model did not answer; try again.';
+const SERVER_DOWN = 'Could not reach the server; try again.';
 
 /** This viewer's own view settings (zoom, library shown). Kept in this browser only; never part of the shared plan. */
 type View = { zoom: number; library: boolean; arrows: boolean; courseWidth: number | null };
@@ -242,8 +243,9 @@ export function Builder(props: {
   }, [library, plan, allCourses]);
   const effRef = useRef(effective);
   effRef.current = effective;
-  const edgesRef = useRef(planEdges(library, plan));
-  edgesRef.current = planEdges(library, plan);
+  const edges = useMemo(() => planEdges(library, plan), [library, plan]);
+  const edgesRef = useRef(edges);
+  edgesRef.current = edges;
 
   /** Whether `sup` comes before `req` on the map: an earlier term, or the same term as a corequisite. */
   const supplies = useCallback((sup: PlacedCourse, req: PlacedCourse) => {
@@ -286,9 +288,10 @@ export function Builder(props: {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'judge', anchor: { text: job.text, course: me.placed.code.slice(0, 40), title: me.placed.title.slice(0, 200), side: job.side }, others: list.map(o => ({ ...o, course: o.course.slice(0, 40), title: o.title.slice(0, 200) })) }),
           });
-          const body = await res.json().catch(() => ({}));
+          const body = await res.json().catch(() => null);
           if (res.status === 502) error = CAMPUS_DOWN;
-          else if (!res.ok) error = typeof body.error === 'string' ? body.error : 'Matching failed; try again.';
+          else if (!res.ok) error = typeof body?.error === 'string' ? body.error : 'Matching failed; try again.';
+          else if (!Array.isArray(body?.results)) error = SERVER_DOWN;
           else {
             const found = body.results as Array<{ ref: string; pFully: number; pPartly: number }>;
             const j = job;
@@ -298,7 +301,7 @@ export function Builder(props: {
               return n;
             });
           }
-        } catch { error = CAMPUS_DOWN; }
+        } catch { error = SERVER_DOWN; }
         const k = job.key;
         setJudging(j => { const n = { ...j }; if (error) n[k] = error; else delete n[k]; return n; });
       }

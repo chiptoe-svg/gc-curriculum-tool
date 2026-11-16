@@ -84,7 +84,7 @@ export function CourseDrawer(props: {
       <details className="cb-sec">
         <summary>Developed skills on this map ({eff.developed.length})</summary>
         <p className="cb-muted cb-small">The skills this course supplies to later courses. Changes here count toward later courses&rsquo; required skills on this map only.</p>
-        <DevelopedSkillsEditor eff={eff} ops={ops} />
+        <DevelopedSkillsEditor eff={eff} ops={ops} courseRef={courseRef} threads={props.threads} />
       </details>
 
       <section className="cb-sec">

@@ -10,7 +10,7 @@ import type { EffectiveCourse } from '@/lib/builder/edits';
 import { editsOf, removeObjective, removeSkill, saveObjective, saveSkill, withEdits } from '@/lib/builder/edit-ops';
 import type { CourseEdits, Depth, EditBase, Link, PlanState } from '@/lib/builder/types';
 import type { ReqResult } from '@/lib/builder/threads';
-import type { Update } from './Builder';
+import type { Threads, Update } from './Builder';
 import { SkillForm, statusWord } from './RequiredSkillsList';
 import { fmtDepth } from './ui';
 
@@ -90,7 +90,15 @@ function ObjectiveForm(props: { initial?: { text: string; bloom: BloomProcess | 
   );
 }
 
-export function DevelopedSkillsEditor(props: { eff: EffectiveCourse; ops: EditOps }) {
+/** A draft skill's judging state: "Matching…" while it runs, the error and Try again when it failed. */
+export function JudgeStatus(props: { threads: Threads; judgeKey: string }) {
+  const state = props.threads.judging[props.judgeKey];
+  if (!state) return null;
+  if (state === 'matching') return <div className="cb-req__meta" role="status">Matching…</div>;
+  return <div className="cb-error cb-small" role="alert">{state} <button type="button" className="cb-linkbtn" onClick={() => props.threads.retryJudge(props.judgeKey)}>Try again</button></div>;
+}
+
+export function DevelopedSkillsEditor(props: { eff: EffectiveCourse; ops: EditOps; courseRef: string; threads: Threads }) {
   const [editing, setEditing] = useState<string | 'new' | null>(null);
   const items = props.eff.developed;
   return (
@@ -104,7 +112,8 @@ export function DevelopedSkillsEditor(props: { eff: EffectiveCourse; ops: EditOp
                 onCancel={() => setEditing(null)} onSave={(t, d) => { props.ops.saveDeveloped(s, t, d); setEditing(null); }} />
             ) : (
               <>
-                <span><span className={s.draft ? 'cb-draft' : undefined}>{s.statement}</span> <span className="cb-mono cb-muted">{fmtDepth(s)}</span></span>
+                <span><span className={s.draft ? 'cb-draft' : undefined}>{s.statement}</span> <span className="cb-mono cb-muted">{fmtDepth(s)}</span>
+                  {s.draft && <JudgeStatus threads={props.threads} judgeKey={`${props.courseRef}|supplied|${s.skillRef}`} />}</span>
                 <span>
                   <button type="button" className="cb-linkbtn" onClick={() => setEditing(s.skillRef)}>Edit</button>{' '}
                   <button type="button" className="cb-linkbtn" onClick={() => props.ops.removeDeveloped(s)}>Remove</button>

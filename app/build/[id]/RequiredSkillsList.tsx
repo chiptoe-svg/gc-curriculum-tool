@@ -10,6 +10,7 @@ import type { ReqResult, ReqStatus } from '@/lib/builder/threads';
 import type { Candidate, Depth, MatchDecision } from '@/lib/builder/types';
 import type { Threads } from './Builder';
 import { DepthInputs } from './controls';
+import { JudgeStatus } from './CourseEditors';
 import { dimName, fmtDepth } from './ui';
 
 const STATUS_WORD: Record<ReqStatus, string> = { met: 'Met', met_draft: 'Met*', partly: 'Partly met', not: 'Not met' };
@@ -61,7 +62,6 @@ function ReqRow(props: {
   const others = r.candidates.filter(c => c !== current && decisionOf(c)?.label !== 'not').slice(0, PICK_MAX);
   const rejected = r.candidates.filter(c => decisionOf(c)?.label === 'not');
   const judgeKey = `${courseRef}|required|${r.required.ref}`;
-  const judging = threads.judging[judgeKey];
 
   const decide = async (c: Candidate, label: MatchDecision['label']) => {
     setBusy(true); setError(null);
@@ -93,10 +93,7 @@ function ReqRow(props: {
       {rejected.length > 0 && (
         <div className="cb-req__meta">Rejected: {rejected.map(c => `${c.suppliedCourse}, “${c.suppliedStatement.slice(0, 60)}${c.suppliedStatement.length > 60 ? '…' : ''}” (${decisionOf(c)!.by}, ${date(decisionOf(c)!.at)})`).join('; ')}</div>
       )}
-      {judging === 'matching' && <div className="cb-req__meta" role="status">Matching…</div>}
-      {judging && judging !== 'matching' && (
-        <div className="cb-error cb-small" role="alert">{judging} <button type="button" className="cb-linkbtn" onClick={() => threads.retryJudge(judgeKey)}>Try again</button></div>
-      )}
+      <JudgeStatus threads={threads} judgeKey={judgeKey} />
       <div className="cb-req__actions">
         {current && (
           <>
