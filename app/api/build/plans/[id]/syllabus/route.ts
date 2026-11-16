@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { authorizeRequest } from '@/lib/auth/route-auth';
 import { personalName } from '@/lib/auth/viewer';
 import { db } from '@/lib/db/client';
@@ -11,7 +11,8 @@ import { NAME_MAX } from '@/lib/builder/plan-schema';
 import {
   SYLLABUS_TEXT_MAX, SYLLABUS_TEXT_MIN, draftSyllabus, normalizeCourseCode, prereqLinks, syllabusModel, toCourseEdits,
 } from '@/lib/builder/syllabus-draft';
-import { capturedMessage, trackedMessage } from '@/lib/builder/syllabus-codes';
+import { capturedMessage, proposedMessage, sameCode, trackedMessage } from '@/lib/builder/syllabus-codes';
+import { findCourseByTypedCode } from '@/lib/db/course-code-match';
 import type { PlanState } from '@/lib/builder/types';
 
 interface Ctx { params: Promise<{ id: string }> }
@@ -62,11 +63,13 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   }
   if (!course.code || !course.title) return bad('A new course needs a code and a title.');
   // A new course must not duplicate a tracked one: drafts attach to the real course, and a captured course is never
-  // drafted over. Matched ignoring case and spacing ("gc4800" = "GC 4800"); checked before any file is read.
+  // drafted over; nor a course already proposed on this plan. Matched ignoring case, spacing and hyphens
+  // ("gc4800" = "GC 4800" = "GC-4800"); checked before any file is read.
   const typed = NEW_REF.test(courseRef) ? normalizeCourseCode(course.code) : null;
   if (typed) {
-    const [dup] = await db.select({ code: courses.code }).from(courses)
-      .where(sql`upper(regexp_replace(${courses.code}, '\s+', ' ', 'g')) = ${typed}`);
+    const onPlan = (state.proposed ?? []).find(p => p.id !== courseRef && sameCode(p.code, typed));
+    if (onPlan) return bad(proposedMessage(onPlan.code), 409);
+    const dup = await findCourseByTypedCode(typed);
     if (dup) return bad(await hasLiveCapture(dup.code) ? capturedMessage(dup.code) : trackedMessage(dup.code), 409);
   }
 
