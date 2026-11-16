@@ -1,7 +1,8 @@
 // Recording map edits on a course. Pure. Edits collapse per item: a second change to an item replaces the first
 // (same `target`), so effectiveCourse never sees two edits of one item; taking out an item added on the map
 // deletes its add rather than recording a remove.
-import type { BloomProcess, CourseEdits, Depth, EditBase, ObjectiveEdit, PlanState, SkillEdit } from './types';
+import { normalizeStatement } from '@/lib/catalog/project-trail';
+import type { BloomProcess, CourseEdits, Depth, EditBase, Link, ObjectiveEdit, PlanState, SkillEdit } from './types';
 
 export const NO_EDITS: CourseEdits = { objectives: [], required: [], developed: [] };
 
@@ -55,4 +56,31 @@ export function removeObjective(list: ObjectiveEdit[], item: ObjectiveItem, stam
   if (src?.action === 'add') return list.filter(e => e !== src);
   const target = src ? src.target : item.text;
   return [...list.filter(e => e.target !== target), { ...stamp, action: 'remove', target, text: null, bloom: null }];
+}
+
+const same = (s: string) => normalizeStatement(s).replace(/[.;:,\s]+$/, '');
+
+/**
+ * A syllabus draft merged into the plan (spec §4b): each drafted item is appended as its own `add` edit (origin
+ * 'syllabus'), except one whose text the course already shows (`existing`, the course as the map reads it);
+ * the course's edits record the source; links the plan or the catalog already has are not repeated.
+ */
+export function mergeSyllabusDraft(
+  plan: PlanState, ref: string, draft: { edits: CourseEdits; links: Link[] },
+  existing: { objectives: string[]; required: string[]; developed: string[] }, catalogLinks: Array<{ from: string; to: string }>,
+): PlanState {
+  const fresh = <E,>(list: E[], have: string[], text: (e: E) => string | null) => {
+    const seen = new Set(have.map(same));
+    return list.filter(e => { const t = text(e); if (!t || seen.has(same(t))) return false; seen.add(same(t)); return true; });
+  };
+  const next = withEdits(plan, ref, e => ({
+    objectives: [...e.objectives, ...fresh(draft.edits.objectives, existing.objectives, x => x.text)],
+    required: [...e.required, ...fresh(draft.edits.required, existing.required, x => x.statement)],
+    developed: [...e.developed, ...fresh(draft.edits.developed, existing.developed, x => x.statement)],
+    ...(draft.edits.source ? { source: draft.edits.source } : e.source ? { source: e.source } : {}),
+  }));
+  const has = (l: Link) => l.from === ref || next.links.some(x => x.from === l.from && x.to === l.to)
+    || catalogLinks.some(x => x.from === l.from && x.to === l.to);
+  const links = draft.links.filter(l => l.to === ref && !has(l));
+  return links.length ? { ...next, links: [...next.links, ...links] } : next;
 }
