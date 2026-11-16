@@ -69,9 +69,14 @@ export async function latestDecisions(opts: { planId?: string } = {}): Promise<M
   return newestPerPair(await db.select().from(skillMatchDecisions).where(visible).orderBy(...oldestFirst));
 }
 
-/** Every decision, newest first; `latestOnly` keeps the newest per pair (drafts included: this is the research export). */
+/**
+ * Every decision, newest first. `latestOnly` keeps the newest NON-draft decision per pair; draft decisions are kept as
+ * their own rows and never shadow a non-draft one (a draft names a skill that is not in a capture yet).
+ */
 export async function exportDecisions(opts: { latestOnly: boolean }): Promise<Decision[]> {
   const rows = await db.select().from(skillMatchDecisions).orderBy(...oldestFirst);
-  const kept = opts.latestOnly ? [...newestPerPair(rows).values()] : rows;
+  const kept = opts.latestOnly
+    ? [...newestPerPair(rows.filter((r) => !r.draft)).values(), ...rows.filter((r) => r.draft)]
+    : rows;
   return kept.sort((a, b) => b.decidedAt.getTime() - a.decidedAt.getTime() || (a.id < b.id ? 1 : -1));
 }

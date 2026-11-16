@@ -45,6 +45,16 @@ describe.skipIf(!SCRATCH)('match-queries (scratch database)', () => {
     expect(onlyLatest.map((d) => d.label)).toEqual(['not']);
   });
 
+  it('exportDecisions latestOnly ignores drafts when picking the latest, and lists them as their own rows', async () => {
+    const r4 = `${tag}-req4`;
+    const planId = '00000000-0000-4000-8000-000000000001';
+    await q.insertDecision(base({ requiredHash: r4, label: 'fully', decidedAt: new Date('2026-02-01T00:00:00Z') }));
+    await q.insertDecision(base({ requiredHash: r4, label: 'not', draft: true, planId, decidedAt: new Date('2026-02-02T00:00:00Z') }));
+    const rows = (await q.exportDecisions({ latestOnly: true })).filter((d) => d.requiredHash === r4);
+    expect(rows.map((d) => [d.label, d.draft]).sort()).toEqual([['fully', false], ['not', true]]);
+    expect((await q.latestDecisions()).get(`${r4}|${sup}`)?.label).toBe('fully');
+  });
+
   it('a draft decision is visible only on its plan', async () => {
     const r2 = `${tag}-req2`;
     const planId = '00000000-0000-4000-8000-000000000001';

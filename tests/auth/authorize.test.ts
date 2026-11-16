@@ -155,6 +155,13 @@ describe('what-if writes', () => {
   it.each([['GET', W], ['GET', ID], ['GET', `${ID}/messages`]])('%s %s is a read', (m, p) => expect(classify(m, p)).toEqual({ kind: 'read' }));
   it('a login scoped to one course may start a what-if on another', () =>
     expect(authorize(scoped, 'POST', '/api/explore/GC%204400/what-ifs')).toEqual({ ok: true }));
+  it('a skill-match decision is a plan write; sub-paths are admin; the decisions download is a read', () => {
+    expect(classify('POST', '/api/build/match')).toEqual({ kind: 'plan-write' });
+    expect(authorize(scoped, 'POST', '/api/build/match')).toEqual({ ok: true });
+    expect(authorize(creator, 'POST', '/api/build/match')).toEqual({ ok: false, reason: 'needs-capture' });
+    expect(classify('POST', '/api/build/match/x')).toEqual({ kind: 'admin' });
+    expect(classify('GET', '/api/build/match-decisions')).toEqual({ kind: 'read' });
+  });
   it.each([creator, noCourses])('a create-only or no-course login is refused', g =>
     expect(authorize(g, 'POST', W)).toEqual({ ok: false, reason: 'needs-capture' }));
   it.each([['POST', '/api/explore/GC%203730/chat'], ['POST', `${ID}/anything-else`], ['POST', `${W}x`]])(

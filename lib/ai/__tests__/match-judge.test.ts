@@ -67,4 +67,22 @@ describe('judgePairs', () => {
     expect(out[0]).toEqual({ pFully: null, pPartly: null });
     expect(n).toBe(10); // 2 questions x (1 try + 4 retries)
   });
+  it('keeps the last error message', async () => {
+    const fetchImpl = (async () => new Response('boom', { status: 503 })) as unknown as typeof fetch;
+    process.env.CAMPUS_LLM_BASE_URL = 'http://x/v1';
+    process.env.CAMPUS_LLM_API_KEY = 'secret-key';
+    const errorSink = { message: null as string | null };
+    await judgePairs([pair], { fetchImpl, retryDelayMs: 0, errorSink });
+    expect(errorSink.message).toBe('HTTP 503');
+  });
+  it('fails fast when the campus model is not configured', async () => {
+    const saved = [process.env.CAMPUS_LLM_BASE_URL, process.env.CAMPUS_LLM_API_KEY];
+    delete process.env.CAMPUS_LLM_BASE_URL;
+    delete process.env.CAMPUS_LLM_API_KEY;
+    try {
+      await expect(judgePairs([pair])).rejects.toThrow(/not configured/);
+    } finally {
+      process.env.CAMPUS_LLM_BASE_URL = saved[0]; process.env.CAMPUS_LLM_API_KEY = saved[1];
+    }
+  });
 });

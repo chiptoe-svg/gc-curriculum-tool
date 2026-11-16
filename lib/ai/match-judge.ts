@@ -42,9 +42,10 @@ export function pYes(topLogprobs: Array<{ token: string; logprob: number }>): nu
   return y + n > 0 ? y / (y + n) : null;
 }
 
-type Opts = { model?: Model; fetchImpl?: typeof fetch; concurrency?: number; retryDelayMs?: number };
+/** `errorSink.message` receives the last request error (never the key) so a caller can say why probabilities are null. */
+type Opts = { model?: Model; fetchImpl?: typeof fetch; concurrency?: number; retryDelayMs?: number; errorSink?: { message: string | null } };
 
-async function ask(prompt: string, model: Model, fetchImpl: typeof fetch, retryDelayMs: number): Promise<number | null> {
+async function ask(prompt: string, model: Model, fetchImpl: typeof fetch, retryDelayMs: number, sink?: { message: string | null }): Promise<number | null> {
   const base = (process.env.CAMPUS_LLM_BASE_URL ?? '').replace(/\/$/, '');
   const key = process.env.CAMPUS_LLM_API_KEY ?? '';
   const body = JSON.stringify({
@@ -61,7 +62,8 @@ async function ask(prompt: string, model: Model, fetchImpl: typeof fetch, retryD
       const ch = (await res.json()).choices?.[0];
       const top = ch?.logprobs?.content?.[0]?.top_logprobs;
       return Array.isArray(top) ? pYes(top) : null;
-    } catch {
+    } catch (err) {
+      if (sink) sink.message = err instanceof Error ? err.message : String(err);
       if (attempt < 4) await new Promise((r) => setTimeout(r, retryDelayMs * 2 ** attempt));
     }
   }
@@ -70,6 +72,9 @@ async function ask(prompt: string, model: Model, fetchImpl: typeof fetch, retryD
 
 /** Judges each pair with one model; a question that fails after retries gives null. Order matches the input. */
 export async function judgePairs(pairs: PairText[], opts: Opts = {}): Promise<Array<{ pFully: number | null; pPartly: number | null }>> {
+  if (!process.env.CAMPUS_LLM_BASE_URL || !process.env.CAMPUS_LLM_API_KEY) {
+    throw new Error('The campus model is not configured (CAMPUS_LLM_BASE_URL and CAMPUS_LLM_API_KEY must be set).');
+  }
   const model = opts.model ?? MODEL_IN_USE;
   const fetchImpl = opts.fetchImpl ?? fetch;
   const delay = opts.retryDelayMs ?? 1000;
@@ -79,8 +84,8 @@ export async function judgePairs(pairs: PairText[], opts: Opts = {}): Promise<Ar
     for (let i = next++; i < pairs.length; i = next++) {
       const p = pairs[i]!;
       out[i] = {
-        pFully: await ask(judgePrompt('fully', p), model, fetchImpl, delay),
-        pPartly: await ask(judgePrompt('partly', p), model, fetchImpl, delay),
+        pFully: await ask(judgePrompt('fully', p), model, fetchImpl, delay, opts.errorSink),
+        pPartly: await ask(judgePrompt('partly', p), model, fetchImpl, delay, opts.errorSink),
       };
     }
   };
