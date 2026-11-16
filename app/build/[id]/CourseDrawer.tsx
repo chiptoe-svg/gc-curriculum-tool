@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { WHAT_IF_PREFIX, versionOf, whatIfOf, type PlacedCourse, type PlanResult } from '@/lib/builder/compute';
 import { type CompetencyDepth, type Library, type PlanState, type ProposedCourse } from '@/lib/builder/types';
-import type { Update } from './Builder';
+import { effectiveCourse, type EffectiveCourse } from '@/lib/builder/edits';
+import type { Threads, Update } from './Builder';
+import { RequiredSkillsList } from './RequiredSkillsList';
+import { ChangesList, DevelopedSkillsEditor, ObjectivesEditor, ToConfirm, courseEditOps, type EditOps } from './CourseEditors';
 import type { Selection } from './Map';
 import { DepthInputs, Drawer, LevelInput } from './controls';
 import { BASIS_WORD, STRATA, fmtDepth, stratumRank } from './ui';
@@ -12,12 +15,33 @@ import { BASIS_WORD, STRATA, fmtDepth, stratumRank } from './ui';
 export function CourseDrawer(props: {
   courseRef: string; library: Library; plan: PlanState; result: PlanResult; allCourses: PlacedCourse[]; slug: string;
   update: Update; onRemove: (ref: string) => void; onClose: () => void; onSelect: (s: Selection) => void;
+  threads: Threads;
+  /** Open at a section (the card bar opens the required skills); `n` changes on every request. */
+  focus: { section: 'required'; n: number } | null;
 }) {
   const { courseRef, library, plan, result, update } = props;
   const placed = props.allCourses.find(c => c.ref === courseRef);
   const lc = library.courses.find(c => c.code === courseRef);
   const pc = plan.proposed.find(c => c.id === courseRef);
+  const [linkKind, setLinkKind] = useState<'prereq' | 'coreq'>('prereq');
+  const requiredRef = useRef<HTMLElement>(null);
+  const focusN = props.focus?.n;
+  useEffect(() => {
+    if (focusN == null || !requiredRef.current) return;
+    if (requiredRef.current instanceof HTMLDetailsElement) requiredRef.current.open = true;
+    requiredRef.current.scrollIntoView({ block: 'start' });
+  }, [focusN]);
   if (!placed || (!lc && !pc)) return null;
+
+  const version = lc ? versionOf(lc, plan) : null;
+  const eff = effectiveCourse((lc ?? pc)!, version, plan.courseEdits?.[courseRef]);
+  const ops = courseEditOps(courseRef, update, props.threads.stamp);
+  const reqResults = props.threads.byCourse[courseRef]?.results ?? [];
+  const counts = props.threads.byCourse[courseRef]?.counts;
+  const original = {
+    required: new Map((version?.required ?? []).map(r => [r.ref, r.statement])),
+    developed: new Map((version?.skills ?? []).map(s => [s.skillRef, s.statement])),
+  };
 
   const q = `?slug=${encodeURIComponent(props.slug)}`;
   const objectiveIds = new Set(result.objectives.map(o => o.competency.id));
@@ -48,8 +72,20 @@ export function CourseDrawer(props: {
         </section>
       )}
 
-      {lc && <TrackedCourse {...props} lc={lc} objectiveIds={objectiveIds} q={q} />}
+      <details className="cb-sec" open ref={requiredRef as React.Ref<HTMLDetailsElement>} id="cb-required">
+        <summary>Required skills{counts ? ` (${counts.met} of ${reqResults.length} met)` : ''}</summary>
+        <p className="cb-muted cb-small">What students need on arrival, and the skill from an earlier course on this map that supplies it. Your decisions are saved for every map; edits here stay on this map.</p>
+        <RequiredSkillsList courseRef={courseRef} threads={props.threads} onSave={ops.saveRequired} onRemove={ops.removeRequired} />
+      </details>
+
+      {lc && <TrackedCourse {...props} lc={lc} objectiveIds={objectiveIds} q={q} eff={eff} ops={ops} />}
       {pc && <ProposedEditor pc={pc} library={library} objectiveIds={objectiveIds} update={update} />}
+
+      <details className="cb-sec">
+        <summary>Developed skills on this map ({eff.developed.length})</summary>
+        <p className="cb-muted cb-small">The skills this course supplies to later courses. Changes here count toward later courses&rsquo; required skills on this map only.</p>
+        <DevelopedSkillsEditor eff={eff} ops={ops} />
+      </details>
 
       <section className="cb-sec">
         <h3>Comes after</h3>
@@ -60,7 +96,7 @@ export function CourseDrawer(props: {
             return (
               <li key={e.from}>
                 <button type="button" className="cb-linkbtn" disabled={!inPlan} onClick={() => props.onSelect({ kind: 'course', ref: e.from })}>{label(e.from)}</button>
-                <span className="cb-muted">{e.source === 'catalog' ? (e.kind === 'concurrent_ok' ? 'catalog prerequisite, may be taken together' : 'catalog prerequisite') : 'added in this plan'}{!inPlan && ', not on the map'}</span>
+                <span className="cb-muted">{e.source === 'catalog' ? (e.kind === 'concurrent_ok' ? 'catalog prerequisite, may be taken together' : 'catalog prerequisite') : e.kind === 'concurrent_ok' ? 'corequisite added in this plan' : 'prerequisite added in this plan'}{!inPlan && ', not on the map'}</span>
                 <button type="button" className="cb-linkbtn" onClick={() => update(p => e.source === 'plan'
                   ? { ...p, links: p.links.filter(l => !(l.from === e.from && l.to === courseRef)) }
                   : { ...p, unlinked: [...p.unlinked, { from: e.from, to: courseRef }] })}>
@@ -77,13 +113,30 @@ export function CourseDrawer(props: {
           </p>
         ))}
         {candidates.length > 0 && (
-          <label className="cb-inline">Add a course this one depends on
-            <select value="" onChange={e => { const from = e.target.value; if (from) update(p => ({ ...p, links: [...p.links, { from, to: courseRef }] })); }}>
-              <option value="">Choose…</option>
+          <div className="cb-edit__row">
+            <select value={linkKind} aria-label="Kind" onChange={e => setLinkKind(e.target.value as 'prereq' | 'coreq')}>
+              <option value="prereq">Prerequisite</option>
+              <option value="coreq">Corequisite (same term allowed)</option>
+            </select>
+            <select value="" aria-label="Add a course this one depends on" onChange={e => {
+              const from = e.target.value;
+              if (from) update(p => ({ ...p, links: [...p.links, linkKind === 'coreq' ? { from, to: courseRef, kind: 'coreq' as const } : { from, to: courseRef }] }));
+            }}>
+              <option value="">Add a course this one depends on…</option>
               {candidates.map(c => <option key={c.ref} value={c.ref}>{c.code} {c.title}</option>)}
             </select>
-          </label>
+          </div>
         )}
+      </section>
+
+      <section className="cb-sec">
+        <h3>Changes on this map</h3>
+        <ChangesList courseRef={courseRef} plan={plan} ops={ops} update={update} label={label} original={original} />
+      </section>
+
+      <section className="cb-sec">
+        <h3>To confirm through capture</h3>
+        <ToConfirm eff={eff} results={reqResults} />
       </section>
 
       <section className="cb-sec">
@@ -100,7 +153,7 @@ const maxN = (a: number | null | undefined, b: number | null | undefined): numbe
 
 function TrackedCourse(props: {
   lc: Library['courses'][number]; library: Library; plan: PlanState; result: PlanResult; allCourses: PlacedCourse[];
-  courseRef: string; update: Update; objectiveIds: Set<string>; q: string;
+  courseRef: string; update: Update; objectiveIds: Set<string>; q: string; eff: EffectiveCourse; ops: EditOps;
 }) {
   const { lc, library, plan, update } = props;
   const placed = props.allCourses.find(c => c.ref === props.courseRef)!;
@@ -199,10 +252,9 @@ function TrackedCourse(props: {
       )}
 
       <details className="cb-sec">
-        <summary>Stated learning objectives ({lc.objectives.length})</summary>
-        {lc.objectives.length > 0
-          ? <ul className="cb-list">{lc.objectives.map((o, i) => <li key={i}>{o}</li>)}</ul>
-          : <p className="cb-muted">The course sheet lists no learning objectives.</p>}
+        <summary>Stated learning objectives ({props.eff.objectives.length})</summary>
+        <p className="cb-muted cb-small">From the course sheet, with this map&rsquo;s changes. Changes stay on this map.</p>
+        <ObjectivesEditor eff={props.eff} ops={props.ops} />
       </details>
 
       <details className="cb-sec">
