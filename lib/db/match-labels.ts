@@ -14,3 +14,21 @@ export function parseLabels(s: string): Map<number, Label> {
   }
   return out;
 }
+
+/** One record of the spike's pairs file: `later`/`earlier` are course codes, `required` and `supplies` the skill texts, `need` the required levels. */
+export type SpikePair = {
+  i: number; later: string; required: string; need?: { k: number; u: number; d: number }; earlier: string; supplies: string;
+  pFully?: number | null; pPartly?: number | null;
+};
+
+/** The decision row for a labeled spike pair (texts as written; no snapshot ids; judge P is the spike's qwen3.8-27b-fp8 / m1). */
+export function spikeDecision(p: SpikePair, label: Label, by: string, titles: Map<string, string>, hash: (s: string) => string) {
+  return {
+    requiredHash: hash(p.required), suppliedHash: hash(p.supplies),
+    requiredText: p.required, suppliedText: p.supplies,
+    requiredCourse: p.later, requiredCourseTitle: titles.get(p.later) ?? null,
+    suppliedCourse: p.earlier, suppliedCourseTitle: titles.get(p.earlier) ?? null,
+    label, draft: false, source: 'labeling_sheet' as const, decidedBy: by,
+    judgeModel: 'qwen3.8-27b-fp8', promptVersion: 'm1', judgePFully: p.pFully ?? null, judgePPartly: p.pPartly ?? null,
+  };
+}

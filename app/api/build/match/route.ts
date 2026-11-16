@@ -19,6 +19,12 @@ const TOP = 5;
 const bad = (error: string) => NextResponse.json({ error }, { status: 400 });
 const hashOf = (s: string) => textHash(normalizeStatement(s));
 
+/** A failure of the campus model (embedding or judge call); anything else is a server fault. */
+class CampusError extends Error {}
+const viaCampus = async <T,>(f: () => Promise<T>): Promise<T> => {
+  try { return await f(); } catch (err) { throw new CampusError(err instanceof Error ? err.message : 'unknown error'); }
+};
+
 type Side = { course: string; title: string; snapshotId: string | null; ref: string; text: string };
 
 function readSide(v: unknown): Side | null {
@@ -112,7 +118,7 @@ async function judge(body: Record<string, unknown>): Promise<Response> {
   const unreachable = (why: string) => NextResponse.json({ error: `The campus model is not reachable right now (${why}). Try again in a few minutes.` }, { status: 502 });
   try {
     const items = [...new Map([{ ref: anchorRef, text: anchorText }, ...others].map((x) => [x.ref, { kind: 'course_skill' as const, ref: x.ref, text: x.text }])).values()];
-    await embedMissing(db, items, DEFAULT_EMBEDDING_MODEL, (t) => embedBatch(t));
+    await embedMissing(db, items, DEFAULT_EMBEDDING_MODEL, (t) => viaCampus(() => embedBatch(t)));
     const vecs = await readVectors(db, 'course_skill', items, DEFAULT_EMBEDDING_MODEL);
     const av = vecs.get(anchorRef);
     const seen = new Set<string>();
@@ -137,7 +143,7 @@ async function judge(body: Record<string, unknown>): Promise<Response> {
       const cached = await readJudgments(pairs, model, PROMPT_VERSION);
       const missing = pairs.filter((p) => !cached.has(key(p)));
       if (missing.length) {
-        const out = await judgePairs(missing.map((p) => p.text), { model, errorSink: sink });
+        const out = await viaCampus(() => judgePairs(missing.map((p) => p.text), { model, errorSink: sink }));
         const fresh = missing.map((p, i) => ({ p, o: out[i]! })).filter((x) => x.o.pFully !== null && x.o.pPartly !== null);
         await writeJudgments(fresh.map(({ p, o }) => ({ requiredHash: p.requiredHash, suppliedHash: p.suppliedHash, model, promptVersion: PROMPT_VERSION, pFully: o.pFully, pPartly: o.pPartly })));
         for (const { p, o } of fresh) cached.set(key(p), { pFully: o.pFully!, pPartly: o.pPartly! });
@@ -151,6 +157,8 @@ async function judge(body: Record<string, unknown>): Promise<Response> {
       results: top.map(({ o, sim }, i) => ({ ref: o.ref, similarity: sim, pFully: inUse.get(key(pairs[i]!))!.pFully, pPartly: inUse.get(key(pairs[i]!))!.pPartly })),
     });
   } catch (err) {
-    return unreachable(sink.message ?? (err instanceof Error ? err.message : 'unknown error'));
+    if (err instanceof CampusError) return unreachable(sink.message ?? err.message);
+    console.error('[build/match] judge failed:', err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: 'Something went wrong on the server. Try again, and tell the maintainer if it keeps happening.' }, { status: 500 });
   }
 }

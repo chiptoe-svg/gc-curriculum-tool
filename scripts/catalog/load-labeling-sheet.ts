@@ -3,8 +3,8 @@
  *
  *   pnpm tsx scripts/catalog/load-labeling-sheet.ts --labels "<1F 2P 3N ...>" --pairs <match-spike.json> --by "<name>" --expect-db <name> [--apply]
  *
- * The pairs file holds records { i, later, required, need, earlier, supplies, sim, pFully, pPartly }: `later` and
- * `earlier` are course codes, `need` the required skill text, `supplies` the supplied skill text (as written; no
+ * The pairs file holds records { i, later, required, need, earlier, supplies, kud, sim, pFully, pPartly }: `later` and
+ * `earlier` are course codes, `required` the required skill text, `need` its levels, `supplies` the supplied skill text (as written; no
  * snapshot ids), pFully/pPartly the spike judge's P with qwen3.8-27b-fp8 and prompt m1. F -> fully, P -> partly, N -> not.
  * Dry run by default (prints what it would write); --apply inserts the decisions.
  */
@@ -12,14 +12,15 @@ import { readFileSync } from 'node:fs';
 import { sql } from 'drizzle-orm';
 import { loadAppEnv, isMainModule, argValue } from './catalog-source';
 
+import type { SpikePair } from '@/lib/db/match-labels';
+
 loadAppEnv();
 
-type SpikePair = { i: number; later: string; need: string; earlier: string; supplies: string; pFully?: number | null; pPartly?: number | null };
 
 async function main(): Promise<number> {
   const { db } = await import('@/lib/db/client');
   const { insertDecision } = await import('@/lib/db/match-queries');
-  const { parseLabels } = await import('@/lib/db/match-labels');
+  const { parseLabels, spikeDecision } = await import('@/lib/db/match-labels');
   const { textHash } = await import('@/lib/catalog/bundles');
   const { normalizeStatement } = await import('@/lib/catalog/project-trail');
   const expect = argValue('--expect-db'), labelsArg = argValue('--labels'), pairsPath = argValue('--pairs'), by = argValue('--by');
@@ -38,13 +39,7 @@ async function main(): Promise<number> {
     const p = pairs.get(i);
     if (!p) { console.error(`pair ${i} is not in ${pairsPath}`); return 2; }
     for (const code of [p.later, p.earlier]) if (!titles.has(code)) { console.error(`pair ${i}: "${code}" is not a course code in the courses table (is the pairs file shaped as expected?)`); return 2; }
-    rows.push({
-      requiredHash: textHash(normalizeStatement(p.need)), suppliedHash: textHash(normalizeStatement(p.supplies)),
-      requiredText: p.need, suppliedText: p.supplies,
-      requiredCourse: p.later, requiredCourseTitle: titles.get(p.later) ?? null, suppliedCourse: p.earlier, suppliedCourseTitle: titles.get(p.earlier) ?? null,
-      label, draft: false, source: 'labeling_sheet', decidedBy: by,
-      judgeModel: 'qwen3.8-27b-fp8', promptVersion: 'm1', judgePFully: p.pFully ?? null, judgePPartly: p.pPartly ?? null,
-    });
+    rows.push(spikeDecision(p, label, by, titles, (t) => textHash(normalizeStatement(t))));
   }
   const tally = (l: string) => rows.filter(r => r.label === l).length;
   console.log(`${rows.length} labeled pairs: ${tally('fully')} fully, ${tally('partly')} partly, ${tally('not')} not`);

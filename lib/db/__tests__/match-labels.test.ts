@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseLabels } from '@/lib/db/match-labels';
+import { parseLabels, spikeDecision, type SpikePair } from '@/lib/db/match-labels';
 import { toCsv, toJsonl, toRecords } from '@/lib/db/match-export';
 import type { Decision } from '@/lib/db/match-queries';
 
@@ -30,5 +30,22 @@ describe('export format', () => {
     expect(csv.split('\r\n')[0]).toMatch(/^required_text,supplied_text,/);
     expect(csv).toContain('"say ""hi"", ok","line\nbreak"');
     expect(toJsonl(recs).trim().split('\n')).toHaveLength(1);
+  });
+});
+
+describe('spikeDecision (two records copied from the real match-spike.json)', () => {
+  const recs = [
+    { i: 1, later: 'GC 1050', required: 'Students are expected to arrive able to use vector/text packaging elements and include bleed and trim marks in basic print layouts.', need: { d: 2, k: 3, u: 1 }, earlier: 'GC 1020', supplies: 'Students set up basic print-ready layouts in InDesign with correct dimensions, bleed, and PDF export practices.', pFully: 0.836, pPartly: 0.971 },
+    { i: 2, later: 'GC 1050', required: 'Students are expected to arrive able to use vector/text packaging elements and include bleed and trim marks in basic print layouts.', need: { d: 2, k: 3, u: 1 }, earlier: 'GC 1040', supplies: 'Students create dielines and include flexographic or screen-print production marks correctly.', pFully: 0.245, pPartly: 0.652 },
+  ] satisfies SpikePair[];
+  it('takes the required text from `required` (not `need`) and the judge P from the file', () => {
+    const titles = new Map([['GC 1050', 'Packaging'], ['GC 1020', 'Intro'], ['GC 1040', 'Press']]);
+    const d = spikeDecision(recs[0]!, 'fully', 'Owner', titles, (s) => `h:${s.length}`);
+    expect(d).toMatchObject({
+      requiredText: recs[0]!.required, suppliedText: recs[0]!.supplies, requiredCourse: 'GC 1050', requiredCourseTitle: 'Packaging',
+      suppliedCourse: 'GC 1020', suppliedCourseTitle: 'Intro', label: 'fully', draft: false, source: 'labeling_sheet', decidedBy: 'Owner',
+      judgeModel: 'qwen3.8-27b-fp8', promptVersion: 'm1', judgePFully: 0.836, judgePPartly: 0.971,
+    });
+    expect(spikeDecision(recs[1]!, 'not', 'Owner', titles, (s) => s).suppliedCourse).toBe('GC 1040');
   });
 });

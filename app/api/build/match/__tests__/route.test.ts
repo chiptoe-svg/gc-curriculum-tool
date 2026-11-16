@@ -13,6 +13,7 @@ const state = vi.hoisted(() => ({
   cache: new Map<string, { pFully: number; pPartly: number }>(), // `${model}|${req}|${sup}`
   vectors: new Map<string, number[]>(),
   asked: [] as Array<{ model?: string; n: number }>,
+  failRead: false,
   judgeImpl: null as null | ((pairs: unknown[], opts: { model?: string; errorSink?: { message: string | null } }) => Promise<Array<{ pFully: number | null; pPartly: number | null }>>),
 }));
 
@@ -32,6 +33,7 @@ vi.mock('@/lib/ai/embeddings', () => ({
 vi.mock('@/lib/db/match-queries', () => ({
   insertDecision: async (d: Record<string, unknown>) => { state.inserted.push(d); },
   readJudgments: async (pairs: Array<{ requiredHash: string; suppliedHash: string }>, model: string) => {
+    if (state.failRead) throw new Error('connection to database lost');
     const out = new Map<string, { pFully: number; pPartly: number }>();
     for (const p of pairs) { const v = state.cache.get(`${model}|${p.requiredHash}|${p.suppliedHash}`); if (v) out.set(`${p.requiredHash}|${p.suppliedHash}`, v); }
     return out;
@@ -53,7 +55,7 @@ import { POST } from '@/app/api/build/match/route';
 const post = (body: unknown) => POST(new Request('http://x/api/build/match', { method: 'POST', body: JSON.stringify(body) }));
 
 beforeEach(() => {
-  state.selects = []; state.inserted = []; state.cache.clear(); state.vectors = new Map(); state.asked = []; state.judgeImpl = null;
+  state.selects = []; state.inserted = []; state.cache.clear(); state.vectors = new Map(); state.asked = []; state.judgeImpl = null; state.failRead = false;
 });
 
 describe('POST /api/build/match decide', () => {
@@ -153,5 +155,17 @@ describe('POST /api/build/match judge', () => {
     const res = await post({ action: 'judge', anchor, others });
     expect(res.status).toBe(502);
     expect((await res.json()).error).toMatch(/not reachable.*HTTP 503/);
+  });
+
+  it('500 with a generic message (not the campus message) when something else fails', async () => {
+    setVectors();
+    state.failRead = true;
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await post({ action: 'judge', anchor, others });
+    expect(res.status).toBe(500);
+    const msg = (await res.json()).error as string;
+    expect(msg).not.toMatch(/campus|database/i);
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
