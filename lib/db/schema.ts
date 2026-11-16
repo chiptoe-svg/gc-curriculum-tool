@@ -1440,3 +1440,62 @@ export const curriculumPlans = pgTable('curriculum_plans', {
   ownerKindCheck: check('curriculum_plans_owner_kind_check', sql`${t.ownerKind} IN ('personal', 'department')`),
   versionCheck: check('curriculum_plans_version_check', sql`${t.version} >= 1`),
 }));
+
+/**
+ * AI judge's probabilities that a supplied skill meets a required skill, cached per
+ * (required, supplied, model, prompt version). Migration 0069 (hand-written).
+ */
+export const skillMatchJudgments = pgTable('skill_match_judgments', {
+  requiredHash: text('required_hash').notNull(),
+  suppliedHash: text('supplied_hash').notNull(),
+  model: text('model').notNull(),
+  promptVersion: text('prompt_version').notNull(),
+  pFully: real('p_fully'),
+  pPartly: real('p_partly'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.requiredHash, t.suppliedHash, t.model, t.promptVersion] }),
+}));
+
+/** Faculty decisions on whether a supplied skill meets a required one. Append-only: rows are only ever inserted. Migration 0069. */
+export const skillMatchDecisions = pgTable('skill_match_decisions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  requiredHash: text('required_hash').notNull(),
+  suppliedHash: text('supplied_hash').notNull(),
+  requiredText: text('required_text').notNull(),
+  suppliedText: text('supplied_text').notNull(),
+  requiredCourse: text('required_course').notNull(),
+  requiredCourseTitle: text('required_course_title'),
+  suppliedCourse: text('supplied_course').notNull(),
+  suppliedCourseTitle: text('supplied_course_title'),
+  requiredSnapshotId: uuid('required_snapshot_id'),
+  suppliedSnapshotId: uuid('supplied_snapshot_id'),
+  label: text('label').$type<'fully' | 'partly' | 'not'>().notNull(),
+  draft: boolean('draft').notNull().default(false),
+  planId: uuid('plan_id'),
+  source: text('source').$type<'map' | 'labeling_sheet'>().notNull(),
+  reason: text('reason'),
+  decidedBy: text('decided_by').notNull(),
+  decidedAt: timestamp('decided_at', { withTimezone: true }).defaultNow().notNull(),
+  judgeModel: text('judge_model'),
+  promptVersion: text('prompt_version'),
+  judgePFully: real('judge_p_fully'),
+  judgePPartly: real('judge_p_partly'),
+}, (t) => ({
+  pairIdx: index('idx_skill_match_decisions_pair').on(t.requiredHash, t.suppliedHash, t.decidedAt.desc()),
+  labelCheck: check('skill_match_decisions_label_check', sql`${t.label} IN ('fully', 'partly', 'not')`),
+  sourceCheck: check('skill_match_decisions_source_check', sql`${t.source} IN ('map', 'labeling_sheet')`),
+}));
+
+/** The model's structured draft from a syllabus uploaded onto a plan course. Migration 0069. */
+export const planSyllabusDrafts = pgTable('plan_syllabus_drafts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  planId: uuid('plan_id').notNull().references(() => curriculumPlans.id, { onDelete: 'cascade' }),
+  courseRef: text('course_ref').notNull(),
+  fileName: text('file_name').notNull(),
+  text: text('text').notNull(),
+  model: text('model').notNull(),
+  draftedBy: text('drafted_by').notNull(),
+  draftedAt: timestamp('drafted_at', { withTimezone: true }).defaultNow().notNull(),
+  draft: jsonb('draft').$type<unknown>().notNull(),
+});
