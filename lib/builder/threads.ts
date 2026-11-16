@@ -95,22 +95,30 @@ export function requiredByCourse(
       };
       const labeled = pairs.map(p => ({ p, l: labelOf(p) })).filter(x => x.l.label !== 'not');
 
-      // Contributions of every eligible fully supplier, per dimension: what a later one restores.
-      const contrib = (d: Dim) => labeled.filter(x => x.l.label === 'fully' && x.p.skill[d] != null)
+      const isDraft = (p: Pair) => p.skill.draft || p.sup.el.viaPlanCoreq || (p.decision?.draft ?? false);
+      // Contributions of every eligible fully supplier, per dimension: what a later one restores. A draft
+      // supplier's contribution may only restore a level toward Met*, never toward Met.
+      const contrib = (d: Dim, cleanOnly: boolean) => labeled
+        .filter(x => x.l.label === 'fully' && x.p.skill[d] != null && !(cleanOnly && isDraft(x.p)))
         .map(x => ({ term: x.p.sup.s.term, level: x.p.skill[d]! }));
 
       let best: Path | null = null;
       for (const { p, l } of labeled) {
-        const supDraft = p.skill.draft || p.sup.el.viaPlanCoreq || req.draft || (p.decision?.draft ?? false);
+        const supDraft = isDraft(p) || req.draft;
         const base = { course: p.sup.s.code, statement: p.skill.statement, draft: supDraft, source: l.source };
         let path: Path;
         if (l.label === 'partly') {
           path = { status: 'partly', p: l.p, short: [], faded: [], supplier: { ...base, label: 'partly' } };
         } else {
           const short = need.filter(d => (p.skill[d] ?? 0) < req.need[d]!);
-          const faded = short.length ? [] : need.filter(d => heldAt(contrib(d), course.term, fade) < req.need[d]!);
-          const status: ReqStatus = short.length || faded.length ? 'partly' : supDraft ? 'met_draft' : 'met';
-          path = { status, p: l.p, short, faded, supplier: { ...base, label: 'fully' } };
+          const fadedWith = (cleanOnly: boolean) =>
+            need.filter(d => !short.includes(d) && heldAt(contrib(d, cleanOnly), course.term, fade) < req.need[d]!);
+          const fadedAll = fadedWith(false);
+          const faded = supDraft ? fadedAll : fadedWith(true);
+          // Held only by counting a draft supplier's restoration: Met*, not Met.
+          const draftRestored = !supDraft && faded.length > 0 && !fadedAll.length;
+          const status: ReqStatus = short.length || (faded.length && !draftRestored) ? 'partly' : supDraft || draftRestored ? 'met_draft' : 'met';
+          path = { status, p: l.p, short, faded: draftRestored ? [] : faded, supplier: { ...base, draft: base.draft || draftRestored, label: 'fully' } };
         }
         if (!best || TIER[path.status] > TIER[best.status] || (TIER[path.status] === TIER[best.status] && path.p > best.p)) best = path;
       }

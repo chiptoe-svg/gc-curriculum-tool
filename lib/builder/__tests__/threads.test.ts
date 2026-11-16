@@ -150,14 +150,35 @@ describe('requiredByCourse', () => {
     expect(run(base, { 'GC 1': [1, 0], 'GC 2': [3, 2] }, { fade: 0 }).results[0]!.status).toBe('met');
   });
 
-  it('a later fully supplier restores the level', () => {
-    const c3 = course('GC 3', [['Check a ticket', 3, 3, 3]]);
-    const two = course('GC 2', [], [[NEED, need(2)]]);
-    const l = lib([c1, c3, two], [cand('GC 1', SUP, 0.9), cand('GC 3', 'Check a ticket', 0.9)]);
-    const terms = { 'GC 1': [1, 0], 'GC 3': [2, 0], 'GC 2': [2, 1] } as Record<string, [1 | 2, 0 | 1]>;
-    expect(run(l, terms, { fade: 1 }).results[0]!.status).toBe('met');
+  it('a later fully supplier restores the level, though its own level falls short', () => {
+    // GC 1 D3 at term 1; GC 3 D2 at term 4 (near the peak, but short of D3 itself); GC 2 needs D3 at term 4 (catalog coreq with GC 3).
+    const c3 = course('GC 3', [['Check a ticket', 3, 3, 2]]);
+    const two = course('GC 2', [], [[NEED, need(3)]]);
+    const l = lib([c1, c3, two], [cand('GC 1', SUP, 0.9), cand('GC 3', 'Check a ticket', 0.8)], {},
+      [{ courseCode: 'GC 2', prereqCode: 'GC 3', kind: 'concurrent_ok', anyOfGroup: null }]);
+    const terms = { 'GC 1': [1, 0], 'GC 3': [2, 0], 'GC 2': [2, 0] } as Record<string, [1 | 2, 0]>;
+    expect(run(l, terms, { fade: 1 }).results[0]).toMatchObject({ status: 'met', faded: [], supplier: { course: 'GC 1' } });
+    // Without the later supplier the level has faded.
     const l2 = lib([c1, two], [cand('GC 1', SUP, 0.9)]);
-    expect(run(l2, { 'GC 1': [1, 0], 'GC 2': [2, 1] }, { fade: 1 }).results[0]!.status).toBe('partly');
+    expect(run(l2, { 'GC 1': [1, 0], 'GC 2': [2, 0] }, { fade: 1 }).results[0]).toMatchObject({ status: 'partly', faded: ['d'] });
+  });
+
+  it('a draft supplier that restores the level gives Met*, not Met', () => {
+    const draftSkill = 'Check a ticket';
+    const edits: CourseEdits = { objectives: [], required: [], developed: [
+      { id: 'e', by: 'X', at: 't', action: 'add', target: null, statement: draftSkill, levels: { k: 3, u: 3, d: 3 } }] };
+    const two = course('GC 2', [], [[NEED, need(2)]]);
+    const l = lib([c1, course('GC 3', []), two], [cand('GC 1', SUP, 0.9)]);
+    const dk = `${hash(NEED)}|${hash(draftSkill)}`;
+    const terms = { 'GC 1': [1, 0], 'GC 3': [2, 0], 'GC 2': [2, 1] } as Record<string, [1 | 2, 0 | 1]>;
+    // GC 1 alone: D3 at term 1 held to term 5 = 1, short of D2.
+    expect(run(l, terms, { fade: 1 }).results[0]!.status).toBe('partly');
+    expect(run(l, terms, { fade: 1, courseEdits: { 'GC 3': edits } }, { [dk]: { pFully: 0.9, pPartly: null } }).results[0]!.status).toBe('met_draft');
+  });
+
+  it('a short dimension does not hide a faded one', () => {
+    const l = lib([course('GC 1', [[SUP, 3, 3, 2]]), course('GC 2', [], [[NEED, { k: 3, u: null, d: 3 }]])], [cand('GC 1', SUP, 0.9)]);
+    expect(run(l, { 'GC 1': [1, 0], 'GC 2': [2, 1] }, { fade: 1 }).results[0]).toMatchObject({ status: 'partly', short: ['d'], faded: ['k'] });
   });
 });
 
@@ -172,6 +193,7 @@ describe('heldAt', () => {
     expect(heldAt([{ term: 1, level: 3 }], 9, 0)).toBe(3);
     expect(heldAt([{ term: 1, level: 3 }, { term: 5, level: 3 }], 6, 1)).toBe(2);
     expect(heldAt([{ term: 1, level: 3 }, { term: 5, level: 3 }], 5, 1)).toBe(3);
+    expect(heldAt([{ term: 1, level: 3 }, { term: 5, level: 2 }], 5, 1)).toBe(3); // within one level of the peak restores
   });
   it('is 0 with no contribution', () => { expect(heldAt([], 5, 1)).toBe(0); });
 });
