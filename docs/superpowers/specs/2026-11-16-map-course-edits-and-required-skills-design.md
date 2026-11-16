@@ -27,6 +27,8 @@ Every edit records who made it (the login's name; "department login" when shared
 
 ## 2. Required skills and their suppliers
 
+**Threads stand apart (owner, 2026-11-16).** A thread (a required skill met by an earlier course's skill) answers one question only: does the earlier course on this map supply what the later course needs? It does not add to or change any competency bucket, competency level, roll-up, program or act target, or learning objective. Competency levels still come only from skill-to-competency links, and objectives only from their own links. Nor does the status of a required skill read competencies: there is no "met through the competency" fallback in this feature.
+
 - **Required skills** of a captured course are its capture's incoming expectations (statement, expected K/U/D), loaded into the library for the version the plan uses. Map edits add to, change or remove them.
 - **Candidates:** the developed skills (captured, plus map-added) of every course placed in an **earlier term** on the map, or the **same term** when linked as a corequisite. Not limited to listed prerequisites: the map asks what students have had by then.
 - **Shortlist:** the 5 nearest candidates by campus embedding (free).
