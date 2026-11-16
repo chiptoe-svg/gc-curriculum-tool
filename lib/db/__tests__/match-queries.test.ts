@@ -62,4 +62,12 @@ describe.skipIf(!SCRATCH)('match-queries (scratch database)', () => {
     expect(got.get(`${r3}|${sup}`)?.pFully).toBeCloseTo(0.9);
     expect((await q.readJudgments([{ requiredHash: r3, suppliedHash: sup }], 'm', 'v2')).size).toBe(0);
   });
+
+  it('writeJudgments dedupes duplicate keys in one call, last one wins', async () => {
+    const r4 = `${tag}-req4`;
+    const row = (pFully: number) => ({ requiredHash: r4, suppliedHash: sup, model: 'm', promptVersion: 'v1', pFully, pPartly: 0.1 });
+    await q.writeJudgments([row(0.1), row(0.7)]);
+    const got = await q.readJudgments([{ requiredHash: r4, suppliedHash: sup }], 'm', 'v1');
+    expect(got.get(`${r4}|${sup}`)?.pFully).toBeCloseTo(0.7);
+  });
 });

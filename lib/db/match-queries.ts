@@ -35,9 +35,13 @@ export async function readJudgments(
 export async function writeJudgments(rows: Array<{
   requiredHash: string; suppliedHash: string; model: string; promptVersion: string; pFully: number | null; pPartly: number | null;
 }>): Promise<void> {
+  // One INSERT cannot touch a row twice, so collapse duplicate keys first (the last one wins).
+  const byKey = new Map<string, (typeof rows)[number]>();
+  for (const r of rows) byKey.set(`${r.requiredHash}|${r.suppliedHash}|${r.model}|${r.promptVersion}`, r);
+  const unique = [...byKey.values()];
   const CHUNK = 1000;
-  for (let i = 0; i < rows.length; i += CHUNK) {
-    await db.insert(skillMatchJudgments).values(rows.slice(i, i + CHUNK)).onConflictDoUpdate({
+  for (let i = 0; i < unique.length; i += CHUNK) {
+    await db.insert(skillMatchJudgments).values(unique.slice(i, i + CHUNK)).onConflictDoUpdate({
       target: [skillMatchJudgments.requiredHash, skillMatchJudgments.suppliedHash, skillMatchJudgments.model, skillMatchJudgments.promptVersion],
       set: { pFully: sql`excluded.p_fully`, pPartly: sql`excluded.p_partly`, createdAt: sql`now()` },
     });
