@@ -22,8 +22,8 @@ export interface SetVerdict { pAny: number | null; kept: string[]; pTogether: nu
 // The call itself: the "v3" procedure from the 2026-11-16 composite experiment (prompt texts copied verbatim).
 // ---------------------------------------------------------------------------------------------------------------------
 
-export interface SetTarget { text: string; course: string; context: string }
-export interface SetPoolItem { ref: string; course: string; text: string; context: string }
+export interface SetTarget { text: string; course: string; title?: string; context: string }
+export interface SetPoolItem { ref: string; course: string; title?: string; text: string; context: string }
 export type SetJudgment = SetVerdict & { picked: string[] };
 type SetOpts = { fetchImpl?: typeof fetch; retryDelayMs?: number };
 
@@ -101,8 +101,8 @@ export async function judgeSet(target: SetTarget, pool: SetPoolItem[], opts: Set
     const errorSink = { message: null as string | null };
     const pair = await judgePairs(picked.map((n) => {
       const m = pool[n - 1]!;
-      return { requiredText: target.text, requiredCourse: target.course, requiredTitle: titleOf(target.course, target.context),
-        suppliedText: m.text, suppliedCourse: m.course, suppliedTitle: titleOf(m.course, m.context) };
+      return { requiredText: target.text, requiredCourse: target.course, requiredTitle: target.title ?? titleOf(target.course, target.context),
+        suppliedText: m.text, suppliedCourse: m.course, suppliedTitle: m.title ?? titleOf(m.course, m.context) };
     }), { fetchImpl, retryDelayMs: delay, errorSink });
     const cut = CUTOFFS[MODEL_IN_USE].partly;
     if (pair.some((p) => p.pPartly === null)) throw new Error(`The campus model did not answer (${errorSink.message ?? 'no answer'}).`);

@@ -269,7 +269,11 @@ async function judgeSetAction(body: Record<string, unknown>): Promise<Response> 
     // Prompt context: code + title + the first 350 characters of the catalog (or proposed) description.
     const codes = [...new Set([text(t.course), ...cands.map((o) => o.course)])];
     const known = new Map((await db.select({ code: courses.code, title: courses.title }).from(courses).where(inArray(courses.code, codes))).map((c) => [c.code, c.title]));
-    const catalog = new Map((await db.select({ code: courseCatalogEntries.courseCode, description: courseCatalogEntries.description }).from(courseCatalogEntries).where(inArray(courseCatalogEntries.courseCode, codes))).map((c) => [c.code, c.description ?? '']));
+    // The latest catalog year with a non-empty description wins: sort oldest first, skip empty, let later years overwrite.
+    const catalog = new Map<string, string>();
+    const entries = await db.select({ code: courseCatalogEntries.courseCode, description: courseCatalogEntries.description, year: courseCatalogEntries.catalogYear })
+      .from(courseCatalogEntries).where(inArray(courseCatalogEntries.courseCode, codes));
+    for (const e of [...entries].sort((a, b) => (a.year ?? '').localeCompare(b.year ?? ''))) if (e.description?.trim()) catalog.set(e.code, e.description);
     const proposed = new Map<string, { title: string; description: string }>();
     for (const p of proposedOf(cluster.state)) {
       if (typeof p.title !== 'string') continue;
@@ -277,16 +281,16 @@ async function judgeSetAction(body: Record<string, unknown>): Promise<Response> 
       if (typeof p.id === 'string') proposed.set(p.id, v);
       if (typeof p.code === 'string' && !proposed.has(p.code)) proposed.set(p.code, v);
     }
+    const titleFor = (course: string, given: string) => (known.get(course) ?? proposed.get(course)?.title ?? given).slice(0, TITLE_MAX);
     const contextOf = (course: string, given: string) => {
-      const title = (known.get(course) ?? proposed.get(course)?.title ?? given).slice(0, TITLE_MAX);
       const desc = (catalog.get(course) || proposed.get(course)?.description || '').slice(0, DESC_CHARS);
-      return `${course} ${title}${desc ? ` (catalog: ${desc})` : ''}`;
+      return `${course} ${titleFor(course, given)}${desc ? ` (catalog: ${desc})` : ''}`;
     };
 
     // The judge sees text hashes as refs so what is stored never depends on the client's refs.
     const v = await viaCampus(() => judgeSet(
-      { text: targetText, course: text(t.course), context: contextOf(text(t.course), text(t.title)) },
-      cands.map((o) => ({ ref: o.key, course: o.course, text: o.text, context: contextOf(o.course, o.title) })),
+      { text: targetText, course: text(t.course), title: titleFor(text(t.course), text(t.title)), context: contextOf(text(t.course), text(t.title)) },
+      cands.map((o) => ({ ref: o.key, course: o.course, title: titleFor(o.course, o.title), text: o.text, context: contextOf(o.course, o.title) })),
     ));
     await writeSetJudgment(keyOf, { pAny: v.pAny, picked: v.picked, kept: v.kept, pTogether: v.pTogether, pCombining: v.pCombining });
     return reply(v);

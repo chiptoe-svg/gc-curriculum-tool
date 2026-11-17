@@ -314,6 +314,22 @@ describe('POST /api/build/match judge-set', () => {
     expect(state.setWrites[0]).toMatchObject({ targetHash: h(target.text), kept: [h(pool[0]!.text)] });
   });
 
+  it('uses the newest non-empty catalog description, and passes titles', async () => {
+    const run = async (rows: Array<{ code: string; description: string; year: string }>) => {
+      state.setAsked = 0; state.setCache.clear();
+      state.selects = [[{ code: 'GC 4400', title: 'Studio Real' }], rows];
+      let seen: { ctx: string; title?: string; pt?: string } | undefined;
+      state.setImpl = async (t, p) => { seen = { ctx: (t as { context: string }).context, title: (t as { title?: string }).title, pt: (p[0] as { title?: string }).title }; return { pAny: 0.1, picked: [], kept: [], pTogether: null, pCombining: null }; };
+      await post({ action: 'judge-set', clusterId: CLUSTER, target, pool });
+      return seen!;
+    };
+    const a = await run([{ code: 'GC 4400', description: 'newer', year: '2026-27' }, { code: 'GC 4400', description: 'older', year: '2024-25' }]);
+    expect(a.ctx).toBe('GC 4400 Studio Real (catalog: newer)');
+    expect(a.title).toBe('Studio Real'); expect(a.pt).toBe('Intro');
+    const b = await run([{ code: 'GC 4400', description: '', year: '2026-27' }, { code: 'GC 4400', description: 'older', year: '2024-25' }]);
+    expect(b.ctx).toBe('GC 4400 Studio Real (catalog: older)');
+  });
+
   it('takes the top 8 by embedding when more are sent', async () => {
     const many = Array.from({ length: 12 }, (_, i) => ({ ref: `q${i}`, text: `skill ${i}`, course: 'GC 1020', title: 'Intro' }));
     state.vectors = new Map([[h(target.text), [1, 0]]]);
