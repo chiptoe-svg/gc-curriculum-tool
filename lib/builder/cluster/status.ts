@@ -77,7 +77,7 @@ export function clusterStatuses(
   };
 
   const evaluate = (t: Target): StatusResult => {
-    /** `known`: some reading exists (judgment, shortlist entry or decision); `judged`: it has a verdict. */
+    /** `known`: some reading exists (judgment, shortlist entry or decision); `judged`: it carries a value (a failed call stays pending). */
     type Pair = { skill: PoolSkill; cand: Candidate; decision: MatchDecision | undefined; known: boolean; judged: boolean };
     const pairs: Pair[] = t.pool.map(skill => {
       const key = `${t.judgeRef}|${skill.skillRef}`;
@@ -88,7 +88,7 @@ export function clusterStatuses(
         requiredRef: t.judgeRef, suppliedRef: skill.skillRef, suppliedCourse: skill.code, suppliedStatement: skill.statement,
         similarity: lc?.similarity ?? 0, pFully: dj ? dj.pFully : lc?.pFully ?? null, pPartly: dj ? dj.pPartly : lc?.pPartly ?? null,
       };
-      return { skill, cand, decision, known: !!dj || !!lc || !!decision, judged: !!dj || lc?.pFully != null || !!decision };
+      return { skill, cand, decision, known: !!dj || !!lc || !!decision, judged: dj?.pFully != null || lc?.pFully != null || !!decision };
     });
     const labelOf = (p: Pair): 'fully' | 'partly' | 'not' => {
       if (p.decision) return p.decision.label;
@@ -189,6 +189,7 @@ const WORD: Record<Exclude<ClusterStatus, 'met_set'>, string> = {
 
 /** The status in words. `codeOf` turns a course ref on the cluster into its course code. */
 export function statusLabel(r: StatusResult, codeOf: (ref: string) => string): string {
+  if (r.status === 'pending') return WORD.pending;
   if (r.proposed.length) {
     const word = r.status === 'met_set' ? 'Met by a set' : WORD[r.status];
     return `${word}: proposed (${r.proposed.join('; ')})`;

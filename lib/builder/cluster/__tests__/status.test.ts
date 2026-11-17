@@ -129,6 +129,22 @@ describe('clusterStatuses', () => {
     expect(run(l, s, { [`${hash(NEED)}|${hash(SUP)}`]: j(0.01, 0.01) }).required['GC 4400']![0]!.status).toBe('not');
   });
 
+  it('a failed judgment (null/null) reads pending, not Not met', () => {
+    const l = lib({ c1: { skills: [SUP] }, c3: { required: [[NEED, NONE]] } });
+    const s = state();
+    const r = run(l, s, { [`${hash(NEED)}|${hash(SUP)}`]: j(null, null) }).required['GC 4400']![0]!;
+    expect(r.status).toBe('pending');
+    expect(label(r, s)).toBe('Matching…');
+  });
+
+  it('a pending target reads just Matching…, without a proposed suffix', () => {
+    const l = lib({ c1: { skills: [SUP] } });
+    const s = state({ courseEdits: { 'GC 4400': { objectives: [], required: [add(NEED, 'faculty')], developed: [] } } });
+    const r = run(l, s).required['GC 4400']![0]!;
+    expect(r).toMatchObject({ status: 'pending', proposed: ['edited skill in GC 4400'] });
+    expect(label(r, s)).toBe('Matching…');
+  });
+
   it('pending when a set verdict is needed but absent', () => {
     const s = state({ objectives: [{ id: 'o1', text: COBJ }] });
     expect(run(setLib(), s, setJudgments()).cluster[0]!.status).toBe('pending');
@@ -185,6 +201,17 @@ describe('clusterStatuses', () => {
     });
     const o = run(l, edited, { [`${hash('Plan a long print run')}|${hash(OWN)}`]: j(0.1, 0.01) }).objectives['GC 2070']![0]!;
     expect(o).toMatchObject({ status: 'not', staleOverride: true, override: { label: 'met' }, proposed: ['edited skill in GC 2070'] });
+  });
+
+  it('a required skill edited after its override shows the override stale, not applied', () => {
+    const NEW = 'Read and check a job ticket';
+    const l = lib({ c1: { skills: [SUP] }, c3: { required: [[NEED, NONE]] } });
+    const s = state({
+      courseEdits: { 'GC 4400': { objectives: [], required: [{ id: 'e1', by: 'X', at: 'now', action: 'edit', target: hash(NEED), statement: NEW, levels: null }], developed: [] } },
+      overrides: [{ targetKey: `req:GC 4400|${hash(NEED)}`, textHash: hash(NEED), label: 'met', by: 'X', at: 'now', reason: null }],
+    });
+    const r = run(l, s, { [`${hash(NEW)}|${hash(SUP)}`]: j(0.01, 0.01) }).required['GC 4400']![0]!;
+    expect(r).toMatchObject({ targetKey: `req:GC 4400|${hash(NEW)}`, status: 'not', staleOverride: true, override: { label: 'met' } });
   });
 
   it('override on a removed course is ignored', () => {
