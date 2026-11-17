@@ -299,3 +299,6 @@ export const EMPTY_PLAN: PlanState = {
   proposed: [],
   versions: {},
 };
+
+/** The fields a course map shares with the plan map: proposed courses, map-scoped edits, chosen versions, drawn and set-aside arrows. */
+export type MapCore = Pick<PlanState, 'proposed' | 'courseEdits' | 'versions' | 'links' | 'unlinked'>;
