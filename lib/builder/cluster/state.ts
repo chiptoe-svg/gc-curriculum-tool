@@ -41,3 +41,14 @@ export function parseClusterState(input: unknown): ClusterState | null {
 export function emptyClusterState(): ClusterState {
   return { cards: [], objectives: [], overrides: [], proposed: [], versions: {}, links: [], unlinked: [] };
 }
+
+/**
+ * A cluster's saved state as the page opens it: a missing state is an empty cluster, fields a newer build added are
+ * filled from the empty cluster, and anything that still cannot be read is null (the page then refuses to open it
+ * rather than let the first edit overwrite it).
+ */
+export function readClusterState(stored: unknown): ClusterState | null {
+  if (stored == null) return emptyClusterState();
+  if (typeof stored !== 'object' || Array.isArray(stored)) return null;
+  return parseClusterState({ ...emptyClusterState(), ...stored });
+}

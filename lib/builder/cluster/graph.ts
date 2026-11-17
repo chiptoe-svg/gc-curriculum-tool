@@ -47,8 +47,11 @@ export function upstreamOf(edges: ReadonlyArray<{ from: string; to: string }>, r
   return found;
 }
 
+/** The refusal for an arrow from→to that would close a loop, naming the courses as given (refs or codes). */
+export const loopMessage = (from: string, to: string) => `That arrow would make a loop (${to} is already upstream of ${from}).`;
+
 /** Why drawing from→to is refused, or null when it is fine. */
 export function wouldCycle(edges: ReadonlyArray<{ from: string; to: string }>, from: string, to: string): string | null {
-  if (from === to || upstreamOf(edges, from).has(to)) return `That arrow would make a loop (${to} is already upstream of ${from}).`;
+  if (from === to || upstreamOf(edges, from).has(to)) return loopMessage(from, to);
   return null;
 }

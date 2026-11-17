@@ -23,6 +23,12 @@ export interface StatusResult {
   suppliers: Array<{ course: string; statement: string; ref: string }>;
   /** Where a status rests on something made up or edited, in words ("GC 4xxx drafted from syllabus"). */
   proposed: string[]; reason: string | null; override: ClusterOverride | null; staleOverride: boolean; candidates: Candidate[];
+  /** The ref judgments name this target by (`${judgeRef}|${suppliedRef}`): a required skill's ref, or an objective's text hash. */
+  judgeRef: string;
+  /** The developed skills it is checked against (`course`: ref on the cluster; `judged`: the pair has a reading with a value). */
+  pool: Array<{ course: string; code: string; ref: string; statement: string; judged: boolean }>;
+  /** Pending only for a set verdict: no single full supplier, some pair at least partly, and no usable set answer. */
+  needsSet: boolean;
 }
 
 const hash = (s: string) => textHash(normalizeStatement(s));
@@ -104,6 +110,7 @@ export function clusterStatuses(
     let status: ClusterStatus;
     let used: PoolSkill[] = [];
     let reason: string | null = null;
+    let needsSet = false;
     const fully = best('fully'), partly = best('partly');
     if (!t.pool.length) {
       status = 'not';
@@ -119,6 +126,7 @@ export function clusterStatuses(
       if (!v || !members || members.some(m => !m)) {
         // No answer yet, or it named a skill no longer in the pool (its course left the cluster): ask again.
         status = 'pending';
+        needsSet = true;
       } else if (v.kept.length >= 2 && (v.pAny ?? -1) >= SET_CUTOFFS.any && (v.pTogether ?? -1) >= SET_CUTOFFS.together) {
         status = (v.pCombining ?? -1) >= SET_CUTOFFS.combining ? 'met_set' : 'parts_met';
         used = members as PoolSkill[];
@@ -140,12 +148,14 @@ export function clusterStatuses(
     const former = own ? undefined : state.overrides.find(o => t.formerKeys.includes(o.targetKey));
     const override = own ?? former ?? null;
     const staleOverride = !!override && (!!former || override.textHash !== textHashNow);
-    if (override && !staleOverride) status = override.label;
+    if (override && !staleOverride) { status = override.label; needsSet = false; }
 
     return {
       targetKey: t.key, text: t.text, status, reason, override, staleOverride, proposed,
       suppliers: used.map(s => ({ course: s.course, statement: s.statement, ref: s.skillRef })),
       candidates: pairs.filter(p => p.known).map(p => p.cand).sort((a, b) => (b.pFully ?? 0) - (a.pFully ?? 0)),
+      judgeRef: t.judgeRef, needsSet,
+      pool: pairs.map(p => ({ course: p.skill.course, code: p.skill.code, ref: p.skill.skillRef, statement: p.skill.statement, judged: p.judged })),
     };
   };
 

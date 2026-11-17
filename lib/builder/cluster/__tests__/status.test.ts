@@ -150,6 +150,25 @@ describe('clusterStatuses', () => {
     expect(run(setLib(), s, setJudgments()).cluster[0]!.status).toBe('pending');
   });
 
+  it('says when a set verdict is the missing piece, and which skills were checked', () => {
+    const s = state({ objectives: [{ id: 'o1', text: COBJ }] });
+    const waiting = run(setLib(), s, setJudgments()).cluster[0]!;
+    expect(waiting).toMatchObject({ status: 'pending', needsSet: true, judgeRef: hash(COBJ) });
+    expect(waiting.pool).toEqual([
+      { course: 'GC 2070', code: 'GC 2070', ref: hash(A), statement: A, judged: true },
+      { course: 'GC 4400', code: 'GC 4400', ref: hash(B), statement: B, judged: true },
+    ]);
+    // Answered, a full single supplier, or no pair judged yet: no set request.
+    expect(run(setLib(), s, setJudgments(), verdict(0.7)).cluster[0]!.needsSet).toBe(false);
+    expect(run(setLib(), s, setJudgments(0.9)).cluster[0]!.needsSet).toBe(false);
+    const unjudged = run(setLib(), s).cluster[0]!;
+    expect(unjudged).toMatchObject({ status: 'pending', needsSet: false });
+    expect(unjudged.pool.map(p => p.judged)).toEqual([false, false]);
+    // An override in force needs no set test.
+    const over = state({ objectives: [{ id: 'o1', text: COBJ }], overrides: [{ targetKey: 'cobj:o1', textHash: hash(COBJ), label: 'met', by: 'X', at: 'now', reason: null }] });
+    expect(run(setLib(), over, setJudgments()).cluster[0]!.needsSet).toBe(false);
+  });
+
   it('a pair decision decides, ahead of the judge', () => {
     const l = lib({ c1: { skills: [SUP] }, c3: { required: [[NEED, NONE]] } });
     const s = state();
