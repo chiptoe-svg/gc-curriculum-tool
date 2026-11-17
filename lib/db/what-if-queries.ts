@@ -10,6 +10,7 @@ import { courseWhatIfs, courseWhatIfMessages, courseWhatIfAttachments, subCompet
 import type { Tx } from '@/lib/db/competency-catalog-queries';
 import type { KnockOn, OwnerKind, UsageKind, WhatIfEstimate, WhatIfProfile, WhatIfProse } from '@/lib/what-if/types';
 
+export type { WhatIfSkills } from '@/lib/what-if/types';
 export type WhatIfRow = typeof courseWhatIfs.$inferSelect;
 export type WhatIfMessageRow = typeof courseWhatIfMessages.$inferSelect;
 export type WhatIfAttachmentRow = typeof courseWhatIfAttachments.$inferSelect;

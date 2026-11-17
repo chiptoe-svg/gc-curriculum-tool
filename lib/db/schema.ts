@@ -3,8 +3,9 @@ import { sql } from 'drizzle-orm';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 import type { ObjectiveGuide } from '@/lib/objective-guide/schema';
-import type { OwnerKind, WhatIfEstimate, WhatIfProfile, KnockOn, WhatIfProse, WhatIfUsage } from '@/lib/what-if/types';
+import type { OwnerKind, WhatIfEstimate, WhatIfProfile, KnockOn, WhatIfProse, WhatIfUsage, WhatIfSkills } from '@/lib/what-if/types';
 import type { PlanState } from '@/lib/builder/types';
+import type { ClusterState } from '@/lib/builder/cluster/state';
 
 export const careerTargets = pgTable('career_targets', {
   id: text('id').primaryKey(),               // stable slug like 'production-operations'
@@ -1380,6 +1381,7 @@ export const courseWhatIfs = pgTable('course_what_ifs', {
   profile: jsonb('profile').$type<WhatIfProfile>(),
   knockOn: jsonb('knock_on').$type<KnockOn>(),
   prose: jsonb('prose').$type<WhatIfProse>(),
+  skills: jsonb('skills').$type<WhatIfSkills>(),
   usage: jsonb('usage').$type<WhatIfUsage>().notNull().default(sql`'{}'::jsonb`),
   pageCreatedAt: timestamp('page_created_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -1473,7 +1475,7 @@ export const skillMatchDecisions = pgTable('skill_match_decisions', {
   label: text('label').$type<'fully' | 'partly' | 'not'>().notNull(),
   draft: boolean('draft').notNull().default(false),
   planId: uuid('plan_id'),
-  source: text('source').$type<'map' | 'labeling_sheet'>().notNull(),
+  source: text('source').$type<'map' | 'labeling_sheet' | 'cluster'>().notNull(),
   reason: text('reason'),
   decidedBy: text('decided_by').notNull(),
   decidedAt: timestamp('decided_at', { withTimezone: true }).defaultNow().notNull(),
@@ -1484,13 +1486,14 @@ export const skillMatchDecisions = pgTable('skill_match_decisions', {
 }, (t) => ({
   pairIdx: index('idx_skill_match_decisions_pair').on(t.requiredHash, t.suppliedHash, t.decidedAt.desc()),
   labelCheck: check('skill_match_decisions_label_check', sql`${t.label} IN ('fully', 'partly', 'not')`),
-  sourceCheck: check('skill_match_decisions_source_check', sql`${t.source} IN ('map', 'labeling_sheet')`),
+  sourceCheck: check('skill_match_decisions_source_check', sql`${t.source} IN ('map', 'labeling_sheet', 'cluster')`),
 }));
 
 /** The model's structured draft from a syllabus uploaded onto a plan course. Migration 0069. */
 export const planSyllabusDrafts = pgTable('plan_syllabus_drafts', {
   id: uuid('id').primaryKey().defaultRandom(),
-  planId: uuid('plan_id').notNull().references(() => curriculumPlans.id, { onDelete: 'cascade' }),
+  planId: uuid('plan_id').references(() => curriculumPlans.id, { onDelete: 'cascade' }),
+  clusterId: uuid('cluster_id').references(() => curriculumClusters.id, { onDelete: 'cascade' }),
   courseRef: text('course_ref').notNull(),
   fileName: text('file_name').notNull(),
   text: text('text').notNull(),
@@ -1498,4 +1501,40 @@ export const planSyllabusDrafts = pgTable('plan_syllabus_drafts', {
   draftedBy: text('drafted_by').notNull(),
   draftedAt: timestamp('drafted_at', { withTimezone: true }).defaultNow().notNull(),
   draft: jsonb('draft').$type<unknown>().notNull(),
-});
+}, (t) => ({
+  ownerCheck: check('plan_syllabus_drafts_owner_check', sql`(${t.planId} IS NULL) <> (${t.clusterId} IS NULL)`),
+}));
+
+/** A saved course cluster map: a few courses and their skills on a canvas, as one JSON document. Same shape and optimistic lock as curriculum_plans. Migration 0070. */
+export const curriculumClusters = pgTable('curriculum_clusters', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  state: jsonb('state').$type<ClusterState>().notNull(),
+  version: integer('version').notNull().default(1),
+  ownerGrantId: text('owner_grant_id').notNull(),
+  ownerKind: text('owner_kind').$type<OwnerKind>().notNull(),
+  createdBy: text('created_by').notNull(),
+  updatedBy: text('updated_by').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  updatedIdx: index('idx_curriculum_clusters_updated').on(t.updatedAt),
+  ownerKindCheck: check('curriculum_clusters_owner_kind_check', sql`${t.ownerKind} IN ('personal', 'department')`),
+  versionCheck: check('curriculum_clusters_version_check', sql`${t.version} >= 1`),
+}));
+
+/** Set-level judge cache: which candidate skills together meet a target skill. Migration 0070. */
+export const skillSetJudgments = pgTable('skill_set_judgments', {
+  targetHash: text('target_hash').notNull(),
+  poolHash: text('pool_hash').notNull(),
+  model: text('model').notNull(),
+  promptVersion: text('prompt_version').notNull(),
+  pAny: real('p_any'),
+  picked: text('picked').array().notNull(),
+  kept: text('kept').array().notNull(),
+  pTogether: real('p_together'),
+  pCombining: real('p_combining'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.targetHash, t.poolHash, t.model, t.promptVersion] }),
+}));
