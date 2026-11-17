@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { Library, LibraryCourse, PlanState } from '@/lib/builder/types';
+import type { Library, LibraryCourse, MapCore } from '@/lib/builder/types';
 import type { CatalogHit } from '@/lib/builder/library';
 import { pageWhatIfs } from '@/lib/builder/compute';
 
@@ -18,7 +18,7 @@ const sourceNote = (c: LibraryCourse): { text: string; mark: string } => {
 
 /** Every course that can go on the map: the tool's own courses, the rest of the Clemson catalog, and new ones. */
 export function LibraryPanel(props: {
-  library: Library; plan: PlanState; placed: Set<string>; open: boolean; onToggle: () => void;
+  library: Library; plan: MapCore; placed: Set<string>; open: boolean; onToggle: () => void;
   onAdd: (code: string) => void; onAddCatalog: (hit: CatalogHit) => void; onAddNew: () => void; onSelect: (ref: string) => void;
   onImportSyllabus: () => void;
 }) {
