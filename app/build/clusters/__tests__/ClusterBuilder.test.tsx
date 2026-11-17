@@ -89,6 +89,18 @@ describe('ClusterBuilder judging', () => {
     expect((set[0]!.body.pool as Array<{ ref: string }>).map(p => p.ref).sort()).toEqual([hash(SUP), hash(A)].sort());
   });
 
+  it('two cluster objectives with the same text each get their set request and their status', async () => {
+    const calls = stubFetch(c => {
+      if (c.body.action === 'judge') return json(200, { results: [{ ref: hash(SUP), similarity: 0.5, pFully: 0.1, pPartly: 0.6 }, { ref: hash(A), similarity: 0.5, pFully: 0.1, pPartly: 0.6 }] });
+      if (c.body.action === 'judge-set') return json(200, { verdict: { pAny: 0.9, kept: [hash(SUP), hash(A)], pTogether: 0.9, pCombining: 0.9 } });
+      return json(500, {});
+    });
+    mount(state({ cards: [{ ref: 'GC 1010', x: 20, y: 20 }], objectives: [{ id: 'o1', text: COBJ }, { id: 'o2', text: COBJ }] }));
+    const items = within(screen.getByRole('region', { name: 'Cluster objectives' })).getAllByRole('listitem');
+    await waitFor(() => { for (const i of items) expect(i).toHaveTextContent('Met by GC 1010 (used together)'); });
+    expect(calls.filter(c => c.body.action === 'judge-set').map(c => (c.body.target as { key: string }).key).sort()).toEqual(['cobj:o1', 'cobj:o2']);
+  });
+
   it('a campus outage shows the error and Try again on a cluster objective, never Not met', async () => {
     let down = true;
     const calls = stubFetch(c => (c.body.action === 'judge'

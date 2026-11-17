@@ -23,8 +23,8 @@ import { ProblemSolvingDrawer } from './ProblemSolvingDrawer';
 import { SyllabusImport, type SyllabusImported } from './SyllabusImport';
 import { newId } from './ui';
 import { useThreadJudging, type JudgeJob, type JudgeOther } from '../shared/useThreadJudging';
+import { useAutosave } from '../shared/useAutosave';
 
-type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict' | 'error' | 'refused';
 const MAX_PROPOSED = 60; // the server's limit (lib/builder/plan-schema.ts)
 const ZOOMS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5];
 /** A change to the map's state. Shared pieces take any map (`S` a plan or a cluster); the plan map's own drawers use the default. */
@@ -87,9 +87,15 @@ export function Builder(props: {
   genEd: { year: string; categories: GenEdCategory[] };
 }) {
   const { library } = props;
-  const [plan, setPlan] = useState(props.initialState);
-  const [name, setName] = useState(props.initialName);
-  const [undo, setUndo] = useState<PlanState[]>([]);
+  const author = useCallback(() => {
+    if (props.knownName) return props.knownName;
+    try { return localStorage.getItem('cb-author') ?? ''; } catch { return ''; }
+  }, [props.knownName]);
+  const saving = useAutosave<PlanState>({
+    url: `/api/build/plans/${props.planId}`, initialState: props.initialState, initialName: props.initialName,
+    initialVersion: props.initialVersion, author, noun: 'plan',
+  });
+  const { state: plan, name, update, stepBack, save, notice, persist, overwrite } = saving;
   const [selection, setSelection] = useState<Selection>(null);
   const [panel, setPanel] = useState<'targets' | 'checks' | { act: Act } | { ps: Act } | null>(
     props.initialState.goal.targetIds.length === 0 && !props.initialState.goal.program ? 'targets' : null);
@@ -109,107 +115,6 @@ export function Builder(props: {
     const j = Math.min(ZOOMS.length - 1, Math.max(0, (i < 0 ? ZOOMS.indexOf(1) : i) + dir));
     changeView({ zoom: ZOOMS[j]! });
   };
-  const [save, setSaveState] = useState<SaveState>('saved');
-  const saveRef = useRef<SaveState>('saved');
-  const setSave = useCallback((s: SaveState) => { saveRef.current = s; setSaveState(s); }, []);
-  const [notice, setNotice] = useState('');
-  const version = useRef(props.initialVersion);
-  /** The version someone else saved, learned from a conflict. Used only if the person chooses to overwrite. */
-  const theirs = useRef<number | null>(null);
-  const inFlight = useRef(false);
-  const unsaved = useRef(false);
-  const latest = useRef({ plan, name });
-  latest.current = { plan, name };
-
-  /** An edit happened. It never clears a conflict or a refusal: those stay until the person chooses what to do. */
-  const touch = useCallback(() => {
-    unsaved.current = true;
-    if (saveRef.current !== 'conflict' && saveRef.current !== 'refused') setSave('dirty');
-  }, [setSave]);
-
-  const update: Update = useCallback(fn => {
-    const prev = latest.current.plan;
-    const next = fn(prev);
-    if (next === prev) return;
-    latest.current = { ...latest.current, plan: next }; // so two updates in one event build on each other
-    setUndo(u => [...u.slice(-40), prev]);
-    setPlan(next);
-    touch();
-  }, [touch]);
-
-  const author = useCallback(() => {
-    if (props.knownName) return props.knownName;
-    try { return localStorage.getItem('cb-author') ?? ''; } catch { return ''; }
-  }, [props.knownName]);
-
-  const putBody = useCallback(() => JSON.stringify({
-    name: latest.current.name, state: latest.current.plan, version: version.current, authorName: author(),
-  }), [author]);
-
-  // One save at a time. A conflict or a refusal stops saving until the person chooses; nothing here overwrites
-  // someone else's save unless overwrite() was called.
-  const persist = useCallback(async () => {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    setSave('saving');
-    const sent = latest.current;
-    try {
-      const res = await fetch(`/api/build/plans/${props.planId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: putBody() });
-      const body = await res.json().catch(() => ({}));
-      if (res.status === 409) {
-        theirs.current = typeof body.version === 'number' ? body.version : null;
-        setNotice(body.updatedBy ?? 'Someone else');
-        setSave('conflict');
-        return;
-      }
-      if (res.status === 400 || res.status === 401 || res.status === 403 || res.status === 404) {
-        setNotice(res.status === 404 ? 'This plan has been deleted, so it can no longer be saved.'
-          : res.status === 400 ? `The server did not accept the plan: ${body.error ?? 'it could not be read'} A blank name or a very large plan can cause this.`
-          : 'This sign-in cannot save plans.');
-        setSave('refused');
-        return;
-      }
-      if (!res.ok) throw new Error(body.error ?? 'save failed');
-      version.current = body.version;
-      const clean = latest.current.plan === sent.plan && latest.current.name === sent.name;
-      unsaved.current = !clean;
-      setSave(clean ? 'saved' : 'dirty');
-    } catch {
-      setSave('error');
-    } finally {
-      inFlight.current = false;
-      // Edits made while the save was in flight: the state is already 'dirty', so the effect below will not re-run.
-      if (unsaved.current && saveRef.current === 'dirty') setTimeout(() => { void persist(); }, 600);
-    }
-  }, [props.planId, putBody, setSave]);
-
-  /** The person chose to keep their version: save over the one someone else saved. */
-  const overwrite = useCallback(() => {
-    if (theirs.current != null) version.current = theirs.current;
-    theirs.current = null;
-    void persist();
-  }, [persist]);
-
-  useEffect(() => {
-    if (save !== 'dirty') return;
-    const t = setTimeout(() => { void persist(); }, 1200);
-    return () => clearTimeout(t);
-  }, [save, plan, name, persist]);
-
-  // Leaving with unsaved edits: send them on the way out, and warn when they cannot be sent.
-  useEffect(() => {
-    const stuck = () => saveRef.current === 'conflict' || saveRef.current === 'refused' || saveRef.current === 'error';
-    const flush = () => {
-      if (!unsaved.current || stuck() || inFlight.current) return;
-      unsaved.current = false;
-      void fetch(`/api/build/plans/${props.planId}`, { method: 'PUT', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: putBody() });
-    };
-    const warn = (e: BeforeUnloadEvent) => { if (unsaved.current && (stuck() || inFlight.current)) e.preventDefault(); };
-    window.addEventListener('pagehide', flush);
-    window.addEventListener('beforeunload', warn);
-    return () => { window.removeEventListener('pagehide', flush); window.removeEventListener('beforeunload', warn); flush(); };
-  }, [props.planId, putBody]);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName);
@@ -219,15 +124,6 @@ export function Builder(props: {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
-
-  function stepBack() {
-    const prev = undo[undo.length - 1];
-    if (!prev) return;
-    latest.current = { ...latest.current, plan: prev };
-    setUndo(undo.slice(0, -1));
-    setPlan(prev);
-    touch();
-  }
 
   // A deleted branch cannot stay selected in the view.
   const shown = view === 'all' || view === 'trunk' || plan.branches.some(b => b.id === view) ? view : 'all';
@@ -441,7 +337,7 @@ export function Builder(props: {
       <header className="cb-bar">
         <Link href={`/build${q}`} className="cb-back">Plans</Link>
         <input className="cb-bar__name" value={name} maxLength={120} aria-label="Plan name"
-          onChange={e => { setName(e.target.value); latest.current = { ...latest.current, name: e.target.value }; touch(); }} />
+          onChange={e => saving.rename(e.target.value)} />
 
         <div className="cb-seg" role="group" aria-label="Which reading of each course the map is built from">
           <button type="button" aria-pressed={plan.lens === 'stated'} onClick={() => update(p => ({ ...p, lens: 'stated' }))}
@@ -489,7 +385,7 @@ export function Builder(props: {
         </button>
         <a className="cb-btn" href={`/api/build/plans/${props.planId}/changes.md`} download
           title="Download every change made on this map (objectives, required and developed skills, prerequisites, match decisions) as a Markdown file. Save first so the file is current.">Export changes</a>
-        <button type="button" className="cb-btn" onClick={stepBack} disabled={undo.length === 0} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
+        <button type="button" className="cb-btn" onClick={stepBack} disabled={!saving.canUndo} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
         <button type="button" className="cb-btn" aria-pressed={!libraryOpen} onClick={() => changeView({ library: !libraryOpen })}
           title="Hide or show the course library, to give the map the full width">{libraryOpen ? 'Hide library' : 'Show library'}</button>
         <label className="cb-check" title="Show or hide the prerequisite arrows between courses. Order problems are still listed under Checks and marked on the course.">
@@ -509,7 +405,7 @@ export function Builder(props: {
       {save === 'conflict' && (
         <div className="cb-banner" role="alert">
           {notice} saved this plan after you opened it. Your changes are on this screen but have not been saved, and nothing more will be saved until you choose.
-          <button type="button" onClick={() => { unsaved.current = false; window.location.reload(); }}>Load their version and drop mine</button>
+          <button type="button" onClick={() => { saving.discard(); window.location.reload(); }}>Load their version and drop mine</button>
           <button type="button" onClick={overwrite}>Keep mine and overwrite theirs</button>
         </div>
       )}

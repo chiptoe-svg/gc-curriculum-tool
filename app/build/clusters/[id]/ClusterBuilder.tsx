@@ -22,13 +22,12 @@ import type { CatalogHit } from '@/lib/builder/library';
 import { LibraryPanel } from '../../[id]/LibraryPanel';
 import { SyllabusImport, type SyllabusImported } from '../../[id]/SyllabusImport';
 import { newId } from '../../[id]/ui';
-import type { Update } from '../../[id]/Builder';
 import { useThreadJudging, type JudgeJob, type JudgeOther } from '../../shared/useThreadJudging';
 import { useSetJudging, type SetRequest } from '../../shared/useSetJudging';
+import { useAutosave } from '../../shared/useAutosave';
 import { ClusterCanvas, cardCourse, nextCardSpot } from '../ClusterCanvas';
 import { ClusterObjectives } from '../ClusterObjectives';
 
-type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict' | 'error' | 'refused';
 const MAX_PROPOSED = 60; // the server's limits (lib/builder/plan-schema.ts, lib/builder/cluster/state.ts)
 const MAX_CARDS = 40;
 /** The anchor "course" of a cluster objective's judge job: the cluster itself. */
@@ -46,113 +45,18 @@ export function ClusterBuilder(props: {
   clusterDecisions: Record<string, MatchDecision>;
 }) {
   const { library } = props;
-  const [cluster, setCluster] = useState(props.initialState);
-  const [name, setName] = useState(props.initialName);
-  const [undo, setUndo] = useState<ClusterState[]>([]);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [libraryOpen, setLibraryOpen] = useState(true);
-  const [save, setSaveState] = useState<SaveState>('saved');
-  const saveRef = useRef<SaveState>('saved');
-  const setSave = useCallback((s: SaveState) => { saveRef.current = s; setSaveState(s); }, []);
-  const [notice, setNotice] = useState('');
-  const version = useRef(props.initialVersion);
-  /** The version someone else saved, learned from a conflict. Used only if the person chooses to overwrite. */
-  const theirs = useRef<number | null>(null);
-  const inFlight = useRef(false);
-  const unsaved = useRef(false);
-  const latest = useRef({ cluster, name });
-  latest.current = { cluster, name };
-
-  /** An edit happened. It never clears a conflict or a refusal: those stay until the person chooses what to do. */
-  const touch = useCallback(() => {
-    unsaved.current = true;
-    if (saveRef.current !== 'conflict' && saveRef.current !== 'refused') setSave('dirty');
-  }, [setSave]);
-
-  const update: Update<ClusterState> = useCallback(fn => {
-    const prev = latest.current.cluster;
-    const next = fn(prev);
-    if (next === prev) return;
-    latest.current = { ...latest.current, cluster: next }; // so two updates in one event build on each other
-    setUndo(u => [...u.slice(-40), prev]);
-    setCluster(next);
-    touch();
-  }, [touch]);
-
   const author = useCallback(() => {
     if (props.knownName) return props.knownName;
     try { return localStorage.getItem('cb-author') ?? ''; } catch { return ''; }
   }, [props.knownName]);
   const who = useCallback(() => author().trim() || 'Department login', [author]);
-
-  const putBody = useCallback(() => JSON.stringify({
-    name: latest.current.name, state: latest.current.cluster, version: version.current, authorName: author(),
-  }), [author]);
-
-  // One save at a time. A conflict or a refusal stops saving until the person chooses; nothing here overwrites
-  // someone else's save unless overwrite() was called.
-  const persist = useCallback(async () => {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    setSave('saving');
-    const sent = latest.current;
-    try {
-      const res = await fetch(`/api/build/clusters/${props.clusterId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: putBody() });
-      const body = await res.json().catch(() => ({}));
-      if (res.status === 409) {
-        theirs.current = typeof body.version === 'number' ? body.version : null;
-        setNotice(body.updatedBy ?? 'Someone else');
-        setSave('conflict');
-        return;
-      }
-      if (res.status === 400 || res.status === 401 || res.status === 403 || res.status === 404) {
-        setNotice(res.status === 404 ? 'This cluster has been deleted, so it can no longer be saved.'
-          : res.status === 400 ? `The server did not accept the cluster: ${body.error ?? 'it could not be read'} A blank name or a very large cluster can cause this.`
-          : 'This sign-in cannot save clusters.');
-        setSave('refused');
-        return;
-      }
-      if (!res.ok) throw new Error(body.error ?? 'save failed');
-      version.current = body.version;
-      const clean = latest.current.cluster === sent.cluster && latest.current.name === sent.name;
-      unsaved.current = !clean;
-      setSave(clean ? 'saved' : 'dirty');
-    } catch {
-      setSave('error');
-    } finally {
-      inFlight.current = false;
-      // Edits made while the save was in flight: the state is already 'dirty', so the effect below will not re-run.
-      if (unsaved.current && saveRef.current === 'dirty') setTimeout(() => { void persist(); }, 600);
-    }
-  }, [props.clusterId, putBody, setSave]);
-
-  /** The person chose to keep their version: save over the one someone else saved. */
-  const overwrite = useCallback(() => {
-    if (theirs.current != null) version.current = theirs.current;
-    theirs.current = null;
-    void persist();
-  }, [persist]);
-
-  useEffect(() => {
-    if (save !== 'dirty') return;
-    const t = setTimeout(() => { void persist(); }, 1200);
-    return () => clearTimeout(t);
-  }, [save, cluster, name, persist]);
-
-  // Leaving with unsaved edits: send them on the way out, and warn when they cannot be sent.
-  useEffect(() => {
-    const stuck = () => saveRef.current === 'conflict' || saveRef.current === 'refused' || saveRef.current === 'error';
-    const flush = () => {
-      if (!unsaved.current || stuck() || inFlight.current) return;
-      unsaved.current = false;
-      void fetch(`/api/build/clusters/${props.clusterId}`, { method: 'PUT', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: putBody() });
-    };
-    const warn = (e: BeforeUnloadEvent) => { if (unsaved.current && (stuck() || inFlight.current)) e.preventDefault(); };
-    window.addEventListener('pagehide', flush);
-    window.addEventListener('beforeunload', warn);
-    return () => { window.removeEventListener('pagehide', flush); window.removeEventListener('beforeunload', warn); flush(); };
-  }, [props.clusterId, putBody]);
-
+  const saving = useAutosave<ClusterState>({
+    url: `/api/build/clusters/${props.clusterId}`, initialState: props.initialState, initialName: props.initialName,
+    initialVersion: props.initialVersion, author, noun: 'cluster',
+  });
+  const { state: cluster, name, update, stepBack, save, notice, persist, overwrite } = saving;
+  const [selected, setSelected] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(true);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName);
@@ -162,15 +66,6 @@ export function ClusterBuilder(props: {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
-
-  function stepBack() {
-    const prev = undo[undo.length - 1];
-    if (!prev) return;
-    latest.current = { ...latest.current, cluster: prev };
-    setUndo(undo.slice(0, -1));
-    setCluster(prev);
-    touch();
-  }
 
   // ---- statuses and judging ----------------------------------------------
   const [drafts, setDrafts] = useState<DraftJudgments>({});
@@ -220,11 +115,19 @@ export function ClusterBuilder(props: {
   const thread = useThreadJudging({ jobs: judgeJobs, othersFor, anchorOf, owner: { clusterId: props.clusterId }, setDrafts });
 
   // The set test, for each target that waits only on it. The whole pool is sent; the server keeps the 8 most similar.
+  // Built from every status by its target key (not the pair-job map, which merges targets with the same text).
   const setRequests = useMemo(() => {
     const out: SetRequest[] = [];
-    for (const t of targets.values()) {
+    const all = [
+      ...Object.entries(statuses.required).flatMap(([courseRef, rs]) => rs.map(result => ({ result, courseRef }))),
+      ...Object.entries(statuses.objectives).flatMap(([courseRef, rs]) => rs.map(result => ({ result, courseRef }))),
+      ...statuses.cluster.map(result => ({ result, courseRef: CLUSTER_REF })),
+    ];
+    const seen = new Set<string>();
+    for (const t of all) {
       const r = t.result;
-      if (!r.needsSet) continue;
+      if (!r.needsSet || seen.has(r.targetKey)) continue;
+      seen.add(r.targetKey);
       const me = t.courseRef === CLUSTER_REF ? { course: 'Cluster', title: name || 'Course cluster' } : (() => { const c = cardCourse(library, cluster, t.courseRef); return { course: c.code, title: c.title }; })();
       out.push({
         key: r.targetKey, target: { key: r.targetKey, text: r.text, ...me },
@@ -232,7 +135,7 @@ export function ClusterBuilder(props: {
       });
     }
     return out;
-  }, [targets, library, cluster, name]);
+  }, [statuses, library, cluster, name]);
   const setJudging = useSetJudging({ requests: setRequests, clusterId: props.clusterId, setSets });
 
   /** The error from a target's last failed match (pair or set), if it is still waiting. */
@@ -249,12 +152,12 @@ export function ClusterBuilder(props: {
   // ---- adding and removing courses ---------------------------------------
   const onCards = useMemo(() => new Set(cluster.cards.map(c => c.ref)), [cluster.cards]);
   const full = () => {
-    if (latest.current.cluster.cards.length < MAX_CARDS) return false;
+    if (saving.current().cards.length < MAX_CARDS) return false;
     window.alert(`A cluster can hold ${MAX_CARDS} courses. Remove one to add another.`);
     return true;
   };
   const tooManyProposed = () => {
-    if (latest.current.cluster.proposed.length < MAX_PROPOSED) return false;
+    if (saving.current().proposed.length < MAX_PROPOSED) return false;
     window.alert(`A cluster can hold ${MAX_PROPOSED} new or catalog-only courses. Remove one to add another.`);
     return true;
   };
@@ -285,7 +188,7 @@ export function ClusterBuilder(props: {
   const [importing, setImporting] = useState(false);
   /** A syllabus draft came back: add the course if new, merge its drafted items and links, put it on the canvas if needed. */
   const imported = (r: SyllabusImported) => {
-    const s0 = latest.current.cluster;
+    const s0 = saving.current();
     if ((r.created && s0.proposed.length >= MAX_PROPOSED) || (!s0.cards.some(c => c.ref === r.ref) && s0.cards.length >= MAX_CARDS)) {
       window.alert(`A cluster can hold ${MAX_CARDS} courses, ${MAX_PROPOSED} of them new or catalog-only. Remove one to add another.`);
       setImporting(false);
@@ -324,11 +227,11 @@ export function ClusterBuilder(props: {
       <header className="cb-bar">
         <Link href={`/build${q}`} className="cb-back">Plans and clusters</Link>
         <input className="cb-bar__name" value={name} maxLength={120} aria-label="Cluster name"
-          onChange={e => { setName(e.target.value); latest.current = { ...latest.current, name: e.target.value }; touch(); }} />
+          onChange={e => saving.rename(e.target.value)} />
         <span className="cb-bar__spacer" />
         <a className="cb-btn" href={`/api/build/clusters/${props.clusterId}/changes.md`} download
           title="Download every change made on this cluster as a Markdown file. Save first so the file is current.">Export changes</a>
-        <button type="button" className="cb-btn" onClick={stepBack} disabled={undo.length === 0} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
+        <button type="button" className="cb-btn" onClick={stepBack} disabled={!saving.canUndo} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
         <button type="button" className="cb-btn" aria-pressed={!libraryOpen} onClick={() => setLibraryOpen(!libraryOpen)}
           title="Hide or show the course library">{libraryOpen ? 'Hide library' : 'Show library'}</button>
         <span className={`cb-save cb-save--${save}`} role="status">
@@ -339,7 +242,7 @@ export function ClusterBuilder(props: {
       {save === 'conflict' && (
         <div className="cb-banner" role="alert">
           {notice} saved this cluster after you opened it. Your changes are on this screen but have not been saved, and nothing more will be saved until you choose.
-          <button type="button" onClick={() => { unsaved.current = false; window.location.reload(); }}>Load their version and drop mine</button>
+          <button type="button" onClick={() => { saving.discard(); window.location.reload(); }}>Load their version and drop mine</button>
           <button type="button" onClick={overwrite}>Keep mine and overwrite theirs</button>
         </div>
       )}
