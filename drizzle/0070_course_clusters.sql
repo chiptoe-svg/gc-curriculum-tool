@@ -9,6 +9,9 @@ DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'curriculum_clusters') THEN
     RAISE EXCEPTION '0070: already applied';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'skill_match_decisions') THEN
+    RAISE EXCEPTION '0070: precondition — 0069 not applied';
+  END IF;
 END $$;
 
 CREATE TABLE curriculum_clusters (

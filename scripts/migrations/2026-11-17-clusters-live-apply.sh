@@ -29,8 +29,9 @@ q() { "$PGBIN/psql" "$URL" -X -q -At -v ON_ERROR_STOP=1 -c "$1"; }
 DB="$(q "select current_database()")" || fail "cannot connect to the live database"
 [ "$DB" = "gc_curriculum" ] || fail "connected to '$DB', expected gc_curriculum"
 EXISTS="$(q "select count(*) from information_schema.tables where table_schema='public' and table_name in ('curriculum_clusters','skill_set_judgments')")"
+PRE="$(q "select count(*) from information_schema.tables where table_schema='public' and table_name in ('skill_match_decisions','plan_syllabus_drafts')")"
 TABLES_BEFORE="$(q "select count(*) from information_schema.tables where table_schema='public' and table_type='BASE TABLE'")"
-DROPS="$(grep -ciE '^(DROP TABLE|DELETE|UPDATE|TRUNCATE)' "$SQL")"
+DROPS="$(grep -ciE '^(DROP TABLE|DELETE|UPDATE|TRUNCATE)|DROP COLUMN|SET DATA TYPE' "$SQL")"
 
 echo "live database:              $DB"
 echo "0070 tables present:        $EXISTS of 2"
@@ -42,6 +43,7 @@ if [ "${1:-}" != "--apply" ]; then
   exit 0
 fi
 
+[ "$PRE" = "2" ] || fail "0069 is not applied (skill_match_decisions and plan_syllabus_drafts must exist)"
 [ "$EXISTS" = "0" ] || fail "0070 tables already exist; nothing to do"
 [ "$DROPS" = "0" ] || fail "0070 now drops, deletes or updates data"
 mkdir -p "$BACKUPS"
@@ -56,8 +58,10 @@ echo "backup: $BACKUP"
 TABLES_AFTER="$(q "select count(*) from information_schema.tables where table_schema='public' and table_type='BASE TABLE'")"
 echo "applied. base tables: $TABLES_BEFORE -> $TABLES_AFTER"
 [ "$TABLES_AFTER" = "$((TABLES_BEFORE + 2))" ] || fail "verification: expected two more tables"
-[ "$(q "select count(*) from information_schema.columns where table_name='course_what_ifs' and column_name='skills'")" = "1" ] || fail "verification: course_what_ifs.skills missing"
-[ "$(q "select count(*) from information_schema.columns where table_name='plan_syllabus_drafts' and column_name='cluster_id'")" = "1" ] || fail "verification: plan_syllabus_drafts.cluster_id missing"
-[ "$(q "select is_nullable from information_schema.columns where table_name='plan_syllabus_drafts' and column_name='plan_id'")" = "YES" ] || fail "verification: plan_syllabus_drafts.plan_id still NOT NULL"
+[ "$(q "select count(*) from pg_constraint where conname='plan_syllabus_drafts_owner_check' and conrelid='public.plan_syllabus_drafts'::regclass")" = "1" ] || fail "verification: plan_syllabus_drafts_owner_check missing"
+[ "$(q "select count(*) from information_schema.tables where table_schema='public' and table_name in ('curriculum_clusters','skill_set_judgments')")" = "2" ] || fail "verification: curriculum_clusters / skill_set_judgments missing"
+[ "$(q "select count(*) from information_schema.columns where table_schema='public' and table_name='course_what_ifs' and column_name='skills'")" = "1" ] || fail "verification: course_what_ifs.skills missing"
+[ "$(q "select count(*) from information_schema.columns where table_schema='public' and table_name='plan_syllabus_drafts' and column_name='cluster_id'")" = "1" ] || fail "verification: plan_syllabus_drafts.cluster_id missing"
+[ "$(q "select is_nullable from information_schema.columns where table_schema='public' and table_name='plan_syllabus_drafts' and column_name='plan_id'")" = "YES" ] || fail "verification: plan_syllabus_drafts.plan_id still NOT NULL"
 q "select pg_get_constraintdef(oid) from pg_constraint where conname='skill_match_decisions_source_check'" | grep -q cluster || fail "verification: source check does not allow 'cluster'"
 echo "verified. Next: deploy the build."
