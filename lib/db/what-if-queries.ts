@@ -11,12 +11,17 @@ import type { Tx } from '@/lib/db/competency-catalog-queries';
 import type { KnockOn, OwnerKind, UsageKind, WhatIfEstimate, WhatIfProfile, WhatIfProse } from '@/lib/what-if/types';
 
 export type { WhatIfSkills } from '@/lib/what-if/types';
+import type { WhatIfSkills } from '@/lib/what-if/types';
 export type WhatIfRow = typeof courseWhatIfs.$inferSelect;
 export type WhatIfMessageRow = typeof courseWhatIfMessages.$inferSelect;
 export type WhatIfAttachmentRow = typeof courseWhatIfAttachments.$inferSelect;
 
 export async function createWhatIf(
-  input: { courseCode: string; baseSnapshotId: string; ownerGrantId: string; ownerKind: OwnerKind; authorName: string },
+  input: {
+    courseCode: string; baseSnapshotId: string; ownerGrantId: string; ownerKind: OwnerKind; authorName: string;
+    /** A skills-only what-if saved from a cluster (migration 0070) names itself and carries its skills. */
+    title?: string; skills?: WhatIfSkills;
+  },
   ex: Tx | typeof db = db,
 ): Promise<WhatIfRow> {
   const [row] = await ex.insert(courseWhatIfs).values(input).returning();
