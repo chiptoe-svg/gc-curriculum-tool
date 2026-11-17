@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { authorizeRequest } from '@/lib/auth/route-auth';
 import { personalName } from '@/lib/auth/viewer';
 import { getCluster } from '@/lib/db/cluster-queries';
+import { planDraftDecisions } from '@/lib/db/match-queries';
+import { isUndefinedTable } from '@/lib/db/pg-errors';
 import { loadLibrary } from '@/lib/builder/library';
 import { emptyClusterState, parseClusterState } from '@/lib/builder/cluster/state';
 import { clusterStatuses } from '@/lib/builder/cluster/status';
 import { renderChangesMarkdown } from '@/lib/builder/changes-md';
 import type { PlacedCourse } from '@/lib/builder/compute';
+import type { MatchDecision } from '@/lib/builder/types';
 
 interface Ctx { params: Promise<{ id: string }> }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -40,11 +43,22 @@ export async function GET(req: Request, { params }: Ctx): Promise<Response> {
     }];
   });
 
-  const statuses = clusterStatuses(lib, state, {}, {}, lib.decisions);
+  // Decisions made on this cluster (stored with plan_id = the cluster id), plus the non-draft ones the library holds.
+  // Lookup may use all of them; the export lists only those whose two skills are on this cluster's courses (renderChangesMarkdown scopes them).
+  const clusterDecisions: Record<string, MatchDecision> = {};
+  try {
+    for (const [key, d] of await planDraftDecisions(id)) {
+      clusterDecisions[key] = { requiredRef: d.requiredHash, suppliedRef: d.suppliedHash, label: d.label, by: d.decidedBy, at: new Date(d.decidedAt).toISOString(), draft: true };
+    }
+  } catch (err) { // 0069 not applied on this database: no decisions, silently; anything else is logged
+    if (!isUndefinedTable(err)) console.error('[build/cluster changes.md] decisions failed:', err instanceof Error ? err.message : err);
+  }
+  const decisions = { ...lib.decisions, ...clusterDecisions };
+  const statuses = clusterStatuses(lib, state, {}, {}, decisions);
   const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
   const md = renderChangesMarkdown({
     planName: cluster.name, exportedBy: personalName(auth.grant) ?? 'Department login', date, lib, plan: state,
-    placed, required: {}, clusterStatuses: statuses, decisions: Object.values(lib.decisions),
+    placed, required: {}, clusterStatuses: statuses, decisions: Object.values(decisions),
     note: 'Match statuses are as last judged: the catalog\'s own matches and faculty decisions. A skill not yet judged reads Matching….',
   });
   const slug = cluster.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'cluster';

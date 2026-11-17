@@ -44,6 +44,9 @@ vi.mock('@/lib/db/cluster-queries', () => ({
 vi.mock('@/lib/db/what-if-queries', () => ({
   createWhatIf: async (i: Record<string, unknown>) => { mem.whatIfs.push(i); return { id: WHATIF_ID }; },
 }));
+vi.mock('@/lib/db/match-queries', () => ({
+  planDraftDecisions: async (id: string) => new Map(id === ID ? [['h:Read a job ticket|h:Mix ink', { requiredHash: 'h:Read a job ticket', suppliedHash: 'h:Mix ink', label: 'fully', decidedBy: 'Dr Who', decidedAt: '2026-11-17T11:00:00.000Z' }]] : []),
+}));
 vi.mock('@/lib/builder/library', () => ({ loadLibrary: async () => mem.lib }));
 vi.mock('@/lib/db/live-captures', () => ({ hasLiveCapture: async (c: string) => mem.captured.has(c) }));
 vi.mock('@/lib/db/course-code-match', () => ({ findCourseByTypedCode: async () => null }));
@@ -168,6 +171,15 @@ describe('GET /api/build/clusters/[id]/changes.md', () => {
     expect(md).toContain('Added: Mix ink by eye (K– U– D2)*');
     expect(md).toMatch(/Added: Mix ink by eye.* — Matching…/);
     expect(md).not.toMatch(/thread/i);
+  });
+  it('lists a decision made on this cluster but not an unrelated library decision', async () => {
+    const lib = mem.lib as Library;
+    lib.decisions = { 'h:Other need|h:Other skill': { requiredRef: 'h:Other need', suppliedRef: 'h:Other skill', label: 'fully', by: 'Dr Else', at: '2026-11-01T00:00:00.000Z', draft: false } };
+    seed({ cards: [{ ref: 'GC 1', x: 0, y: 0 }, { ref: 'GC 2', x: 300, y: 0 }], links: [{ from: 'GC 1', to: 'GC 2' }] });
+    const md = await (await changes(new Request('http://x'), ctx())).text();
+    expect(md).toContain('Accepted fully: "Read a job ticket" ← GC 1: "Mix ink"');
+    expect(md).not.toContain('Other need');
+    expect(md).not.toContain('Other skill');
   });
   it('is 404 for a missing cluster', async () => {
     expect((await changes(new Request('http://x'), ctx())).status).toBe(404);
