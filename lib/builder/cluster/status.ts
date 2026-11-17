@@ -6,7 +6,7 @@ import { CUTOFFS, MODEL_IN_USE } from '@/lib/ai/match-judge';
 import { SET_CUTOFFS, type SetVerdict } from '@/lib/ai/set-judge';
 import { textHash } from '@/lib/catalog/bundles';
 import { normalizeStatement } from '@/lib/catalog/project-trail';
-import { versionOf } from '../compute';
+import { clusterVersionOf } from '../compute';
 import { effectiveCourse, type EffectiveCourse } from '../edits';
 import type { DraftJudgments } from '../threads';
 import type { Candidate, Library, LibraryCourse, MatchDecision, ProposedCourse } from '../types';
@@ -29,7 +29,7 @@ const hash = (s: string) => textHash(normalizeStatement(s));
 
 /** The capture a catalog course is read from on the cluster. One place, so the cluster's own version picker can swap in. */
 function versionFor(lc: LibraryCourse, state: ClusterState) {
-  return versionOf(lc, state);
+  return clusterVersionOf(lc, state);
 }
 
 interface PoolSkill { course: string; code: string; skillRef: string; statement: string; draft: boolean }

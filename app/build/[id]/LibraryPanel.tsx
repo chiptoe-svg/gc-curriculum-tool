@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Library, LibraryCourse, PlanState } from '@/lib/builder/types';
 import type { CatalogHit } from '@/lib/builder/library';
+import { pageWhatIfs } from '@/lib/builder/compute';
 
 const sourceNote = (c: LibraryCourse): { text: string; mark: string } => {
   const scored = c.versions.some(v => v.depths.length > 0);
@@ -74,7 +75,7 @@ export function LibraryPanel(props: {
               <li key={c.code} className={`cb-libitem${placed ? ' is-placed' : ''}`} draggable
                 onDragStart={e => { e.dataTransfer.setData('text/plain', c.code); e.dataTransfer.effectAllowed = 'move'; }}>
                 <button type="button" className="cb-libitem__main" onClick={() => (placed ? props.onSelect(c.code) : props.onAdd(c.code))}
-                  title={`${c.title}. ${s.text}.${c.whatIfs.length ? ` ${c.whatIfs.length} what-if${c.whatIfs.length > 1 ? 's' : ''}.` : ''}`}>
+                  title={`${c.title}. ${s.text}.${pageWhatIfs(c).length ? ` ${pageWhatIfs(c).length} what-if${pageWhatIfs(c).length > 1 ? 's' : ''}.` : ''}`}>
                   <span className={`cb-src cb-src--${s.mark}`} aria-hidden />
                   <span className="cb-libitem__code">{c.code}</span>
                   <span className="cb-libitem__title">{c.title}</span>

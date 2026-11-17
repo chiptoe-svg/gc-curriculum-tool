@@ -48,9 +48,10 @@ export default async function ExplorePage({ params, searchParams }: Props) {
       summary: w.summary,
       pageCreatedAt: w.pageCreatedAt ? w.pageCreatedAt.toISOString() : null,
       createdAt: w.createdAt.toISOString(),
+      skillsOnly: !!w.skills && !w.profile,
       mine: me !== null && w.ownerKind === me.ownerKind && w.ownerGrantId === me.ownerGrantId,
     }))
-    .filter(w => w.pageCreatedAt !== null || w.mine);
+    .filter(w => w.pageCreatedAt !== null || w.skillsOnly || w.mine);
 
   return (
     <div className="min-h-screen bg-background">

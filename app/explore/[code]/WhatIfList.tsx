@@ -12,6 +12,8 @@ export interface WhatIfListItem {
   createdAt: string;
   /** The caller started it (so an unfinished one is theirs to continue). */
   mine: boolean;
+  /** Saved from a cluster: skills and objectives only, no page. */
+  skillsOnly?: boolean;
 }
 
 /** The course's what-ifs: every one with a page, plus the caller's own unfinished ones. */
@@ -48,14 +50,15 @@ export function WhatIfList({
         <ul className="divide-y rounded-md border">
           {whatIfs.map(w => (
             <li key={w.id} className="px-4 py-3">
-              {w.pageCreatedAt ? (
+              {w.pageCreatedAt || w.skillsOnly ? (
                 <>
                   <Link href={`${base}/${w.id}${q}`} className="font-medium underline-offset-2 hover:underline">
                     {w.title ?? WHAT_IF_COPY.untitled}
                   </Link>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {WHAT_IF_COPY.listBy(w.authorName, formatDate(w.pageCreatedAt))}
+                    {WHAT_IF_COPY.listBy(w.authorName, formatDate(w.pageCreatedAt ?? w.createdAt))}
                   </p>
+                  {w.skillsOnly && <p className="mt-0.5 text-xs font-medium">{WHAT_IF_COPY.listSkillsOnly}</p>}
                   {w.summary && <p className="mt-1 text-sm">{w.summary}</p>}
                 </>
               ) : (

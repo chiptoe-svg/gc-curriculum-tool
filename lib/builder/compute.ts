@@ -14,10 +14,12 @@
 import { depthScaffoldingStatus, type ScaffoldingStatus } from '@/lib/program/scaffolding';
 import { isMentionOnly } from '@/lib/program/depth-band';
 import { MEMBERSHIP_CUTOFF } from '@/lib/catalog/membership';
+import { textHash } from '@/lib/catalog/bundles';
+import { normalizeStatement } from '@/lib/catalog/project-trail';
 import { PLAN_SCOPE, TERMS_PER_ACT, termOf } from './types';
 import { layoutLanes } from './layout';
 import type {
-  Act, ActLevels, Basis, CompetencyDepth, Depth, Library, LibraryCompetency, LibraryCourse, PlanState, ProposedCourse, Requirement,
+  Act, ActLevels, Basis, CompetencyDepth, Depth, Library, LibraryCompetency, LibraryCourse, LibraryVersion, PlanState, ProposedCourse, Requirement,
 } from './types';
 
 const maxN = (a: number | null, b: number | null): number | null =>
@@ -45,11 +47,38 @@ export function versionOf(course: LibraryCourse, plan: Pick<PlanState, 'versions
 
 export const WHAT_IF_PREFIX = 'whatif:';
 
+/** What-ifs that have a finished page. /build's picker lists only these; skills-only ones (from a cluster) are not its inputs. */
+export function pageWhatIfs(course: LibraryCourse) {
+  return course.whatIfs.filter(w => !w.skills);
+}
+
 /** The what-if chosen for a course in this plan, if any. */
 export function whatIfOf(course: LibraryCourse, plan: Pick<PlanState, 'versions'>) {
   const chosen = plan.versions[course.code];
   if (!chosen?.startsWith(WHAT_IF_PREFIX)) return null;
   return course.whatIfs.find(w => w.id === chosen.slice(WHAT_IF_PREFIX.length)) ?? null;
+}
+
+/**
+ * A cluster's reading of a course: like versionOf, except a chosen skills-only what-if stands in for the base capture's
+ * skills and required skills (and objectives), using the what-if's own statements. Refs hash the normalized statement,
+ * as lib/builder/edits.ts does.
+ */
+export function clusterVersionOf(course: LibraryCourse, state: Pick<PlanState, 'versions'>): LibraryVersion | null {
+  const chosen = state.versions[course.code];
+  const w = chosen?.startsWith(WHAT_IF_PREFIX) ? course.whatIfs.find(x => x.id === chosen.slice(WHAT_IF_PREFIX.length)) : undefined;
+  if (!w?.skills) return versionOf(course, state);
+  const base = course.versions.find(v => v.snapshotId === w.baseSnapshotId) ?? course.versions[0] ?? null;
+  const ref = (s: string) => textHash(normalizeStatement(s));
+  return {
+    ...(base ?? {
+      snapshotId: `${WHAT_IF_PREFIX}${w.id}`, instructorName: null, createdAt: new Date(0).toISOString(), depths: [], outcomes: [],
+      disagreements: [], projects: [], conditions: null, unmapped: [], suggestions: [], linked: false,
+    }),
+    skills: w.skills.developed.map(s => ({ skillRef: ref(s.statement), statement: s.statement, k: s.k, u: s.u, d: s.d })),
+    required: w.skills.required.map(r => ({ ref: ref(r.statement), statement: r.statement, need: r.need })),
+    objectives: w.skills.objectives,
+  };
 }
 
 export function readCourse(course: LibraryCourse, plan: Pick<PlanState, 'lens' | 'fill' | 'versions'>): CourseReading {

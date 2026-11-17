@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { WHAT_IF_PREFIX, versionOf, whatIfOf, type PlacedCourse, type PlanResult } from '@/lib/builder/compute';
+import { WHAT_IF_PREFIX, pageWhatIfs, versionOf, whatIfOf, type PlacedCourse, type PlanResult } from '@/lib/builder/compute';
 import { type CompetencyDepth, type Library, type PlanState, type ProposedCourse } from '@/lib/builder/types';
 import { effectiveCourse, type EffectiveCourse } from '@/lib/builder/edits';
 import type { Threads, Update } from './Builder';
@@ -238,7 +238,7 @@ function TrackedCourse(props: {
         </p>
       </section>
 
-      {(lc.versions.length > 1 || lc.whatIfs.length > 0) && (
+      {(lc.versions.length > 1 || pageWhatIfs(lc).length > 0) && (
         <section className="cb-sec">
           <label className="cb-inline">Version on the map
             <select value={plan.versions[lc.code] ?? ''} onChange={e => update(p => {
@@ -248,7 +248,7 @@ function TrackedCourse(props: {
             })}>
               <option value="">Newest capture{lc.versions[0] ? ` (${lc.versions[0].instructorName ?? 'department'}, ${date(lc.versions[0].createdAt)})` : ''}</option>
               {lc.versions.slice(1).map(v => <option key={v.snapshotId} value={v.snapshotId}>Capture: {v.instructorName ?? 'department'}, {date(v.createdAt)}</option>)}
-              {lc.whatIfs.map(w => <option key={w.id} value={`${WHAT_IF_PREFIX}${w.id}`}>What-if: {w.title} ({w.author})</option>)}
+              {pageWhatIfs(lc).map(w => <option key={w.id} value={`${WHAT_IF_PREFIX}${w.id}`}>What-if: {w.title} ({w.author})</option>)}
             </select>
           </label>
           {whatIf && (

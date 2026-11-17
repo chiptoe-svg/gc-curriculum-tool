@@ -137,16 +137,24 @@ export async function loadLibrary(): Promise<Library> {
   }
 
   // What-ifs with a finished page: the base version's depths with the what-if's changed ratings laid over them.
-  const whatIfRows = await db.select().from(courseWhatIfs).where(isNotNull(courseWhatIfs.pageCreatedAt));
+  // Skills-only what-ifs (saved from a cluster, no page) load too, with no depths of their own.
+  const whatIfRows = await db.select().from(courseWhatIfs).where(or(isNotNull(courseWhatIfs.pageCreatedAt), isNotNull(courseWhatIfs.skills)));
   const whatIfsByCourse = new Map<string, LibraryWhatIf[]>();
   for (const w of whatIfRows) {
-    if (!w.baseSnapshotId || !w.profile) continue; // its base version was deleted: nothing to lay the change over
+    if (!w.profile) {
+      if (!w.skills) continue;
+      const list = whatIfsByCourse.get(w.courseCode) ?? [];
+      list.push({ id: w.id, title: w.title ?? 'Untitled what-if', author: w.authorName, depths: [], notComputed: [], skills: w.skills, baseSnapshotId: w.baseSnapshotId });
+      whatIfsByCourse.set(w.courseCode, list);
+      continue;
+    }
+    if (!w.baseSnapshotId) continue; // its base version was deleted: nothing to lay the change over
     const { resolved, notComputed } = await resolveWhatIfDepths(w.baseSnapshotId, w.profile);
     const changed = new Map(resolved.map(r => [r.subCompetencyId, r]));
     const base = (depthsBySnap.get(w.baseSnapshotId) ?? []).filter(d => !changed.has(d.competencyId));
     const depths = [...base, ...resolved.filter(r => live.has(r.subCompetencyId)).map(r => ({ competencyId: r.subCompetencyId, k: r.k, u: r.u, d: r.d }))];
     const list = whatIfsByCourse.get(w.courseCode) ?? [];
-    list.push({ id: w.id, title: w.title ?? 'Untitled what-if', author: w.authorName, depths, notComputed });
+    list.push({ id: w.id, title: w.title ?? 'Untitled what-if', author: w.authorName, depths, notComputed, skills: null, baseSnapshotId: w.baseSnapshotId });
     whatIfsByCourse.set(w.courseCode, list);
   }
 

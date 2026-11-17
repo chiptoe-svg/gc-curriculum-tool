@@ -22,6 +22,6 @@ export function canManageWhatIf(grant: Grant, w: Pick<WhatIfRow, 'ownerGrantId' 
 }
 
 /** A what-if is readable by anyone once it has a page; before that, only by those who manage it. */
-export function canReadWhatIf(grant: Grant, w: Pick<WhatIfRow, 'ownerGrantId' | 'ownerKind' | 'pageCreatedAt'>): boolean {
-  return w.pageCreatedAt !== null || canManageWhatIf(grant, w);
+export function canReadWhatIf(grant: Grant, w: Pick<WhatIfRow, 'ownerGrantId' | 'ownerKind' | 'pageCreatedAt'> & { skills?: unknown }): boolean {
+  return w.pageCreatedAt !== null || w.skills != null || canManageWhatIf(grant, w);
 }

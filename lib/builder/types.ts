@@ -1,6 +1,7 @@
 // Shared types for the curriculum builder (spec docs/superpowers/specs/2026-11-14-curriculum-builder-design.md).
 // Pure: imported by both the server loader and the client.
 import type { Area7Block } from '@/lib/ai/capture/area7-types';
+import type { WhatIfSkills } from '@/lib/what-if/types';
 
 export type Act = 1 | 2 | 3;
 export const ACTS: ReadonlyArray<{ act: Act; name: string; verb: string; span: string }> = [
@@ -74,6 +75,8 @@ export interface LibraryVersion {
   suggestions: Array<LinkedSkill & { competencyId: string }>;
   /** Whether the levels come from links (true) or from the older catalog scoring (false). */
   linked: boolean;
+  /** Set only on a version read from a skills-only what-if (cluster maps): the course's objectives as that what-if has them. */
+  objectives?: string[];
 }
 
 /** A what-if on a course (one with a finished page): the course as it would read if the change were made. */
@@ -84,6 +87,10 @@ export interface LibraryWhatIf {
   depths: CompetencyDepth[];
   /** Changed ratings the what-if could not tie to a competency; they are not in `depths`. */
   notComputed: string[];
+  /** A skills sketch saved from a cluster (migration 0070). Set means skills-only: no page, no competency depths. */
+  skills: WhatIfSkills | null;
+  /** The capture the what-if started from; null when that capture was deleted. */
+  baseSnapshotId: string | null;
 }
 
 export interface LibraryCourse {
