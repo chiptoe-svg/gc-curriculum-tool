@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
@@ -42,6 +42,7 @@ export default async function WhatIfTalkPage({ params, searchParams }: Props) {
   if (!grant) notFound();
   const whatIf = await getWhatIf(id);
   if (!whatIf || whatIf.courseCode !== code || !canManageWhatIf(grant, whatIf)) notFound();
+  if (whatIf.skills && !whatIf.profile) redirect(`/explore/${encodeURIComponent(code)}/what-ifs/${id}?slug=${encodeURIComponent(slug)}`);
   const course = await getCourseByCode(code);
   if (!course) notFound();
 

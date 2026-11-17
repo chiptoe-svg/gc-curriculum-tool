@@ -30,7 +30,7 @@ const usageOf = (t: CompletionTelemetry) => ({
  */
 export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   const { code: rawCode, id } = await params;
-  const g = await guardWhatIf(req, decodeURIComponent(rawCode), id, 'manage');
+  const g = await guardWhatIf(req, decodeURIComponent(rawCode), id, 'manage', { leadsToModel: true });
   if (g.response) return g.response;
   const { whatIf } = g;
 

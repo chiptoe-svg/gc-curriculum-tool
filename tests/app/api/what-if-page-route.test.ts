@@ -92,3 +92,14 @@ describe('POST what-ifs/[id]/page', () => {
     expect(await res.json()).toEqual({ error: 'The page could not be created. Try again.' });
   });
 });
+
+describe('POST what-ifs/[id]/page on a skills-only what-if', () => {
+  it('returns 409 and never calls the provider', async () => {
+    getWhatIf.mockResolvedValue(row({ pageCreatedAt: null, profile: null, skills: { objectives: [], developed: [], required: [], fromCluster: 'c1' } }));
+    const res = await POST(post(), ctx());
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe('This version was saved from a cluster and holds skills only.');
+    expect(createWhatIfPage).not.toHaveBeenCalled();
+  });
+});
+

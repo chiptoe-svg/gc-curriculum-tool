@@ -83,6 +83,14 @@ describe('a skills-only what-if page', () => {
   });
 });
 
+describe('the talk page for a skills-only what-if', () => {
+  it('redirects to the what-if page', async () => {
+    row = { ...finished, pageCreatedAt: null, estimate: null, profile: null, knockOn: null, prose: null,
+      skills: { objectives: [], developed: [], required: [], fromCluster: 'c1' } };
+    await expect(WhatIfTalkPage(props())).rejects.toThrow(/redirect \/explore\/GC%203460\/what-ifs\/.*slug=/);
+  });
+});
+
 describe('the what-if page', () => {
   it('is readable by someone who cannot manage it once it has a page, without the actions', async () => {
     grant = other;

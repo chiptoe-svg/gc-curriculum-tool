@@ -20,7 +20,7 @@ interface Ctx { params: Promise<{ code: string; id: string }> }
  */
 export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   const { code: rawCode, id } = await params;
-  const g = await guardWhatIf(req, decodeURIComponent(rawCode), id, 'manage');
+  const g = await guardWhatIf(req, decodeURIComponent(rawCode), id, 'manage', { leadsToModel: true });
   if (g.response) return g.response;
 
   const rl = await checkIpRateLimit(hashIp(req));

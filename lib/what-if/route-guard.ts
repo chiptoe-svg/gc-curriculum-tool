@@ -5,6 +5,7 @@ import { isCrossSiteRequest } from '@/lib/auth/cross-site';
 import { getWhatIf, type WhatIfRow } from '@/lib/db/what-if-queries';
 import { canManageWhatIf, canReadWhatIf } from './ownership';
 
+export const SKILLS_ONLY_MESSAGE = 'This version was saved from a cluster and holds skills only.';
 const notFound = () => NextResponse.json({ error: 'not found' }, { status: 404 });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -16,11 +17,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  *  4. The what-if must exist and belong to `code`, else 404.
  *  5. Not readable by this grant (unfinished and not the owner or an admin): 404, so existence is not revealed.
  *  6. need 'manage' and not a manager: 403.
+ *  7. `leadsToModel` on a skills-only what-if: 409.
  * `code` must be the decoded course code exactly as stored: the guard compares exactly, so callers pass
  * Next's decoded `params.code` unchanged (do not normalize or upper-case it).
  */
 export async function guardWhatIf(
-  req: Request, code: string, id: string, need: 'read' | 'manage',
+  req: Request, code: string, id: string, need: 'read' | 'manage', opts: { leadsToModel?: boolean } = {},
 ): Promise<{ grant: Grant; whatIf: WhatIfRow; response?: undefined } | { response: Response }> {
   const auth = await authorizeRequest(req);
   if (auth.response) return { response: auth.response };
@@ -37,5 +39,9 @@ export async function guardWhatIf(
   if (!whatIf || whatIf.courseCode !== code) return { response: notFound() };
   if (!canReadWhatIf(auth.grant, whatIf)) return { response: notFound() };
   if (need === 'manage' && !canManageWhatIf(auth.grant, whatIf)) return { response: forbidden() };
+  // A skills-only what-if (saved from a cluster) has no conversation or page: nothing that reaches a model may run on it.
+  if (opts.leadsToModel && whatIf.skills && !whatIf.profile) {
+    return { response: NextResponse.json({ error: SKILLS_ONLY_MESSAGE }, { status: 409 }) };
+  }
   return { grant: auth.grant, whatIf };
 }
