@@ -194,3 +194,16 @@ describe('curriculum-plan writes', () => {
   it.each([['POST', `${ID}/anything`], ['POST', `${P}/not-an-id`], ['POST', '/api/build/other']])(
     '%s %s stays admin-kind', (m, p) => expect(classify(m, p)).toEqual({ kind: 'admin' }));
 });
+
+describe('course-cluster writes', () => {
+  const C = '/api/build/clusters';
+  const CID = `${C}/8b1f0c2e-0000-4000-8000-000000000002`;
+  const writes: [string, string][] = [['POST', C], ['PUT', CID], ['DELETE', CID], ['POST', `${CID}/syllabus`], ['POST', `${CID}/versions`]];
+  it.each(writes)('%s %s is a plan write', (m, p) => expect(classify(m, p)).toEqual({ kind: 'plan-write' }));
+  it.each(writes)('%s %s is allowed for a login that can capture a course', (m, p) => expect(authorize(scoped, m, p)).toEqual({ ok: true }));
+  it.each(writes)('%s %s is refused for a create-only login', (m, p) =>
+    expect(authorize(creator, m, p)).toEqual({ ok: false, reason: 'needs-capture' }));
+  it.each([['GET', C], ['GET', CID], ['GET', `${CID}/changes.md`]])('%s %s is a read', (m, p) => expect(classify(m, p)).toEqual({ kind: 'read' }));
+  it.each([['POST', `${CID}/other`], ['POST', `${C}/not-an-id`], ['POST', `${CID}/versions/x`], ['POST', `${CID}/changes.md`]])(
+    '%s %s stays admin-kind', (m, p) => expect(classify(m, p)).toEqual({ kind: 'admin' }));
+});
