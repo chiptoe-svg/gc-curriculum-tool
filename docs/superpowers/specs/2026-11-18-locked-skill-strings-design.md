@@ -151,6 +151,9 @@ that meet it). Only points on captured courses can be locked; a what-if or draft
   pulls the string off that anchor: the previous stop links straight to the next (a link with no why, "carried on past
   GC xxxx", which a faculty member can give a why later). The string never splits; the readings show any effect on
   the depth reaching later courses (owner, 2026-11-18).
+  An unhooked skill contributes nothing: its depth no longer counts toward the depth reaching later courses, toward
+  reinforcement, or toward meeting a later course's need. The Changes list shows the result ("Unhooked from GC xxxx"
+  and any "depth reaching … is now …, was …").
 
 Who (owner, 2026-11-18): any signed-in faculty who can use the cluster map can lock, extend, confirm, explain an end or
 an orphan, and unlock; unlock needs a reason. All of it is in the event history with names. Strings are faculty-only
