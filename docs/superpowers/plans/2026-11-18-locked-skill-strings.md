@@ -3,8 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Faculty lock named skill strings on cluster maps; strings are a department-wide record that joins, branches
-and merges through shared skill points, is read in its own panel, shows read-only on `/build`, and warns when a course
-change would break it.
+and merges through shared skill points, is read in its own panel (with a Changes list), and shows read-only on `/build`.
 
 **Architecture:** Migration 0071 adds a shared graph (skill points + links) and named strings as ordered paths through
 it, with an append-only event log. All readings come from one pure module (`lib/builder/strings/`), computed against
@@ -23,8 +22,9 @@ its "Resolved after the builder check" and owner-marked sections are binding.
 - Hash scheme for every skill point: `textHash(normalizeStatement(s))` (`lib/catalog/bundles`, `lib/catalog/project-trail`).
 - Points anchor to **captured** courses only; "current" = `course.versions[0]` of `loadLibrary()`. Never map edits, never what-ifs.
 - Nothing repairs a point without a faculty confirm. Reads never write to strings, points, links or path rows.
-- Warnings never block a save, a capture, or an edit.
-- Matcher unavailable → point status `unchecked`, shown as "Couldn't check", never "broken".
+- No warnings before saving, capturing or editing (owner, 2026-11-18). Changes are listed on the string panel and the course's strings section.
+- A string never breaks: a skill removed from a middle stop unhooks it (previous stop links to the next, why null); a skill gone from a recapture leaves the point `unanchored` and readings skip it.
+- Matcher unavailable → point status `unchecked`, shown as "Couldn't check", never "unanchored".
 - String ends get no warning styling. Copy: "Ends at GC xxxx (Act n)"; merged: "Merges into *X* at GC xxxx".
 - Reinforcement = a `develops` stop after the first whose K, U or D is within one level of the string's running peak on that dimension.
 - `readString` takes `options.fade: number | null`; this version always passes `null`.
@@ -39,8 +39,8 @@ its "Resolved after the builder check" and owner-marked sections are binding.
 1. A recapture rewords two skills in one course and both resemble the same old point: each point gets its own candidate; confirming a reword onto a hash another point of the same course and role already holds is refused (409), not merged silently. → Task 4 test `refuses a reword onto an existing point`.
 2. Two faculty edit the same string at once: the second save gets 409 with the current version, and the client reloads instead of overwriting. → Task 4 test `stale version is refused`, Task 6 test.
 3. Merge rules: into itself, into an unlocked string, into a string that (directly or through a chain) merges into it, or from a last point not on the target path — all refused. → Task 4 tests.
-4. A course in a string disappears from the catalog/library or loses all captures: its points read `broken` with "course not found" / "no capture", the panel still renders. → Task 3 test.
-5. Unlocked strings: still readable at `/strings/[id]`, never drawn on maps, never counted when listing orphans, never trigger warnings. → Tasks 5, 8, 9 tests.
+4. A course in a string disappears from the catalog/library or loses all captures: its points read `unanchored` with "course not found" / "no capture", the string carries on past it, the panel still renders. → Tasks 2 and 3 tests.
+5. Unlocked strings: still readable at `/strings/[id]`, never drawn on maps, never counted when listing orphans, never listed in a course's Changes. → Tasks 5, 8, 9 tests.
 
 ---
 
@@ -51,14 +51,14 @@ its "Resolved after the builder check" and owner-marked sections are binding.
 - `lib/builder/strings/order.ts` — stop ordering.
 - `lib/builder/strings/read.ts` — `readString` (all panel readings), `stringEnd`, `joinsAt`.
 - `lib/builder/strings/resolve.ts` — pure point resolution against the library.
-- `lib/builder/strings/touch.ts` — which strings an edit would break; orphans per course.
+- `lib/builder/strings/touch.ts` — map segments, strings through a course, changes, orphans.
 - `lib/strings/reword.ts` — server: shortlist + judge + cache for changed points.
 - `lib/db/string-queries.ts` — reads and all writes, each in one transaction with its event.
 - `app/api/strings/route.ts`, `app/api/strings/[id]/route.ts`, `app/api/strings/resolve/route.ts`, `app/api/strings/orphan-notes/route.ts`
 - `components/strings/StringPanel.tsx`, `components/strings/strings.css`
 - `app/strings/page.tsx`, `app/strings/[id]/page.tsx`
 - Cluster: `app/build/clusters/LockString.tsx`, edits to `ClusterRequiredList.tsx`, `ClusterCanvas.tsx`, `[id]/ClusterBuilder.tsx`
-- `/build`: edits to `app/build/[id]/Map.tsx`, `Builder.tsx`, `page.tsx`, `CourseEditors.tsx`
+- `/build`: edits to `app/build/[id]/Map.tsx`, `Builder.tsx`, `page.tsx`
 - Course and capture: `components/strings/CourseStrings.tsx`, edits to `app/courses/[code]/page.tsx`, `app/capture/[code]/page.tsx`
 
 ---
@@ -75,12 +75,12 @@ its "Resolved after the builder check" and owner-marked sections are binding.
 
 Tables (snake_case SQL; camelCase Drizzle):
 - `string_points`: id uuid pk; course_code text; role text CHECK IN ('develops','requires'); statement text; statement_hash text; snapshot_id uuid null; k,u,d smallint null; term smallint null CHECK (term BETWEEN 1 AND 9); created_by text; created_at timestamptz. UNIQUE (course_code, role, statement_hash).
-- `string_links`: id uuid pk; from_point uuid → string_points ON DELETE RESTRICT; to_point uuid → string_points ON DELETE RESTRICT; why text; created_by; created_at. UNIQUE (from_point, to_point); CHECK (from_point <> to_point).
+- `string_links`: id uuid pk; from_point uuid → string_points ON DELETE RESTRICT; to_point uuid → string_points ON DELETE RESTRICT; why text null (null = made by unhooking a middle stop); created_by; created_at. UNIQUE (from_point, to_point); CHECK (from_point <> to_point).
 - `curriculum_strings`: id uuid pk; name text; description text; status text CHECK IN ('active','unlocked') default 'active'; end_note text null; end_by text null; end_at timestamptz null; merged_into uuid null → curriculum_strings ON DELETE RESTRICT; merged_by, merged_at null; merge_reason text null; created_by/at, updated_by/at; version integer default 1 CHECK ≥ 1; CHECK (merged_into IS NULL OR merged_into <> id). Partial unique index on lower(name) WHERE status = 'active'.
 - `curriculum_string_path`: string_id uuid → curriculum_strings ON DELETE CASCADE; position integer; point_id uuid → string_points ON DELETE RESTRICT; PK (string_id, position).
 - `skill_orphan_notes`: course_code, role (same CHECK), statement_hash, statement, reason, by, at; PK (course_code, role, statement_hash).
-- `curriculum_string_events`: id uuid pk; string_id uuid null; point_id uuid null; kind text CHECK IN ('locked','extended','joined','branched','merged','unmerged','point_removed','reword_confirmed','renamed','end_note','unlocked','relocked','orphan_note'); by text; at timestamptz; reason text null; before jsonb null; after jsonb null. Index (string_id, at desc).
-- `string_point_resolutions`: point_id uuid → string_points ON DELETE CASCADE; snapshot_id uuid; status text CHECK IN ('changed','broken'); candidate_statement text null; candidate_hash text null; p_partly real null; model text; prompt_version text; created_at; PK (point_id, snapshot_id, model, prompt_version).
+- `curriculum_string_events`: id uuid pk; string_id uuid null; point_id uuid null; kind text CHECK IN ('locked','extended','joined','branched','merged','unmerged','point_removed','reword_confirmed','link_why','renamed','end_note','unlocked','relocked','orphan_note'); by text; at timestamptz; reason text null; before jsonb null; after jsonb null. Index (string_id, at desc).
+- `string_point_resolutions`: point_id uuid → string_points ON DELETE CASCADE; snapshot_id uuid; status text CHECK IN ('changed','unanchored'); candidate_statement text null; candidate_hash text null; p_partly real null; model text; prompt_version text; created_at; PK (point_id, snapshot_id, model, prompt_version).
 
 - [ ] **Step 1: Write the failing test** — `strings-schema.test.ts` reads `drizzle/0071_skill_strings.sql` and asserts: it begins with `BEGIN;` and ends with `COMMIT;`; contains `RAISE EXCEPTION '0071: already applied'` guarded on `string_points`, and `'0071: precondition — 0070 not applied'` guarded on `curriculum_clusters`; contains no `DROP TABLE`, `DELETE`, `UPDATE`, `TRUNCATE`, `DROP COLUMN`; creates exactly the 7 tables above; and `getTableConfig` on each Drizzle table lists the unique/PK columns above.
 - [ ] **Step 2: Run** `pnpm vitest run lib/db/__tests__/strings-schema.test.ts` → FAIL (file missing).
@@ -101,7 +101,7 @@ Tables (snake_case SQL; camelCase Drizzle):
   - `interface StringRow { id: string; name: string; description: string; status: 'active' | 'unlocked'; endNote: string | null; mergedInto: string | null; version: number; path: string[] /* point ids in order */ }`
   - `interface LinkRow { id: string; from: string; to: string; why: string; createdBy: string; createdAt: string }`
   - `interface StringGraph { strings: StringRow[]; points: Record<string, PointRow>; links: LinkRow[] }`
-  - `type PointStatus = { kind: 'intact'; now: Depth } | { kind: 'changed'; now: Depth | null; candidate: { statement: string; hash: string } } | { kind: 'broken'; why: 'skill gone' | 'course not found' | 'no capture' } | { kind: 'unchecked' }`
+  - `type PointStatus = { kind: 'intact'; now: Depth } | { kind: 'changed'; now: Depth | null; candidate: { statement: string; hash: string } } | { kind: 'unanchored'; why: 'skill gone' | 'course not found' | 'no capture' } | { kind: 'unchecked' }`
   - `interface StopReading { pointId: string; courseCode: string; act: Act; role: Role; depth: Depth | null /* attained now for develops, need for requires */; status: PointStatus; why: string | null /* link into this stop */; slip: Array<'k'|'u'|'d'>; gap: Array<'k'|'u'|'d'>; reinforces: boolean; mergedIn: string[] /* string ids */; sharedWith: Array<{ stringId: string; relation: 'joins' | 'branches' }> }`
   - `interface StringReading { stops: StopReading[]; reinforcement: number; end: { kind: 'ends'; courseCode: string; act: Act; note: string | null } | { kind: 'merges'; into: string; courseCode: string } }`
   - `orderPoints(points: PointRow[], levelOf: (code: string) => number): PointRow[]` — by `defaultAct({code, level})`, then the numeric part of the code, then `develops` before `requires`; stable.
@@ -116,7 +116,7 @@ Tables (snake_case SQL; camelCase Drizzle):
   - mergedIn: string B with `mergedInto: A`, B's last point = A's 3rd point → A's stop 3 `mergedIn: [B.id]`.
   - sharedWith: string C shares A's first two points then diverges → A stop 2 `{ stringId: C, relation: 'branches' }`; string D shares only A's stop 3 coming from elsewhere → `'joins'`. Unlocked strings are ignored for mergedIn/sharedWith.
   - `options.fade` non-null throws `Error('fade not implemented')` (keeps the hook honest until built).
-  - status `changed` with `now` uses `now` for depth; `broken`/`unchecked` → `depth: null` and the stop is skipped for slip/gap/reinforcement comparisons.
+  - status `changed` with `now` uses `now` for depth; `unanchored`/`unchecked` → `depth: null` and the stop is skipped for slip/gap/reinforcement: with stops D3 (GC 1040), unanchored (GC 2400), need D3 (GC 4800), GC 4800 has `gap: []` (the string carries on from GC 1040).
 - [ ] **Step 2: Run** `pnpm vitest run lib/builder/strings` → FAIL.
 - [ ] **Step 3: Implement** in the three files. Act from `defaultAct` in `lib/builder/compute.ts`; `Depth` from `lib/builder/types.ts`.
 - [ ] **Step 4: Run** → PASS.
@@ -131,11 +131,11 @@ Tables (snake_case SQL; camelCase Drizzle):
 **Interfaces:**
 - Consumes: `PointRow`, `PointStatus` (Task 2); `Library`, `LibraryCourse` (`lib/builder/types.ts`); `judgePairs`, `CUTOFFS`, `MODEL_IN_USE`, `PROMPT_VERSION` (`lib/ai/match-judge`); `embedBatch`, `cosineSimilarity` (`lib/ai/embeddings`).
 - Produces:
-  - `resolveExact(point: PointRow, lib: Library): PointStatus | { kind: 'needs-check'; snapshotId: string; pool: Array<{ statement: string; hash: string }> }` — intact on same hash in the role's list of `versions[0]` (`skills` for develops, `required` for requires; `now` from that skill's k/u/d or `need`); `broken: course not found` / `no capture`; empty pool → `broken: skill gone`; otherwise needs-check with the role's skills **not already held by another point of the same course and role**.
-  - `checkRewords(items: Array<{ point: PointRow; snapshotId: string; pool: Array<{ statement: string; hash: string }> }>): Promise<Record<string, PointStatus>>` in `lib/strings/reword.ts` — reads `string_point_resolutions` for (point, snapshot, MODEL_IN_USE, PROMPT_VERSION); for misses, embeds, shortlists top 8 by cosine, judges pairs (point statement = required side), picks the highest `pPartly` ≥ `CUTOFFS[MODEL_IN_USE].partly`; writes the cache row (`changed` with candidate, or `broken`); any campus error → `unchecked` for those points, nothing cached.
+  - `resolveExact(point: PointRow, lib: Library): PointStatus | { kind: 'needs-check'; snapshotId: string; pool: Array<{ statement: string; hash: string }> }` — intact on same hash in the role's list of `versions[0]` (`skills` for develops, `required` for requires; `now` from that skill's k/u/d or `need`); `unanchored: course not found` / `no capture`; empty pool → `unanchored: skill gone`; otherwise needs-check with the role's skills **not already held by another point of the same course and role**.
+  - `checkRewords(items: Array<{ point: PointRow; snapshotId: string; pool: Array<{ statement: string; hash: string }> }>): Promise<Record<string, PointStatus>>` in `lib/strings/reword.ts` — reads `string_point_resolutions` for (point, snapshot, MODEL_IN_USE, PROMPT_VERSION); for misses, embeds, shortlists top 8 by cosine, judges pairs (point statement = required side), picks the highest `pPartly` ≥ `CUTOFFS[MODEL_IN_USE].partly`; writes the cache row (`changed` with candidate, or `unanchored`); any campus error → `unchecked` for those points, nothing cached.
   - `resolveAll(lib: Library, points: PointRow[]): Promise<Record<string, PointStatus>>` — `resolveExact` then `checkRewords` for the rest.
 
-- [ ] **Step 1: Failing tests.** resolve.test.ts: intact (develops, depth from skill), intact (requires, depth = need), course not found, no capture, skill gone, needs-check pool excludes a hash another point of that course/role holds. reword.test.ts (mock embeddings/judge/db as `app/api/build/match/__tests__/route.test.ts` does): cache hit makes no campus call; best candidate above the partly cutoff → changed; all below → broken and cached; `judgePairs` throws → unchecked, nothing written.
+- [ ] **Step 1: Failing tests.** resolve.test.ts: intact (develops, depth from skill), intact (requires, depth = need), course not found, no capture, skill gone, needs-check pool excludes a hash another point of that course/role holds. reword.test.ts (mock embeddings/judge/db as `app/api/build/match/__tests__/route.test.ts` does): cache hit makes no campus call; best candidate above the partly cutoff → changed; all below → unanchored and cached; `judgePairs` throws → unchecked, nothing written.
 - [ ] **Step 2: Run** → FAIL. **Step 3: Implement.** **Step 4: Run** → PASS.
 - [ ] **Step 5: Commit** `feat(strings): resolve points against current captures; reword check with campus judge and cache`.
 
@@ -158,19 +158,20 @@ Tables (snake_case SQL; camelCase Drizzle):
   - `extendString({ id, version, at: 'start' | 'end', point, why, by })`
   - `branchString({ fromId, version, atPosition, name, description, point, why, by })` — new string = from's path[0..atPosition] + new point.
   - `mergeString({ id, version, into, reason, by })`, `unmergeString({ id, version, reason, by })`
-  - `removePoint({ id, version, position, reason, by })` — removing an end point shortens; a middle point leaves the path with a gap: the path is split — refuse with "Removing a middle skill would cut the string in two. Unlock it or branch instead." (keeps `checkPath` true).
+  - `removePoint({ id, version, position, reason, by })` — an end point shortens the path (refused when only 2 points remain: "A string needs at least two skills. Unlock it instead."); a middle point unhooks: the point leaves the path and `upsertLink(prev, next, null)` joins its neighbors (an existing link keeps its why); event `point_removed` with the before path.
+  - `setLinkWhy({ linkId, why, by })` — event `link_why`.
   - `confirmReword({ pointId, candidate: { statement, hash }, snapshotId, by })` — 409 "Another string point already holds that skill." if (course, role, candidate hash) exists; else updates the point's statement/hash/snapshot/k/u/d and writes one event (`string_id` null, `point_id` set).
   - `setEndNote`, `rename`, `unlockString({ reason })`, `relockString` (refused when another active string has the same name), `setOrphanNote({ courseCode, role, statementHash, statement, reason, by })`.
   - `listOrphanNotes(courseCodes: string[])`.
 
-- [ ] **Step 1: Failing tests.** rules.test.ts: each refusal message above, and the accepting case. string-queries.test.ts: lock writes 1 string, N points, N-1 links, 1 `locked` event; locking a second string through an existing point reuses the point (point count unchanged) — the join; `stale version is refused` (409 with `current`); `refuses a reword onto an existing point`; merge chain cycle refused; unlock without reason → 400; name clash with an active string → 409, with an unlocked one → allowed.
+- [ ] **Step 1: Failing tests.** rules.test.ts: each refusal message above, and the accepting case. string-queries.test.ts: lock writes 1 string, N points, N-1 links, 1 `locked` event; locking a second string through an existing point reuses the point (point count unchanged) — the join; `stale version is refused` (409 with `current`); `refuses a reword onto an existing point`; merge chain cycle refused; removing a middle point leaves path length − 1, `checkPath` true, and a new link with why null; unlock without reason → 400; name clash with an active string → 409, with an unlocked one → allowed.
 - [ ] **Step 2: Run** → FAIL. **Step 3: Implement.** **Step 4: Run** → PASS.
 - [ ] **Step 5: Commit** `feat(strings): string queries with write rules, optimistic version and event log`.
 
 ### Task 5: API routes and auth
 
 **Files:**
-- Create: `app/api/strings/route.ts` (GET list, POST lock), `app/api/strings/[id]/route.ts` (GET one; PATCH `{ action, version, ... }` with action ∈ extend | branch | merge | unmerge | remove-point | rename | end-note | unlock | relock), `app/api/strings/resolve/route.ts` (POST `{ courseCodes }` → `{ graph, status }` for active strings through those courses; `{ stringId }` → that string, unlocked included), `app/api/strings/points/[id]/route.ts` (POST confirm reword), `app/api/strings/orphan-notes/route.ts` (POST).
+- Create: `app/api/strings/route.ts` (GET list, POST lock), `app/api/strings/[id]/route.ts` (GET one; PATCH `{ action, version, ... }` with action ∈ extend | branch | merge | unmerge | remove-point | link-why | rename | end-note | unlock | relock), `app/api/strings/resolve/route.ts` (POST `{ courseCodes }` → `{ graph, status }` for active strings through those courses; `{ stringId }` → that string, unlocked included), `app/api/strings/points/[id]/route.ts` (POST confirm reword), `app/api/strings/orphan-notes/route.ts` (POST).
 - Modify: `lib/auth/authorize.ts` (`PLAN_WRITE` regex gains `|strings(?:\/[0-9a-f-]{36})?|strings\/(?:resolve|orphan-notes)|strings\/points\/[0-9a-f-]{36}`; update its comment), `lib/auth/__tests__/authorize.test.ts`
 - Test: `app/api/strings/__tests__/strings.test.ts`
 
@@ -192,7 +193,7 @@ Tables (snake_case SQL; camelCase Drizzle):
 - Consumes: `readString` (Task 2), `/api/strings/resolve`, `/api/strings/[id]` PATCH, `/api/strings/points/[id]`.
 - Produces: `StringPanel(props: { graph: StringGraph; status: Record<string, PointStatus>; stringId: string; levelOf: (code: string) => number; editable: boolean; onChanged: (g: StringGraph) => void; editHref?: string })`. `editable=false` hides every write control and shows "Edit in a cluster" when `editHref` is given.
 
-Panel content (spec "The string panel"): name, description, status; stops grouped by Act with course, role ("develops" / "needs"), wording, K/U/D now (and "at lock" when changed), status line ("Reworded? *new* — Confirm / Not the same", "Skill gone", "Couldn't check: try again"), the link's why, evidence from `LibraryVersion` (projects and outcomes the version carries for that course; show only what exists); slip and gap marks; "Reinforced N times"; end line exactly "Ends at GC xxxx (Act n)" plus note, or "Merges into *X* at GC xxxx"; "*A* merged in here"; "joined by *X*" / "*Y* branches off here" links; history list. "Not the same" marks the point broken for this view only (no write).
+Panel content (spec "The string panel"): name, description, status; stops grouped by Act with course, role ("develops" / "needs"), wording, K/U/D now (and "at lock" when changed), status line ("Reworded? *new* — Confirm / Not the same", "No longer anchored at GC xxxx", "Couldn't check: try again"), the link's why (null shows "carried on past GC xxxx" with "Add why"), evidence from `LibraryVersion` (projects and outcomes the version carries for that course; show only what exists); slip and gap marks; "Reinforced N times"; end line exactly "Ends at GC xxxx (Act n)" plus note, or "Merges into *X* at GC xxxx"; "*A* merged in here"; "joined by *X*" / "*Y* branches off here" links; a **Changes** section (`stringChanges`, Task 9) newest first; history list. "Not the same" marks the point unanchored for this view only (no write).
 
 `/strings`: table of active strings (toggle "Show unlocked") with name, courses, stops, reinforcement, "Ends at"; sort by name / end course / end Act; filter by end Act and by course. `/strings/[id]`: the panel, read-only (`editable=false`, `editHref` = Task 7's cluster link).
 
@@ -229,29 +230,30 @@ Canvas overlay: for each active string with ≥ 2 points on cluster cards, draw 
 - Consumes: Tasks 2, 5, 6, 7 (`clusterStringHref`).
 - Produces: `mapStringSegments(g: StringGraph, onMap: Set<string>): Array<{ stringId: string; from: string; to: string; kind: 'segment' | 'merge' } | { stringId: string; from: string; leaves: string /* next course code, off map */ }>` in `lib/builder/strings/touch.ts`.
 
-Drawn on the front SVG layer, distinct from the course arrows: locked strings as colored curves with name on hover; a card where ≥ 2 strings share a point gets a small shared-point dot; a string leaving the plan ends in a stub labeled "continues to GC xxxx, not in this plan"; changed/broken points show as a hollow/broken mark on the card edge. Click opens `StringPanel` read-only with `editHref = clusterStringHref(string's course codes)`. No edit controls anywhere on `/build`.
+Drawn on the front SVG layer, distinct from the course arrows: locked strings as colored curves with name on hover; a card where ≥ 2 strings share a point gets a small shared-point dot; a string leaving the plan ends in a stub labeled "continues to GC xxxx, not in this plan"; changed/unanchored points show as a quiet hollow mark on the card edge. Click opens `StringPanel` read-only with `editHref = clusterStringHref(string's course codes)`. No edit controls anywhere on `/build`.
 
 - [ ] **Step 1: Failing tests:** `mapStringSegments` — a string through GC 1040 → GC 2400 → GC 4800 with only the first two on the map yields one segment and one `leaves: 'GC 4800'`; unlocked string yields nothing; a merge yields `kind: 'merge'`. Map renders the stub label text exactly.
 - [ ] **Step 2–4:** FAIL, implement, PASS.
 - [ ] **Step 5: Commit** `feat(strings): show locked strings read-only on /build`.
 
-### Task 9: Break warnings and orphans
+### Task 9: Changes and orphans
 
 **Files:**
-- Modify: `lib/builder/strings/touch.ts`; `app/build/clusters/ClusterRequiredList.tsx` and the developed-skill editor in the cluster course drawer; `app/build/[id]/CourseEditors.tsx`
-- Test: `lib/builder/strings/__tests__/touch.test.ts`, `app/build/[id]/__tests__/CourseEditors.test.tsx`
+- Modify: `lib/builder/strings/touch.ts`
+- Test: `lib/builder/strings/__tests__/touch.test.ts`
 
 **Interfaces:**
 - Produces:
-  - `stringsAt(g: StringGraph, courseCode: string, role: Role, statementHash: string): StringRow[]` (active only).
-  - `breakWarning(g: StringGraph, courseCode: string, role: Role, statementHash: string): string | null` — exact copy: `This skill is on ${names}. ${laterCodes} build on it.` where names = string names joined with " and " (three or more: "a, b and c"), laterCodes = distinct course codes after this point on those strings in order, joined the same way; when nothing comes after: `This skill is on ${names}.`
-  - `orphansOf(lib: Library, g: StringGraph, notes: OrphanNote[], courseCode: string): { developed: Array<{ statement; hash; note: string | null }>; unsupplied: Array<{ statement; hash; note: string | null }> }` — developed = skills of `versions[0]` on no active string's point; unsupplied = required skills that are not a `requires` point with an earlier `develops` point on some active string.
+  - `stringsAt(g: StringGraph, courseCode: string): StringRow[]` (active strings with a point in that course).
+  - `stringChanges(g: StringGraph, status: Record<string, PointStatus>, stringId: string, levelOf: (code: string) => number): ChangeItem[]` where `ChangeItem = { kind: 'reworded' | 'unanchored' | 'no-why' | 'depth-moved'; courseCode: string; pointId?: string; linkId?: string; text: string }`. Copy, exactly: reworded → `Reworded at ${code}: "${candidate}"`; unanchored → `No longer anchored at ${code}`; no-why → `Carried on past ${code}; no reason given yet` (code = the unhooked point's course from the `point_removed` event, else the link's from-course); depth-moved, for each `requires` stop whose preceding best `develops` depth differs between lock time (point k/u/d) and now → `The depth reaching ${code} is now ${now}, was ${then}`, depths written like `K2 U3 D2`.
+  - `courseChanges(g, status, courseCode, levelOf): ChangeItem[]` — `stringChanges` items over `stringsAt` whose `courseCode` matches.
+  - `orphansOf(lib: Library, g: StringGraph, notes: OrphanNote[], courseCode: string): { developed: Array<{ statement: string; hash: string; note: string | null }>; unsupplied: Array<{ statement: string; hash: string; note: string | null }> }` — developed = skills of `versions[0]` on no active string's point; unsupplied = required skills that are not a `requires` point with an earlier `develops` point on some active string.
 
-Editors: on save of an edit that changes a captured skill's wording, or on remove, show `breakWarning` inline above the Save/Remove button before confirming; the action still proceeds with one more click ("Save anyway" / "Remove anyway"). Map preview: a point whose skill a map edit removes or rewords renders with the would-break mark (Task 8's broken mark, dashed) — no write.
+No warnings anywhere in course editors, clusters, `/build` or capture (owner, 2026-11-18).
 
-- [ ] **Step 1: Failing tests:** `breakWarning` copy for one, two and three strings and for an end point; unlocked strings give null; `orphansOf` excludes skills on active strings, includes skills only on an unlocked string, attaches notes by hash. CourseEditors: removing a skill on a string shows the warning and "Remove anyway", and the second click calls `onRemove`.
+- [ ] **Step 1: Failing tests:** each ChangeItem copy above; depth-moved appears when a develops point's current D is 2 and its lock-time D was 3 before a requires stop, and not when equal; an unlocked string contributes nothing to `courseChanges` or `stringsAt`; `orphansOf` excludes skills on active strings, includes skills only on an unlocked string, attaches notes by hash.
 - [ ] **Step 2–4:** FAIL, implement, PASS.
-- [ ] **Step 5: Commit** `feat(strings): break warnings in course editors; orphan lists`.
+- [ ] **Step 5: Commit** `feat(strings): changes list and orphans`.
 
 ### Task 10: Course and capture pages; docs
 
@@ -262,9 +264,9 @@ Editors: on save of an edit that changes a captured skill's wording, or on remov
 
 **Interfaces:**
 - Consumes: Tasks 3, 6, 9.
-- Produces: `CourseStrings(props: { courseCode: string; mode: 'course' | 'capture' })` — client component; fetches `/api/strings/resolve` for the course; lists "Strings through this course" with each string's name, the stop's status, link to `/strings/[id]`; then "Skills on no string" (orphans with notes, each with "Add a note"); in `capture` mode, only when at least one point in this course is changed or broken, a banner: "This capture changed *n* strings" with the list and Confirm links.
+- Produces: `CourseStrings(props: { courseCode: string; mode: 'course' | 'capture' })` — client component; fetches `/api/strings/resolve` for the course; lists "Strings through this course" with each string's name, the stop's status, link to `/strings/[id]`; then "Changes" (`courseChanges`, with Confirm links for rewordings; omitted when empty); then "Skills on no string" (orphans with notes, each with "Add a note"). Same content in both modes; no banner (owner, 2026-11-18).
 
-- [ ] **Step 1: Failing tests:** banner absent when all points are intact; present with the count when one is changed; "Couldn't check" when resolve returns `unchecked`; orphan note form posts to `/api/strings/orphan-notes`.
+- [ ] **Step 1: Failing tests:** no Changes heading when all points are intact; a reworded point lists `Reworded at GC 2400: "…"` with Confirm; nothing on the page uses an alert or banner role; "Couldn't check" when resolve returns `unchecked`; orphan note form posts to `/api/strings/orphan-notes`.
 - [ ] **Step 2–4:** FAIL, implement, PASS.
 - [ ] **Step 5:** Update STATE.md (routes `/strings`, `/strings/[id]`, `/api/strings*`; migration 0071 not applied; Deferred: named cables, chords, fade switched on, automatic suggestions, string term placement from plans) and the doc index. Run the full suite `pnpm vitest run` and `pnpm tsc --noEmit` → all green.
 - [ ] **Step 6: Commit** `feat(strings): strings and orphans on course and capture pages; docs`.

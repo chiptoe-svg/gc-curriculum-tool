@@ -1,6 +1,7 @@
 # Locked skill strings — design
 
-Status: draft for owner review (2026-11-18); owner answered the three open questions the same day. First half of the ROADMAP item "Skills vs. competencies: strings and chords".
+Status: approved by the owner 2026-11-18, with two owner changes the same day after approval (unhooking a middle skill
+instead of a gap; a Changes list instead of warnings). First half of the ROADMAP item "Skills vs. competencies: strings and chords".
 
 ## Intent and why
 
@@ -34,8 +35,10 @@ look at a string and see the progression, where it thins, and where it ends.
    edited only there.
 7. Locked strings show in the larger map (`/build`), read-only, including where they join and branch (owner, 2026-11-18).
 3. A string panel with the stops in order and the four readings (depth, reinforcement, where it ends, why).
-4. String status against today's captures: intact, changed-since-locked (confirm), broken (skill gone).
-5. Break warnings where courses are changed, and "strings through this course" marks.
+4. String status against today's captures: intact, changed-since-locked (confirm), unanchored (skill gone: the string
+   carries on past that course).
+5. A **Changes** list on the string panel and the course's strings section; no warnings before saving (owner,
+   2026-11-18).
 6. An orphan list per course.
 
 ## Non-goals (this version)
@@ -48,7 +51,8 @@ look at a string and see the progression, where it thins, and where it ends.
 ## Anti-goals
 
 - A string that silently changes or disappears. Nothing repairs a stop without a faculty member confirming it.
-- A capture or an edit blocked by a string. Warnings inform; they never stop someone saving their course.
+- A capture or an edit blocked, or interrupted by a warning, because of a string. A skill dying on the vine hurts
+  nothing; changes are listed where people look at strings (owner, 2026-11-18).
 - Orphan labels that read as an accusation, and any warning styling on a string's end. An orphan is a question; an
   explained one shows its explanation. An end is just where the string stops today.
 
@@ -95,7 +99,8 @@ points look bundled on the map without a name.
   `skillRef` / `ref` scheme: `textHash(normalizeStatement(s))`), snapshot_id and k/u/d when first locked, optional
   `term` (see "Built for fade and reinforcement later"). Unique on (course_code, role, statement_hash). One point per
   skill, shared by every string through it, so a join is the same row, not two copies.
-- `string_links`: from_point, to_point, why (the faculty reason this skill leads to that one), by, at. Unique on the
+- `string_links`: from_point, to_point, why (the faculty reason this skill leads to that one; null when the link was
+  made by unhooking a middle skill, shown as "carried on past GC xxxx"), by, at. Unique on the
   pair. Shared: two strings using the same link share its why.
 - `curriculum_strings`: id, name (unique among active strings), description, status `active | unlocked`, optional
   end_note / end_by / end_at (a note on where it ends, e.g. "could continue into GC 4800"; adding past the end clears
@@ -122,7 +127,9 @@ resolved against the course's **current** captured snapshot:
 - **Changed since locked:** the hash is gone, but the closest skill in that course (embedding shortlist, then the pair
   judge as the matcher uses today) reads at least partly. The stop shows "Reworded? *new wording* — confirm / not the
   same". Confirming records a `reword confirmed` event and updates the stop's saved wording and hash.
-- **Broken:** no candidate. The string draws a visible gap at that stop.
+- **Unanchored:** no candidate: the skill is gone from that course. The string is **not broken**: it carries on from
+  the previous stop to the next one, and the stop is shown as "No longer anchored at GC xxxx" in the panel's Changes
+  list. Readings skip it, so the depth reaching the next course may drop, which the readings show (owner, 2026-11-18).
 
 Resolution is per skill point (a join is resolved once for every string through it), computed on read and cached by
 (point hash, snapshot id); it never writes to the record. A reworded point confirmed once is confirmed for every string.
@@ -140,7 +147,10 @@ that meet it). Only points on captured courses can be locked; a what-if or draft
 - **Merge into:** from a string's end point, when another string passes through it: "Merge into *X*", with a reason.
 - **Branch:** from a point on a string, **Branch from here** starts a new named string that shares the path up to that
   point and then follows a new link.
-- **Unlink / remove a point:** with a reason; any string left with a gap shows it.
+- **Remove a point (unhook):** with a reason. Removing an end point shortens the string. Removing a middle point
+  pulls the string off that anchor: the previous stop links straight to the next (a link with no why, "carried on past
+  GC xxxx", which a faculty member can give a why later). The string never splits; the readings show any effect on
+  the depth reaching later courses (owner, 2026-11-18).
 
 Who (owner, 2026-11-18): any signed-in faculty who can use the cluster map can lock, extend, confirm, explain an end or
 an orphan, and unlock; unlock needs a reason. All of it is in the event history with names. Strings are faculty-only
@@ -154,10 +164,9 @@ active locked string whose points fall on courses in the plan, over its existing
 - Locked strings are drawn distinctly from the matcher's suggested strings, and show their name on hover.
 - Joins, branches and merges are visible where locked strings share a point (a merging string flows into the other); a point shared by several strings is marked.
 - A string that leaves the plan's courses shows where it goes ("continues to GC xxxx, not in this plan").
-- Status shows here too: a reworded or broken point reads as it does in the panel.
+- Status shows here too, quietly: a reworded or unanchored point reads as it does in the panel.
 - Clicking a locked string opens its panel. Nothing about strings can be edited from `/build`; the panel links to
   "Edit in a cluster" (opens or creates a cluster with the string's courses).
-- `/build`'s course edits that would reword or drop a point show the break warning as a preview (below).
 
 ### The string panel
 
@@ -198,13 +207,17 @@ the peak halves the loss; time runs in terms, three per act. A string is exactly
 - **Related-string support** (the `support` flag in `durable()`, a related competency at integration depth) waits for
   chords and is out of scope.
 
-### Break warnings and marks
+### Changes, not warnings (owner, 2026-11-18)
 
-- **Cluster and /build course editors:** removing or rewording a skill that a string runs through shows "This skill is
-  on *<string>*. *<later courses>* build on it." before save; saving still works. The map's string markers show the
-  would-be break as a preview; the record does not change (map edits are proposals).
-- **CourseCapture:** when a new snapshot of a course is saved, a banner lists the strings it changed (now reworded or
-  broken), with links to confirm. The course page shows "Strings through this course" with each string's status.
+No warning appears before anyone saves or captures. Instead, what has changed is listed where people look at strings:
+
+- **String panel, "Changes":** stops reworded since locked (Confirm / Not the same), stops no longer anchored (the skill
+  is gone from that course; the string carries on), links carried on with no why yet, and readings that moved as a
+  result (e.g. "the depth reaching GC 4800 is now D2, was D3"). Newest first.
+- **Course page and capture page, "Strings through this course":** each string through the course with its stop's
+  status, plus the same changes for this course. No banner.
+- **Maps:** the cluster canvas and /build show unanchored and reworded stops with a quiet mark; nothing is previewed for
+  unsaved edits.
 
 ### Orphans
 
@@ -239,10 +252,8 @@ Orphans are a list, not a score.
   note and a sort/filter on `/strings`.
 - **Orphans:** a developed skill is an orphan if it is on no string. A required skill is unsupplied if it is not a
   `requires` stop with an earlier `develops` stop on some string.
-- **Warnings:** checked in the browser against the strings loaded with the page, on cluster and /build course edits
-  (shown as a preview) and on the capture page. Nothing blocks saving.
-- **Capture banner:** computed when the course or capture page loads, not at snapshot save. If the matcher can't run,
-  the stop reads "Couldn't check", never "broken" (same rule as the cluster map).
+- **Changes:** computed when the panel, course page or capture page loads, not at snapshot save. If the matcher can't run,
+  the stop reads "Couldn't check", never "unanchored" (same rule as the cluster map).
 - **Unlock:** an unlocked string stays readable and frozen with its history; it can be locked again.
 - **Creation:** strings are created from cluster maps only in this version; `/strings` lists them and opens the panel.
   Name uniqueness is a partial unique index on active strings. Whether 0071 adds a resolution cache table is the
@@ -254,5 +265,5 @@ Orphans are a list, not a score.
 - Captured courses only.
 - Unlock needs a reason; full history.
 - End notes and orphan notes are free text, one per string end or skill, editable by any faculty.
-- Warnings never block saving.
+- No warnings; changes are listed on the panel and the course's strings section.
 - Reword detection reuses the existing matcher; confirmation is manual.
