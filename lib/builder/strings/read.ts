@@ -1,5 +1,5 @@
 import { defaultAct } from '../compute';
-import type { Act, Depth } from '../types';
+import type { Act } from '../types';
 import { depthNow } from './touch';
 import type { PointStatus, StopReading, StringGraph, StringReading } from './types';
 

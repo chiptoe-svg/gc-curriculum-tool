@@ -1,13 +1,13 @@
 'use client';
 import { useMemo } from 'react';
-import { mapStringSegments } from '@/lib/builder/strings/touch';
+import { CHANGED_MARK_TITLE, mapStringSegments, stringMarks } from '@/lib/builder/strings/touch';
 import type { PointStatus, StringGraph } from '@/lib/builder/strings/types';
 import { colorOf } from '../clusters/stringsOnCluster';
 
 type Box = { x: number; y: number; w: number; h: number };
 const STUB = 44;
 
-/** Locked strings drawn over the plan map (read-only): colored curves between cards, a stub where a string leaves the plan. Render inside the front SVG. */
+/** Locked strings drawn over the plan map (read-only): colored curves between cards, a stub where a string leaves the plan. Render inside an SVG that is not aria-hidden (MapStringsLayer). */
 export function MapStrings(props: {
   graph: StringGraph;
   status: Record<string, PointStatus>;
@@ -22,21 +22,7 @@ export function MapStrings(props: {
   const segments = useMemo(() => mapStringSegments(graph, onMap), [graph, onMap]);
   const nameOf = (id: string) => graph.strings.find(s => s.id === id)?.name ?? 'String';
 
-  // Where strings share a point (two or more active strings through one point), and which cards hold a reworded or lost skill.
-  const shared = new Set<string>();
-  const changed = new Set<string>();
-  const seen = new Map<string, number>();
-  for (const s of graph.strings) {
-    if (s.status !== 'active') continue;
-    for (const id of s.path) {
-      const code = graph.points[id]?.courseCode;
-      if (!code || !onMap.has(code)) continue;
-      seen.set(id, (seen.get(id) ?? 0) + 1);
-      if (seen.get(id) === 2) shared.add(code);
-      const k = status[id]?.kind;
-      if (k === 'changed' || k === 'unanchored') changed.add(code);
-    }
-  }
+  const { shared, changed } = useMemo(() => stringMarks(graph, status, onMap), [graph, status, onMap]);
 
   const slot = new Map<string, number>(); // parallel curves on one pair of cards fan out
   const nth = (key: string) => { const n = slot.get(key) ?? 0; slot.set(key, n + 1); return n; };
@@ -89,7 +75,13 @@ export function MapStrings(props: {
         );
       })}
       {[...shared].map(code => { const b = boxOf(code)!; return <circle key={`s:${code}`} className="bs-mark bs-mark--shared" cx={b.x + b.w} cy={b.y + b.h / 2} r={4.5}><title>More than one string passes through this course</title></circle>; })}
-      {[...changed].map(code => { const b = boxOf(code)!; return <circle key={`c:${code}`} className="bs-mark bs-mark--changed" cx={b.x} cy={b.y + b.h / 2} r={4.5}><title>A skill on a string here has been reworded or is no longer there</title></circle>; })}
+      {[...changed].map(code => { const b = boxOf(code)!; return <circle key={`c:${code}`} className="bs-mark bs-mark--changed" cx={b.x} cy={b.y + b.h / 2} r={4.5}><title>{CHANGED_MARK_TITLE}</title></circle>; })}
     </g>
   );
+}
+
+/** The strings in their own SVG above the arrows' layer. That layer is aria-hidden; the strings are buttons and must stay reachable. */
+export function MapStringsLayer(props: React.ComponentProps<typeof MapStrings> & { width: number; height: number }) {
+  const { width, height, ...rest } = props;
+  return <svg className="cb-svg cb-svg--strings" width={width} height={height}><MapStrings {...rest} /></svg>;
 }

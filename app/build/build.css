@@ -232,6 +232,7 @@
 .cb-svg { position: absolute; left: 0; top: 0; }
 .cb-svg--back { z-index: 1; }
 .cb-svg--front { z-index: 3; pointer-events: none; }
+.cb-svg--strings { z-index: 4; pointer-events: none; }
 .cb-divider { position: absolute; top: 0; bottom: 0; width: 10px; z-index: 5; cursor: col-resize; touch-action: none; }
 .cb-divider:hover, .cb-divider:active { background: linear-gradient(90deg, transparent 4px, var(--cb-accent) 4px, var(--cb-accent) 6px, transparent 6px); }
 .cb-cgroup { border-top: 1px solid var(--cb-rule); padding: 0.55rem 0 0.4rem; }

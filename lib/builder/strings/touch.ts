@@ -229,3 +229,27 @@ export function mapStringSegments(g: StringGraph, onMap: Set<string>): MapSegmen
   }
   return out;
 }
+
+/**
+ * Where the active strings need a quiet mark on a course: `shared` = two or more strings pass through one point there,
+ * `changed` = a skill on a string there has been reworded or is no longer in the capture. Only courses in `onMap` count.
+ */
+export function stringMarks(g: StringGraph, status: Record<string, PointStatus>, onMap: ReadonlySet<string>): { shared: Set<string>; changed: Set<string> } {
+  const shared = new Set<string>();
+  const changed = new Set<string>();
+  const seen = new Map<string, number>();
+  for (const s of g.strings) {
+    if (s.status !== 'active') continue;
+    for (const id of s.path) {
+      const code = g.points[id]?.courseCode;
+      if (!code || !onMap.has(code)) continue;
+      seen.set(id, (seen.get(id) ?? 0) + 1);
+      if (seen.get(id) === 2) shared.add(code);
+      const k = status[id]?.kind;
+      if (k === 'changed' || k === 'unanchored') changed.add(code);
+    }
+  }
+  return { shared, changed };
+}
+
+export const CHANGED_MARK_TITLE = 'A skill on a string here has been reworded or is no longer there';

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MapStrings } from '../MapStrings';
+import { MapStrings, MapStringsLayer } from '../MapStrings';
 import type { PointRow, StringGraph } from '@/lib/builder/strings/types';
 
 const pt = (id: string, courseCode: string): PointRow => ({
@@ -28,5 +28,10 @@ describe('MapStrings', () => {
     const { container } = render(<svg><MapStrings graph={g} status={{ a: { kind: 'unanchored', why: 'skill gone' } }} cards={cards} refOf={refOf} onOpen={() => {}} /></svg>);
     expect(container.querySelectorAll('.bs-mark--changed')).toHaveLength(1);
     expect(container.querySelectorAll('.bs-mark--shared')).toHaveLength(2);
+  });
+  it('the strings layer is reachable by role (it is not inside an aria-hidden svg)', () => {
+    const { container } = render(<div><svg aria-hidden /><MapStringsLayer width={400} height={300} graph={graph} status={{}} cards={cards} refOf={refOf} onOpen={() => {}} /></div>);
+    expect(screen.getByRole('button', { name: 'String Color: GC 1040 to GC 2400' })).toBeTruthy();
+    expect(container.querySelector('svg.cb-svg--strings')!.closest('[aria-hidden]')).toBeNull();
   });
 });

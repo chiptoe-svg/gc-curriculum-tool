@@ -64,6 +64,7 @@
 .cl-string__hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
 .cl-string__line { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; opacity: 0.75; }
 .cl-string:hover .cl-string__line, .cl-string:focus-visible .cl-string__line { opacity: 1; stroke-width: 4; }
+.cl-card__mark { position: absolute; left: 0.2rem; bottom: 0.2rem; }
 .cl-card__strings { font-size: 0.8125rem; color: var(--cb-ink-soft); }
 .st-lock { margin-top: 0.3rem; }
 .st-lockform { display: grid; gap: 0.4rem; max-width: 40rem; margin-top: 0.3rem; }

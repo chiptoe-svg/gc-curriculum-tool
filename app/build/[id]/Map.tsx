@@ -14,7 +14,7 @@ import { CONDITIONS, type ProblemSolvingResult } from '@/lib/builder/problem-sol
 import { ACTS, TERMS_PER_ACT, termOf, type Act, type Branch, type Library, type PlanState, type Slot } from '@/lib/builder/types';
 import type { ReqStatus, requiredByCourse } from '@/lib/builder/threads';
 import type { PointStatus, StringGraph } from '@/lib/builder/strings/types';
-import { MapStrings } from './MapStrings';
+import { MapStringsLayer } from './MapStrings';
 import { TONE_VAR, dimNote, dimsOf, stratumName, stratumRank, toneOfCheckpoint, trunkLevel, type Tone } from './ui';
 
 const COL = 44;          // one trunk
@@ -519,10 +519,11 @@ export function CurriculumMap(props: {
               ))}
             </defs>
             {arrows}
-            {props.strings && props.onOpenString && (
-              <MapStrings graph={props.strings.graph} status={props.strings.status} cards={geom.cards} refOf={stringRefs} onOpen={props.onOpenString} />
-            )}
           </svg>
+          {props.strings && props.onOpenString && (
+            <MapStringsLayer width={geom.width} height={geom.height} graph={props.strings.graph} status={props.strings.status}
+              cards={geom.cards} refOf={stringRefs} onOpen={props.onOpenString} />
+          )}
         </>
       )}
       <div className="cb-divider" style={{ left: HEAD_W + laneW - 5 }} role="separator" aria-orientation="vertical" aria-label="Width of the course area"

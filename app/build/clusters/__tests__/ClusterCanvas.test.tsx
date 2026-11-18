@@ -144,4 +144,13 @@ describe('ClusterCanvas strings', () => {
     expect(open).toHaveBeenCalledWith('s2');
     expect(screen.queryByText(/1010.*string/)).toBeNull();
   });
+  it('marks the card of a reworded or lost skill with the hollow mark, and only that card', () => {
+    const g = graph([str('s1', 'Ink path', ['a', 'b'])]);
+    render(<ClusterCanvas library={lib()} state={state()} statuses={{}} selected={null} onSelect={() => {}} update={() => {}} strings={g}
+      status={{ a: { kind: 'unanchored', why: 'skill gone' }, b: { kind: 'intact', now: { k: 1, u: 1, d: 1 } } }} />);
+    const marks = screen.getAllByRole('img', { name: /reworded or is no longer there/ });
+    expect(marks).toHaveLength(1);
+    expect(marks[0]!.closest('[role="group"]')?.getAttribute('aria-label')).toBe('GC 1010 Title of GC 1010');
+    expect(marks[0]!.querySelector('.bs-mark--changed')).not.toBeNull();
+  });
 });

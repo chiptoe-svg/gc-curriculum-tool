@@ -13,8 +13,8 @@ import { clusterEdges, loopMessage, wouldCycle, type ClusterEdge } from '@/lib/b
 import type { ClusterCard, ClusterState } from '@/lib/builder/cluster/state';
 import type { StatusResult } from '@/lib/builder/cluster/status';
 import type { Library } from '@/lib/builder/types';
-import { stringsAt } from '@/lib/builder/strings/touch';
-import type { StringGraph } from '@/lib/builder/strings/types';
+import { CHANGED_MARK_TITLE, stringMarks, stringsAt } from '@/lib/builder/strings/touch';
+import type { PointStatus, StringGraph } from '@/lib/builder/strings/types';
 import type { Update } from '../[id]/Builder';
 import { stringCurves } from './stringsOnCluster';
 
@@ -64,6 +64,8 @@ export function ClusterCanvas(props: {
   selected: string | null; onSelect: (ref: string | null) => void;
   /** Locked strings to draw between the cards' courses, and what a click on one does (open its panel). */
   strings?: StringGraph; onOpenString?: (id: string) => void;
+  /** Each string point's standing; a card whose point was reworded or lost gets the quiet hollow mark /build uses. */
+  status?: Record<string, PointStatus>;
 }) {
   const { library, state, update } = props;
   const edges = useMemo(() => clusterEdges(library, state), [library, state]);
@@ -101,6 +103,9 @@ export function ClusterCanvas(props: {
 
   const cardCodes = useMemo(() => new Set(state.cards.map(c => c.ref)), [state.cards]);
   const curves = useMemo(() => (props.strings ? stringCurves(props.strings, cardCodes) : []), [props.strings, cardCodes]);
+
+  const marks = useMemo(() => (props.strings ? stringMarks(props.strings, props.status ?? {}, new Set(
+    state.cards.filter(c => library.courses.some(l => l.code === c.ref)).map(c => c.ref))) : null), [props.strings, props.status, state.cards, library.courses]);
 
   const width = Math.max(...state.cards.map(c => pos(c).x + CARD_W + 2 * MARGIN), 600);
   const height = Math.max(...state.cards.map(c => pos(c).y + CARD_H + 2 * MARGIN), 360);
@@ -223,6 +228,11 @@ export function ClusterCanvas(props: {
                 {n.met} met · {n.partly} partly · {n.not} not{n.matching ? ` · ${n.matching} matching` : ''}{n.failed ? ` · ${n.failed} could not be checked` : ''}
               </span>
               {(() => { const n = props.strings && !proposed ? stringsAt(props.strings, c.ref).length : 0; return n > 0 ? <span className="cl-card__strings">{n} {n === 1 ? 'string' : 'strings'}</span> : null; })()}
+              {marks?.changed.has(c.ref) && (
+                <svg className="cl-card__mark" width="11" height="11" role="img" aria-label={CHANGED_MARK_TITLE}>
+                  <circle className="bs-mark bs-mark--changed" cx="5.5" cy="5.5" r="4.5"><title>{CHANGED_MARK_TITLE}</title></circle>
+                </svg>
+              )}
               <button type="button" className="cl-card__handle" aria-label={`Draw an arrow from ${code}`}
                 title="Drag onto the course that needs this one"
                 onPointerDown={ev => { ev.stopPropagation(); setRefusal(null); setArrow(null); const q = local(ev); setDrawing({ from: c.ref, x: q.x, y: q.y }); }}
