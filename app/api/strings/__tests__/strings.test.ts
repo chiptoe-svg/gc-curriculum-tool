@@ -256,6 +256,11 @@ describe('POST /api/strings/points/[id]', () => {
     expect(r.status).toBe(200);
     expect(mem.calls[0]![1]).toMatchObject({ pointId: P2, depth: { k: 4, u: 3, d: 2 }, snapshotId: SNAP, by: 'Dr Who' });
   });
+  it('an absent snapshot id means the capture the depth came from', async () => {
+    const r = await post({ candidate: { statement: NEW, hash: hashOf(NEW) } });
+    expect(r.status).toBe(200);
+    expect(mem.calls[0]![1]).toMatchObject({ pointId: P2, snapshotId: 'snap-GC 2010' });
+  });
   it('a snapshot id that is not a UUID is 400', async () => {
     const r = await post({ candidate: { statement: NEW, hash: hashOf(NEW) }, snapshotId: 'snap-GC 2010' });
     expect(r.status).toBe(400);

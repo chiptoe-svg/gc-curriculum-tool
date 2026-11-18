@@ -49,6 +49,7 @@ describe('StringPanel', () => {
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('/api/strings/points/p2');
     expect(JSON.parse(init.body as string).candidate).toEqual({ statement: 'New words', hash: 'hn' });
+    expect(JSON.parse(init.body as string)).not.toHaveProperty('snapshotId');
   });
 
   it('Not the same marks the point unanchored without writing', () => {
@@ -61,10 +62,12 @@ describe('StringPanel', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('a 409 reloads and hands the server graph to onChanged', async () => {
+  it('a 409 shows the notice, fetches the string and hands that to onChanged; the form keeps its text', async () => {
     const fresh = base();
     fresh.strings[0]!.name = 'Color, renamed';
-    vi.stubGlobal('fetch', vi.fn(async () => json(409, { error: 'stale', graph: fresh })));
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === 'PATCH' ? json(409, { error: 'stale', current: fresh.strings[0] }) : json(200, { graph: fresh }));
+    vi.stubGlobal('fetch', fetchMock);
     const onChanged = vi.fn();
     render(<StringPanel graph={base()} status={okStatus} stringId="s1" levelOf={levelOf} editable authorName="Pat" onChanged={onChanged} />);
     fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
@@ -72,6 +75,41 @@ describe('StringPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     expect(await screen.findByText('Someone else changed this string. Reloaded.')).toBeInTheDocument();
     expect(onChanged).toHaveBeenCalledWith(fresh);
+    expect((fetchMock.mock.calls[1] as unknown[])[0]).toBe('/api/strings/s1');
+    expect(screen.getByLabelText('New name')).toHaveValue('Other');
+  });
+
+  it('keeps the access query on links to other strings, and names merged-in and joined strings', () => {
+    const g = base();
+    g.strings.push(
+      { id: 's2', name: 'Inks', description: '', status: 'active', endNote: null, mergedInto: 's1', version: 1, path: ['q1', 'p2'] },
+      { id: 's3', name: 'Press', description: '', status: 'active', endNote: null, mergedInto: null, version: 1, path: ['r1', 'p2'] },
+    );
+    g.points.q1 = pt('q1', 'GC 1020');
+    g.points.r1 = pt('r1', 'GC 1030');
+    render(<StringPanel graph={g} status={{ ...okStatus, q1: intact(), r1: intact() }} stringId="s1" levelOf={levelOf} editable={false}
+      hrefOf={(id) => `/strings/${id}?slug=abc`} onChanged={() => {}} />);
+    expect(screen.getByText(/merged in here/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Inks' })).toHaveAttribute('href', '/strings/s2?slug=abc');
+    expect(screen.getByText(/joined by/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Press' })).toHaveAttribute('href', '/strings/s3?slug=abc');
+  });
+
+  it('says Couldn\'t check, and offers try again when it can retry', () => {
+    const onRetry = vi.fn();
+    render(<StringPanel graph={base()} status={{ p1: intact(), p2: { kind: 'unchecked' } }} stringId="s1" levelOf={levelOf} editable={false} onRetry={onRetry} onChanged={() => {}} />);
+    expect(screen.getByText(/Couldn.t check:/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'try again' }));
+    expect(onRetry).toHaveBeenCalled();
+  });
+
+  it('caps evidence at five and writes history in plain words', () => {
+    const g = base();
+    g.events.push({ id: 'e1', stringId: 's1', pointId: null, kind: 'point_removed', at: '2026-02-01T00:00:00Z', by: 'Pat', reason: 'gone', before: null, after: null });
+    render(<StringPanel graph={g} status={okStatus} stringId="s1" levelOf={levelOf} editable={false}
+      evidenceOf={(c) => (c === 'GC 2400' ? ['a', 'b', 'c', 'd', 'e', 'f'] : [])} onChanged={() => {}} />);
+    expect(screen.getByText('Evidence: a; b; c; d; e')).toBeInTheDocument();
+    expect(screen.getByText(/skill removed, Pat/)).toBeInTheDocument();
   });
 
   it('read-only shows only the cluster link', () => {

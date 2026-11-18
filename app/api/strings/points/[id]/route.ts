@@ -8,8 +8,9 @@ interface Ctx { params: Promise<{ id: string }> }
 
 /**
  * POST /api/strings/points/[id]: accept a reword.
- * Body: { candidate: { statement, hash }, snapshotId, authorName? }. The depth comes from the course's current
- * capture (the candidate must still be in it), never from the request.
+ * Body: { candidate: { statement, hash }, snapshotId?, authorName? }. The depth comes from the course's current
+ * capture (the candidate must still be in it), never from the request. An absent snapshotId means the course's
+ * current capture; a present one must be a UUID.
  * → 200 { graph, notes } | 400 | 404 | 409 { error }
  */
 export async function POST(req: Request, { params }: Ctx): Promise<Response> {
@@ -25,8 +26,8 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   const hash = c && typeof c === 'object' ? str(c.hash) : null;
   if (!statement || !hash) return bad('Send the new wording and its hash.');
   if (statement.length > CAP.statement) return bad(TOO_LONG);
-  const snapshotId = parseSnapshotId(body.snapshotId);
-  if (snapshotId === undefined) return bad(BAD_SNAPSHOT);
+  const sent = parseSnapshotId(body.snapshotId);
+  if (sent === undefined) return bad(BAD_SNAPSHOT);
 
   const point = (await loadGraph({ includeUnlocked: true })).points[id];
   if (!point) return bad('Point not found.', 404);
@@ -35,5 +36,6 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   if ('why' in hit || hashOf(statement) !== hash) return bad(gone, 409);
   const skill = hit.skills.find((s) => s.hash === hash);
   if (!skill) return bad(gone, 409);
+  const snapshotId = sent ?? hit.snapshotId;
   return respond(await confirmReword({ pointId: id, candidate: { statement, hash }, snapshotId, depth: skill.depth, by }));
 }

@@ -12,15 +12,16 @@ export interface StringPanelProps {
   stringId: string;
   levelOf: (code: string) => number;
   editable: boolean;
-  onChanged: (g: StringGraph) => void;
+  /** Receives a PATCH of the graph (a write response or one string's GET): lay it over the current graph with mergeGraph. */
+  onChanged: (patch: StringGraph) => void;
   /** Where "Edit in a cluster" goes (read-only view). */
   editHref?: string;
   /** The signed-in name; when absent an editable panel asks for one. */
   authorName?: string | null;
   /** Library evidence for a stop (projects and outcomes); the line shows only when this returns items. */
   evidenceOf?: (courseCode: string, statement: string) => string[];
-  /** The course's newest capture id, sent with a confirmed reword. */
-  snapshotIdOf?: (courseCode: string) => string | null;
+  /** Link to another string; keeps the page's access query. Default /strings/{id}. */
+  hrefOf?: (stringId: string) => string;
   /** Re-run the status check; offered next to "Couldn't check". */
   onRetry?: () => void;
   /** Hooks for the cluster's extend / branch / merge / remove controls (Task 7). */
@@ -33,18 +34,25 @@ const STALE = 'Someone else changed this string. Reloaded.';
 
 const fmt = (d: Depth | null) => (d ? `K${d.k ?? '–'} U${d.u ?? '–'} D${d.d ?? '–'}` : null);
 const listDims = (dims: string[]) => dims.map((d) => d.toUpperCase()).join(', ');
+const EVENT_WORDS: Record<string, string> = {
+  locked: 'locked', unlocked: 'unlocked', relocked: 'locked again', renamed: 'renamed', extended: 'extended', branched: 'branched off',
+  merged: 'merged', unmerged: 'unmerged', joined: 'joined', point_removed: 'skill removed', reword_confirmed: 'rewording confirmed',
+  link_why: 'reason added', end_note: 'end note', orphan_note: 'note on an unused skill',
+};
+const eventWords = (k: string) => EVENT_WORDS[k] ?? k.replace(/_/g, ' ');
 const when = (at: string) => { const d = new Date(at); return Number.isNaN(d.getTime()) ? at : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); };
 
 /** A button that opens one small text field, then submits it. */
 function InlineForm({ open, label, field, submit, required = true, initial = '', disabled, onSubmit }: {
   open: string; label: string; field: string; submit: string; required?: boolean; initial?: string; disabled?: boolean;
-  onSubmit: (text: string) => void;
+  /** Resolves true when the write took; the form closes only then. */
+  onSubmit: (text: string) => Promise<boolean>;
 }) {
   const [shown, setShown] = useState(false);
   const [text, setText] = useState(initial);
   if (!shown) return <button type="button" className="cb-linkbtn" disabled={disabled} onClick={() => setShown(true)}>{open}</button>;
   return (
-    <form className="st-form" onSubmit={(e) => { e.preventDefault(); onSubmit(text.trim()); setShown(false); }}>
+    <form className="st-form" onSubmit={(e) => { e.preventDefault(); void onSubmit(text.trim()).then((ok) => { if (ok) setShown(false); }); }}>
       <label>{label}<input aria-label={field} value={text} onChange={(e) => setText(e.target.value)} /></label>
       <button type="submit" className="cb-btn" disabled={disabled || (required && !text.trim())}>{submit}</button>
       <button type="button" className="cb-linkbtn" onClick={() => setShown(false)}>Cancel</button>
@@ -53,7 +61,7 @@ function InlineForm({ open, label, field, submit, required = true, initial = '',
 }
 
 export function StringPanel(props: StringPanelProps) {
-  const { graph, stringId, levelOf, editable, onChanged, editHref, evidenceOf, snapshotIdOf, onRetry, stopActions, stringActions } = props;
+  const { graph, stringId, levelOf, editable, onChanged, editHref, evidenceOf, hrefOf = (id: string) => `/strings/${id}`, onRetry, stopActions, stringActions } = props;
   const [typedName, setTypedName] = useState('');
   const [notNow, setNotNow] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
@@ -69,27 +77,24 @@ export function StringPanel(props: StringPanelProps) {
   const nameOf = (id: string) => graph.strings.find((s) => s.id === id)?.name ?? 'another string';
   const cannotWrite = busy || !name;
 
-  async function send(url: string, method: string, body: Record<string, unknown>) {
+  async function send(url: string, method: string, body: Record<string, unknown>): Promise<boolean> {
     setBusy(true);
     setNotice(null);
     try {
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, authorName: name }) });
       const data = (await res.json().catch(() => ({}))) as { graph?: StringGraph; error?: string };
-      if (res.ok && data.graph) { onChanged(data.graph); return; }
+      if (res.ok && data.graph) { onChanged(data.graph); return true; }
       if (res.status === 409) {
-        let fresh = data.graph;
-        if (!fresh) {
-          const again = await fetch(`/api/strings/${stringId}`).then((r) => r.json()).catch(() => null) as { graph?: StringGraph } | null;
-          fresh = again?.graph;
-        }
+        const again = await fetch(`/api/strings/${stringId}`).then((r) => r.json()).catch(() => null) as { graph?: StringGraph } | null;
         setNotice(STALE);
-        if (fresh) onChanged(fresh);
-        return;
+        if (again?.graph) onChanged(again.graph);
+        return false;
       }
       setNotice(data.error ?? 'That did not save.');
+      return false;
     } finally { setBusy(false); }
   }
-  const patch = (body: Record<string, unknown>) => send(`/api/strings/${stringId}`, 'PATCH', { ...body, version: str.version });
+  const patch = (body: Record<string, unknown>): Promise<boolean> => send(`/api/strings/${stringId}`, 'PATCH', { ...body, version: str.version });
 
   const events = graph.events
     .filter((e) => e.stringId === stringId || (e.pointId !== null && str.path.includes(e.pointId)))
@@ -115,7 +120,7 @@ export function StringPanel(props: StringPanelProps) {
           {str.status === 'active'
             ? <InlineForm open="Unlock" label="Reason" field="Reason" submit="Unlock string" disabled={cannotWrite}
                 onSubmit={(t) => patch({ action: 'unlock', reason: t })} />
-            : <button type="button" className="cb-linkbtn" disabled={cannotWrite} onClick={() => patch({ action: 'relock' })}>Relock</button>}
+            : <button type="button" className="cb-linkbtn" disabled={cannotWrite} onClick={() => void patch({ action: 'relock' })}>Relock</button>}
           {str.mergedInto && (
             <InlineForm open="Unmerge" label="Reason" field="Reason" submit="Unmerge string" disabled={cannotWrite}
               onSubmit={(t) => patch({ action: 'unmerge', reason: t })} />
@@ -138,7 +143,7 @@ export function StringPanel(props: StringPanelProps) {
                 const link = i > 0 ? graph.links.find((l) => l.from === reading.stops[i - 1]!.pointId && l.to === s.pointId) : undefined;
                 const lock: Depth = { k: p.k, u: p.u, d: p.d };
                 const moved = s.depth && (s.depth.k !== lock.k || s.depth.u !== lock.u || s.depth.d !== lock.d);
-                const evidence = evidenceOf?.(s.courseCode, p.statement) ?? [];
+                const evidence = (evidenceOf?.(s.courseCode, p.statement) ?? []).slice(0, 5);
                 return (
                   <li key={s.pointId} className="st-stop">
                     <div className="st-stop__line">
@@ -155,7 +160,7 @@ export function StringPanel(props: StringPanelProps) {
                     </div>
                     <StopStatus s={s} nameBusy={cannotWrite} editable={editable} onRetry={onRetry}
                       confirm={() => s.status.kind === 'changed' && send(`/api/strings/points/${s.pointId}`, 'POST', {
-                        candidate: s.status.candidate, snapshotId: snapshotIdOf?.(s.courseCode) ?? null,
+                        candidate: s.status.candidate,
                       })}
                       notSame={() => setNotNow(new Set([...notNow, s.pointId]))} />
                     {i > 0 && (s.why !== null ? <p className="st-why">Why: {s.why}</p> : (
@@ -168,10 +173,10 @@ export function StringPanel(props: StringPanelProps) {
                       </p>
                     ))}
                     {evidence.length > 0 && <p className="st-evidence cb-muted">Evidence: {evidence.join('; ')}</p>}
-                    {s.mergedIn.map((id) => <p key={id} className="cb-muted"><Link href={`/strings/${id}`}>{nameOf(id)}</Link> merged in here</p>)}
+                    {s.mergedIn.map((id) => <p key={id} className="cb-muted"><Link href={hrefOf(id)}>{nameOf(id)}</Link> merged in here</p>)}
                     {s.sharedWith.map((o) => (
                       <p key={o.stringId} className="cb-muted">
-                        {o.relation === 'joins' ? 'joined by ' : ''}<Link href={`/strings/${o.stringId}`}>{nameOf(o.stringId)}</Link>{o.relation === 'branches' ? ' branches off here' : ''}
+                        {o.relation === 'joins' ? 'joined by ' : ''}<Link href={hrefOf(o.stringId)}>{nameOf(o.stringId)}</Link>{o.relation === 'branches' ? ' branches off here' : ''}
                       </p>
                     ))}
                     {editable && stopActions?.(s, i)}
@@ -203,7 +208,7 @@ export function StringPanel(props: StringPanelProps) {
       {events.length === 0 ? <p className="cb-empty">No history yet.</p> : (
         <ul className="st-list">
           {events.map((e) => (
-            <li key={e.id}>{e.kind.replace(/_/g, ' ')}, {e.by}, {when(e.at)}{e.reason ? `: ${e.reason}` : ''}</li>
+            <li key={e.id}>{eventWords(e.kind)}, {e.by}, {when(e.at)}{e.reason ? `: ${e.reason}` : ''}</li>
           ))}
         </ul>
       )}
@@ -219,7 +224,7 @@ function StopStatus({ s, editable, nameBusy, onRetry, confirm, notSame }: {
     return (
       <p className="st-line">Reworded? <em>{st.candidate.statement}</em>{' '}
         {editable && <>
-          <button type="button" className="cb-btn" disabled={nameBusy} onClick={confirm}>Confirm</button>{' '}
+          <button type="button" className="cb-btn" disabled={nameBusy} onClick={() => void confirm()}>Confirm</button>{' '}
           <button type="button" className="cb-btn" onClick={notSame}>Not the same</button>
         </>}
       </p>
