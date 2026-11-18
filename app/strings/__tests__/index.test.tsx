@@ -32,4 +32,7 @@ describe('clusterStringHref', () => {
   it('encodes and de-duplicates in order', () => {
     expect(clusterStringHref(['GC 2400', 'GC 1010', 'GC 2400'])).toBe('/build/clusters/new?courses=GC%202400,GC%201010');
   });
+  it('keeps the access query after the courses', () => {
+    expect(clusterStringHref(['GC 1010', 'GC 2070'], '?slug=ab-12')).toBe('/build/clusters/new?courses=GC%201010,GC%202070&slug=ab-12');
+  });
 });

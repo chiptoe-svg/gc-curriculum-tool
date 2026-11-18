@@ -73,7 +73,7 @@ export function ClusterBuilder(props: {
     const onKey = (e: KeyboardEvent) => {
       const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName);
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !typing) { e.preventDefault(); stepBack(); }
-      if (e.key === 'Escape') setSelected(null);
+      if (e.key === 'Escape') { setSelected(null); setOpenString(null); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

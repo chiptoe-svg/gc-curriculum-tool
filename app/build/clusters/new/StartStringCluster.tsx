@@ -11,11 +11,13 @@ export function StartStringCluster({ slug, codes, knownName }: { slug: string; c
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
+  const lastBy = useRef<string | null>(null);
   const name = `Strings: ${codes[0] ?? 'courses'}${codes.length > 1 ? ` and ${codes.length - 1} more` : ''}`;
 
   async function create(by: string) {
     if (started.current) return;
     started.current = true;
+    lastBy.current = by;
     setBusy(true); setError(null);
     try {
       const res = await fetch('/api/build/clusters', {
@@ -51,7 +53,12 @@ export function StartStringCluster({ slug, codes, knownName }: { slug: string; c
           <button type="submit">Create cluster</button>
         </form>
       )}
-      {error && <p className="cb-error" role="alert">{error}</p>}
+      {error && (
+        <p className="cb-error" role="alert">
+          {error}{' '}
+          {lastBy.current && !ready && <button type="button" className="cb-linkbtn" onClick={() => void create(lastBy.current!)}>Try again</button>}
+        </p>
+      )}
     </div>
   );
 }

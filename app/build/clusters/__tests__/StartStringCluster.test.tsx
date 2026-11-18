@@ -28,3 +28,15 @@ describe('StartStringCluster', () => {
     expect(calls[0]).toMatchObject({ name: 'Strings: GC 1010', authorName: 'Pat' });
   });
 });
+
+describe('StartStringCluster retry', () => {
+  it('shows Try again after a failure and creates one cluster when it works', async () => {
+    let n = 0;
+    const fn = vi.fn(async () => (++n === 1 ? new Response(JSON.stringify({ error: 'Down.' }), { status: 500 }) : new Response(JSON.stringify({ id: 'abc' }), { status: 201 })));
+    vi.stubGlobal('fetch', fn);
+    render(<StartStringCluster slug="s1" codes={['GC 1010']} knownName="Dr Who" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/build/clusters/abc?slug=s1'));
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+});

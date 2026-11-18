@@ -134,6 +134,7 @@ describe('ClusterCanvas strings', () => {
     expect(one.querySelector('title')?.textContent).toBe('Ink path');
     expect((one as unknown as SVGElement).style.color).not.toBe((two as unknown as SVGElement).style.color);
     expect(screen.getByText('2 strings')).toBeInTheDocument();
+    expect(screen.getAllByText('1 string').map(e => e.closest('[role="group"]')?.getAttribute('aria-label'))).toEqual(['GC 2070 Title of GC 2070', 'GC 4400 Title of GC 4400']);
   });
   it('an unlocked string draws nothing, and a click on a curve opens it', () => {
     const open = vi.fn();

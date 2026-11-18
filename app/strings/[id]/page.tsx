@@ -46,7 +46,7 @@ export default async function StringPage({ params, searchParams }: {
       <Link href={`/strings?slug=${encodeURIComponent(slug)}`} className="cb-back">All strings</Link>
       <StringView
         initialGraph={graph} initialStatus={exactStatuses(lib, Object.values(graph.points))} stringId={id}
-        levels={levels} evidence={evidence} editHref={clusterStringHref(codes)} query={`?slug=${encodeURIComponent(slug)}`}
+        levels={levels} evidence={evidence} editHref={clusterStringHref(codes, `?slug=${encodeURIComponent(slug)}`)} query={`?slug=${encodeURIComponent(slug)}`}
       />
     </div>
   );

@@ -69,9 +69,10 @@ export function addOptions(g: StringGraph, required: SkillInput, suppliers: Skil
     for (const s of suppliers) {
       const at = rows.findIndex(p => sameSkill(p, s));
       if (at === -1) continue;
-      if (!hasR && at === rows.length - 1) out.push({ kind: 'extend-end', string: str, supplier: s });
+      if (!hasR && at === rows.length - 1) { if (!str.mergedInto) out.push({ kind: 'extend-end', string: str, supplier: s }); }
       else if (!hasR) out.push({ kind: 'branch', string: str, supplier: s, position: at });
     }
+    // extend-start stays open on a merged string; its end is fixed, so only the start can grow.
     if (rows[0] && sameSkill(rows[0], required)) {
       for (const s of suppliers) if (!rows.some(p => sameSkill(p, s))) out.push({ kind: 'extend-start', string: str, supplier: s });
     }
@@ -79,12 +80,19 @@ export function addOptions(g: StringGraph, required: SkillInput, suppliers: Skil
   return out;
 }
 
+/** A string's color slot (0 to 5): a stable hash of its id, so it keeps its color as other strings come and go. */
+export function colorOf(id: string): number {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h % 6;
+}
+
 export interface StringCurve { id: string; name: string; color: number; hops: Array<{ from: string; to: string }> }
 
 /** One curve set per active string with at least two different courses on the cluster's cards. */
 export function stringCurves(g: StringGraph, cardCodes: ReadonlySet<string>): StringCurve[] {
   const out: StringCurve[] = [];
-  g.strings.forEach((s, i) => {
+  g.strings.forEach(s => {
     if (s.status !== 'active') return;
     const codes: string[] = [];
     for (const id of s.path) {
@@ -92,7 +100,7 @@ export function stringCurves(g: StringGraph, cardCodes: ReadonlySet<string>): St
       if (c && cardCodes.has(c) && codes[codes.length - 1] !== c) codes.push(c);
     }
     const hops = codes.slice(1).map((to, j) => ({ from: codes[j]!, to })).filter(h => h.from !== h.to);
-    if (hops.length) out.push({ id: s.id, name: s.name, color: i % 6, hops });
+    if (hops.length) out.push({ id: s.id, name: s.name, color: colorOf(s.id), hops });
   });
   return out;
 }

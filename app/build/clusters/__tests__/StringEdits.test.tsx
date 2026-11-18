@@ -72,3 +72,27 @@ describe('StringEdits', () => {
     expect(calls[0]!.body).toMatchObject({ action: 'extend', at: 'start', point: target, why: 'because' });
   });
 });
+
+describe('StringEdits on a merged string and without a name', () => {
+  const merged = { ...graph.strings[1]!, mergedInto: 's1' };
+  it('offers no Merge and no End extension on a string that already merges into another', () => {
+    stub();
+    render(<StringTools {...common(merged)} targets={[target]} />);
+    expect(screen.queryByRole('button', { name: 'Merge into…' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Extend…' }));
+    expect(screen.queryByRole('option', { name: 'End' })).toBeNull();
+    expect(screen.getByRole('option', { name: 'Start' })).toBeInTheDocument();
+  });
+  it('asks for a name when none is set and sends it', async () => {
+    stub();
+    render(<StopTools {...{ ...common(graph.strings[0]!), authorName: '' }} position={1} targets={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'gone' } });
+    const go = screen.getByRole('button', { name: 'Remove skill' }) as HTMLButtonElement;
+    expect(go.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Pat' } });
+    fireEvent.click(go);
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]!.body).toMatchObject({ authorName: 'Pat' });
+  });
+});

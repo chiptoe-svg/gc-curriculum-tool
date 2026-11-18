@@ -18,12 +18,16 @@ interface Common {
 function useWrite({ str, authorName, onChanged }: Common) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [typed, setTyped] = useState('');
+  /** The signed-in name; a login that names nobody types one here. */
+  const name = (authorName || typed).trim();
+  const nameField = authorName ? null : <label className="st-name">Your name <input aria-label="Your name" value={typed} onChange={e => setTyped(e.target.value)} /></label>;
   /** Resolves true when the write took. */
   async function patch(body: Record<string, unknown>): Promise<boolean> {
     setBusy(true); setError(null);
     try {
       const res = await fetch(`/api/strings/${str.id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, version: str.version, authorName }),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, version: str.version, authorName: name }),
       });
       const data = (await res.json().catch(() => ({}))) as { graph?: StringGraph; error?: string };
       if (res.ok && data.graph) { onChanged(data.graph); return true; }
@@ -37,7 +41,7 @@ function useWrite({ str, authorName, onChanged }: Common) {
       return false;
     } finally { setBusy(false); }
   }
-  return { busy, error, patch };
+  return { busy, error, patch, name, nameField };
 }
 
 const labelOf = (p: LockPoint) => `${p.courseCode} ${p.role === 'develops' ? 'develops' : 'needs'}: ${p.statement}`;
@@ -77,8 +81,8 @@ export function StringTools(props: Common & { targets: LockPoint[] }) {
   const free = targets.filter(t => !onString(t));
   return (
     <>
-      {str.status === 'active' && mergeable.length > 0 && <MergeForm {...props} candidates={mergeable} />}
-      {str.status === 'active' && <ExtendForm {...props} free={free} />}
+      {str.status === 'active' && !str.mergedInto && mergeable.length > 0 && <MergeForm {...props} candidates={mergeable} />}
+      {str.status === 'active' && <ExtendForm {...props} free={free} merged={!!str.mergedInto} />}
     </>
   );
 }
@@ -87,33 +91,35 @@ function MergeForm(props: Common & { candidates: StringRow[] }) {
   const w = useWrite(props);
   const [into, setInto] = useState('');
   return (
-    <Form open="Merge into…" submit="Merge" disabled={w.busy || !into} error={w.error} onSubmit={() => w.patch({ action: 'merge', into })}>
+    <Form open="Merge into…" submit="Merge" disabled={w.busy || !w.name || !into} error={w.error} onSubmit={() => w.patch({ action: 'merge', into })}>
       <label>String
         <select aria-label="Merge into" value={into} onChange={e => setInto(e.target.value)}>
           <option value="">Choose a string</option>
           {props.candidates.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       </label>
+      {w.nameField}
     </Form>
   );
 }
 
-function ExtendForm(props: Common & { free: LockPoint[] }) {
+function ExtendForm(props: Common & { free: LockPoint[]; merged: boolean }) {
   const w = useWrite(props);
   const [i, setI] = useState(-1);
-  const [at, setAt] = useState<'start' | 'end'>('end');
+  const [at, setAt] = useState<'start' | 'end'>(props.merged ? 'start' : 'end');
   const [why, setWhy] = useState('');
   const target = props.free[i];
   return (
-    <Form open="Extend…" submit="Extend string" disabled={w.busy || !target || !why.trim()} error={w.error}
+    <Form open="Extend…" submit="Extend string" disabled={w.busy || !w.name || !target || !why.trim()} error={w.error}
       onSubmit={() => w.patch({ action: 'extend', at, point: target, why: why.trim() })}>
       <TargetSelect targets={props.free} value={i} onChange={setI} />
       <label>At
         <select aria-label="Extend at" value={at} onChange={e => setAt(e.target.value as 'start' | 'end')}>
-          <option value="end">End</option><option value="start">Start</option>
+          {!props.merged && <option value="end">End</option>}<option value="start">Start</option>
         </select>
       </label>
       <label>Why <input aria-label="Why" value={why} onChange={e => setWhy(e.target.value)} /></label>
+      {w.nameField}
     </Form>
   );
 }
@@ -135,9 +141,10 @@ function RemoveForm(props: Common & { position: number }) {
   const w = useWrite(props);
   const [reason, setReason] = useState('');
   return (
-    <Form open="Remove" submit="Remove skill" disabled={w.busy || !reason.trim()} error={w.error}
+    <Form open="Remove" submit="Remove skill" disabled={w.busy || !w.name || !reason.trim()} error={w.error}
       onSubmit={() => w.patch({ action: 'remove-point', position: props.position, reason: reason.trim() })}>
       <label>Reason <input aria-label="Reason" value={reason} onChange={e => setReason(e.target.value)} /></label>
+      {w.nameField}
     </Form>
   );
 }
@@ -149,11 +156,12 @@ function BranchForm(props: Common & { position: number; free: LockPoint[] }) {
   const [why, setWhy] = useState('');
   const target = props.free[i];
   return (
-    <Form open="Branch from here" submit="Branch string" disabled={w.busy || !target || !name.trim() || !why.trim()} error={w.error}
+    <Form open="Branch from here" submit="Branch string" disabled={w.busy || !w.name || !target || !name.trim() || !why.trim()} error={w.error}
       onSubmit={() => w.patch({ action: 'branch', atPosition: props.position, name: name.trim(), point: target, why: why.trim() })}>
       <TargetSelect targets={props.free} value={i} onChange={setI} />
       <label>New string name <input aria-label="New string name" value={name} maxLength={120} onChange={e => setName(e.target.value)} /></label>
       <label>Why <input aria-label="Why" value={why} onChange={e => setWhy(e.target.value)} /></label>
+      {w.nameField}
     </Form>
   );
 }

@@ -204,3 +204,19 @@ describe('ClusterBuilder strings', () => {
     expect((lock as HTMLButtonElement).disabled).toBe(false);
   });
 });
+
+describe('ClusterBuilder string panel', () => {
+  it('Escape closes the open string panel', async () => {
+    const SNAP = '8b1f0c2e-0000-4000-8000-0000000000a1';
+    const row = (id: string, code: string, statement: string) => ({ id, courseCode: code, role: 'develops', statement, statementHash: hash(statement), snapshotId: SNAP, k: 1, u: 1, d: 1, term: null });
+    stubFetch(c => (c.url === '/api/strings/resolve' ? json(200, {
+      graph: { strings: [{ id: 'str1', name: 'Ink path', description: '', status: 'active', endNote: null, mergedInto: null, version: 1, path: ['a', 'b'] }],
+        points: { a: row('a', 'GC 1010', SUP), b: row('b', 'GC 2070', NEED) }, links: [], events: [] }, status: {}, levels: {}, notes: [],
+    }) : json(500, {})));
+    mount(state());
+    fireEvent.click(await screen.findByRole('button', { name: 'String Ink path' }));
+    await screen.findByRole('button', { name: 'Rename' });
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Rename' })).toBeNull());
+  });
+});
