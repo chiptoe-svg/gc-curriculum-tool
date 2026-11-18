@@ -5,7 +5,7 @@ import {
   unlockString, unmergeString, type WriteResult,
 } from '@/lib/db/string-queries';
 import { NAME_MAX } from '@/lib/builder/plan-schema';
-import { authorOf, bad, parsePoint, POINT_BAD, readBody, respond, str, subGraph, UUID, type Body } from '@/lib/strings/api';
+import { authorOf, bad, overLongText, parsePoint, readBody, respond, str, subGraph, UUID, type Body } from '@/lib/strings/api';
 
 interface Ctx { params: Promise<{ id: string }> }
 
@@ -41,6 +41,8 @@ export async function PATCH(req: Request, { params }: Ctx): Promise<Response> {
   if (!ACTIONS.includes(action)) return bad('Unknown action.');
   const by = authorOf(auth.grant, body);
   if (!by) return bad('A name is required.');
+  const long = overLongText(body);
+  if (long) return bad(long);
   const version = body.version;
   const needsVersion = action !== 'link-why';
   if (needsVersion && (typeof version !== 'number' || !Number.isInteger(version))) return bad('The string version is required.');
@@ -53,20 +55,22 @@ async function dispatch(action: Action, id: string, version: number, by: string,
   const reason = str(b.reason)?.trim();
   switch (action) {
     case 'extend': {
-      const point = parsePoint(b.point);
+      const parsed = parsePoint(b.point);
       const why = str(b.why);
       if (b.at !== 'start' && b.at !== 'end') return bad('Say whether to extend at the start or the end.');
-      if (!point) return bad(POINT_BAD);
+      if ('error' in parsed) return bad(parsed.error);
+      const point = parsed.point;
       if (!why) return bad('A reason for the link is required.');
       return extendString({ id, version, at: b.at, point, why, by });
     }
     case 'branch': {
-      const point = parsePoint(b.point);
+      const parsed = parsePoint(b.point);
       const name = str(b.name)?.trim().slice(0, NAME_MAX);
       const why = str(b.why);
       if (typeof b.atPosition !== 'number' || !Number.isInteger(b.atPosition)) return bad('Say which skill to branch from.');
       if (!name) return bad('A string needs a name.');
-      if (!point) return bad(POINT_BAD);
+      if ('error' in parsed) return bad(parsed.error);
+      const point = parsed.point;
       if (!why) return bad('A reason for the link is required.');
       return branchString({ fromId: id, version, atPosition: b.atPosition, name, description: typeof b.description === 'string' ? b.description.trim() : '', point, why, by });
     }

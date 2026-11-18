@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { authorizeRequest } from '@/lib/auth/route-auth';
 import { loadGraph, lockString } from '@/lib/db/string-queries';
 import { NAME_MAX } from '@/lib/builder/plan-schema';
-import { authorOf, bad, parsePoint, POINT_BAD, readBody, respond, str } from '@/lib/strings/api';
+import { authorOf, bad, CAP, overLongText, parsePoint, readBody, respond, str } from '@/lib/strings/api';
 
 /**
  * POST /api/strings
@@ -18,11 +18,17 @@ export async function POST(req: Request): Promise<Response> {
   const by = authorOf(auth.grant, body);
   if (!by) return bad('A name is required.');
   if (!Array.isArray(body.points) || !Array.isArray(body.whys)) return bad('A string needs its skills and a reason for each link.');
-  const points = body.points.map(parsePoint);
-  if (points.some((p) => !p)) return bad(POINT_BAD);
+  if (body.points.length > CAP.points) return bad(`A string can have at most ${CAP.points} skills.`);
+  if (body.whys.length !== body.points.length - 1) return bad('Each link needs a reason.');
+  const long = overLongText(body) ?? (body.whys.some((w) => typeof w === 'string' && w.length > CAP.text) ? `A reason is too long (${CAP.text} characters at most).` : null);
+  if (long) return bad(long);
+  const parsed = body.points.map(parsePoint);
+  const failed = parsed.find((p) => 'error' in p);
+  if (failed && 'error' in failed) return bad(failed.error);
+  const points = parsed.map((p) => ('point' in p ? p.point : null!));
   const whys = body.whys.map((w) => (typeof w === 'string' ? w : ''));
   const description = typeof body.description === 'string' ? body.description.trim() : '';
-  return respond(await lockString({ name, description, points: points as NonNullable<(typeof points)[number]>[], whys, by }), 201);
+  return respond(await lockString({ name, description, points, whys, by }), 201);
 }
 
 /**

@@ -9,6 +9,7 @@ const A = '8b1f0c2e-0000-4000-8000-0000000000a1';
 const B = '8b1f0c2e-0000-4000-8000-0000000000a2';
 const P1 = '8b1f0c2e-0000-4000-8000-0000000000b1';
 const P2 = '8b1f0c2e-0000-4000-8000-0000000000b2';
+const SNAP = '8b1f0c2e-0000-4000-8000-0000000000c1';
 const P3 = '8b1f0c2e-0000-4000-8000-0000000000b3';
 const hashOf = (s: string) => textHash(normalizeStatement(s));
 
@@ -56,7 +57,7 @@ const req = (url: string, method: string, body?: unknown) => new Request(`http:/
 const okGraph: StringGraph = { strings: [], points: {}, links: [], events: [] };
 
 const pt = (id: string, courseCode: string, statement: string, role: 'develops' | 'requires' = 'develops'): PointRow =>
-  ({ id, courseCode, role, statement, statementHash: hashOf(statement), snapshotId: 's1', k: 1, u: 1, d: 1, term: null });
+  ({ id, courseCode, role, statement, statementHash: hashOf(statement), snapshotId: SNAP, k: 1, u: 1, d: 1, term: null });
 const str = (id: string, name: string, path: string[], status: 'active' | 'unlocked' = 'active', mergedInto: string | null = null): StringRow =>
   ({ id, name, description: '', status, endNote: null, mergedInto, version: 3, path });
 
@@ -70,7 +71,7 @@ const course = (code: string, level: number, skills: Array<{ s: string; k: numbe
   }],
 } as unknown as LibraryCourse);
 
-const goodPoint = { courseCode: 'GC 1010', role: 'develops', statement: 'Mix ink', snapshotId: 's1', k: 2, u: 1, d: 3 };
+const goodPoint = { courseCode: 'GC 1010', role: 'develops', statement: 'Mix ink', snapshotId: SNAP, k: 2, u: 1, d: 3 };
 
 beforeEach(() => {
   mem.calls = []; mem.notesFor = [];
@@ -106,6 +107,26 @@ describe('POST /api/strings', () => {
   });
   it('a point with a bad role is 400', async () => {
     expect((await lock(req('/api/strings', 'POST', { ...body, points: [{ ...goodPoint, role: 'teaches' }, body.points[1]] }))).status).toBe(400);
+  });
+  it('a snapshot id that is not a UUID is 400', async () => {
+    const r = await lock(req('/api/strings', 'POST', { ...body, points: [{ ...goodPoint, snapshotId: 'snap-1' }, body.points[1]] }));
+    expect(r.status).toBe(400);
+    expect((await r.json()).error).toBe('Invalid snapshot id.');
+  });
+  it('a why over 1000 characters is 400; whys must number points minus one', async () => {
+    expect((await lock(req('/api/strings', 'POST', { ...body, whys: ['x'.repeat(1001)] }))).status).toBe(400);
+    expect((await lock(req('/api/strings', 'POST', { ...body, whys: [] }))).status).toBe(400);
+    expect((await lock(req('/api/strings', 'POST', { ...body, whys: ['a', 'b'] }))).status).toBe(400);
+    expect(mem.calls).toEqual([]);
+  });
+  it('more than 50 points is 400', async () => {
+    const points = Array.from({ length: 51 }, (_, i) => ({ ...goodPoint, statement: `Skill ${i}` }));
+    const r = await lock(req('/api/strings', 'POST', { ...body, points, whys: Array(50).fill('w') }));
+    expect(r.status).toBe(400);
+    expect(mem.calls).toEqual([]);
+  });
+  it('an over-long statement is 400', async () => {
+    expect((await lock(req('/api/strings', 'POST', { ...body, points: [{ ...goodPoint, statement: 'x'.repeat(501) }, body.points[1]] }))).status).toBe(400);
   });
   it('passes a refusal from the query straight through', async () => {
     mem.result = { ok: false, status: 409, error: 'A string with that name already exists.' };
@@ -168,6 +189,17 @@ describe('PATCH /api/strings/[id]', () => {
     expect(j.current).toEqual(current);
     expect(j.error).toMatch(/changed/);
   });
+  it('an over-long reason is 400', async () => {
+    expect((await patch({ action: 'unlock', version: 3, reason: 'x'.repeat(1001) })).status).toBe(400);
+    expect(mem.calls).toEqual([]);
+  });
+  it('a login that names nobody needs a typed name', async () => {
+    mem.grant = null;
+    expect((await patch({ action: 'relock', version: 3 })).status).toBe(400);
+    expect(mem.calls).toEqual([]);
+    expect((await patch({ action: 'relock', version: 3, authorName: '  Sam ' })).status).toBe(200);
+    expect(mem.calls[0]![1]).toMatchObject({ by: 'Sam' });
+  });
   it('maps each action to its query with the author', async () => {
     await patch({ action: 'extend', version: 3, at: 'start', point: goodPoint, why: 'w' });
     await patch({ action: 'merge', version: 3, into: B });
@@ -200,6 +232,14 @@ describe('POST /api/strings/resolve', () => {
     expect(j.levels).toEqual({ 'GC 2010': 2, 'GC 3010': 3 });
     expect(j.notes).toEqual([]);
   });
+  it('caps the course list and each code', async () => {
+    const many = await resolve(req('/api/strings/resolve', 'POST', { courseCodes: Array.from({ length: 201 }, (_, i) => `GC ${i}`) }));
+    expect(many.status).toBe(400);
+    expect((await many.json()).error).toBe('Too many courses.');
+    const long = await resolve(req('/api/strings/resolve', 'POST', { courseCodes: ['G'.repeat(41)] }));
+    expect(long.status).toBe(400);
+    expect((await long.json()).error).toBe('Course code too long.');
+  });
   it('neither field is 400', async () => {
     expect((await resolve(req('/api/strings/resolve', 'POST', {}))).status).toBe(400);
   });
@@ -212,12 +252,17 @@ describe('POST /api/strings/points/[id]', () => {
   });
   const post = (b: unknown) => reword(req(`/api/strings/points/${P2}`, 'POST', b), ctx(P2));
   it('fills depth from the capture and passes the candidate on', async () => {
-    const r = await post({ candidate: { statement: NEW, hash: hashOf(NEW) }, snapshotId: 'snap-GC 2010' });
+    const r = await post({ candidate: { statement: NEW, hash: hashOf(NEW) }, snapshotId: SNAP });
     expect(r.status).toBe(200);
-    expect(mem.calls[0]![1]).toMatchObject({ pointId: P2, depth: { k: 4, u: 3, d: 2 }, snapshotId: 'snap-GC 2010', by: 'Dr Who' });
+    expect(mem.calls[0]![1]).toMatchObject({ pointId: P2, depth: { k: 4, u: 3, d: 2 }, snapshotId: SNAP, by: 'Dr Who' });
+  });
+  it('a snapshot id that is not a UUID is 400', async () => {
+    const r = await post({ candidate: { statement: NEW, hash: hashOf(NEW) }, snapshotId: 'snap-GC 2010' });
+    expect(r.status).toBe(400);
+    expect((await r.json()).error).toBe('Invalid snapshot id.');
   });
   it('a candidate no longer in the capture is 409', async () => {
-    const r = await post({ candidate: { statement: 'Something else', hash: hashOf('Something else') }, snapshotId: 'snap-GC 2010' });
+    const r = await post({ candidate: { statement: 'Something else', hash: hashOf('Something else') }, snapshotId: SNAP });
     expect(r.status).toBe(409);
     expect((await r.json()).error).toBe("That wording is no longer in the course's capture.");
     expect(mem.calls).toEqual([]);
@@ -229,10 +274,13 @@ describe('POST /api/strings/points/[id]', () => {
 });
 
 describe('POST /api/strings/orphan-notes', () => {
-  it('needs a reason; saves with the author', async () => {
-    const note = { courseCode: 'GC 2010', role: 'develops', statementHash: 'h', statement: 'Old skill' };
+  const note = { courseCode: 'GC 2010', role: 'develops', statement: 'Old skill' };
+  it('needs a reason; computes the hash on the server and ignores the client\'s', async () => {
     expect((await orphan(req('/api/strings/orphan-notes', 'POST', note))).status).toBe(400);
-    expect((await orphan(req('/api/strings/orphan-notes', 'POST', { ...note, reason: 'Retired' }))).status).toBe(200);
-    expect(mem.calls[0]).toEqual(['orphan', { ...note, reason: 'Retired', by: 'Dr Who' }]);
+    expect((await orphan(req('/api/strings/orphan-notes', 'POST', { ...note, statementHash: 'client-lies', reason: 'Retired' }))).status).toBe(200);
+    expect(mem.calls[0]).toEqual(['orphan', { ...note, statementHash: hashOf('Old skill'), reason: 'Retired', by: 'Dr Who' }]);
+  });
+  it('an over-long reason is 400', async () => {
+    expect((await orphan(req('/api/strings/orphan-notes', 'POST', { ...note, reason: 'x'.repeat(1001) }))).status).toBe(400);
   });
 });

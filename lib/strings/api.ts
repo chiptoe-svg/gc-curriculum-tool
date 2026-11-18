@@ -58,18 +58,40 @@ const depthOf = (v: unknown): number | null | undefined =>
 
 export const hashOf = (statement: string) => textHash(normalizeStatement(statement));
 
-/** A point from the request body. The hash is always computed here, never taken from the client. */
-export function parsePoint(v: unknown): PointInput | null {
-  if (!v || typeof v !== 'object') return null;
+/** Size limits for text and lists sent to the string routes. */
+export const CAP = { text: 1000, statement: 500, code: 40, points: 50, courses: 200 } as const;
+export const TOO_LONG = 'That text is too long.';
+export const BAD_SNAPSHOT = 'Invalid snapshot id.';
+
+/** First free-text field in `b` (why, reason, description, note) over the cap, or null. */
+export function overLongText(b: Body): string | null {
+  for (const k of ['why', 'reason', 'description', 'note']) {
+    const v = b[k];
+    if (typeof v === 'string' && v.length > CAP.text) return `The ${k === 'note' ? 'note' : k} is too long (${CAP.text} characters at most).`;
+  }
+  return null;
+}
+
+/** A snapshot id from the request: null when absent, the id when it is a UUID, undefined when it is anything else. */
+export function parseSnapshotId(v: unknown): string | null | undefined {
+  if (v === null || v === undefined) return null;
+  return typeof v === 'string' && UUID.test(v) ? v : undefined;
+}
+
+/** A point from the request body, or the sentence to show. The hash is always computed here, never taken from the client. */
+export function parsePoint(v: unknown): { point: PointInput } | { error: string } {
+  const err = (error: string) => ({ error });
+  if (!v || typeof v !== 'object') return err(POINT_BAD);
   const p = v as Body;
   const courseCode = str(p.courseCode)?.trim();
   const statement = str(p.statement)?.trim();
-  if (!courseCode || !statement || (p.role !== 'develops' && p.role !== 'requires')) return null;
+  if (!courseCode || !statement || (p.role !== 'develops' && p.role !== 'requires')) return err(POINT_BAD);
+  if (courseCode.length > CAP.code || statement.length > CAP.statement) return err(TOO_LONG);
   const k = depthOf(p.k), u = depthOf(p.u), d = depthOf(p.d);
-  if (k === undefined || u === undefined || d === undefined) return null;
-  const snapshotId = p.snapshotId === null || p.snapshotId === undefined ? null : str(p.snapshotId);
-  if (p.snapshotId !== null && p.snapshotId !== undefined && !snapshotId) return null;
-  return { courseCode, role: p.role, statement, statementHash: hashOf(statement), snapshotId, k, u, d };
+  if (k === undefined || u === undefined || d === undefined) return err(POINT_BAD);
+  const snapshotId = parseSnapshotId(p.snapshotId);
+  if (snapshotId === undefined) return err(BAD_SNAPSHOT);
+  return { point: { courseCode, role: p.role, statement, statementHash: hashOf(statement), snapshotId, k, u, d } };
 }
 
 export const POINT_BAD = 'Each skill needs a course, a role (develops or requires) and a statement.';

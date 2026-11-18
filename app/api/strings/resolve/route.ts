@@ -3,7 +3,7 @@ import { authorizeRequest } from '@/lib/auth/route-auth';
 import { listOrphanNotes, loadGraph } from '@/lib/db/string-queries';
 import { loadLibrary } from '@/lib/builder/library';
 import { resolveAll } from '@/lib/strings/resolve-all';
-import { bad, readBody, subGraph, UUID } from '@/lib/strings/api';
+import { bad, CAP, readBody, subGraph, UUID } from '@/lib/strings/api';
 
 /**
  * POST /api/strings/resolve
@@ -24,6 +24,8 @@ export async function POST(req: Request): Promise<Response> {
     graph = subGraph(await loadGraph({ includeUnlocked: true }), body.stringId);
     if (!graph) return bad('String not found.', 404);
   } else if (Array.isArray(body.courseCodes) && body.courseCodes.every((c) => typeof c === 'string')) {
+    if (body.courseCodes.length > CAP.courses) return bad('Too many courses.');
+    if (body.courseCodes.some((c) => c.length > CAP.code)) return bad('Course code too long.');
     requested = [...new Set(body.courseCodes as string[])];
     graph = await loadGraph({ courseCodes: requested });
   } else {

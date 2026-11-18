@@ -2,7 +2,7 @@ import { authorizeRequest } from '@/lib/auth/route-auth';
 import { confirmReword, loadGraph } from '@/lib/db/string-queries';
 import { loadLibrary } from '@/lib/builder/library';
 import { roleSkills } from '@/lib/builder/strings/resolve';
-import { authorOf, bad, hashOf, readBody, respond, str, UUID } from '@/lib/strings/api';
+import { authorOf, bad, BAD_SNAPSHOT, CAP, hashOf, parseSnapshotId, TOO_LONG, readBody, respond, str, UUID } from '@/lib/strings/api';
 
 interface Ctx { params: Promise<{ id: string }> }
 
@@ -24,8 +24,9 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   const statement = c && typeof c === 'object' ? str(c.statement)?.trim() : undefined;
   const hash = c && typeof c === 'object' ? str(c.hash) : null;
   if (!statement || !hash) return bad('Send the new wording and its hash.');
-  const snapshotId = body.snapshotId === null || body.snapshotId === undefined ? null : str(body.snapshotId);
-  if (body.snapshotId !== null && body.snapshotId !== undefined && !snapshotId) return bad('The capture is not recognized.');
+  if (statement.length > CAP.statement) return bad(TOO_LONG);
+  const snapshotId = parseSnapshotId(body.snapshotId);
+  if (snapshotId === undefined) return bad(BAD_SNAPSHOT);
 
   const point = (await loadGraph({ includeUnlocked: true })).points[id];
   if (!point) return bad('Point not found.', 404);
