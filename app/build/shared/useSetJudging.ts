@@ -13,7 +13,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SetVerdict, SetVerdicts } from '@/lib/builder/cluster/status';
 import { CAMPUS_DOWN, JUDGE_OTHERS_MAX, SERVER_DOWN, type JudgeOther } from './useThreadJudging';
 
-export type SetRequest = { key: string; target: { key: string; text: string; course: string; title: string }; pool: JudgeOther[] };
+/** `sig`: the target's set signature now (StatusResult.setSig); stored with the verdict so the statuses can tell it is current. */
+export type SetRequest = { key: string; sig: string; target: { key: string; text: string; course: string; title: string }; pool: JudgeOther[] };
 
 const sigOf = (r: SetRequest) => `${r.key}|${r.target.text}|${r.pool.map(p => p.ref).sort().join(',')}`;
 const capped = <T extends { course: string; title: string }>(o: T): T => ({ ...o, course: o.course.slice(0, 40), title: o.title.slice(0, 200) });
@@ -61,7 +62,7 @@ export function useSetJudging(args: {
           else if (!res.ok) error = typeof body?.error === 'string' ? body.error : 'Matching failed; try again.';
           else if (!body?.verdict || typeof body.verdict !== 'object') error = SERVER_DOWN;
           else {
-            const v = body.verdict as SetVerdict;
+            const v: SetVerdict = { ...(body.verdict as SetVerdict), sig: r.sig };
             answered.current.set(sig, v);
             if (live()) setSets(s => ({ ...s, [key]: v }));
           }

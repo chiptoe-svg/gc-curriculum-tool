@@ -6,7 +6,7 @@ import { CUTOFFS, MODEL_IN_USE } from '@/lib/ai/match-judge';
 import { SET_CUTOFFS, type SetVerdict } from '@/lib/ai/set-judge';
 import { textHash } from '@/lib/catalog/bundles';
 import { normalizeStatement } from '@/lib/catalog/project-trail';
-import { clusterVersionOf } from '../compute';
+import { clusterVersionOf, whatIfOf } from '../compute';
 import { effectiveCourse, type EffectiveCourse } from '../edits';
 import type { DraftJudgments } from '../threads';
 import type { Candidate, Library, LibraryCourse, MatchDecision, ProposedCourse } from '../types';
@@ -15,8 +15,14 @@ import type { ClusterOverride, ClusterState } from './state';
 
 export type { SetVerdict };
 export type ClusterStatus = 'met' | 'met_set' | 'parts_met' | 'partly' | 'not' | 'pending';
-/** Set-test answers keyed by targetKey (`req:…`, `obj:…`, `cobj:…`; see ClusterOverride). */
+/** Set-test answers keyed by targetKey (`req:…`, `obj:…`, `cobj:…`; see ClusterOverride). Each carries the `sig` of
+ * the target text and pool it answered (setSignature); one whose sig differs from the target now is not used. */
 export type SetVerdicts = Record<string, SetVerdict>;
+
+/** What a set verdict was asked about: the target text's hash and the pool's skill refs in any order. */
+export function setSignature(text: string, poolRefs: string[]): string {
+  return `${hash(text)}|${[...poolRefs].sort().join(',')}`;
+}
 export interface StatusResult {
   targetKey: string; text: string; status: ClusterStatus;
   /** `course`: the supplying course's ref on the cluster; `ref`: the supplied skill's ref. */
@@ -29,6 +35,8 @@ export interface StatusResult {
   pool: Array<{ course: string; code: string; ref: string; statement: string; judged: boolean }>;
   /** Pending only for a set verdict: no single full supplier, some pair at least partly, and no usable set answer. */
   needsSet: boolean;
+  /** The signature a set verdict for this target must carry to be used (setSignature of its text and pool). */
+  setSig: string;
 }
 
 const hash = (s: string) => textHash(normalizeStatement(s));
@@ -59,23 +67,33 @@ export function clusterStatuses(
   const proposedById = new Map(state.proposed.map(p => [p.id, p]));
   const onCards = new Set(state.cards.map(c => c.ref));
 
-  const courses = new Map<string, { code: string; proposed: ProposedCourse | null; eff: EffectiveCourse }>();
+  /** `skillsOnly`: the course is read from a skills-only what-if chosen on this cluster. */
+  const courses = new Map<string, { code: string; proposed: ProposedCourse | null; eff: EffectiveCourse; skillsOnly: boolean }>();
   for (const { ref } of state.cards) {
     const lc = byCode.get(ref);
     const p = lc ? null : proposedById.get(ref) ?? null;
     if (!lc && !p) continue;
     const eff = effectiveCourse((lc ?? p)!, lc ? versionFor(lc, state) : null, state.courseEdits?.[ref]);
-    courses.set(ref, { code: lc ? lc.code : p!.code, proposed: p, eff });
+    courses.set(ref, { code: lc ? lc.code : p!.code, proposed: p, eff, skillsOnly: !!lc && !!whatIfOf(lc, state)?.skills });
   }
 
-  /** How a draft item on a course is named: drafted from syllabus, a new course, or an edit. */
+  /** How a draft item on a course is named: drafted from syllabus (any course with syllabus-origin edits), a new
+   * course, or an edit. */
   const phraseFor = (ref: string): string => {
     const c = courses.get(ref)!;
     const e = state.courseEdits?.[ref];
     const fromSyllabus = !!e && [...e.objectives, ...e.required, ...e.developed].some(x => x.origin === 'syllabus');
-    if (c.proposed && fromSyllabus) return `${c.code} drafted from syllabus`;
+    if (fromSyllabus) return `${c.code} drafted from syllabus`;
     if (c.proposed?.source === 'new') return `new course ${c.code}`;
     return `edited skill in ${c.code}`;
+  };
+  /** The proposed phrase for an item on a course, or null when it rests on a real capture: a draft item or any item on a
+   * proposed course as phraseFor; an item read from a skills-only what-if as an edited version of the course. */
+  const itemPhrase = (ref: string, draft: boolean): string | null => {
+    const c = courses.get(ref)!;
+    if (draft || c.proposed) return phraseFor(ref);
+    if (c.skillsOnly) return `edited version of ${c.code}`;
+    return null;
   };
   const developedOf = (ref: string): PoolSkill[] => {
     const c = courses.get(ref);
@@ -107,6 +125,7 @@ export function clusterStatuses(
       .sort((a, b) => Number(!!b.decision) - Number(!!a.decision)
         || ((label === 'fully' ? b.cand.pFully : b.cand.pPartly) ?? 0) - ((label === 'fully' ? a.cand.pFully : a.cand.pPartly) ?? 0));
 
+    const setSigNow = setSignature(t.text, t.pool.map(s => s.skillRef));
     let status: ClusterStatus;
     let used: PoolSkill[] = [];
     let reason: string | null = null;
@@ -121,7 +140,9 @@ export function clusterStatuses(
       status = 'met';
       used = [fully[0]!.skill];
     } else if (partly.length) {
-      const v = sets[t.key];
+      const v0 = sets[t.key];
+      // A verdict on other wording or another pool says nothing about this one: ask again.
+      const v = v0 && v0.sig === setSigNow ? v0 : undefined;
       const members = v?.kept.map(ref => t.pool.find(s => s.skillRef === ref));
       if (!v || !members || members.some(m => !m)) {
         // No answer yet, or it named a skill no longer in the pool (its course left the cluster): ask again.
@@ -139,7 +160,7 @@ export function clusterStatuses(
     }
 
     const proposed = [...new Set([
-      ...used.filter(s => s.draft).map(s => phraseFor(s.course)),
+      ...used.map(s => itemPhrase(s.course, s.draft)).filter((x): x is string => !!x),
       ...(t.targetPhrase ? [t.targetPhrase] : []),
     ])];
 
@@ -154,7 +175,7 @@ export function clusterStatuses(
       targetKey: t.key, text: t.text, status, reason, override, staleOverride, proposed,
       suppliers: used.map(s => ({ course: s.course, statement: s.statement, ref: s.skillRef })),
       candidates: pairs.filter(p => p.known).map(p => p.cand).sort((a, b) => (b.pFully ?? 0) - (a.pFully ?? 0)),
-      judgeRef: t.judgeRef, needsSet,
+      judgeRef: t.judgeRef, needsSet, setSig: setSigNow,
       pool: pairs.map(p => ({ course: p.skill.course, code: p.skill.code, ref: p.skill.skillRef, statement: p.skill.statement, judged: p.judged })),
     };
   };
@@ -171,7 +192,7 @@ export function clusterStatuses(
       emptyReason: upstream.length ? 'no upstream course has developed skills yet' : 'no upstream courses',
       libCands: new Map((lib.candidates[`${c.code}|${req.ref}`] ?? []).map(x => [`${x.suppliedCourse}|${x.suppliedRef}`, x])),
       decisions: true,
-      targetPhrase: req.draft || c.proposed ? phraseFor(ref) : null,
+      targetPhrase: itemPhrase(ref, req.draft),
       formerKeys: (edits?.required ?? []).filter(e => e.action === 'edit' && e.target && e.statement && hash(e.statement) === req.ref)
         .map(e => `req:${ref}|${e.target}`),
     }));
@@ -179,7 +200,7 @@ export function clusterStatuses(
     objectives[ref] = c.eff.objectives.map(o => evaluate({
       key: `obj:${ref}|${hash(o.text)}`, text: o.text, judgeRef: hash(o.text), pool: ownPool,
       emptyReason: 'this course has no developed skills yet', libCands: null, decisions: false,
-      targetPhrase: o.draft || c.proposed ? phraseFor(ref) : null,
+      targetPhrase: itemPhrase(ref, o.draft),
       formerKeys: (edits?.objectives ?? []).filter(e => e.action === 'edit' && e.target && e.text === o.text)
         .map(e => `obj:${ref}|${hash(e.target!)}`),
     }));

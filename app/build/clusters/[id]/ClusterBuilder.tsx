@@ -136,7 +136,7 @@ export function ClusterBuilder(props: {
       seen.add(r.targetKey);
       const me = t.courseRef === CLUSTER_REF ? { course: 'Cluster', title: name || 'Course cluster' } : (() => { const c = cardCourse(library, cluster, t.courseRef); return { course: c.code, title: c.title }; })();
       out.push({
-        key: r.targetKey, target: { key: r.targetKey, text: r.text, ...me },
+        key: r.targetKey, sig: r.setSig, target: { key: r.targetKey, text: r.text, ...me },
         pool: r.pool.map(p => ({ ref: p.ref, text: p.statement, course: p.code, title: cardCourse(library, cluster, p.course).title })),
       });
     }

@@ -89,6 +89,23 @@ describe('ClusterBuilder judging', () => {
     expect((set[0]!.body.pool as Array<{ ref: string }>).map(p => p.ref).sort()).toEqual([hash(SUP), hash(A)].sort());
   });
 
+  it('a cluster objective edited after its set verdict is asked again on the new wording', async () => {
+    const calls = stubFetch(c => {
+      if (c.body.action === 'judge') return json(200, { results: [{ ref: hash(SUP), similarity: 0.5, pFully: 0.1, pPartly: 0.6 }, { ref: hash(A), similarity: 0.5, pFully: 0.1, pPartly: 0.6 }] });
+      if (c.body.action === 'judge-set') return json(200, { verdict: { pAny: 0.9, kept: [hash(SUP), hash(A)], pTogether: 0.9, pCombining: 0.9 } });
+      return json(500, {});
+    });
+    mount(state({ cards: [{ ref: 'GC 1010', x: 20, y: 20 }], objectives: [{ id: 'o1', text: COBJ }] }));
+    const strip = screen.getByRole('region', { name: 'Cluster objectives' });
+    await waitFor(() => expect(within(strip).getByRole('listitem')).toHaveTextContent('Met by GC 1010 (used together)'));
+    fireEvent.click(within(strip).getByRole('button', { name: 'Edit' }));
+    fireEvent.change(within(strip).getByRole('textbox', { name: 'Objective text' }), { target: { value: 'Manage color across print and web' } });
+    fireEvent.click(within(strip).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(calls.filter(c => c.body.action === 'judge-set').map(c => (c.body.target as { text: string }).text))
+      .toEqual([COBJ, 'Manage color across print and web']));
+    await waitFor(() => expect(within(strip).getByRole('listitem')).toHaveTextContent('Met by GC 1010 (used together)'));
+  });
+
   it('two cluster objectives with the same text each get their set request and their status', async () => {
     const calls = stubFetch(c => {
       if (c.body.action === 'judge') return json(200, { results: [{ ref: hash(SUP), similarity: 0.5, pFully: 0.1, pPartly: 0.6 }, { ref: hash(A), similarity: 0.5, pFully: 0.1, pPartly: 0.6 }] });

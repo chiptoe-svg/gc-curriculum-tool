@@ -9,7 +9,7 @@ afterEach(cleanup);
 
 const result = (o: Partial<StatusResult> & { targetKey: string; text: string }): StatusResult => ({
   status: 'pending', suppliers: [], proposed: [], reason: null, override: null, staleOverride: false, candidates: [],
-  judgeRef: 'h', pool: [], needsSet: false, ...o,
+  judgeRef: 'h', pool: [], needsSet: false, setSig: '', ...o,
 });
 
 function mount(initial: ClusterState, results: StatusResult[], errorOf: (r: StatusResult) => string | null = () => null) {

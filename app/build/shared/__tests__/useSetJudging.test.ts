@@ -10,7 +10,7 @@ const pool = [
   { ref: 's1', text: 'Estimates job costs', course: 'GC 1', title: 'Estimating' },
   { ref: 's2', text: 'Schedules a press run', course: 'GC 2', title: 'Press' },
 ];
-const req = (p = pool): SetRequest => ({ key: target.key, target, pool: p });
+const req = (p = pool): SetRequest => ({ key: target.key, sig: p.map(x => x.ref).sort().join(','), target, pool: p });
 const verdict = (pAny: number) => ({ pAny, kept: ['s1', 's2'], pTogether: 0.7, pCombining: 0.6 });
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -32,12 +32,13 @@ describe('useSetJudging', () => {
       open--;
       return json(200, { verdict: verdict(0.8) });
     }));
-    const other: SetRequest = { key: 'cobj:o1', target: { key: 'cobj:o1', text: 'Runs a print shop', course: 'GC 3', title: 'Print production' }, pool };
+    const other: SetRequest = { key: 'cobj:o1', sig: 'o', target: { key: 'cobj:o1', text: 'Runs a print shop', course: 'GC 3', title: 'Print production' }, pool };
     const { result } = renderHook(() => useCluster([req(), other]));
     await waitFor(() => expect(Object.keys(result.current.sets)).toHaveLength(2));
     expect(most).toBe(1);
     expect(bodies[0]).toEqual({ action: 'judge-set', clusterId: CLUSTER, target, pool });
-    expect(result.current.sets[target.key]).toEqual(verdict(0.8));
+    expect(result.current.sets[target.key]).toEqual({ ...verdict(0.8), sig: 's1,s2' }); // stamped with what it answered
+    expect(result.current.sets['cobj:o1']?.sig).toBe('o');
     expect(result.current.judging).toEqual({});
   });
 
@@ -50,7 +51,7 @@ describe('useSetJudging', () => {
     vi.stubGlobal('fetch', vi.fn(async () => json(200, { verdict: verdict(0.9) })));
     act(() => result.current.retry(target.key));
     expect(result.current.judging[target.key]).toBe('matching');
-    await waitFor(() => expect(result.current.sets[target.key]).toEqual(verdict(0.9)));
+    await waitFor(() => expect(result.current.sets[target.key]).toEqual({ ...verdict(0.9), sig: 's1,s2' }));
     expect(result.current.judging[target.key]).toBeUndefined();
   });
 
@@ -94,6 +95,6 @@ describe('useSetJudging', () => {
     rerender({ p: [...pool].reverse() });
     await new Promise(r => setTimeout(r, 20));
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(result.current.sets[target.key]).toEqual(verdict(0.8));
+    expect(result.current.sets[target.key]).toEqual({ ...verdict(0.8), sig: 's1,s2' });
   });
 });

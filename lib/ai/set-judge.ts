@@ -15,8 +15,10 @@ export const SET_PROMPT_VERSION = 's1';
  */
 export const SET_CUTOFFS = { any: 0.3, together: 0.6, combining: 0.5 } as const;
 
-/** One set-test answer for a target. `kept`: the supplied skill refs in the smallest set (pair judge at least partly). */
-export interface SetVerdict { pAny: number | null; kept: string[]; pTogether: number | null; pCombining: number | null }
+/** One set-test answer for a target. `kept`: the supplied skill refs in the smallest set (pair judge at least partly).
+ * `sig`: set by the cluster page, not the server: what the verdict was asked about (lib/builder/cluster/status.ts
+ * setSignature), so a verdict on an older pool or wording is not used. */
+export interface SetVerdict { pAny: number | null; kept: string[]; pTogether: number | null; pCombining: number | null; sig?: string }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The call itself: the "v3" procedure from the 2026-11-16 composite experiment (prompt texts copied verbatim).
