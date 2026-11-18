@@ -108,7 +108,7 @@ describe('StringPanel', () => {
     g.events.push({ id: 'e1', stringId: 's1', pointId: null, kind: 'point_removed', at: '2026-02-01T00:00:00Z', by: 'Pat', reason: 'gone', before: null, after: null });
     render(<StringPanel graph={g} status={okStatus} stringId="s1" levelOf={levelOf} editable={false}
       evidenceOf={(c) => (c === 'GC 2400' ? ['a', 'b', 'c', 'd', 'e', 'f'] : [])} onChanged={() => {}} />);
-    expect(screen.getByText('Evidence: a; b; c; d; e')).toBeInTheDocument();
+    expect(screen.getByText('Course evidence: a; b; c; d; e')).toBeInTheDocument();
     expect(screen.getByText(/skill removed, Pat/)).toBeInTheDocument();
   });
 
@@ -130,7 +130,7 @@ describe('StringPanel', () => {
   it('shows evidence only when there is some', () => {
     render(<StringPanel graph={base()} status={okStatus} stringId="s1" levelOf={levelOf} editable={false}
       evidenceOf={(c) => (c === 'GC 2400' ? ['Poster project'] : [])} onChanged={() => {}} />);
-    expect(screen.getAllByText(/Evidence/)).toHaveLength(1);
+    expect(screen.getAllByText(/Course evidence/)).toHaveLength(1);
     expect(screen.getByText(/Poster project/)).toBeInTheDocument();
   });
 });

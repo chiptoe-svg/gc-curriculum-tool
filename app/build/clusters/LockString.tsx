@@ -6,11 +6,11 @@
  * passes through them). Only captured catalog courses can be on a string (lockPoint decides; `snapshotId` null = cannot).
  */
 import { useState } from 'react';
+import { sendStringWrite } from '@/components/strings/sendStringWrite';
 import { orderPoints } from '@/lib/builder/strings/order';
 import type { PointRow, StringGraph } from '@/lib/builder/strings/types';
 import { CAPTURED_ONLY, addOptions, type AddOption, type LockPoint, type SkillInput } from './stringsOnCluster';
 
-const STALE = 'Someone else changed this string. Reloaded.';
 const keyOf = (p: SkillInput) => `${p.role}|${p.courseCode}|${p.statement}`;
 
 /** The skills in string order, as the API takes them. */
@@ -48,16 +48,8 @@ export function LockString(props: {
   async function send(url: string, method: string, body: Record<string, unknown>, staleId?: string) {
     setBusy(true); setError(null);
     try {
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, authorName: author }) });
-      const data = (await res.json().catch(() => ({}))) as { graph?: StringGraph; error?: string };
-      if (res.ok && data.graph) { props.onLocked(data.graph); setMode(null); return; }
-      if (res.status === 409 && staleId) {
-        const again = await fetch(`/api/strings/${staleId}`).then(r => r.json()).catch(() => null) as { graph?: StringGraph } | null;
-        if (again?.graph) props.onLocked(again.graph);
-        setError(STALE);
-        return;
-      }
-      setError(data.error ?? 'That did not save.');
+      const r = await sendStringWrite({ url, method, body, authorName: author, reloadStringId: staleId, onChanged: props.onLocked });
+      if (r.ok) setMode(null); else setError(r.notice);
     } finally { setBusy(false); }
   }
 

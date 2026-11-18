@@ -195,6 +195,21 @@ describe('ClusterBuilder strings', () => {
     expect(screen.getByRole('button', { name: 'Rename' })).toBeInTheDocument();
   });
 
+  it('shows "Skills on no string" with Add a note in the drawer of a catalog course', async () => {
+    const calls = stubFetch(c => (c.url === '/api/strings/resolve'
+      ? json(200, { ...resolved, orphans: { 'GC 1010': { developed: [{ statement: A, hash: hash(A), note: null }], unsupplied: [] } } })
+      : c.url === '/api/strings/orphan-notes' ? json(200, { graph: resolved.graph, notes: [] }) : respond(c)));
+    mount(state());
+    await waitFor(() => expect(calls.some(c => c.url === '/api/strings/resolve')).toBe(true));
+    fireEvent.click(card('GC 1010'));
+    expect(await screen.findByText('Skills on no string')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a note' }));
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Taught once' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save note' }));
+    await waitFor(() => expect(calls.some(c => c.url === '/api/strings/orphan-notes')).toBe(true));
+    expect(calls.find(c => c.url === '/api/strings/orphan-notes')!.body).toMatchObject({ courseCode: 'GC 1010', role: 'develops', statement: A, reason: 'Taught once', authorName: 'Tester' });
+  });
+
   it('offers Lock as string on a required skill that has a supplier', async () => {
     stubFetch(respond);
     mount(state());

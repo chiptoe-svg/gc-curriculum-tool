@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
+import { sendStringWrite } from './sendStringWrite';
 import { readString } from '@/lib/builder/strings/read';
 import { stringChanges } from '@/lib/builder/strings/touch';
 import type { PointStatus, StopReading, StringGraph } from '@/lib/builder/strings/types';
@@ -30,7 +31,6 @@ export interface StringPanelProps {
 }
 
 const GONE = { kind: 'unanchored', why: 'skill gone' } as const;
-const STALE = 'Someone else changed this string. Reloaded.';
 
 const fmt = (d: Depth | null) => (d ? `K${d.k ?? '–'} U${d.u ?? '–'} D${d.d ?? '–'}` : null);
 const listDims = (dims: string[]) => dims.map((d) => d.toUpperCase()).join(', ');
@@ -81,17 +81,9 @@ export function StringPanel(props: StringPanelProps) {
     setBusy(true);
     setNotice(null);
     try {
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, authorName: name }) });
-      const data = (await res.json().catch(() => ({}))) as { graph?: StringGraph; error?: string };
-      if (res.ok && data.graph) { onChanged(data.graph); return true; }
-      if (res.status === 409) {
-        const again = await fetch(`/api/strings/${stringId}`).then((r) => r.json()).catch(() => null) as { graph?: StringGraph } | null;
-        setNotice(STALE);
-        if (again?.graph) onChanged(again.graph);
-        return false;
-      }
-      setNotice(data.error ?? 'That did not save.');
-      return false;
+      const r = await sendStringWrite({ url, method, body, authorName: name, reloadStringId: stringId, onChanged });
+      if (!r.ok) setNotice(r.notice);
+      return r.ok;
     } finally { setBusy(false); }
   }
   const patch = (body: Record<string, unknown>): Promise<boolean> => send(`/api/strings/${stringId}`, 'PATCH', { ...body, version: str.version });
@@ -172,7 +164,7 @@ export function StringPanel(props: StringPanelProps) {
                         )}
                       </p>
                     ))}
-                    {evidence.length > 0 && <p className="st-evidence cb-muted">Evidence: {evidence.join('; ')}</p>}
+                    {evidence.length > 0 && <p className="st-evidence cb-muted">Course evidence: {evidence.join('; ')}</p>}
                     {s.mergedIn.map((id) => <p key={id} className="cb-muted"><Link href={hrefOf(id)}>{nameOf(id)}</Link> merged in here</p>)}
                     {s.sharedWith.map((o) => (
                       <p key={o.stringId} className="cb-muted">

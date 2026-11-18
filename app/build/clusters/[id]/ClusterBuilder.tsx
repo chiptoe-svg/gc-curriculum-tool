@@ -30,14 +30,14 @@ import { ClusterCanvas, cardCourse, nextCardSpot } from '../ClusterCanvas';
 import { ClusterObjectives } from '../ClusterObjectives';
 import { ClusterCourseDrawer } from './ClusterCourseDrawer';
 import { StringPanel } from '@/components/strings/StringPanel';
-import { mergeGraph } from '@/lib/builder/strings/graph';
-import type { PointStatus, StringGraph } from '@/lib/builder/strings/types';
+import { useStringsAt } from '@/components/strings/useStringsAt';
+import { OrphanSkills } from '@/components/strings/OrphanSkills';
+import { courseEvidence } from '@/lib/builder/strings/evidence';
 import { Drawer } from '../../[id]/controls';
 import { LockString } from '../LockString';
 import { StopTools, StringTools } from '../StringEdits';
 import { lockPoint, lockTargets, type SkillInput } from '../stringsOnCluster';
 
-const NO_STRINGS: StringGraph = { strings: [], points: {}, links: [], events: [] };
 const MAX_PROPOSED = 60; // the server's limits (lib/builder/plan-schema.ts, lib/builder/cluster/state.ts)
 const MAX_CARDS = 40;
 /** The anchor "course" of a cluster objective's judge job: the cluster itself. */
@@ -80,28 +80,14 @@ export function ClusterBuilder(props: {
   });
 
   // ---- strings through the courses on the cards -------------------------------
-  const [strings, setStrings] = useState<{ graph: StringGraph; status: Record<string, PointStatus> }>({ graph: NO_STRINGS, status: {} });
+  const catalogCodes = useMemo(() => cluster.cards.map(c => c.ref).filter(r => library.courses.some(c => c.code === r)), [cluster.cards, library.courses]);
+  const q = `?slug=${encodeURIComponent(props.slug)}`;
+  const strings = useStringsAt(catalogCodes, q);
   const [openString, setOpenString] = useState<string | null>(null);
-  /** The catalog courses on the cards, as one key so a card moving does not ask again. */
-  const catalogKey = useMemo(() => cluster.cards.map(c => c.ref).filter(r => library.courses.some(c => c.code === r)).sort().join('\n'), [cluster.cards, library.courses]);
-  const refreshStrings = useCallback(async () => {
-    if (!catalogKey) return;
-    try {
-      const res = await fetch('/api/strings/resolve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ courseCodes: catalogKey.split('\n') }) });
-      if (!res.ok) return;
-      const data = (await res.json()) as { graph: StringGraph; status: Record<string, PointStatus> };
-      setStrings(x => ({ graph: mergeGraph(x.graph, data.graph), status: { ...x.status, ...data.status } }));
-    } catch { /* strings stay as they were; the panel offers "try again" for what could not be checked */ }
-  }, [catalogKey]);
-  useEffect(() => { void refreshStrings(); }, [refreshStrings]);
-  /** A write's graph, laid over ours; the new points' standing is then read. */
-  const stringsChanged = useCallback((patch: StringGraph) => { setStrings(x => ({ ...x, graph: mergeGraph(x.graph, patch) })); void refreshStrings(); }, [refreshStrings]);
+  const stringsChanged = strings.changed;
   const levelOf = useCallback((code: string) => library.courses.find(c => c.code === code)?.level ?? 0, [library.courses]);
   const stringTargets = useMemo(() => lockTargets(library, cluster), [library, cluster]);
-  const evidenceOf = useCallback((code: string) => {
-    const v = library.courses.find(c => c.code === code)?.versions[0];
-    return v ? [...v.projects.map(p => p.title), ...v.outcomes.map(o => o.statement)] : [];
-  }, [library.courses]);
+  const evidenceOf = useCallback((code: string) => courseEvidence(library, code), [library]);
 
   // ---- statuses and judging ----------------------------------------------
   const [drafts, setDrafts] = useState<DraftJudgments>({});
@@ -315,7 +301,6 @@ export function ClusterBuilder(props: {
     );
   };
 
-  const q = `?slug=${encodeURIComponent(props.slug)}`;
   const sel = selected && onCards.has(selected) ? cardCourse(library, cluster, selected) : null;
 
   return (
@@ -370,7 +355,7 @@ export function ClusterBuilder(props: {
             errorOf={r => errorOf(r, CLUSTER_REF, 'objective')} onRetry={r => retry(r, CLUSTER_REF, 'objective')} />
           <ClusterCanvas library={library} state={cluster} update={update} statuses={statuses.required}
             failed={(ref, r) => couldNotCheck(r, errorOf(r, ref, 'required'))} selected={selected} onSelect={selectCard}
-            strings={strings.graph} onOpenString={id => { setSelected(null); setOpenString(id); }} />
+            strings={strings.graph} status={strings.status} onOpenString={id => { setSelected(null); setOpenString(id); }} />
         </main>
 
         {openStringId && (() => {
@@ -379,8 +364,8 @@ export function ClusterBuilder(props: {
           return (
             <Drawer wide title="String" onClose={() => setOpenString(null)}>
               <StringPanel graph={strings.graph} status={strings.status} stringId={openStringId} levelOf={levelOf} editable
-                authorName={author().trim() || null} onChanged={stringsChanged} evidenceOf={evidenceOf} onRetry={() => void refreshStrings()}
-                hrefOf={id => `/strings/${id}${q}`}
+                authorName={author().trim() || null} onChanged={stringsChanged} evidenceOf={evidenceOf} onRetry={() => void strings.refresh()}
+                hrefOf={strings.hrefOf}
                 stringActions={() => <StringTools {...common} targets={stringTargets} />}
                 stopActions={(_, i) => <StopTools {...common} position={i} targets={stringTargets} />} />
             </Drawer>
@@ -392,7 +377,9 @@ export function ClusterBuilder(props: {
             codeOf={codeOf} decisions={decisionsInForce} decide={(r, cand, label) => decide(selected, r, cand, label)}
             errorOf={(r, kind) => errorOf(r, selected, kind)} onRetry={(r, kind) => retry(r, selected, kind)}
             judging={thread} stamp={stamp} who={who} author={author} guide={props.guides?.[selected] ?? null}
-            lockSlot={(req, r) => lockSlot(selected, req, r)} saved={save === 'saved'} onSelect={selectCard} onRemove={remove} onClose={() => setSelected(null)} />
+            lockSlot={(req, r) => lockSlot(selected, req, r)}
+            stringsSlot={library.courses.some(c => c.code === selected)
+              ? <OrphanSkills courseCode={selected} orphans={strings.orphans[selected]} authorName={author().trim() || null} onSaved={strings.refresh} /> : null} saved={save === 'saved'} onSelect={selectCard} onRemove={remove} onClose={() => setSelected(null)} />
         )}
       </div>
     </div>

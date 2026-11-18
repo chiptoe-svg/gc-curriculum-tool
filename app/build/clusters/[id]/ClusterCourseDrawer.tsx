@@ -43,6 +43,8 @@ export function ClusterCourseDrawer(props: {
   /** False while the cluster has changes not saved yet (a new version is read from the saved cluster). */
   saved?: boolean;
   /** Strings controls for a required skill with suppliers (LockString); null or absent shows none. */
+  /** "Skills on no string" for a catalog course (OrphanSkills); null or absent shows none. */
+  stringsSlot?: React.ReactNode;
   lockSlot?: (req: { statement: string; need: Depth }, r: StatusResult | undefined) => React.ReactNode;
   onSelect: (ref: string) => void; onRemove: (ref: string) => void; onClose: () => void;
 }) {
@@ -156,6 +158,10 @@ export function ClusterCourseDrawer(props: {
           </ul>
         )}
       </section>
+
+      {props.stringsSlot && (
+        <section className="cb-sec" aria-label="Strings">{props.stringsSlot}</section>
+      )}
 
       {props.guide && (
         <section className="cb-sec" aria-label="How it is graded">

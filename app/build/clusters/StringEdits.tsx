@@ -7,9 +7,8 @@
 import { useState } from 'react';
 import { checkBranch, checkMerge } from '@/lib/builder/strings/rules';
 import type { StringGraph, StringRow } from '@/lib/builder/strings/types';
+import { sendStringWrite } from '@/components/strings/sendStringWrite';
 import { sameSkill, type LockPoint } from './stringsOnCluster';
-
-const STALE = 'Someone else changed this string. Reloaded.';
 
 interface Common {
   graph: StringGraph; str: StringRow; authorName: string; onChanged: (patch: StringGraph) => void;
@@ -26,19 +25,9 @@ function useWrite({ str, authorName, onChanged }: Common) {
   async function patch(body: Record<string, unknown>): Promise<boolean> {
     setBusy(true); setError(null);
     try {
-      const res = await fetch(`/api/strings/${str.id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, version: str.version, authorName: name }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { graph?: StringGraph; error?: string };
-      if (res.ok && data.graph) { onChanged(data.graph); return true; }
-      if (res.status === 409) {
-        const again = await fetch(`/api/strings/${str.id}`).then(r => r.json()).catch(() => null) as { graph?: StringGraph } | null;
-        if (again?.graph) onChanged(again.graph);
-        setError(STALE);
-        return false;
-      }
-      setError(data.error ?? 'That did not save.');
-      return false;
+      const r = await sendStringWrite({ url: `/api/strings/${str.id}`, method: 'PATCH', body: { ...body, version: str.version }, authorName: name, reloadStringId: str.id, onChanged });
+      if (!r.ok) setError(r.notice);
+      return r.ok;
     } finally { setBusy(false); }
   }
   return { busy, error, patch, name, nameField };
@@ -90,14 +79,17 @@ export function StringTools(props: Common & { targets: LockPoint[] }) {
 function MergeForm(props: Common & { candidates: StringRow[] }) {
   const w = useWrite(props);
   const [into, setInto] = useState('');
+  const [reason, setReason] = useState('');
   return (
-    <Form open="Merge into…" submit="Merge" disabled={w.busy || !w.name || !into} error={w.error} onSubmit={() => w.patch({ action: 'merge', into })}>
+    <Form open="Merge into…" submit="Merge" disabled={w.busy || !w.name || !into || !reason.trim()} error={w.error}
+      onSubmit={() => w.patch({ action: 'merge', into, reason: reason.trim() })}>
       <label>String
         <select aria-label="Merge into" value={into} onChange={e => setInto(e.target.value)}>
           <option value="">Choose a string</option>
           {props.candidates.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       </label>
+      <label>Reason <input aria-label="Reason" value={reason} onChange={e => setReason(e.target.value)} /></label>
       {w.nameField}
     </Form>
   );

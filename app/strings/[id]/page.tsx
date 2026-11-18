@@ -4,6 +4,7 @@ import { isValidSlug } from '@/lib/slug';
 import { loadGraph } from '@/lib/db/string-queries';
 import { loadLibrary } from '@/lib/builder/library';
 import { clusterStringHref } from '@/lib/builder/strings/href';
+import { courseEvidence } from '@/lib/builder/strings/evidence';
 import { exactStatuses } from '@/lib/strings/exact';
 import { UUID } from '@/lib/strings/api';
 import { StringView } from './StringView';
@@ -37,8 +38,7 @@ export default async function StringPage({ params, searchParams }: {
     const c = lib.courses.find((x) => x.code === p.courseCode);
     if (!c) continue;
     levels[c.code] = c.level;
-    const v = c.versions[0];
-    if (v) evidence[c.code] = [...v.projects.map((x) => x.title), ...v.outcomes.map((o) => o.statement)];
+    evidence[c.code] = courseEvidence(lib, c.code);
   }
   const codes = [...new Set(graph.strings.find((s) => s.id === id)!.path.map((p) => graph.points[p]?.courseCode ?? ''))].filter(Boolean);
   return (

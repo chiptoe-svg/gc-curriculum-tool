@@ -56,9 +56,11 @@ describe('StringEdits', () => {
     expect(screen.getByRole('option', { name: 'Ink path' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Color path' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Merge into'), { target: { value: 's1' } });
+    expect(screen.getByRole('button', { name: 'Merge' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'same skill, same course' } });
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
     await waitFor(() => expect(calls).toHaveLength(1));
-    expect(calls[0]!.body).toMatchObject({ action: 'merge', into: 's1' });
+    expect(calls[0]!.body).toMatchObject({ action: 'merge', into: 's1', reason: 'same skill, same course' });
   });
   it('Extend sends a point at the chosen end', async () => {
     stub();

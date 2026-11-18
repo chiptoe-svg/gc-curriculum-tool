@@ -73,4 +73,16 @@ describe('CourseStrings', () => {
     expect(JSON.parse(call[1].body)).toMatchObject({ courseCode: 'GC 2400', role: 'develops', statement: 'Mix spot inks', reason: 'Taught as a one-off' });
     expect(await screen.findByText(/Taught as a one-off/)).toBeInTheDocument();
   });
+
+  it('shows a standing for each point when a string runs through the course twice', async () => {
+    const two: StringGraph = {
+      ...graph,
+      strings: [{ ...graph.strings[0]!, path: ['p1', 'p2', 'p3'] }],
+      points: { ...graph.points, p3: pt('p3', 'GC 2400', { statement: 'Second skill' }) },
+      links: [],
+    };
+    stub(json(200, { ...reply(intact), graph: two, status: { p1: intact, p2: intact, p3: { kind: 'unanchored', why: 'skill gone' } } }));
+    render(<CourseStrings courseCode="GC 2400" mode="course" />);
+    expect(await screen.findByText('Skill at GC 2400: Holds · Second skill: No longer anchored')).toBeInTheDocument();
+  });
 });

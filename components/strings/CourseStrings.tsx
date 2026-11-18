@@ -2,7 +2,8 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { courseChanges, stringsAt, type OrphanSkill } from '@/lib/builder/strings/touch';
-import type { OrphanNote, PointStatus, Role, StringGraph } from '@/lib/builder/strings/types';
+import { OrphanSkills, orphanCountOf } from './OrphanSkills';
+import type { OrphanNote, PointStatus, StringGraph } from '@/lib/builder/strings/types';
 
 interface Resolved { graph: StringGraph; status: Record<string, PointStatus>; levels: Record<string, number>; notes: OrphanNote[]; orphans?: Record<string, { developed: OrphanSkill[]; unsupplied: OrphanSkill[] }> }
 
@@ -16,19 +17,6 @@ export interface CourseStringsProps {
 const STANDING: Record<string, string> = {
   intact: 'Holds', changed: 'Reworded', unanchored: 'No longer anchored', unchecked: "Couldn't check",
 };
-
-function NoteForm({ onSave }: { onSave: (reason: string) => Promise<boolean> }) {
-  const [shown, setShown] = useState(false);
-  const [text, setText] = useState('');
-  if (!shown) return <button type="button" className="cb-linkbtn" onClick={() => setShown(true)}>Add a note</button>;
-  return (
-    <form className="st-form" onSubmit={(e) => { e.preventDefault(); void onSave(text.trim()).then((ok) => { if (ok) setShown(false); }); }}>
-      <label>Note<input aria-label="Note" value={text} onChange={(e) => setText(e.target.value)} /></label>
-      <button type="submit" className="cb-btn" disabled={!text.trim()}>Save note</button>
-      <button type="button" className="cb-linkbtn" onClick={() => setShown(false)}>Cancel</button>
-    </form>
-  );
-}
 
 export function CourseStrings({ courseCode, mode, query = '' }: CourseStringsProps) {
   const [data, setData] = useState<Resolved | null>(null);
@@ -56,7 +44,7 @@ export function CourseStrings({ courseCode, mode, query = '' }: CourseStringsPro
   const here = stringsAt(graph, courseCode);
   const changes = courseChanges(graph, status, courseCode, levelOf);
   const orphans = data.orphans?.[courseCode] ?? null;
-  const orphanCount = orphans ? orphans.developed.length + orphans.unsupplied.length : 0;
+  const orphanCount = orphanCountOf(orphans);
 
   async function post(url: string, body: Record<string, unknown>): Promise<Response | null> {
     setMessage(null);
@@ -72,26 +60,14 @@ export function CourseStrings({ courseCode, mode, query = '' }: CourseStringsPro
   async function confirm(pointId: string, candidate: { statement: string; hash: string }) {
     if (await post(`/api/strings/points/${pointId}`, { candidate })) await load();
   }
-  async function saveNote(role: Role, statement: string, reason: string): Promise<boolean> {
-    const res = await post('/api/strings/orphan-notes', { courseCode, role, statement, reason });
-    if (!res) return false;
-    await load();
-    return true;
-  }
-
   if (here.length === 0 && changes.length === 0 && orphanCount === 0) return null;
 
+  /** One standing when the string has one point here; one per point, with its skill, when it has two or more. */
   const standingAt = (s: (typeof here)[number]) => {
-    const id = s.path.find((p) => graph.points[p]?.courseCode === courseCode);
-    return STANDING[(id && status[id]?.kind) || 'unchecked'];
+    const ids = s.path.filter((p) => graph.points[p]?.courseCode === courseCode);
+    const word = (id: string) => STANDING[status[id]?.kind ?? 'unchecked'];
+    return ids.length === 1 ? word(ids[0]!) : ids.map((id) => `${graph.points[id]!.statement}: ${word(id)}`).join(' · ');
   };
-  const list = (role: Role, items: NonNullable<typeof orphans>['developed']) => items.map((o) => (
-    <li key={`${role}-${o.hash}`}>
-      <span>{o.statement}</span>
-      {o.note ? <span className="cb-muted"> — {o.note}</span> : <> <NoteForm onSave={(r) => saveNote(role, o.statement, r)} /></>}
-    </li>
-  ));
-
   return (
     <section className="cb st-panel" data-mode={mode}>
       {here.length > 0 && (
@@ -124,13 +100,7 @@ export function CourseStrings({ courseCode, mode, query = '' }: CourseStringsPro
           </ul>
         </div>
       )}
-      {orphans && orphanCount > 0 && (
-        <div>
-          <h3>Skills on no string</h3>
-          {orphans.developed.length > 0 && <><p className="cb-muted">Developed here</p><ul>{list('develops', orphans.developed)}</ul></>}
-          {orphans.unsupplied.length > 0 && <><p className="cb-muted">Needed on entry</p><ul>{list('requires', orphans.unsupplied)}</ul></>}
-        </div>
-      )}
+      <OrphanSkills courseCode={courseCode} orphans={orphans} authorName={name.trim() || null} onSaved={load} />
       {askName && <label className="st-name">Your name <input value={name} onChange={(e) => setName(e.target.value)} /></label>}
       {message && <p className="st-notice">{message}</p>}
     </section>
