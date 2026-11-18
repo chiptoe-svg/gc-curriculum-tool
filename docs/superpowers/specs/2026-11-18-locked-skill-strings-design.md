@@ -13,7 +13,8 @@ happens along the way:
 
 - **Depth:** K/U/D at each stop: does it rise, hold, or slip?
 - **Reinforcement:** how many later courses develop it again.
-- **Abandonment:** the string stops: taught, then nothing later uses or builds on it. Every dead end is flagged until a faculty member explains it (owner, 2026-11-18).
+- **Where it ends:** the last course the string reaches. Not a failure and not permanent: an end is a future
+  opportunity, so it is shown plainly, with no warning flag (owner, 2026-11-18).
 - **The why:** each link says why this course follows the last, in a faculty member's words.
 
 Two more payoffs the owner named:
@@ -30,7 +31,7 @@ look at a string and see the progression, where it thins, and where it ends.
 
 1. A department-wide string record: name, a short "what this string is", ordered stops, who locked it, when, and why.
 2. Lock a string from a cluster map, from links already on the canvas; extend an existing string from any cluster.
-3. A string panel with the stops in order and the four readings (depth, reinforcement, abandonment, why).
+3. A string panel with the stops in order and the four readings (depth, reinforcement, where it ends, why).
 4. String status against today's captures: intact, changed-since-locked (confirm), broken (skill gone).
 5. Break warnings where courses are changed, and "strings through this course" marks.
 6. An orphan list per course.
@@ -46,7 +47,8 @@ look at a string and see the progression, where it thins, and where it ends.
 
 - A string that silently changes or disappears. Nothing repairs a stop without a faculty member confirming it.
 - A capture or an edit blocked by a string. Warnings inform; they never stop someone saving their course.
-- Orphan and dead-end labels that read as an accusation. They are questions; an explained one shows its explanation instead of a flag.
+- Orphan labels that read as an accusation, and any warning styling on a string's end. An orphan is a question; an
+  explained one shows its explanation. An end is just where the string stops today.
 
 ## Approaches considered
 
@@ -66,7 +68,8 @@ look at a string and see the progression, where it thins, and where it ends.
 - `curriculum_string_stops`: string_id, position (order), course_code, role `develops | requires`, statement (saved
   wording at lock), statement_hash (the `skillRef` / `ref` scheme: `textHash(normalizeStatement(s))`), snapshot_id at
   lock, k/u/d at lock, link_reason (why this stop follows the previous; null on the first stop), added_by / at.
-- `curriculum_strings` also holds end_reason, end_by, end_at: why the string ends where it does (null = unexplained dead end). Changing the last stop clears it.
+- `curriculum_strings` also holds an optional end_note, end_by, end_at: a faculty note on the end (e.g. "could continue
+  into GC 4800"). Optional; no note is the normal case. Adding a stop past the end clears it.
 - `skill_orphan_notes`: course_code, role, statement_hash, statement, reason, by, at: why a skill on no string is there. Resolved like a stop (a reworded skill shows its note as "changed, confirm").
 - `curriculum_string_events`: append-only history (locked, stop added, stop removed, reword confirmed, renamed,
   unlocked), with who, when, reason, and the stop's before/after wording. Unlocking keeps the rows; status flips.
@@ -106,8 +109,8 @@ Opened from any stop marker, from the course, or from a strings index (`/strings
 - **Depth:** a small K/U/D line across stops, flagging any slip (a later develops stop lower than an earlier one).
 - **Reinforcement:** count of `develops` stops after the first that are within one level of the peak so far (see
   "Built for fade and reinforcement later").
-- **Dead end:** every string ends somewhere; the end is flagged as a dead end unless it has an end reason, which shows
-  in its place (e.g. "leads to prepress technician roles").
+- **Ends at:** the string's last stop, shown plainly as "Ends at GC xxxx (Act n)" with its optional end note. `/strings`
+  can sort and filter by where strings end (course, Act), so faculty can see which strings stop where.
 - History: the event list.
 
 ### Built for fade and reinforcement later (owner, 2026-11-18)
@@ -122,7 +125,7 @@ the peak halves the loss; time runs in terms, three per act. A string is exactly
 - **One pure reading function.** All panel readings come from `readString(stops, options)` in
   `lib/builder/strings/read.ts`, returning per-stop readings plus string totals. `options.fade` exists now and is
   `null` (no fade): readings are attained depth. Adding fade later means passing a number and mapping `develops` stops
-  to `durable()` contributions, giving "estimated depth still held" at each stop and at the dead end.
+  to `durable()` contributions, giving "estimated depth still held" at each stop and where the string ends.
 - **Reinforcement means the same thing now and later.** In this version a stop counts as reinforcement when it is a
   `develops` stop after the first whose depth is within one level of the string's peak so far, on any of K, U or D:
   the same rule `durable()` uses for a revisit that makes depth stick. Lighter touches are shown but not counted.
@@ -171,7 +174,8 @@ Orphans are a list, not a score.
 - **Lock gesture:** one string per lock. The user ticks which of the link's supplying skills belong (default all); each
   becomes a stop. Stops are ordered by Act (the existing default-act-by-catalog-level rule), then course number, then
   develops before requires within a course; the user can reorder.
-- **Dead ends (owner, 2026-11-18):** every string end is flagged, Act 3 included, until explained with an end reason.
+- **Ends (owner, 2026-11-18):** an end is a future opportunity, not a fault: no flag, just visible, with an optional
+  note and a sort/filter on `/strings`.
 - **Orphans:** a developed skill is an orphan if it is on no string. A required skill is unsupplied if it is not a
   `requires` stop with an earlier `develops` stop on some string.
 - **Warnings:** checked in the browser against the strings loaded with the page, on cluster and /build course edits
@@ -188,6 +192,6 @@ Orphans are a list, not a score.
 - Strings are linear; a skill can be on many strings (no branching).
 - Captured courses only.
 - Unlock needs a reason; full history.
-- Explanations for dead ends and orphans are free text, one per end or skill, editable by any faculty.
+- End notes and orphan notes are free text, one per string end or skill, editable by any faculty.
 - Warnings never block saving.
 - Reword detection reuses the existing matcher; confirmation is manual.
