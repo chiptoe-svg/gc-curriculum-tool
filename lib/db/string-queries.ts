@@ -346,6 +346,8 @@ export async function mergeString(input: { id: string; version: number; into: st
   return write(async (tx) => {
     const cur = await loadForWrite(tx, input.id, input.version);
     if (cur.mergedInto) throw new Refuse(400, 'That string already merges into another string.');
+    // Lock the target so a concurrent remove or unlock on it serializes against this merge.
+    await tx.select({ id: curriculumStrings.id }).from(curriculumStrings).where(eq(curriculumStrings.id, input.into)).for('share');
     const graph = await loadGraph({ includeUnlocked: true }, tx);
     const bad = checkMerge(graph, input.id, input.into);
     if (bad) throw new Refuse(bad === MSG.notFound ? 404 : 400, bad);
@@ -360,7 +362,7 @@ export async function mergeString(input: { id: string; version: number; into: st
 export async function unmergeString(input: { id: string; version: number; reason: string; by: string }): Promise<WriteResult> {
   return write(async (tx) => {
     const reason = requireReason(input.reason);
-    const cur = await loadForWrite(tx, input.id, input.version);
+    const cur = await loadForWrite(tx, input.id, input.version, { active: false });
     if (!cur.mergedInto) throw new Refuse(400, "That string isn't merged into another.");
     await bump(tx, cur.id, input.version, input.by, { mergedInto: null, mergedBy: null, mergedAt: null, mergeReason: null });
     await addEvent(tx, { stringId: cur.id, kind: 'unmerged', by: input.by, reason, before: { into: cur.mergedInto } });
@@ -444,6 +446,10 @@ export async function relockString(input: { id: string; version: number; by: str
     if (cur.status !== 'unlocked') throw new Refuse(400, 'That string is already locked.');
     await assertNameFree(tx, cur.name, cur.id);
     await assertPath(tx, cur.path);
+    if (cur.mergedInto) {
+      await tx.select({ id: curriculumStrings.id }).from(curriculumStrings).where(eq(curriculumStrings.id, cur.mergedInto)).for('share');
+      if (checkMerge(await loadGraph({ includeUnlocked: true }, tx), cur.id, cur.mergedInto)) throw new Refuse(400, "This string's merge no longer holds. Unmerge it first.");
+    }
     await bump(tx, cur.id, input.version, input.by, { status: 'active' });
     await addEvent(tx, { stringId: cur.id, kind: 'relocked', by: input.by });
     return { courseCodes: await courseCodesOf(tx, cur.path) };

@@ -284,7 +284,9 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
     // b: remove the end point of a merged string (three-point string C merging into a target)
     const a3 = must(await q.lockString({ name: name('gA3'), description: 'd', points: [pt('GC1', 1), pt('GC2', 1), pt('GC3', 1)], whys: ['w', 'w'], by: 't' }));
     const C = mine(a3, a3.graph.strings.find((x) => x.name.includes(' gA3 '))!.name);
-    must(await q.mergeString({ id: C.id, version: 1, into: C.id === B.id ? A.id : (await lock(name('gT'), [['GX', 1], ['GC3', 1]])).graph.strings.find((x) => x.path.length === 2 && x.name.includes(' gT '))!.id, reason: 'r', by: 't' }));
+    const target = await lock(name('gT'), [['GX', 1], ['GC3', 1]]);
+    const targetId = target.graph.strings.find((x) => x.name.includes(' gT '))!.id;
+    must(await q.mergeString({ id: C.id, version: 1, into: targetId, reason: 'r', by: 't' }));
     expect(await q.removePoint({ id: C.id, version: 2, position: 2, reason: 'r', by: 't' }))
       .toMatchObject({ ok: false, status: 400, error: 'This string merges into another. Unmerge it first.' });
     // c: remove the skill where another string merges in (B's middle point GA2)
@@ -337,6 +339,21 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
     const a = await lock(nm, [['BI1', 1], ['BI2', 1], ['BI3', 1]]);
     const r = await q.branchString({ fromId: mine(a, nm).id, version: 1, atPosition: 0.5, name: name('bi-c'), description: 'd', point: pt('BI4', 1), why: 'w', by: 't' });
     expect(r).toMatchObject({ ok: false, status: 400 });
+  });
+
+  it('relock re-checks the merge; unmerge works on an unlocked string so it is never a dead end', async () => {
+    const na = name('rmA'); const nb = name('rmB');
+    const a = await lock(na, [['RMA', 1], ['RMJ', 1]]);
+    const b = await lock(nb, [['RMB0', 1], ['RMJ', 1], ['RMB2', 1]]);
+    const A = mine(a, na); const B = mine(b, nb);
+    must(await q.mergeString({ id: A.id, version: 1, into: B.id, reason: 'same', by: 't' }));
+    must(await q.unlockString({ id: A.id, version: 2, reason: 'park', by: 't' }));
+    must(await q.removePoint({ id: B.id, version: 1, position: 1, reason: 'gone', by: 't' }));
+    expect(await q.relockString({ id: A.id, version: 3, by: 't' }))
+      .toMatchObject({ ok: false, status: 400, error: "This string's merge no longer holds. Unmerge it first." });
+    must(await q.unmergeString({ id: A.id, version: 3, reason: 'target moved', by: 't' }));
+    const re = must(await q.relockString({ id: A.id, version: 4, by: 't' }));
+    expect(re.graph.strings.find((x) => x.id === A.id)).toMatchObject({ status: 'active', mergedInto: null });
   });
 
   it('404s on an unknown string', async () => {
