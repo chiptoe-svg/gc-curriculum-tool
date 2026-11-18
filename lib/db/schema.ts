@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, pgView, check, uuid, text, jsonb, timestamp, date, integer, smallint, bigint, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, pgView, check, uuid, text, jsonb, timestamp, date, integer, smallint, bigint, real, boolean, primaryKey, index, uniqueIndex, unique, foreignKey, type AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
@@ -1537,4 +1537,119 @@ export const skillSetJudgments = pgTable('skill_set_judgments', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => ({
   pk: primaryKey({ columns: [t.targetHash, t.poolHash, t.model, t.promptVersion] }),
+}));
+
+// ---- Locked skill strings (migration 0071) ----
+
+/** A skill statement at a course, either developed there or required there. Identity is (course, role, statement hash). */
+export const stringPoints = pgTable('string_points', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull(),
+  role: text('role').$type<'develops' | 'requires'>().notNull(),
+  statement: text('statement').notNull(),
+  statementHash: text('statement_hash').notNull(),
+  snapshotId: uuid('snapshot_id'),
+  k: smallint('k'),
+  u: smallint('u'),
+  d: smallint('d'),
+  term: smallint('term'),
+  createdBy: text('created_by').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  unq: unique('string_points_unique').on(t.courseCode, t.role, t.statementHash),
+  roleCheck: check('string_points_role_check', sql`${t.role} IN ('develops', 'requires')`),
+  termCheck: check('string_points_term_check', sql`${t.term} BETWEEN 1 AND 9`),
+}));
+
+/** A hook between two points. why is null when the link was made by unhooking a middle stop. */
+export const stringLinks = pgTable('string_links', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  fromPoint: uuid('from_point').notNull().references(() => stringPoints.id, { onDelete: 'restrict' }),
+  toPoint: uuid('to_point').notNull().references(() => stringPoints.id, { onDelete: 'restrict' }),
+  why: text('why'),
+  createdBy: text('created_by').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  unq: unique('string_links_unique').on(t.fromPoint, t.toPoint),
+  distinctCheck: check('string_links_distinct_check', sql`${t.fromPoint} <> ${t.toPoint}`),
+}));
+
+/** A named, locked string of points. */
+export const curriculumStrings = pgTable('curriculum_strings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  status: text('status').$type<'active' | 'unlocked'>().notNull().default('active'),
+  endNote: text('end_note'),
+  endBy: text('end_by'),
+  endAt: timestamp('end_at', { withTimezone: true }),
+  mergedInto: uuid('merged_into').references((): AnyPgColumn => curriculumStrings.id, { onDelete: 'restrict' }),
+  mergedBy: text('merged_by'),
+  mergedAt: timestamp('merged_at', { withTimezone: true }),
+  mergeReason: text('merge_reason'),
+  createdBy: text('created_by').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedBy: text('updated_by').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  version: integer('version').notNull().default(1),
+}, (t) => ({
+  activeName: uniqueIndex('idx_curriculum_strings_active_name').on(sql`lower(${t.name})`).where(sql`${t.status} = 'active'`),
+  statusCheck: check('curriculum_strings_status_check', sql`${t.status} IN ('active', 'unlocked')`),
+  versionCheck: check('curriculum_strings_version_check', sql`${t.version} >= 1`),
+  mergeSelfCheck: check('curriculum_strings_merge_self_check', sql`${t.mergedInto} IS NULL OR ${t.mergedInto} <> ${t.id}`),
+}));
+
+/** The ordered points of a string. */
+export const curriculumStringPath = pgTable('curriculum_string_path', {
+  stringId: uuid('string_id').notNull().references(() => curriculumStrings.id, { onDelete: 'cascade' }),
+  position: integer('position').notNull(),
+  pointId: uuid('point_id').notNull().references(() => stringPoints.id, { onDelete: 'restrict' }),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.stringId, t.position] }),
+}));
+
+/** Why a skill statement is deliberately not on any string. */
+export const skillOrphanNotes = pgTable('skill_orphan_notes', {
+  courseCode: text('course_code').notNull(),
+  role: text('role').$type<'develops' | 'requires'>().notNull(),
+  statementHash: text('statement_hash').notNull(),
+  statement: text('statement').notNull(),
+  reason: text('reason').notNull(),
+  by: text('by').notNull(),
+  at: timestamp('at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.courseCode, t.role, t.statementHash] }),
+  roleCheck: check('skill_orphan_notes_role_check', sql`${t.role} IN ('develops', 'requires')`),
+}));
+
+/** Audit trail for strings and points. */
+export const curriculumStringEvents = pgTable('curriculum_string_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  stringId: uuid('string_id'),
+  pointId: uuid('point_id'),
+  kind: text('kind').notNull(),
+  by: text('by').notNull(),
+  at: timestamp('at', { withTimezone: true }).defaultNow().notNull(),
+  reason: text('reason'),
+  before: jsonb('before').$type<unknown>(),
+  after: jsonb('after').$type<unknown>(),
+}, (t) => ({
+  stringAtIdx: index('idx_curriculum_string_events_string_at').on(t.stringId, sql`${t.at} DESC`),
+  kindCheck: check('curriculum_string_events_kind_check', sql`${t.kind} IN ('locked', 'extended', 'joined', 'branched', 'merged', 'unmerged', 'point_removed', 'reword_confirmed', 'link_why', 'renamed', 'end_note', 'unlocked', 'relocked', 'orphan_note')`),
+}));
+
+/** Cache of the reword-resolution judge for a point against a snapshot. */
+export const stringPointResolutions = pgTable('string_point_resolutions', {
+  pointId: uuid('point_id').notNull().references(() => stringPoints.id, { onDelete: 'cascade' }),
+  snapshotId: uuid('snapshot_id').notNull(),
+  status: text('status').$type<'changed' | 'unanchored'>().notNull(),
+  candidateStatement: text('candidate_statement'),
+  candidateHash: text('candidate_hash'),
+  pPartly: real('p_partly'),
+  model: text('model').notNull(),
+  promptVersion: text('prompt_version').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.pointId, t.snapshotId, t.model, t.promptVersion] }),
+  statusCheck: check('string_point_resolutions_status_check', sql`${t.status} IN ('changed', 'unanchored')`),
 }));
