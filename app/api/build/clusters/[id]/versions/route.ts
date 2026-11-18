@@ -4,7 +4,7 @@ import { personalName } from '@/lib/auth/viewer';
 import { getCluster } from '@/lib/db/cluster-queries';
 import { createWhatIf } from '@/lib/db/what-if-queries';
 import { loadLibrary } from '@/lib/builder/library';
-import { versionOf } from '@/lib/builder/compute';
+import { clusterVersionOf, whatIfOf } from '@/lib/builder/compute';
 import { effectiveCourse } from '@/lib/builder/edits';
 import { emptyClusterState, parseClusterState } from '@/lib/builder/cluster/state';
 import { NAME_MAX } from '@/lib/builder/plan-schema';
@@ -19,7 +19,9 @@ const bad = (error: string, status = 400) => NextResponse.json({ error }, { stat
  * POST /api/build/clusters/[id]/versions
  * Body: { courseRef, authorName? }. Saves the course as edited on this cluster as a skills-only what-if on that
  * course (no estimate or profile; `fromCluster` names this cluster). It is based on the capture the cluster uses
- * for the course. Only a tracked course with a captured version can be saved.
+ * for the course. Only a tracked course with a captured version can be saved. A course read from a skills-only what-if
+ * is saved with that what-if's skills plus the edits, based on the what-if's own base capture; when that capture is
+ * gone it is refused.
  * → 201 { id, title } | 400 | 404
  */
 export async function POST(req: Request, { params }: Ctx): Promise<Response> {
@@ -46,7 +48,12 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   if (!state.cards.some(c => c.ref === courseRef)) return bad('That course is not on this cluster.');
   const lc = lib.courses.find(c => c.code === courseRef);
   if (!lc) return bad('Only a tracked course can be saved as a version.');
-  const version = versionOf(lc, state);
+  const chosen = whatIfOf(lc, state);
+  const skillsOnly = chosen?.skills ? chosen : null;
+  if (skillsOnly && !lc.versions.some(v => v.snapshotId === skillsOnly.baseSnapshotId)) {
+    return bad("This version's base capture is gone; it can't be saved again.");
+  }
+  const version = clusterVersionOf(lc, state);
   if (!version) return bad('This course has no captured version to save from.');
 
   const eff = effectiveCourse(lc, version, state.courseEdits?.[courseRef]);
@@ -58,7 +65,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   };
   const title = `${lc.code} as edited on ${cluster.name}`;
   const row = await createWhatIf({
-    courseCode: lc.code, baseSnapshotId: version.snapshotId, ...ownerOf(auth.grant), authorName, title, skills,
+    courseCode: lc.code, baseSnapshotId: skillsOnly ? skillsOnly.baseSnapshotId! : version.snapshotId, ...ownerOf(auth.grant), authorName, title, skills,
   });
   return NextResponse.json({ id: row.id, title }, { status: 201 });
 }

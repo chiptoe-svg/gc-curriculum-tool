@@ -224,4 +224,36 @@ describe('POST /api/build/clusters/[id]/versions', () => {
     seed({ cards: [] });
     expect((await post('GC 2')).status).toBe(400);
   });
+  const withSkillsOnly = (baseSnapshotId: string | null) => {
+    const l = mem.lib as Library;
+    l.courses[1]!.whatIfs = [{
+      id: 'w1', title: 'GC 2 as edited on Other cluster', author: 'Dr Who', depths: [], notComputed: [], baseSnapshotId,
+      skills: { objectives: ['Plan a press run'], developed: [{ statement: 'Proof a layout', k: 2, u: 2, d: 3 }], required: [{ statement: 'Read a press sheet', need: { k: null, u: null, d: 2 } }], fromCluster: 'other' },
+    }];
+  };
+  it('re-saving a course read from a skills-only what-if keeps the what-if\'s skills plus the edits', async () => {
+    withSkillsOnly('GC 2');
+    seed({
+      cards: [{ ref: 'GC 2', x: 0, y: 0 }], versions: { 'GC 2': 'whatif:w1' },
+      courseEdits: { 'GC 2': { objectives: [], required: [], developed: [{ id: 'd1', action: 'add', target: null, statement: 'Mix ink', levels: null, by: 'Dr Who', at: '2026-11-17T10:00:00.000Z' }] } },
+    });
+    const res = await post('GC 2');
+    expect(res.status).toBe(201);
+    expect(mem.whatIfs[0]).toMatchObject({
+      courseCode: 'GC 2', baseSnapshotId: 'GC 2',
+      skills: {
+        objectives: ['Plan a press run'],
+        developed: [expect.objectContaining({ statement: 'Proof a layout' }), expect.objectContaining({ statement: 'Mix ink' })],
+        required: [{ statement: 'Read a press sheet', need: { k: null, u: null, d: 2 } }],
+      },
+    });
+  });
+  it('refuses to re-save a skills-only what-if whose base capture is gone', async () => {
+    withSkillsOnly(null);
+    seed({ cards: [{ ref: 'GC 2', x: 0, y: 0 }], versions: { 'GC 2': 'whatif:w1' } });
+    const res = await post('GC 2');
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("This version's base capture is gone; it can't be saved again.");
+    expect(mem.whatIfs).toHaveLength(0);
+  });
 });
