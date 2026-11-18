@@ -4,6 +4,9 @@ import { render, screen, cleanup } from '@testing-library/react';
 
 vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('notFound'); } }));
 vi.mock('@/app/FeedbackLink', () => ({ FeedbackLink: () => null }));
+vi.mock('@/components/strings/CourseStrings', () => ({ CourseStrings: () => null }));
+vi.mock('@/components/strings/strings.css', () => ({}));
+vi.mock('@/lib/builder/library', () => ({ loadLibrary: async () => ({ courses: [] }) }));
 vi.mock('@/app/courses/[code]/PrereqEdgesClient', () => ({ PrereqEdgesClient: () => null }));
 vi.mock('@/lib/db/courses-queries', () => ({
   getCourseByCode: async () => ({ code: 'GC 3460', title: 'Digital Imaging', prerequisites: null }),

@@ -21,8 +21,19 @@ import type { SubCompetencyGap } from '@/lib/program/prereq-gaps';
 import { depthBand } from '@/lib/program/depth-band';
 import { PrereqEdgesClient } from './PrereqEdgesClient';
 import { FeedbackLink } from '@/app/FeedbackLink';
+import { loadLibrary } from '@/lib/builder/library';
+import { CourseStrings } from '@/components/strings/CourseStrings';
+import '@/components/strings/strings.css';
 
 export const dynamic = 'force-dynamic';
+
+/** The course's current captured skill statements, for "Skills on no string"; undefined when the library cannot be read. */
+async function currentSkills(code: string): Promise<{ skills: string[]; required: string[] } | undefined> {
+  try {
+    const v = (await loadLibrary()).courses.find((c) => c.code === code)?.versions[0];
+    return v ? { skills: v.skills.map((s) => s.statement), required: v.required.map((s) => s.statement) } : undefined;
+  } catch { return undefined; }
+}
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -218,6 +229,7 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
     countWhatIfsByCourse(),
   ]);
   const whatIfCount = whatIfCounts.get(code) ?? 0;
+  const captured = await currentSkills(code);
 
   // Inline unknown-prereq detection (mirrors GET handler logic)
   const edgeCodes = [...new Set(edges.map((e) => e.prereqCourseCode))];
@@ -286,6 +298,8 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8 space-y-10">
+        <CourseStrings courseCode={code} mode="course" query={`?slug=${encodeURIComponent(slug)}`} skills={captured?.skills} required={captured?.required} />
+
 
         {/* Course meta */}
         {course.prerequisites && (
