@@ -2,14 +2,17 @@
 
 /**
  * The cluster objectives strip (spec goal 6): what the cluster as a whole is meant to deliver, each checked against the
- * developed skills of every course on the cluster. Add, edit and remove; each shows its status in words. A failed match
- * shows the error and Try again, never Not met.
+ * developed skills of every course on the cluster. Add, edit and remove; each shows its status in words, the course
+ * skills it rests on, and an override (target key `cobj:<id>`). A failed match shows the error and Try again, never
+ * Not met.
  */
 import { useState } from 'react';
 import { statusLabel, type StatusResult } from '@/lib/builder/cluster/status';
 import type { ClusterObjective, ClusterState } from '@/lib/builder/cluster/state';
 import type { Update } from '../[id]/Builder';
 import { newId } from '../[id]/ui';
+import { OverrideControl } from './OverrideControl';
+import { SupplierLines } from './StatusLine';
 
 const MAX = 20; // the schema's limits (lib/builder/cluster/state.ts)
 const TEXT_MAX = 500;
@@ -23,6 +26,8 @@ export function ClusterObjectives(props: {
   /** The judging error for a pending objective, if its last match failed. */
   errorOf: (r: StatusResult) => string | null;
   onRetry: (r: StatusResult) => void;
+  /** Who sets an override. */
+  who: () => string;
 }) {
   const { update } = props;
   const [draft, setDraft] = useState('');
@@ -72,6 +77,12 @@ export function ClusterObjectives(props: {
                     {r.reason && !error && <span className="cl-status__why"> ({r.reason})</span>}
                     {r.staleOverride && <span className="cl-status__why"> Override out of date (the objective changed)</span>}
                   </span>
+                )}
+                {r && editing?.id !== o.id && (
+                  <div className="cl-objstatus">
+                    <OverrideControl r={r} update={update} who={props.who} />
+                    <SupplierLines r={r} codeOf={props.codeOf} />
+                  </div>
                 )}
                 {editing?.id !== o.id && (
                   <span className="cl-obj__actions">

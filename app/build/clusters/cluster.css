@@ -49,6 +49,7 @@
 /* The course panel (ClusterCourseDrawer): statuses beside objectives and required skills, ratings, overrides. */
 .cl-status__err { color: var(--cb-short); font-weight: 400; }
 .cl-objstatus { grid-column: 1 / -1; font-size: 0.875rem; }
+.cl-obj > .cl-objstatus { flex-basis: 100%; }
 .cl-override { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; margin-left: 0.4rem; }
 .cl-override input { border: 1px solid var(--cb-rule); border-radius: 3px; padding: 0.15rem 0.4rem; min-width: 12rem; }
 .cb-req.cl-req--met, .cb-req.cl-req--met_set { border-left-color: var(--cb-req-met); }

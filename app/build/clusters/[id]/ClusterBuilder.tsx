@@ -320,7 +320,7 @@ export function ClusterBuilder(props: {
             maxProposed={MAX_PROPOSED} noun="cluster" acts={false} onClose={() => setImporting(false)} onImported={imported} />
         )}
         <main className="cb-main cl-main">
-          <ClusterObjectives objectives={cluster.objectives} results={statuses.cluster} codeOf={codeOf} update={update}
+          <ClusterObjectives objectives={cluster.objectives} results={statuses.cluster} codeOf={codeOf} update={update} who={who}
             errorOf={r => errorOf(r, CLUSTER_REF, 'objective')} onRetry={r => retry(r, CLUSTER_REF, 'objective')} />
           <ClusterCanvas library={library} state={cluster} update={update} statuses={statuses.required}
             failed={(ref, r) => !!errorOf(r, ref, 'required')} selected={selected} onSelect={setSelected} />

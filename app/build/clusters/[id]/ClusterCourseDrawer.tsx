@@ -9,11 +9,9 @@
 import { useState } from 'react';
 import { WHAT_IF_PREFIX, clusterVersionOf } from '@/lib/builder/compute';
 import { effectiveCourse } from '@/lib/builder/edits';
-import { textHash } from '@/lib/catalog/bundles';
-import { normalizeStatement } from '@/lib/catalog/project-trail';
 import { clusterEdges, upstreamOf } from '@/lib/builder/cluster/graph';
 import type { StatusResult } from '@/lib/builder/cluster/status';
-import type { ClusterOverride, ClusterState } from '@/lib/builder/cluster/state';
+import type { ClusterState } from '@/lib/builder/cluster/state';
 import type { Candidate, EditBase, Library, MatchDecision, ProposedCourse } from '@/lib/builder/types';
 import type { ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
 import { ObjectiveGuidePanel } from '@/app/wiki/ObjectiveGuidePanel';
@@ -22,12 +20,10 @@ import { ChangesList, DevelopedSkillsEditor, ObjectivesEditor, courseEditOps, ty
 import { Drawer } from '../../[id]/controls';
 import { cardCourse } from '../ClusterCanvas';
 import { ClusterRequiredList } from '../ClusterRequiredList';
-import { StatusLine } from '../StatusLine';
+import { OverrideControl } from '../OverrideControl';
+import { StatusLine, SupplierLines } from '../StatusLine';
 
-const hash = (s: string) => textHash(normalizeStatement(s)); // as lib/builder/cluster/status.ts names a target's text
 const monthYear = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-const day = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-const OVERRIDE_WORD: Record<ClusterOverride['label'], string> = { met: 'Met', partly: 'Partly', not: 'Not' };
 
 export function ClusterCourseDrawer(props: {
   courseRef: string; clusterId: string; slug: string; library: Library; cluster: ClusterState; update: Update<ClusterState>;
@@ -137,7 +133,7 @@ export function ClusterCourseDrawer(props: {
         <ClusterRequiredList courseRef={courseRef} required={eff.required} results={props.required} codeOf={props.codeOf}
           decisions={props.decisions} decide={props.decide}
           errorOf={r => props.errorOf(r, 'required')} onRetry={r => props.onRetry(r, 'required')}
-          onSave={ops.saveRequired} onRemove={ops.removeRequired} />
+          onSave={ops.saveRequired} onRemove={ops.removeRequired} update={update} who={props.who} />
       </section>
 
       <section className="cb-sec" aria-label="Developed skills">
@@ -186,40 +182,17 @@ export function ClusterCourseDrawer(props: {
   );
 }
 
-/** An objective's status and its override: Met / Partly / Not with an optional reason, kept with the cluster. */
+/** An objective's status, the skills it rests on, and its override (OverrideControl), kept with the cluster. */
 function ObjectiveStatus(props: {
   r: StatusResult; codeOf: (ref: string) => string; update: Update<ClusterState>; who: () => string;
   errorOf: (r: StatusResult, kind: 'objective') => string | null; onRetry: (r: StatusResult, kind: 'objective') => void;
 }) {
-  const { r, update } = props;
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState('');
-  // Replace any override on this target, and one left under the objective's former wording.
-  const drop = (list: ClusterOverride[]) => list.filter(o => o.targetKey !== r.targetKey && o.targetKey !== r.override?.targetKey);
-  const set = (label: ClusterOverride['label']) => {
-    const o: ClusterOverride = {
-      targetKey: r.targetKey, textHash: hash(r.text), label, by: props.who().slice(0, 120), at: new Date().toISOString(),
-      reason: reason.trim() ? reason.trim().slice(0, 1000) : null,
-    };
-    update(s => ({ ...s, overrides: [...drop(s.overrides), o] }));
-    setOpen(false); setReason('');
-  };
-  const inForce = r.override && !r.staleOverride ? r.override : null;
+  const { r } = props;
   return (
     <div className="cl-objstatus">
       <StatusLine r={r} codeOf={props.codeOf} noun="objective" error={props.errorOf(r, 'objective')} onRetry={() => props.onRetry(r, 'objective')} />
-      {inForce && <span className="cb-muted cb-small"> Set by hand by {inForce.by}, {day(inForce.at)}{inForce.reason ? `: ${inForce.reason}` : ''}.</span>}{' '}
-      {!open && <button type="button" className="cb-linkbtn" onClick={() => setOpen(true)}>Override</button>}
-      {r.override && <>{' '}<button type="button" className="cb-linkbtn" onClick={() => update(s => ({ ...s, overrides: drop(s.overrides) }))}>Clear override</button></>}
-      {open && (
-        <span className="cl-override">
-          <input value={reason} maxLength={1000} aria-label="Reason (optional)" placeholder="Why (optional)" onChange={e => setReason(e.target.value)} />
-          {(['met', 'partly', 'not'] as const).map(l => (
-            <button key={l} type="button" className="cb-iconbtn" onClick={() => set(l)}>{OVERRIDE_WORD[l]}</button>
-          ))}
-          <button type="button" className="cb-linkbtn" onClick={() => setOpen(false)}>Cancel</button>
-        </span>
-      )}
+      <OverrideControl r={r} update={props.update} who={props.who} />
+      <SupplierLines r={r} codeOf={props.codeOf} />
     </div>
   );
 }

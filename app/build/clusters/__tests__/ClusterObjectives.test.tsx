@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import { useState } from 'react';
+import { textHash } from '@/lib/catalog/bundles';
+import { normalizeStatement } from '@/lib/catalog/project-trail';
 import { emptyClusterState, type ClusterState } from '@/lib/builder/cluster/state';
 import type { StatusResult } from '@/lib/builder/cluster/status';
 import { ClusterObjectives } from '../ClusterObjectives';
@@ -18,7 +20,7 @@ function mount(initial: ClusterState, results: StatusResult[], errorOf: (r: Stat
   function Harness() {
     const [s, setS] = useState(initial);
     seen.push(s);
-    return <ClusterObjectives objectives={s.objectives} results={results} codeOf={r => r} update={fn => setS(fn)} errorOf={errorOf} onRetry={onRetry} />;
+    return <ClusterObjectives objectives={s.objectives} results={results} codeOf={r => r} update={fn => setS(fn)} errorOf={errorOf} onRetry={onRetry} who={() => 'Tester'} />;
   }
   render(<Harness />);
   return { last: () => seen[seen.length - 1]!, onRetry };
@@ -61,6 +63,32 @@ describe('ClusterObjectives', () => {
     expect(items[1]).toHaveTextContent('Not met');
     expect(items[1]).toHaveTextContent('no course on this cluster has developed skills yet');
     expect(items[2]).toHaveTextContent('Override out of date (the objective changed)');
+  });
+
+  it('names the course skill a Met or Partly met objective rests on', () => {
+    const s = { ...emptyClusterState(), objectives: [{ id: 'a', text: 'One' }, { id: 'b', text: 'Two' }] };
+    mount(s, [
+      result({ targetKey: 'cobj:a', text: 'One', status: 'met', suppliers: [{ course: 'GC 2070', statement: 'Mix ink', ref: 'x' }] }),
+      result({ targetKey: 'cobj:b', text: 'Two', status: 'partly', suppliers: [{ course: 'GC 4400', statement: 'Proof a page', ref: 'y' }] }),
+    ]);
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('From GC 2070: Mix ink');
+    expect(items[1]).toHaveTextContent('Partly met');
+    expect(items[1]).toHaveTextContent('From GC 4400: Proof a page');
+  });
+
+  it('overrides a cluster objective (Met / Partly / Not with a reason), replacing one on the same key, and clears it', () => {
+    const hash = (x: string) => textHash(normalizeStatement(x));
+    const old = { targetKey: 'cobj:a', textHash: 'old', label: 'not' as const, by: 'Ann', at: '2026-11-17T10:00:00.000Z', reason: null };
+    const s = { ...emptyClusterState(), objectives: [{ id: 'a', text: 'One' }], overrides: [old] };
+    const m = mount(s, [result({ targetKey: 'cobj:a', text: 'One', status: 'not', override: old, staleOverride: true })]);
+    const item = screen.getByRole('listitem');
+    fireEvent.click(within(item).getByRole('button', { name: 'Override' }));
+    fireEvent.change(within(item).getByRole('textbox', { name: 'Reason (optional)' }), { target: { value: 'Shown in the capstone' } });
+    fireEvent.click(within(item).getByRole('button', { name: 'Met' }));
+    expect(m.last().overrides).toEqual([expect.objectContaining({ targetKey: 'cobj:a', textHash: hash('One'), label: 'met', by: 'Tester', reason: 'Shown in the capstone' })]);
+    fireEvent.click(within(item).getByRole('button', { name: 'Clear override' }));
+    expect(m.last().overrides).toEqual([]);
   });
 
   it('a failed match shows the error and Try again, never Not met', () => {

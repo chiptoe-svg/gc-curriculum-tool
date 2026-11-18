@@ -90,6 +90,31 @@ describe('ClusterCourseDrawer', () => {
     expect(next.overrides[0]).toMatchObject({ targetKey: `obj:GC 2070|${hash(OBJ)}`, textHash: hash(OBJ), label: 'partly', by: 'Tester', reason: 'Seen in the lab' });
   });
 
+  it('a required skill can be overridden; it replaces an override under the same or former key', () => {
+    const NEW = 'Read and check a job ticket';
+    const former = { targetKey: `req:GC 2070|${hash(NEED)}`, textHash: hash(NEED), label: 'met' as const, by: 'Ann', at: '2026-11-17T10:00:00.000Z', reason: null };
+    const edited = base({
+      overrides: [former],
+      courseEdits: { 'GC 2070': { objectives: [], developed: [], required: [{ ...EDIT, action: 'edit', target: hash(NEED), statement: NEW, levels: null }] } },
+    });
+    const { update, state } = mount({ state: edited, judgments: {} });
+    const req = section('Required skills');
+    expect(req).toHaveTextContent('Override out of date (the skill changed)');
+    fireEvent.click(within(req).getByRole('button', { name: 'Override' }));
+    fireEvent.change(within(req).getByRole('textbox', { name: 'Reason (optional)' }), { target: { value: 'Taught in the lab' } });
+    fireEvent.click(within(req).getByRole('button', { name: 'Not' }));
+    const key = `req:GC 2070|${hash(NEW)}`;
+    const next = applied(update, { ...state, overrides: [...state.overrides, { ...former, targetKey: key, label: 'partly' }] });
+    expect(next.overrides).toEqual([expect.objectContaining({ targetKey: key, textHash: hash(NEW), label: 'not', by: 'Tester', reason: 'Taught in the lab' })]);
+    fireEvent.click(within(req).getByRole('button', { name: 'Clear override' }));
+    expect(applied(update, state).overrides).toEqual([]);
+  });
+
+  it('a met course objective names the course skill that meets it', () => {
+    mount();
+    expect(section('Objectives')).toHaveTextContent(`From GC 2070: ${DRAFT}`);
+  });
+
   it('an override in force can be cleared; an out-of-date one says so', () => {
     const key = `obj:GC 2070|${hash(OBJ)}`;
     const o = { targetKey: key, textHash: hash(OBJ), label: 'met' as const, by: 'Ann', at: '2026-11-17T10:00:00.000Z', reason: null };

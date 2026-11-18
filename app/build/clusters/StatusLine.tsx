@@ -28,3 +28,14 @@ export function StatusLine(props: {
     </span>
   );
 }
+
+/** The skills a Met, Partly met or set status rests on: "From <course>: <skill>", one line each. */
+export function SupplierLines(props: { r: StatusResult; codeOf: (ref: string) => string }) {
+  const { r } = props;
+  if (!r.suppliers.length) return null;
+  return (
+    <div className="cb-req__meta">
+      {r.suppliers.map(s => <div key={`${s.course}|${s.ref}`}>From {props.codeOf(s.course)}: {s.statement}</div>)}
+    </div>
+  );
+}

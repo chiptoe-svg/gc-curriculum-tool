@@ -2,16 +2,19 @@
 
 /**
  * A course's required skills on a cluster: each one's status (skills only), the upstream skills that supply it, and the
- * best candidates with Fully / Partly / Not. A decision is saved through the match API with the cluster's id and
+ * best candidates with Fully / Partly / Not, and a status override kept with the cluster. A decision is saved through the match API with the cluster's id and
  * counts at once; add, edit and remove are drafts on this cluster (courseEditOps). Built for cluster statuses rather
  * than forcing /build's RequiredSkillsList (its rows read plan threads, needed levels and fade).
  */
 import { useState } from 'react';
 import type { StatusResult } from '@/lib/builder/cluster/status';
+import type { ClusterState } from '@/lib/builder/cluster/state';
 import type { EffectiveCourse } from '@/lib/builder/edits';
 import type { Candidate, Depth, MatchDecision } from '@/lib/builder/types';
+import type { Update } from '../[id]/Builder';
 import { SkillForm } from '../[id]/RequiredSkillsList';
-import { StatusLine } from './StatusLine';
+import { OverrideControl } from './OverrideControl';
+import { StatusLine, SupplierLines } from './StatusLine';
 
 const BEST = 3;
 const date = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -26,6 +29,8 @@ export function ClusterRequiredList(props: {
   decide: (r: StatusResult, cand: Candidate, label: MatchDecision['label']) => Promise<string | null>;
   errorOf: (r: StatusResult) => string | null; onRetry: (r: StatusResult) => void;
   onSave: (item: Req | null, statement: string, need: Depth) => void; onRemove: (item: Req) => void;
+  /** For status overrides (ClusterState.overrides, target key `req:<courseRef>|<requiredRef>`). */
+  update: Update<ClusterState>; who: () => string;
 }) {
   const [adding, setAdding] = useState(false);
   const taken = props.required.map(r => r.statement);
@@ -64,11 +69,8 @@ function Row(props: Parameters<typeof ClusterRequiredList>[0] & { req: Req; r: S
         {r && <StatusLine r={r} codeOf={props.codeOf} noun="skill" error={props.errorOf(r)} onRetry={() => props.onRetry(r)} />}{' '}
         <span className={req.draft ? 'cb-draft' : undefined}>{req.statement}</span>
       </div>
-      {r && r.suppliers.length > 0 && (
-        <div className="cb-req__meta">
-          {r.suppliers.map(s => <div key={`${s.course}|${s.ref}`}>From {props.codeOf(s.course)}: {s.statement}</div>)}
-        </div>
-      )}
+      {r && <SupplierLines r={r} codeOf={props.codeOf} />}
+      {r && <div className="cl-objstatus"><OverrideControl r={r} update={props.update} who={props.who} /></div>}
       {best.length > 0 && (
         <ul className="cl-cands" aria-label="Closest upstream skills">
           {best.map(c => {
