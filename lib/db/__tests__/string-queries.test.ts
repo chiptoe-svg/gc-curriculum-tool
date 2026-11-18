@@ -101,10 +101,12 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
 
   it('reusing an existing link keeps its why and says the supplied one was ignored', async () => {
     await lock(name('l1'), [['M', 1], ['N', 1]]);
-    const r = must(await q.lockString({ name: name('l2'), description: 'd', points: [pt('M', 1), pt('N', 1)], whys: ['a different why'], by: 'tester' }));
+    const nm2 = name('l2');
+    const r = must(await q.lockString({ name: nm2, description: 'd', points: [pt('M', 1), pt('N', 1)], whys: ['a different why'], by: 'tester' }));
     expect(r.notes?.length).toBe(1);
-    const l = r.graph.links.find((x) => x.why === 'why 0' && r.graph.points[x.from]?.courseCode === code('M'))!;
-    expect(l).toBeDefined();
+    const strRow = mine(r, nm2);
+    const l = r.graph.links.find((x) => x.from === strRow.path[0] && x.to === strRow.path[1])!;
+    expect(l.why).toBe('why 0');
     expect(r.graph.links.some((x) => x.why === 'a different why')).toBe(false);
   });
 
@@ -268,6 +270,73 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
     expect(notes).toHaveLength(1);
     expect(notes[0]).toMatchObject({ reason: 'updated reason', by: 't2', role: 'develops' });
     expect(await q.listOrphanNotes([])).toEqual([]);
+  });
+
+  it('merge rules hold after later writes (extend end, remove end, remove merge point, unlock a target); extend at start still works', async () => {
+    const na = name('gA'); const nb = name('gB');
+    const a = await lock(na, [['GA1', 1], ['GA2', 1]]);
+    const b = await lock(nb, [['GB0', 1], ['GA2', 1], ['GB3', 1]]);
+    const A = mine(a, na); const B = mine(b, nb);
+    must(await q.mergeString({ id: A.id, version: 1, into: B.id, reason: 'same', by: 't' }));
+    // a: extend at the end of a merged string
+    expect(await q.extendString({ id: A.id, version: 2, at: 'end', point: pt('GA9', 1), why: 'w', by: 't' }))
+      .toMatchObject({ ok: false, status: 400, error: 'This string merges into another. Unmerge it first.' });
+    // b: remove the end point of a merged string (three-point string C merging into a target)
+    const a3 = must(await q.lockString({ name: name('gA3'), description: 'd', points: [pt('GC1', 1), pt('GC2', 1), pt('GC3', 1)], whys: ['w', 'w'], by: 't' }));
+    const C = mine(a3, a3.graph.strings.find((x) => x.name.includes(' gA3 '))!.name);
+    must(await q.mergeString({ id: C.id, version: 1, into: C.id === B.id ? A.id : (await lock(name('gT'), [['GX', 1], ['GC3', 1]])).graph.strings.find((x) => x.path.length === 2 && x.name.includes(' gT '))!.id, reason: 'r', by: 't' }));
+    expect(await q.removePoint({ id: C.id, version: 2, position: 2, reason: 'r', by: 't' }))
+      .toMatchObject({ ok: false, status: 400, error: 'This string merges into another. Unmerge it first.' });
+    // c: remove the skill where another string merges in (B's middle point GA2)
+    expect(await q.removePoint({ id: B.id, version: 1, position: 1, reason: 'r', by: 't' }))
+      .toMatchObject({ ok: false, status: 400, error: 'Another string merges in at this skill. Unmerge it first.' });
+    // d: unlock a merge target
+    expect(await q.unlockString({ id: B.id, version: 1, reason: 'r', by: 't' }))
+      .toMatchObject({ ok: false, status: 400, error: 'Other strings merge into this one. Unmerge them first.' });
+    // extend at start of a merged string is fine
+    const ok = must(await q.extendString({ id: A.id, version: 2, at: 'start', point: pt('GA0', 1), why: 'w', by: 't' }));
+    expect(ok.graph.strings.find((x) => x.id === A.id)?.path).toHaveLength(3);
+  });
+
+  it('an unlocked string whose name an active string took can be renamed and then relocked', async () => {
+    const nm = name('rl');
+    const a = await lock(nm, [['RL1', 1], ['RL2', 1]]);
+    const id = mine(a, nm).id;
+    must(await q.unlockString({ id, version: 1, reason: 'r', by: 't' }));
+    must(await q.lockString({ name: nm, description: 'd', points: [pt('RL3', 1), pt('RL4', 1)], whys: ['w'], by: 't' }));
+    expect(await q.relockString({ id, version: 2, by: 't' })).toMatchObject({ ok: false, status: 409 });
+    const nn = name('rl-new');
+    must(await q.renameString({ id, version: 2, name: nn, by: 't' }));
+    const re = must(await q.relockString({ id, version: 3, by: 't' }));
+    expect(re.graph.strings.find((x) => x.id === id)).toMatchObject({ status: 'active', name: nn });
+  });
+
+  it('a middle removal keeps the why of an existing prev-to-next link and notes nothing', async () => {
+    const nm = name('kw');
+    const a = await lock(nm, [['KW1', 1], ['KW2', 1], ['KW3', 1]]);
+    must(await q.lockString({ name: name('kw-direct'), description: 'd', points: [pt('KW1', 1), pt('KW3', 1)], whys: ['direct why'], by: 't' }));
+    const src = mine(a, nm);
+    const r = must(await q.removePoint({ id: src.id, version: 1, position: 1, reason: 'r', by: 't' }));
+    expect(r.notes).toEqual([]);
+    expect(r.graph.links.find((l) => l.from === src.path[0] && l.to === src.path[2])?.why).toBe('direct why');
+  });
+
+  it('a refused write leaves no event row', async () => {
+    const nm = name('noev');
+    const a = await lock(nm, [['NE1', 1], ['NE2', 1]]);
+    const id = mine(a, nm).id;
+    const count = async () => (await dbm.db.select().from(s.curriculumStringEvents).where(orm.eq(s.curriculumStringEvents.stringId, id))).length;
+    const before = await count();
+    expect((await q.renameString({ id, version: 99, name: name('x'), by: 't' })).ok).toBe(false);
+    expect((await q.unlockString({ id, version: 1, reason: '', by: 't' })).ok).toBe(false);
+    expect(await count()).toBe(before);
+  });
+
+  it('branch rejects a non-integer position', async () => {
+    const nm = name('bint');
+    const a = await lock(nm, [['BI1', 1], ['BI2', 1], ['BI3', 1]]);
+    const r = await q.branchString({ fromId: mine(a, nm).id, version: 1, atPosition: 0.5, name: name('bi-c'), description: 'd', point: pt('BI4', 1), why: 'w', by: 't' });
+    expect(r).toMatchObject({ ok: false, status: 400 });
   });
 
   it('404s on an unknown string', async () => {

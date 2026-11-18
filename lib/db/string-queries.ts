@@ -22,6 +22,10 @@ export type WriteResult =
 const NAME_TAKEN = 'A string with that name already exists.';
 const REASON_REQUIRED = 'A reason is required.';
 const WHY_REQUIRED = 'A reason for the link is required.';
+const STALE = 'This string changed since you loaded it.';
+const MERGED_END = 'This string merges into another. Unmerge it first.';
+const MERGES_IN_HERE = 'Another string merges in at this skill. Unmerge it first.';
+const MERGED_INTO_THIS = 'Other strings merge into this one. Unmerge them first.';
 const LOCKED_ONLY = 'That string is unlocked.';
 
 /** Thrown inside a transaction to abort it and return a refusal. */
@@ -113,7 +117,7 @@ function pgError(e: unknown): { code?: string; constraint?: string } {
 interface Done { courseCodes: string[]; notes?: string[] }
 
 /** Run `fn` in one transaction, then load the graph for the courses it touched (still inside the transaction). */
-async function write(fn: (tx: Tx) => Promise<Done>): Promise<WriteResult> {
+async function write(fn: (tx: Tx) => Promise<Done>, stringId?: string): Promise<WriteResult> {
   try {
     return await db.transaction(async (tx) => {
       const done = await fn(tx);
@@ -123,6 +127,10 @@ async function write(fn: (tx: Tx) => Promise<Done>): Promise<WriteResult> {
   } catch (e) {
     if (e instanceof Refuse) return { ok: false, status: e.status, error: e.error, current: e.current };
     const pg = pgError(e);
+    if (pg.code === '40P01' || pg.code === '40001') {
+      const current = stringId ? (await getString(db, stringId)) ?? undefined : undefined;
+      return { ok: false, status: 409, error: STALE, current };
+    }
     if (pg.code === '23505' && pg.constraint === 'idx_curriculum_strings_active_name') return { ok: false, status: 409, error: NAME_TAKEN };
     if (pg.code === '23505' && pg.constraint === 'string_points_unique') return { ok: false, status: 409, error: 'Another string point already holds that skill.' };
     throw e;
@@ -141,7 +149,7 @@ async function getString(tx: Exec, id: string, lock = false): Promise<StringRow 
 async function loadForWrite(tx: Tx, id: string, version: number, opts: { active?: boolean } = { active: true }): Promise<StringRow> {
   const cur = await getString(tx, id, true);
   if (!cur) throw new Refuse(404, MSG.notFound);
-  if (cur.version !== version) throw new Refuse(409, 'This string changed since you loaded it.', cur);
+  if (cur.version !== version) throw new Refuse(409, STALE, cur);
   if (opts.active !== false && cur.status !== 'active') throw new Refuse(400, LOCKED_ONLY);
   return cur;
 }
@@ -154,7 +162,7 @@ async function bump(tx: Tx, id: string, version: number, by: string, set: Partia
     .returning({ id: curriculumStrings.id });
   if (rows.length === 0) {
     const cur = await getString(tx, id);
-    throw cur ? new Refuse(409, 'This string changed since you loaded it.', cur) : new Refuse(404, MSG.notFound);
+    throw cur ? new Refuse(409, STALE, cur) : new Refuse(404, MSG.notFound);
   }
 }
 
@@ -189,6 +197,15 @@ async function recordJoin(tx: Tx, stringId: string, pointId: string, by: string)
     .innerJoin(curriculumStrings, eq(curriculumStrings.id, curriculumStringPath.stringId))
     .where(and(eq(curriculumStringPath.pointId, pointId), ne(curriculumStringPath.stringId, stringId), eq(curriculumStrings.status, 'active')));
   if (others.length) await addEvent(tx, { stringId, pointId, kind: 'joined', by, after: { with: others.map((o) => o.id).sort() } });
+}
+
+/** Active strings that merge into `id`. */
+async function mergersOf(tx: Tx, id: string): Promise<StringRow[]> {
+  const rows = await tx.select({ id: curriculumStrings.id }).from(curriculumStrings)
+    .where(and(eq(curriculumStrings.mergedInto, id), eq(curriculumStrings.status, 'active')));
+  const out: StringRow[] = [];
+  for (const r of rows) { const s = await getString(tx, r.id); if (s) out.push(s); }
+  return out;
 }
 
 async function courseCodesOf(tx: Exec, pointIds: string[]): Promise<string[]> {
@@ -282,6 +299,7 @@ export async function extendString(input: { id: string; version: number; at: 'st
   return write(async (tx) => {
     const why = requireWhy(input.why);
     const cur = await loadForWrite(tx, input.id, input.version);
+    if (input.at === 'end' && cur.mergedInto) throw new Refuse(400, MERGED_END);
     const pointId = await upsertPoint(tx, { ...input.point, by: input.by });
     const path = input.at === 'end' ? [...cur.path, pointId] : [pointId, ...cur.path];
     if (new Set(path).size !== path.length) throw new Refuse(400, MSG.repeated);
@@ -294,7 +312,7 @@ export async function extendString(input: { id: string; version: number; at: 'st
     await addEvent(tx, { stringId: cur.id, pointId, kind: 'extended', by: input.by, before: { path: cur.path }, after: { path, at: input.at } });
     await recordJoin(tx, cur.id, pointId, input.by);
     return { courseCodes: await courseCodesOf(tx, path), notes };
-  });
+  }, input.id);
 }
 
 export async function branchString(input: {
@@ -304,6 +322,7 @@ export async function branchString(input: {
     const name = requireName(input.name);
     const why = requireWhy(input.why);
     const from = await loadForWrite(tx, input.fromId, input.version);
+    if (!Number.isInteger(input.atPosition)) throw new Refuse(400, 'No skill at that position.');
     const bad = checkBranch({ strings: [from], points: {}, links: [], events: [] }, from.id, input.atPosition);
     if (bad) throw new Refuse(400, bad);
     await assertNameFree(tx, name);
@@ -320,7 +339,7 @@ export async function branchString(input: {
     await addEvent(tx, { stringId: row!.id, pointId, kind: 'branched', by: input.by, before: { fromId: from.id, atPosition: input.atPosition }, after: { name, path } });
     await recordJoin(tx, row!.id, pointId, input.by);
     return { courseCodes: [...await courseCodesOf(tx, path), ...await courseCodesOf(tx, from.path)], notes };
-  });
+  }, input.fromId);
 }
 
 export async function mergeString(input: { id: string; version: number; into: string; reason: string; by: string }): Promise<WriteResult> {
@@ -335,7 +354,7 @@ export async function mergeString(input: { id: string; version: number; into: st
     await addEvent(tx, { stringId: cur.id, kind: 'merged', by: input.by, reason, after: { into: input.into } });
     const target = graph.strings.find((s) => s.id === input.into)!;
     return { courseCodes: await courseCodesOf(tx, [...cur.path, ...target.path]) };
-  });
+  }, input.id);
 }
 
 export async function unmergeString(input: { id: string; version: number; reason: string; by: string }): Promise<WriteResult> {
@@ -346,7 +365,7 @@ export async function unmergeString(input: { id: string; version: number; reason
     await bump(tx, cur.id, input.version, input.by, { mergedInto: null, mergedBy: null, mergedAt: null, mergeReason: null });
     await addEvent(tx, { stringId: cur.id, kind: 'unmerged', by: input.by, reason, before: { into: cur.mergedInto } });
     return { courseCodes: await courseCodesOf(tx, cur.path) };
-  });
+  }, input.id);
 }
 
 export async function removePoint(input: { id: string; version: number; position: number; reason: string; by: string }): Promise<WriteResult> {
@@ -357,6 +376,10 @@ export async function removePoint(input: { id: string; version: number; position
     if (!Number.isInteger(position) || position < 0 || position >= cur.path.length) throw new Refuse(400, 'No skill at that position.');
     if (cur.path.length <= 2) throw new Refuse(400, 'A string needs at least two skills. Unlock it instead.');
     const removed = cur.path[position]!;
+    if (cur.mergedInto && position === cur.path.length - 1) throw new Refuse(400, MERGED_END);
+    for (const m of await mergersOf(tx, cur.id)) {
+      if (m.path[m.path.length - 1] === removed) throw new Refuse(400, MERGES_IN_HERE);
+    }
     const path = cur.path.filter((_, i) => i !== position);
     const [pt] = await tx.select({ c: stringPoints.courseCode }).from(stringPoints).where(eq(stringPoints.id, removed));
     const middle = position > 0 && position < cur.path.length - 1;
@@ -369,7 +392,7 @@ export async function removePoint(input: { id: string; version: number; position
       before: { path: cur.path, courseCode: pt!.c }, after: { path },
     });
     return { courseCodes: await courseCodesOf(tx, [...cur.path]) };
-  });
+  }, input.id);
 }
 
 export async function setLinkWhy(input: { linkId: string; why: string; by: string }): Promise<WriteResult> {
@@ -390,28 +413,29 @@ export async function setEndNote(input: { id: string; version: number; note: str
     await bump(tx, cur.id, input.version, input.by, { endNote: note, endBy: note ? input.by : null, endAt: note ? new Date() : null });
     await addEvent(tx, { stringId: cur.id, kind: 'end_note', by: input.by, before: { note: cur.endNote }, after: { note } });
     return { courseCodes: await courseCodesOf(tx, cur.path) };
-  });
+  }, input.id);
 }
 
 export async function renameString(input: { id: string; version: number; name: string; by: string }): Promise<WriteResult> {
   return write(async (tx) => {
     const name = requireName(input.name);
-    const cur = await loadForWrite(tx, input.id, input.version);
+    const cur = await loadForWrite(tx, input.id, input.version, { active: false });
     await assertNameFree(tx, name, cur.id);
     await bump(tx, cur.id, input.version, input.by, { name });
     await addEvent(tx, { stringId: cur.id, kind: 'renamed', by: input.by, before: { name: cur.name }, after: { name } });
     return { courseCodes: await courseCodesOf(tx, cur.path) };
-  });
+  }, input.id);
 }
 
 export async function unlockString(input: { id: string; version: number; reason: string; by: string }): Promise<WriteResult> {
   return write(async (tx) => {
     const reason = requireReason(input.reason);
     const cur = await loadForWrite(tx, input.id, input.version);
+    if ((await mergersOf(tx, cur.id)).length) throw new Refuse(400, MERGED_INTO_THIS);
     await bump(tx, cur.id, input.version, input.by, { status: 'unlocked' });
     await addEvent(tx, { stringId: cur.id, kind: 'unlocked', by: input.by, reason });
     return { courseCodes: await courseCodesOf(tx, cur.path) };
-  });
+  }, input.id);
 }
 
 export async function relockString(input: { id: string; version: number; by: string }): Promise<WriteResult> {
@@ -423,7 +447,7 @@ export async function relockString(input: { id: string; version: number; by: str
     await bump(tx, cur.id, input.version, input.by, { status: 'active' });
     await addEvent(tx, { stringId: cur.id, kind: 'relocked', by: input.by });
     return { courseCodes: await courseCodesOf(tx, cur.path) };
-  });
+  }, input.id);
 }
 
 // ---------------------------------------------------------------- points and notes
