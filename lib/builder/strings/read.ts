@@ -1,16 +1,10 @@
 import { defaultAct } from '../compute';
 import type { Act, Depth } from '../types';
+import { depthNow } from './touch';
 import type { PointStatus, StopReading, StringGraph, StringReading } from './types';
 
 type Dim = 'k' | 'u' | 'd';
 const DIMS: Dim[] = ['k', 'u', 'd'];
-
-function depthOf(s: PointStatus | undefined): Depth | null {
-  if (!s) return null;
-  if (s.kind === 'intact') return s.now;
-  if (s.kind === 'changed') return s.now;
-  return null;
-}
 
 export function readString(
   g: StringGraph,
@@ -34,7 +28,7 @@ export function readString(
     const p = g.points[pointId];
     if (!p) throw new Error(`point not found: ${pointId}`);
     const st: PointStatus = status[pointId] ?? { kind: 'unchecked' };
-    const depth = depthOf(st);
+    const depth = depthNow(p, st);
     const slip: Dim[] = [];
     const gap: Dim[] = [];
     let reinforces = false;

@@ -30,7 +30,7 @@ export function stringsAt(g: StringGraph, courseCode: string): StringRow[] {
 }
 
 /** A develops point's depth now: the status reading; unanchored counts as gone; no reading falls back to lock time. */
-function nowDepthOf(p: PointRow, s: PointStatus | undefined): Depth | null {
+export function depthNow(p: PointRow, s: PointStatus | undefined): Depth | null {
   if (s?.kind === 'unanchored') return null;
   if (s && (s.kind === 'intact' || s.kind === 'changed') && s.now) return s.now;
   return { k: p.k, u: p.u, d: p.d };
@@ -125,7 +125,7 @@ export function stringChanges(
   // Depth moved: lock time vs now, and before the latest removal vs now.
   const nowDepth = (id: string) => {
     const p = g.points[id];
-    return p ? nowDepthOf(p, status[id]) : null;
+    return p ? depthNow(p, status[id]) : null;
   };
   const now = peaksBefore(str.path, g, nowDepth);
   const lock = peaksBefore(str.path, g, (id) => {

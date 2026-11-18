@@ -107,4 +107,19 @@ describe('readString', () => {
     expect(r.stops[0]!.why).toBeNull();
     expect(r.stops[1]!.why).toBe('builds on');
   });
+
+  it('uses the lock-time depth for an unchecked stop: no gap, and it reinforces', () => {
+    const withDepth = (p: PointRow, d: number): PointRow => ({ ...p, d });
+    const pts = [
+      withDepth(pt('p1', 'GC 1040', 'develops'), 2),
+      withDepth(pt('p2', 'GC 2400', 'develops'), 3),
+      withDepth(pt('p3', 'GC 4800', 'requires'), 2),
+    ];
+    const r = read(graph(pts, [str('A', ['p1', 'p2', 'p3'])]), {});
+    expect(r.stops[1]!.depth).toEqual({ k: null, u: null, d: 3 });
+    expect(r.stops[2]!.gap).toEqual([]);
+    const two = read(graph([pts[1]!, pts[2]!, withDepth(pt('p4', 'GC 4900', 'develops'), 3)], [str('B', ['p2', 'p3', 'p4'])]), {}, 'B');
+    expect(two.stops[2]!.reinforces).toBe(true);
+    expect(two.reinforcement).toBe(1);
+  });
 });
