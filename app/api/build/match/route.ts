@@ -18,7 +18,8 @@ import { readSetJudgment, writeSetJudgment } from '@/lib/db/set-judgment-queries
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TEXT_MAX = 600;
 const OTHERS_MAX = 400;
-const TOP = 5;
+// The pair shortlist: 8, as in the batch (judge-required-skills.ts) and the 2026-11-16 composite experiment.
+const TOP = 8;
 const COURSE_MAX = 40, TITLE_MAX = 200, REF_MAX = 64;
 const bad = (error: string) => NextResponse.json({ error }, { status: 400 });
 const hashOf = (s: string) => textHash(normalizeStatement(s));
@@ -68,7 +69,7 @@ async function captured(side: Side, kind: 'required' | 'supplied'): Promise<{ co
  *           -> { verdict: { pAny, kept: ref[], pTogether, pCombining } } for the top 8 pool skills by embedding (when more
  *              are sent); cached per target text and exact pool. A failed model call is a 502 and is never stored.
  *   judge:  { anchor: { text, course, title, side: 'required'|'supplied' }, others: [{ ref, text, course, title }], planId? }
- *           -> { results: [{ ref, similarity, pFully, pPartly }] } for the top 5 others by embedding similarity,
+ *           -> { results: [{ ref, similarity, pFully, pPartly }] } for the top 8 others by embedding similarity,
  *              judged by the model in use (cached; the batch script fills the second model). Course titles in the
  *              prompt come from the courses table, else from the plan's proposed course, else the body (capped).
  * → 200 | 400 | 404 | 502 (the campus model is unreachable)

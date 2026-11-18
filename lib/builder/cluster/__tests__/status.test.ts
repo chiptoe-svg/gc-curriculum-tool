@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { textHash } from '@/lib/catalog/bundles';
 import { normalizeStatement } from '@/lib/catalog/project-trail';
-import { clusterStatuses, setSignature, statusLabel, type SetVerdicts, type StatusResult } from '../status';
+import { clusterStatuses, couldNotCheck, setSignature, statusLabel, type SetVerdicts, type StatusResult } from '../status';
 import { emptyClusterState, type ClusterState } from '../state';
 import type { DraftJudgments } from '../../threads';
 import type { Depth, Library, LibraryCourse, MatchDecision, ProposedCourse } from '../../types';
@@ -318,5 +318,25 @@ describe('clusterStatuses', () => {
   it('need levels do not change a status', () => {
     const l = lib({ c1: { skills: [SUP], level: 1 }, c3: { required: [[NEED, { k: 5, u: 5, d: 5 }]] } });
     expect(run(l, state(), { [`${hash(NEED)}|${hash(SUP)}`]: j(0.9, 0.9) }).required['GC 4400']![0]!.status).toBe('met');
+  });
+});
+
+describe('couldNotCheck', () => {
+  const base = { targetKey: 'req:x|y', text: 'x', suppliers: [], proposed: [], reason: null, override: null, staleOverride: false,
+    candidates: [], judgeRef: 'y', pool: [{ course: 'GC 1', code: 'GC 1', ref: 'p', statement: 'p', judged: false }], needsSet: false, setSig: '' };
+  const r = (status: StatusResult['status'], o: Partial<StatusResult> = {}) => ({ ...base, status, ...o } as StatusResult);
+  const ERR = 'The campus model did not answer; try again.';
+  it('a failed match leaves Matching or Not met unchecked', () => {
+    expect(couldNotCheck(r('pending'), ERR)).toBe(true);
+    expect(couldNotCheck(r('not'), ERR)).toBe(true);
+  });
+  it('no error, a Met or Partly reading, an empty pool or an override in force keeps the status', () => {
+    expect(couldNotCheck(r('not'), null)).toBe(false);
+    expect(couldNotCheck(r('partly'), ERR)).toBe(false);
+    expect(couldNotCheck(r('met'), ERR)).toBe(false);
+    expect(couldNotCheck(r('not', { pool: [] }), ERR)).toBe(false);
+    const ov = { targetKey: 'req:x|y', label: 'not' as const, textHash: 'h', reason: null, by: 'T', at: '2026-11-17' };
+    expect(couldNotCheck(r('not', { override: ov }), ERR)).toBe(false);
+    expect(couldNotCheck(r('not', { override: ov, staleOverride: true }), ERR)).toBe(true);
   });
 });

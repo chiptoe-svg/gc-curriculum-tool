@@ -93,6 +93,12 @@ describe('ClusterCanvas', () => {
     expect(screen.getByRole('group', { name: 'GC 4400 Title of GC 4400' })).toHaveTextContent('1 met · 0 partly · 0 not · 1 matching · 1 could not be checked');
   });
 
+  it('counts a Not met reading whose match failed as could not be checked', () => {
+    const r = (status: ClusterStatus, key: string) => ({ status, targetKey: key } as StatusResult);
+    mount(lib(), state(), { 'GC 4400': [r('not', 'a'), r('not', 'c')] }, (_ref, x) => x.targetKey === 'c');
+    expect(screen.getByRole('group', { name: 'GC 4400 Title of GC 4400' })).toHaveTextContent('0 met · 0 partly · 1 not · 1 could not be checked');
+  });
+
   it('marks a proposed or edited course', () => {
     const s = state({
       cards: [{ ref: 'GC 1010', x: 20, y: 20 }, { ref: 'new-1', x: 300, y: 20 }],

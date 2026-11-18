@@ -147,24 +147,24 @@ describe('POST /api/build/match decide', () => {
 });
 
 describe('POST /api/build/match judge', () => {
-  const others = Array.from({ length: 8 }, (_, i) => ({ ref: `o${i}`, text: `other skill ${i}`, course: 'GC 1020', title: 'Intro' }));
+  const others = Array.from({ length: 10 }, (_, i) => ({ ref: `o${i}`, text: `other skill ${i}`, course: 'GC 1020', title: 'Intro' }));
   const anchor = { text: 'lay out a page', course: 'GC 3460', title: 'Print', side: 'required' as const };
   const setVectors = () => {
     state.vectors = new Map([[h(anchor.text), [1, 0]]]);
-    others.forEach((o, i) => state.vectors.set(h(o.text), [1 - i * 0.1, i * 0.1])); // o0 most similar
+    others.forEach((o, i) => state.vectors.set(h(o.text), [1 - i * 0.05, i * 0.05])); // o0 most similar
   };
 
-  it('judges the top 5 by similarity with the model in use only, and asks only uncached pairs', async () => {
+  it('judges the top 8 by similarity (as the batch and the composite experiment do) with the model in use only, and asks only uncached pairs', async () => {
     setVectors();
     // o0's pair is already cached for both models.
     for (const m of ['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017']) state.cache.set(`${m}|${h(anchor.text)}|${h(others[0]!.text)}`, { pFully: 0.5, pPartly: 0.6 });
     const res = await post({ action: 'judge', anchor, others });
     expect(res.status).toBe(200);
     const { results } = await res.json();
-    expect(results.map((r: { ref: string }) => r.ref)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+    expect(results.map((r: { ref: string }) => r.ref)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'o5', 'o6', 'o7']);
     expect(results[0]).toMatchObject({ pFully: 0.5, pPartly: 0.6 });
     expect(results[1]).toMatchObject({ pFully: 0.8, pPartly: 0.9 });
-    expect(state.asked).toEqual([{ model: 'qwen3.8-27b-fp8', n: 4 }]);
+    expect(state.asked).toEqual([{ model: 'qwen3.8-27b-fp8', n: 7 }]);
     // A second call asks nothing.
     state.asked = [];
     await post({ action: 'judge', anchor, others });

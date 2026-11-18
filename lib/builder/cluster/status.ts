@@ -218,6 +218,17 @@ const WORD: Record<Exclude<ClusterStatus, 'met_set'>, string> = {
   met: 'Met', parts_met: 'Parts met, combining not shown', partly: 'Partly met', not: 'Not met', pending: 'Matching…',
 };
 
+/**
+ * A reading that a failed match leaves unchecked: still matching, or Not met, while the last match for it failed. A Not
+ * met may only mean the pair that would have met it was never scored, so it reads "Couldn't check" with the error and
+ * Try again. An override in force, an empty pool (nothing upstream to check) and Met or Partly readings keep their words.
+ */
+export function couldNotCheck(r: StatusResult, error: string | null): boolean {
+  if (!error) return false;
+  if (r.status === 'pending') return true;
+  return r.status === 'not' && r.pool.length > 0 && !(r.override && !r.staleOverride);
+}
+
 /** The status in words. `codeOf` turns a course ref on the cluster into its course code. */
 export function statusLabel(r: StatusResult, codeOf: (ref: string) => string): string {
   if (r.status === 'pending') return WORD.pending;

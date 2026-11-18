@@ -14,7 +14,7 @@ import Link from 'next/link';
 import { WHAT_IF_PREFIX, clusterVersionOf } from '@/lib/builder/compute';
 import { effectiveCourse } from '@/lib/builder/edits';
 import { mergeSyllabusDraft } from '@/lib/builder/edit-ops';
-import { clusterStatuses, type SetVerdicts, type StatusResult } from '@/lib/builder/cluster/status';
+import { clusterStatuses, couldNotCheck, type SetVerdicts, type StatusResult } from '@/lib/builder/cluster/status';
 import type { ClusterState } from '@/lib/builder/cluster/state';
 import type { DraftJudgments } from '@/lib/builder/threads';
 import type { Candidate, EditBase, Library, MatchDecision } from '@/lib/builder/types';
@@ -323,7 +323,7 @@ export function ClusterBuilder(props: {
           <ClusterObjectives objectives={cluster.objectives} results={statuses.cluster} codeOf={codeOf} update={update} who={who}
             errorOf={r => errorOf(r, CLUSTER_REF, 'objective')} onRetry={r => retry(r, CLUSTER_REF, 'objective')} />
           <ClusterCanvas library={library} state={cluster} update={update} statuses={statuses.required}
-            failed={(ref, r) => !!errorOf(r, ref, 'required')} selected={selected} onSelect={setSelected} />
+            failed={(ref, r) => couldNotCheck(r, errorOf(r, ref, 'required'))} selected={selected} onSelect={setSelected} />
         </main>
 
         {sel && selected && (

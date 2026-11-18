@@ -35,15 +35,15 @@ export function cardCourse(library: Library, state: ClusterState, ref: string): 
 
 /**
  * Required-skill counts for a card: met (alone or by a set), partly (including parts met), not, still matching, and
- * waiting on a match that failed (`failed`: the campus model did not answer), which could not be checked.
+ * could not be checked (`failed`: a Matching or Not met reading whose last match failed; see couldNotCheck).
  */
 export function cardCounts(results: readonly StatusResult[], failed: (r: StatusResult) => boolean = () => false) {
   const n = { met: 0, partly: 0, not: 0, matching: 0, failed: 0 };
   for (const r of results) {
     if (r.status === 'met' || r.status === 'met_set') n.met++;
     else if (r.status === 'partly' || r.status === 'parts_met') n.partly++;
-    else if (r.status === 'not') n.not++;
     else if (failed(r)) n.failed++;
+    else if (r.status === 'not') n.not++;
     else n.matching++;
   }
   return n;
@@ -61,7 +61,7 @@ export function ClusterCanvas(props: {
   library: Library; state: ClusterState; update: Update<ClusterState>;
   /** Required-skill statuses by course ref (clusterStatuses(...).required). */
   statuses: Record<string, StatusResult[]>;
-  /** Whether a pending required skill's last match failed (counted as "could not be checked"). */
+  /** Whether a required skill could not be checked (couldNotCheck: its last match failed). */
   failed?: (ref: string, r: StatusResult) => boolean;
   selected: string | null; onSelect: (ref: string | null) => void;
 }) {

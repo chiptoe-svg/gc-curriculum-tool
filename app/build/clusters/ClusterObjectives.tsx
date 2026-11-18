@@ -7,12 +7,12 @@
  * Not met.
  */
 import { useState } from 'react';
-import { statusLabel, type StatusResult } from '@/lib/builder/cluster/status';
+import type { StatusResult } from '@/lib/builder/cluster/status';
 import type { ClusterObjective, ClusterState } from '@/lib/builder/cluster/state';
 import type { Update } from '../[id]/Builder';
 import { newId } from '../[id]/ui';
 import { OverrideControl } from './OverrideControl';
-import { SupplierLines } from './StatusLine';
+import { StatusLine, SupplierLines } from './StatusLine';
 
 const MAX = 20; // the schema's limits (lib/builder/cluster/state.ts)
 const TEXT_MAX = 500;
@@ -23,7 +23,7 @@ export function ClusterObjectives(props: {
   results: StatusResult[];
   codeOf: (ref: string) => string;
   update: Update<ClusterState>;
-  /** The judging error for a pending objective, if its last match failed. */
+  /** The judging error for an objective, if its last match failed. */
   errorOf: (r: StatusResult) => string | null;
   onRetry: (r: StatusResult) => void;
   /** Who sets an override. */
@@ -55,7 +55,6 @@ export function ClusterObjectives(props: {
         <ul>
           {props.objectives.map(o => {
             const r = props.results.find(x => x.targetKey === `cobj:${o.id}`);
-            const error = r && r.status === 'pending' ? props.errorOf(r) : null;
             return (
               <li key={o.id} className="cl-obj">
                 {editing?.id === o.id ? (
@@ -69,15 +68,7 @@ export function ClusterObjectives(props: {
                 ) : (
                   <span className="cl-obj__text">{o.text}</span>
                 )}
-                {r && (
-                  <span className={`cl-status cl-status--${error ? 'error' : r.status}`}>
-                    {error ? (
-                      <>{error} <button type="button" className="cb-linkbtn" onClick={() => props.onRetry(r)}>Try again</button></>
-                    ) : statusLabel(r, props.codeOf)}
-                    {r.reason && !error && <span className="cl-status__why"> ({r.reason})</span>}
-                    {r.staleOverride && <span className="cl-status__why"> Override out of date (the objective changed)</span>}
-                  </span>
-                )}
+                {r && <StatusLine r={r} codeOf={props.codeOf} noun="objective" error={props.errorOf(r)} onRetry={() => props.onRetry(r)} />}
                 {r && editing?.id !== o.id && (
                   <div className="cl-objstatus">
                     <OverrideControl r={r} update={update} who={props.who} />

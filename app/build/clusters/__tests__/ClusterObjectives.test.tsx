@@ -101,4 +101,16 @@ describe('ClusterObjectives', () => {
     fireEvent.click(within(item).getByRole('button', { name: 'Try again' }));
     expect(m.onRetry).toHaveBeenCalledWith(r);
   });
+
+  it('a Not met reading whose match failed reads Couldn\'t check, with the error and Try again', () => {
+    const s = { ...emptyClusterState(), objectives: [{ id: 'a', text: 'One' }] };
+    const pool = [{ course: 'GC 1', code: 'GC 1', ref: 'p', statement: 'p', judged: false }];
+    const r = result({ targetKey: 'cobj:a', text: 'One', status: 'not', pool });
+    const m = mount(s, [r], () => 'The campus model did not answer; try again.');
+    const item = screen.getByRole('listitem');
+    expect(item).toHaveTextContent("Couldn't check: The campus model did not answer; try again.");
+    expect(item).not.toHaveTextContent('Not met');
+    fireEvent.click(within(item).getByRole('button', { name: 'Try again' }));
+    expect(m.onRetry).toHaveBeenCalledWith(r);
+  });
 });

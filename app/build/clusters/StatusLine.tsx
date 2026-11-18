@@ -2,10 +2,10 @@
 
 /**
  * One cluster status in words (statusLabel), with what explains it: the reason, an out-of-date override, and a failed
- * match's error with Try again. A pending status whose match failed shows the error in place of "Matching…", never
- * Not met. Skills only: no competencies or levels.
+ * match's error with Try again. A Matching or Not met reading whose match failed reads "Couldn't check" with the error
+ * (couldNotCheck), never Not met. Skills only: no competencies or levels.
  */
-import { statusLabel, type StatusResult } from '@/lib/builder/cluster/status';
+import { couldNotCheck, statusLabel, type StatusResult } from '@/lib/builder/cluster/status';
 
 export function StatusLine(props: {
   r: StatusResult; codeOf: (ref: string) => string;
@@ -14,14 +14,14 @@ export function StatusLine(props: {
   error: string | null; onRetry: () => void;
 }) {
   const { r, error } = props;
-  const failed = !!error && r.status === 'pending';
+  const failed = couldNotCheck(r, error);
   return (
     <span className={`cl-status cl-status--${failed ? 'error' : r.status}`}>
       {failed ? null : statusLabel(r, props.codeOf)}
       {r.reason && !failed && <span className="cl-status__why"> ({r.reason})</span>}
       {r.staleOverride && <span className="cl-status__why"> Override out of date (the {props.noun} changed)</span>}
       {error && (
-        <span className={failed ? undefined : 'cl-status__err'}>{failed ? '' : ' · '}{error}{' '}
+        <span className={failed ? undefined : 'cl-status__err'}>{failed ? "Couldn't check: " : ' · '}{error}{' '}
           <button type="button" className="cb-linkbtn" onClick={props.onRetry}>Try again</button>
         </span>
       )}
