@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-/** Creates a cluster holding the given courses and opens it. A login that names nobody is asked for a name first. */
+/** Opens the cluster that already holds exactly the given courses, or creates one. A login that names nobody is asked for a name first. */
 export function StartStringCluster({ slug, codes, knownName }: { slug: string; codes: string[]; knownName: string | null }) {
   const router = useRouter();
   const [author, setAuthor] = useState('');
@@ -21,7 +21,7 @@ export function StartStringCluster({ slug, codes, knownName }: { slug: string; c
     setBusy(true); setError(null);
     try {
       const res = await fetch('/api/build/clusters', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, courses: codes, authorName: by }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, courses: codes, reuse: true, authorName: by }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? 'The cluster could not be created.');

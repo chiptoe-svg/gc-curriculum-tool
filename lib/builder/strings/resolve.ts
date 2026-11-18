@@ -1,12 +1,9 @@
-import { textHash } from '@/lib/catalog/bundles';
-import { normalizeStatement } from '@/lib/catalog/project-trail';
+import { hashOf } from '@/lib/strings/hash';
 import type { Depth, Library } from '../types';
 import type { PointRow, PointStatus } from './types';
 
 export type PoolSkill = { statement: string; hash: string };
 export type NeedsCheck = { kind: 'needs-check'; snapshotId: string; pool: PoolSkill[] };
-
-const hashOf = (s: string) => textHash(normalizeStatement(s));
 
 /** The course's skills for a role, from its newest capture; null when the course or the capture is missing. */
 export function roleSkills(point: PointRow, lib: Library):

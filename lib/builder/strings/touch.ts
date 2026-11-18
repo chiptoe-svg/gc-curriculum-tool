@@ -2,8 +2,7 @@
  * Pure read-side helpers for skill strings: which strings touch a course, what changed on a
  * string since it was locked, and which of a course's skills sit on no string.
  */
-import { textHash } from '@/lib/catalog/bundles';
-import { normalizeStatement } from '@/lib/catalog/project-trail';
+import { hashOf } from '@/lib/strings/hash';
 import type { Depth, Library } from '../types';
 import type { OrphanNote, PointRow, PointStatus, StringGraph, StringRow } from './types';
 
@@ -19,8 +18,6 @@ export interface ChangeItem {
 }
 
 export interface OrphanSkill { statement: string; hash: string; note: string | null }
-
-const hashOf = (s: string) => textHash(normalizeStatement(s));
 
 /** Active strings with a point in that course. */
 export function stringsAt(g: StringGraph, courseCode: string): StringRow[] {

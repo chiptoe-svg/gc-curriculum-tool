@@ -18,6 +18,15 @@ export async function createCluster(input: {
   return row!;
 }
 
+/** The most recently updated cluster whose cards are exactly these course codes, or null. */
+export async function findClusterByCourses(codes: string[]): Promise<{ id: string } | null> {
+  const want = [...new Set(codes)].sort().join('\n');
+  const rows = await db.select({ id: curriculumClusters.id, state: curriculumClusters.state })
+    .from(curriculumClusters).orderBy(desc(curriculumClusters.updatedAt));
+  const hit = rows.find(r => [...new Set((r.state as ClusterState).cards.map(c => c.ref))].sort().join('\n') === want);
+  return hit ? { id: hit.id } : null;
+}
+
 export async function getCluster(id: string): Promise<ClusterRow | null> {
   const [row] = await db.select().from(curriculumClusters).where(eq(curriculumClusters.id, id));
   return row ?? null;

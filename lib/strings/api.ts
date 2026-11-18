@@ -6,10 +6,11 @@ import { NextResponse } from 'next/server';
 import { personalName } from '@/lib/auth/viewer';
 import type { Grant } from '@/lib/auth/authorize';
 import { NAME_MAX } from '@/lib/builder/plan-schema';
-import { textHash } from '@/lib/catalog/bundles';
-import { normalizeStatement } from '@/lib/catalog/project-trail';
+import { hashOf } from './hash';
 import type { WriteResult, PointInput } from '@/lib/db/string-queries';
-import type { StringGraph } from '@/lib/builder/strings/types';
+import { roleSkills } from '@/lib/builder/strings/resolve';
+import type { Library } from '@/lib/builder/types';
+import type { PointRow, StringGraph } from '@/lib/builder/strings/types';
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -56,10 +57,10 @@ export function subGraph(g: StringGraph, id: string): StringGraph | null {
 const depthOf = (v: unknown): number | null | undefined =>
   v === null || v === undefined ? null : typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 5 ? v : undefined;
 
-export const hashOf = (statement: string) => textHash(normalizeStatement(statement));
+export { hashOf };
 
 /** Size limits for text and lists sent to the string routes. */
-export const CAP = { text: 1000, statement: 500, code: 40, points: 50, courses: 200 } as const;
+export const CAP = { text: 1000, statement: 2000, code: 40, points: 50, courses: 200 } as const;
 export const TOO_LONG = 'That text is too long.';
 export const BAD_SNAPSHOT = 'Invalid snapshot id.';
 
@@ -95,3 +96,17 @@ export function parsePoint(v: unknown): { point: PointInput } | { error: string 
 }
 
 export const POINT_BAD = 'Each skill needs a course, a role (develops or requires) and a statement.';
+
+export const NOT_CAPTURED = 'Strings can only run through captured courses.';
+
+/**
+ * The point as the captured course holds it: the course must have a capture and the statement (by server hash) must be
+ * in its newest capture for that role. The snapshot and the depths come from that capture, never from the client.
+ */
+export function anchorPoint(p: PointInput, lib: Library): PointInput | null {
+  const hit = roleSkills({ courseCode: p.courseCode, role: p.role } as PointRow, lib);
+  if ('why' in hit) return null;
+  const skill = hit.skills.find((s) => s.hash === p.statementHash);
+  if (!skill) return null;
+  return { ...p, statement: skill.statement.trim(), snapshotId: hit.snapshotId, k: skill.depth.k, u: skill.depth.u, d: skill.depth.d };
+}

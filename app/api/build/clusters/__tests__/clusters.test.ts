@@ -33,6 +33,11 @@ vi.mock('@/lib/db/cluster-queries', () => ({
     const row = { id: ID, version: 1, updatedBy: i.createdBy, ...i }; mem.clusters.set(ID, row); return row;
   },
   getCluster: async (id: string) => mem.clusters.get(id) ?? null,
+  findClusterByCourses: async (codes: string[]) => {
+    const want = [...new Set(codes)].sort().join();
+    const hit = [...mem.clusters.values()].find(c => [...new Set((c.state as ClusterState).cards.map(x => x.ref))].sort().join() === want);
+    return hit ? { id: hit.id } : null;
+  },
   listClusters: async () => [...mem.clusters.values()].map(c => ({ ...c, courses: (c.state as ClusterState).cards.length })),
   saveCluster: async (id: string, v: number, p: { name: string; state: unknown; updatedBy: string }) => {
     const c = mem.clusters.get(id);
@@ -98,7 +103,7 @@ describe('cluster collection', () => {
   it('creates and lists clusters', async () => {
     const res = await create(json('/api/build/clusters', 'POST', { name: '  Press cluster ' }));
     expect(res.status).toBe(201);
-    expect(await res.json()).toEqual({ id: ID });
+    expect(await res.json()).toEqual({ id: ID, reused: false });
     expect(mem.clusters.get(ID)).toMatchObject({ name: 'Press cluster', createdBy: 'Dr Who', ownerGrantId: 'g', ownerKind: 'personal', state: emptyClusterState() });
     const body = await (await list(new Request('http://x/api/build/clusters'))).json();
     expect(body.clusters).toEqual([expect.objectContaining({ id: ID, name: 'Press cluster', courses: 0 })]);
@@ -112,6 +117,23 @@ describe('cluster collection', () => {
     const cards = (mem.clusters.get(ID)!.state as ClusterState).cards;
     expect(cards.map(c => c.ref)).toEqual(['GC 1', 'GC 2']);
     expect(cards[1]!.x).toBeGreaterThan(cards[0]!.x);
+  });
+  it('reuse: true returns the cluster that already holds exactly those courses, and creates one otherwise', async () => {
+    seed({ cards: [{ ref: 'GC 2', x: 0, y: 0 }, { ref: 'GC 1', x: 0, y: 0 }] as ClusterState['cards'] });
+    const hit = await create(json('/api/build/clusters', 'POST', { name: 'S', courses: ['GC 1', 'GC 2'], reuse: true }));
+    expect(hit.status).toBe(200);
+    expect(await hit.json()).toEqual({ id: ID, reused: true });
+    const before = mem.clusters.get(ID)!;
+    const miss = await create(json('/api/build/clusters', 'POST', { name: 'S', courses: ['GC 1'], reuse: true }));
+    expect(miss.status).toBe(201);
+    expect(await miss.json()).toEqual({ id: ID, reused: false });
+    expect((mem.clusters.get(ID)!.state as ClusterState).cards.map(c => c.ref)).toEqual(['GC 1']);
+    expect(mem.clusters.get(ID)).not.toBe(before);
+  });
+  it('without reuse, an identical cluster is still created', async () => {
+    seed({ cards: [{ ref: 'GC 1', x: 0, y: 0 }] as ClusterState['cards'] });
+    const res = await create(json('/api/build/clusters', 'POST', { name: 'S', courses: ['GC 1'] }));
+    expect(res.status).toBe(201);
   });
   it('refuses more than 40 courses', async () => {
     const many = Array.from({ length: 41 }, (_, i) => `GC ${i}`);

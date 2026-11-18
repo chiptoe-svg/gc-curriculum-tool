@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authorizeRequest } from '@/lib/auth/route-auth';
 import { personalName } from '@/lib/auth/viewer';
-import { createCluster, listClusters } from '@/lib/db/cluster-queries';
+import { createCluster, findClusterByCourses, listClusters } from '@/lib/db/cluster-queries';
 import { NAME_MAX } from '@/lib/builder/plan-schema';
 import { loadLibrary } from '@/lib/builder/library';
 import { nextCardSpot } from '@/lib/builder/cluster/spot';
@@ -13,12 +13,13 @@ const MAX_CARDS = 40;
 /**
  * POST /api/build/clusters
  * Body: { name, authorName?, courses? } (courses: catalog course codes to start with, at most 40; unknown codes are ignored) (authorName is read only for a login that names nobody).
- * → 201 { id }
+ * With `reuse: true` and courses, an existing cluster whose cards are exactly those courses (the most recently updated)
+ * is returned instead of a new one. → 201 { id, reused: false } | 200 { id, reused: true }
  */
 export async function POST(req: Request): Promise<Response> {
   const auth = await authorizeRequest(req);
   if (auth.response) return auth.response;
-  let body: { name?: unknown; authorName?: unknown; courses?: unknown } = {};
+  let body: { name?: unknown; authorName?: unknown; courses?: unknown; reuse?: unknown } = {};
   try {
     const parsed = await req.json();
     if (parsed && typeof parsed === 'object') body = parsed;
@@ -41,8 +42,12 @@ export async function POST(req: Request): Promise<Response> {
     }
     state.cards = cards;
   }
+  if (body.reuse === true && state.cards.length > 0) {
+    const existing = await findClusterByCourses(state.cards.map(c => c.ref));
+    if (existing) return NextResponse.json({ id: existing.id, reused: true });
+  }
   const cluster = await createCluster({ name, state, createdBy, ...ownerOf(auth.grant) });
-  return NextResponse.json({ id: cluster.id }, { status: 201 });
+  return NextResponse.json({ id: cluster.id, reused: false }, { status: 201 });
 }
 
 /** GET /api/build/clusters → every cluster, newest first. Clusters are shared working documents, like plans. */

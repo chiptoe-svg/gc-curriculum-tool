@@ -5,7 +5,8 @@ import {
   unlockString, unmergeString, type WriteResult,
 } from '@/lib/db/string-queries';
 import { NAME_MAX } from '@/lib/builder/plan-schema';
-import { authorOf, bad, overLongText, parsePoint, readBody, respond, str, subGraph, UUID, type Body } from '@/lib/strings/api';
+import { loadLibrary } from '@/lib/builder/library';
+import { anchorPoint, authorOf, bad, NOT_CAPTURED, overLongText, parsePoint, readBody, respond, str, subGraph, UUID, type Body } from '@/lib/strings/api';
 
 interface Ctx { params: Promise<{ id: string }> }
 
@@ -27,7 +28,7 @@ type Action = (typeof ACTIONS)[number];
  * PATCH /api/strings/[id]
  * Body: { action, version, authorName?, ...fields } where the fields depend on the action:
  *   extend { at: 'start'|'end', point, why }   branch { atPosition, name, description?, point, why }
- *   merge { into, reason? }   unmerge { reason }   remove-point { position, reason }   link-why { linkId, why }
+ *   merge { into, reason }   unmerge { reason }   remove-point { position, reason }   link-why { linkId, why }
  *   rename { name }   end-note { note|null }   unlock { reason }   relock {}
  * → 200 { graph, notes } | 400 | 404 | 409 { error, current? } (a stale version carries the string as it stands now).
  */
@@ -59,8 +60,9 @@ async function dispatch(action: Action, id: string, version: number, by: string,
       const why = str(b.why);
       if (b.at !== 'start' && b.at !== 'end') return bad('Say whether to extend at the start or the end.');
       if ('error' in parsed) return bad(parsed.error);
-      const point = parsed.point;
       if (!why) return bad('A reason for the link is required.');
+      const point = anchorPoint(parsed.point, await loadLibrary());
+      if (!point) return bad(NOT_CAPTURED);
       return extendString({ id, version, at: b.at, point, why, by });
     }
     case 'branch': {
@@ -70,15 +72,17 @@ async function dispatch(action: Action, id: string, version: number, by: string,
       if (typeof b.atPosition !== 'number' || !Number.isInteger(b.atPosition)) return bad('Say which skill to branch from.');
       if (!name) return bad('A string needs a name.');
       if ('error' in parsed) return bad(parsed.error);
-      const point = parsed.point;
       if (!why) return bad('A reason for the link is required.');
+      const point = anchorPoint(parsed.point, await loadLibrary());
+      if (!point) return bad(NOT_CAPTURED);
       return branchString({ fromId: id, version, atPosition: b.atPosition, name, description: typeof b.description === 'string' ? b.description.trim() : '', point, why, by });
     }
     case 'merge': {
       const into = str(b.into);
       if (!into) return bad('Say which string to merge into.');
       if (!UUID.test(into)) return bad('String not found.', 404);
-      return mergeString({ id, version, into, reason: reason ?? '', by });
+      if (!reason) return bad('A reason is required.');
+      return mergeString({ id, version, into, reason, by });
     }
     case 'unmerge':
       if (!reason) return bad('A reason is required.');

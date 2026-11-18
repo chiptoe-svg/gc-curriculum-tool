@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { authorizeRequest } from '@/lib/auth/route-auth';
-import { loadGraph, lockString } from '@/lib/db/string-queries';
+import { loadGraph, lockString, type PointInput } from '@/lib/db/string-queries';
 import { NAME_MAX } from '@/lib/builder/plan-schema';
-import { authorOf, bad, CAP, overLongText, parsePoint, readBody, respond, str } from '@/lib/strings/api';
+import { loadLibrary } from '@/lib/builder/library';
+import { anchorPoint, authorOf, bad, CAP, NOT_CAPTURED, overLongText, parsePoint, readBody, respond, str } from '@/lib/strings/api';
 
 /**
  * POST /api/strings
@@ -25,10 +26,12 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = body.points.map(parsePoint);
   const failed = parsed.find((p) => 'error' in p);
   if (failed && 'error' in failed) return bad(failed.error);
-  const points = parsed.map((p) => ('point' in p ? p.point : null!));
+  const lib = await loadLibrary();
+  const points = parsed.map((p) => anchorPoint('point' in p ? p.point : null!, lib));
+  if (points.some((p) => p === null)) return bad(NOT_CAPTURED);
   const whys = body.whys.map((w) => (typeof w === 'string' ? w : ''));
   const description = typeof body.description === 'string' ? body.description.trim() : '';
-  return respond(await lockString({ name, description, points, whys, by }), 201);
+  return respond(await lockString({ name, description, points: points as PointInput[], whys, by }), 201);
 }
 
 /**

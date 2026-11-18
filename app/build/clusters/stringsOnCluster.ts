@@ -6,8 +6,7 @@ import { WHAT_IF_PREFIX } from '@/lib/builder/compute';
 import type { ClusterState } from '@/lib/builder/cluster/state';
 import type { Library } from '@/lib/builder/types';
 import type { PointRow, Role, StringGraph, StringRow } from '@/lib/builder/strings/types';
-import { textHash } from '@/lib/catalog/bundles';
-import { normalizeStatement } from '@/lib/catalog/project-trail';
+import { hashOf } from '@/lib/strings/hash';
 
 export const CAPTURED_ONLY = 'Strings can only run through captured courses.';
 
@@ -16,7 +15,6 @@ export interface LockPoint {
   courseCode: string; role: Role; statement: string; snapshotId: string; k: number | null; u: number | null; d: number | null;
 }
 
-const hashOf = (s: string) => textHash(normalizeStatement(s));
 
 /**
  * The skill as a string point, or null when it cannot be one: only a captured catalog course counts, and the statement

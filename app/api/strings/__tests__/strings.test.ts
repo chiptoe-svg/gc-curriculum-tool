@@ -82,11 +82,11 @@ beforeEach(() => {
     points: { [P1]: pt(P1, 'GC 1010', 'Mix ink'), [P2]: pt(P2, 'GC 2010', 'Run a press'), [P3]: pt(P3, 'GC 3010', 'Color manage') },
     links: [], events: [],
   };
-  mem.lib = { courses: [course('GC 1010', 1, []), course('GC 2010', 2, []), course('GC 3010', 3, []), course('GC 4010', 4, [])] } as unknown as Library;
+  mem.lib = { courses: [course('GC 1010', 1, [{ s: 'Mix ink', k: 4, u: 3, d: 2 }]), course('GC 2010', 2, [{ s: 'Run a press', k: 1, u: 1, d: 1 }]), course('GC 3010', 3, []), course('GC 4010', 4, [])] } as unknown as Library;
 });
 
 describe('POST /api/strings', () => {
-  const body = { name: 'Color', points: [goodPoint, { ...goodPoint, courseCode: 'GC 2010' }], whys: ['builds on it'] };
+  const body = { name: 'Color', points: [goodPoint, { ...goodPoint, courseCode: 'GC 2010', statement: 'Run a press' }], whys: ['builds on it'] };
   it('without a name is 400 and writes nothing', async () => {
     const r = await lock(req('/api/strings', 'POST', { ...body, name: '  ' }));
     expect(r.status).toBe(400);
@@ -104,6 +104,19 @@ describe('POST /api/strings', () => {
     const input = mem.calls[0]![1] as { by: string; points: Array<{ statementHash: string }> };
     expect(input.by).toBe('Dr Who');
     expect(input.points[0]!.statementHash).toBe(hashOf('Mix ink'));
+  });
+  it('takes the snapshot and the depths from the capture, ignoring the client\'s', async () => {
+    await lock(req('/api/strings', 'POST', body));
+    const input = mem.calls[0]![1] as { points: Array<{ snapshotId: string; k: number; u: number; d: number }> };
+    expect(input.points[0]).toMatchObject({ snapshotId: 'snap-GC 1010', k: 4, u: 3, d: 2 });
+  });
+  it('a course with no capture, or a statement not in it, is 400 and writes nothing', async () => {
+    const notIn = await lock(req('/api/strings', 'POST', { ...body, points: [{ ...goodPoint, statement: 'Invented' }, body.points[1]] }));
+    expect(notIn.status).toBe(400);
+    expect((await notIn.json()).error).toBe('Strings can only run through captured courses.');
+    const noCourse = await lock(req('/api/strings', 'POST', { ...body, points: [{ ...goodPoint, courseCode: 'GC 9999' }, body.points[1]] }));
+    expect(noCourse.status).toBe(400);
+    expect(mem.calls).toEqual([]);
   });
   it('a point with a bad role is 400', async () => {
     expect((await lock(req('/api/strings', 'POST', { ...body, points: [{ ...goodPoint, role: 'teaches' }, body.points[1]] }))).status).toBe(400);
@@ -126,7 +139,7 @@ describe('POST /api/strings', () => {
     expect(mem.calls).toEqual([]);
   });
   it('an over-long statement is 400', async () => {
-    expect((await lock(req('/api/strings', 'POST', { ...body, points: [{ ...goodPoint, statement: 'x'.repeat(501) }, body.points[1]] }))).status).toBe(400);
+    expect((await lock(req('/api/strings', 'POST', { ...body, points: [{ ...goodPoint, statement: 'x'.repeat(2001) }, body.points[1]] }))).status).toBe(400);
   });
   it('passes a refusal from the query straight through', async () => {
     mem.result = { ok: false, status: 409, error: 'A string with that name already exists.' };
@@ -169,6 +182,7 @@ describe('PATCH /api/strings/[id]', () => {
     ['extend', { at: 'middle', point: goodPoint, why: 'w' }],
     ['branch', { name: 'N', point: goodPoint, why: 'w' }],
     ['merge', {}],
+    ['merge', { into: B }],
     ['unmerge', {}],
     ['remove-point', { position: 1 }],
     ['rename', { name: ' ' }],
@@ -178,6 +192,12 @@ describe('PATCH /api/strings/[id]', () => {
     const r = await patch({ action, version: 3, ...rest });
     expect(r.status).toBe(400);
     expect((await r.json()).error).toBeTruthy();
+    expect(mem.calls).toEqual([]);
+  });
+  it('extend and branch refuse a skill that is not in a capture', async () => {
+    const ghost = { ...goodPoint, statement: 'Invented' };
+    expect((await patch({ action: 'extend', version: 3, at: 'end', point: ghost, why: 'w' })).status).toBe(400);
+    expect((await patch({ action: 'branch', version: 3, atPosition: 0, name: 'N', point: ghost, why: 'w' })).status).toBe(400);
     expect(mem.calls).toEqual([]);
   });
   it('a stale version is 409 and the body has current', async () => {
@@ -202,7 +222,7 @@ describe('PATCH /api/strings/[id]', () => {
   });
   it('maps each action to its query with the author', async () => {
     await patch({ action: 'extend', version: 3, at: 'start', point: goodPoint, why: 'w' });
-    await patch({ action: 'merge', version: 3, into: B });
+    await patch({ action: 'merge', version: 3, into: B, reason: 'same skill' });
     await patch({ action: 'unmerge', version: 3, reason: 'r' });
     await patch({ action: 'remove-point', version: 3, position: 0, reason: 'r' });
     await patch({ action: 'end-note', version: 3, note: null });
@@ -210,7 +230,8 @@ describe('PATCH /api/strings/[id]', () => {
     await patch({ action: 'link-why', linkId: B, why: 'w' });
     expect(mem.calls.map((c) => c[0])).toEqual(['extend', 'merge', 'unmerge', 'remove-point', 'end-note', 'relock', 'link-why']);
     expect(mem.calls.every((c) => (c[1] as { by: string }).by === 'Dr Who')).toBe(true);
-    expect(mem.calls[1]![1]).toMatchObject({ id: A, version: 3, into: B, reason: '' });
+    expect(mem.calls[1]![1]).toMatchObject({ id: A, version: 3, into: B, reason: 'same skill' });
+    expect(mem.calls[0]![1]).toMatchObject({ point: { snapshotId: 'snap-GC 1010', k: 4, u: 3, d: 2 } });
   });
 });
 
@@ -259,19 +280,14 @@ describe('POST /api/strings/points/[id]', () => {
   });
   const post = (b: unknown) => reword(req(`/api/strings/points/${P2}`, 'POST', b), ctx(P2));
   it('fills depth from the capture and passes the candidate on', async () => {
-    const r = await post({ candidate: { statement: NEW, hash: hashOf(NEW) }, snapshotId: SNAP });
-    expect(r.status).toBe(200);
-    expect(mem.calls[0]![1]).toMatchObject({ pointId: P2, depth: { k: 4, u: 3, d: 2 }, snapshotId: SNAP, by: 'Dr Who' });
-  });
-  it('an absent snapshot id means the capture the depth came from', async () => {
     const r = await post({ candidate: { statement: NEW, hash: hashOf(NEW) } });
     expect(r.status).toBe(200);
-    expect(mem.calls[0]![1]).toMatchObject({ pointId: P2, snapshotId: 'snap-GC 2010' });
+    expect(mem.calls[0]![1]).toMatchObject({ pointId: P2, depth: { k: 4, u: 3, d: 2 }, snapshotId: 'snap-GC 2010', by: 'Dr Who' });
   });
-  it('a snapshot id that is not a UUID is 400', async () => {
-    const r = await post({ candidate: { statement: NEW, hash: hashOf(NEW) }, snapshotId: 'snap-GC 2010' });
-    expect(r.status).toBe(400);
-    expect((await r.json()).error).toBe('Invalid snapshot id.');
+  it('ignores a snapshot id sent by the client: always the current capture\'s', async () => {
+    const r = await post({ candidate: { statement: NEW, hash: hashOf(NEW) }, snapshotId: SNAP });
+    expect(r.status).toBe(200);
+    expect(mem.calls[0]![1]).toMatchObject({ snapshotId: 'snap-GC 2010' });
   });
   it('a candidate no longer in the capture is 409', async () => {
     const r = await post({ candidate: { statement: 'Something else', hash: hashOf('Something else') }, snapshotId: SNAP });

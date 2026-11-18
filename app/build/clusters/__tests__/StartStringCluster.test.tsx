@@ -17,7 +17,7 @@ describe('StartStringCluster', () => {
     const calls = stub();
     render(<StartStringCluster slug="s1" codes={['GC 1010', 'GC 2070', 'GC 4400']} knownName="Dr Who" />);
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/build/clusters/abc?slug=s1'));
-    expect(calls).toEqual([{ name: 'Strings: GC 1010 and 2 more', courses: ['GC 1010', 'GC 2070', 'GC 4400'], authorName: 'Dr Who' }]);
+    expect(calls).toEqual([{ name: 'Strings: GC 1010 and 2 more', courses: ['GC 1010', 'GC 2070', 'GC 4400'], reuse: true, authorName: 'Dr Who' }]);
   });
   it('asks for a name when the login names nobody', async () => {
     const calls = stub();
