@@ -55,7 +55,7 @@ describe('checkRewords', () => {
     const r = await checkRewords([item]);
     expect(r.p1).toEqual({ kind: 'changed', now: null, candidate: { statement: 'B', hash: 'hb' } });
     expect(state.inserted).toHaveLength(1);
-    expect(state.inserted[0]).toMatchObject({ status: 'changed', candidateHash: 'hb', pPartly: 0.8 });
+    expect(state.inserted[0]).toMatchObject({ status: 'changed', candidateHash: 'hb', pFully: FULLY + 0.2 });
   });
   it('a partly-only pair is not a reword: unanchored and cached', async () => {
     state.judgeImpl = async (pairs) => pairs.map(() => ({ pFully: FULLY - 0.01, pPartly: 0.99 }));

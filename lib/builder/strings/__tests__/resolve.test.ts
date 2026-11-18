@@ -1,10 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { textHash } from '@/lib/catalog/bundles';
 import { normalizeStatement } from '@/lib/catalog/project-trail';
 import type { Library } from '../../types';
 import type { PointRow } from '../types';
 
-vi.mock('@/lib/strings/reword', () => ({ checkRewords: async () => ({}) }));
 import { resolveExact } from '../resolve';
 
 const h = (s: string) => textHash(normalizeStatement(s));

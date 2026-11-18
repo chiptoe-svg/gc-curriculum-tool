@@ -77,7 +77,7 @@ export async function checkRewords(items: RewordItem[]): Promise<Record<string, 
         pointId: it.point.id, snapshotId: it.snapshotId,
         status: hit ? 'changed' : 'unanchored',
         candidateStatement: hit?.s.statement ?? null, candidateHash: hit?.s.hash ?? null,
-        pPartly: hit?.pPartly ?? null, model, promptVersion: PROMPT_VERSION,
+        pFully: hit?.pFully ?? null, model, promptVersion: PROMPT_VERSION,
       }).onConflictDoNothing();
       out[it.point.id] = hit
         ? { kind: 'changed', now: null, candidate: { statement: hit.s.statement, hash: hit.s.hash } }

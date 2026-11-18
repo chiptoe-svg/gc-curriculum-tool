@@ -1645,7 +1645,7 @@ export const stringPointResolutions = pgTable('string_point_resolutions', {
   status: text('status').$type<'changed' | 'unanchored'>().notNull(),
   candidateStatement: text('candidate_statement'),
   candidateHash: text('candidate_hash'),
-  pPartly: real('p_partly'),
+  pFully: real('p_fully'),
   model: text('model').notNull(),
   promptVersion: text('prompt_version').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

@@ -105,7 +105,7 @@ CREATE TABLE string_point_resolutions (
   status text NOT NULL,
   candidate_statement text,
   candidate_hash text,
-  p_partly real,
+  p_fully real,
   model text NOT NULL,
   prompt_version text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
