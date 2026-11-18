@@ -52,6 +52,8 @@ export function ClusterCourseDrawer(props: {
   if (!lc && !pc) return null;
 
   const version = lc ? clusterVersionOf(lc, cluster) : null;
+  // Only skills-only what-ifs can be read on a cluster: a page what-if has no skills, so choosing one would change nothing.
+  const skillsOnly = lc ? lc.whatIfs.filter(w => w.skills) : [];
   const eff = effectiveCourse((lc ?? pc)!, version, cluster.courseEdits?.[courseRef]);
   const ops = courseEditOps<ClusterState>(courseRef, update, props.stamp);
   const original = {
@@ -91,7 +93,7 @@ export function ClusterCourseDrawer(props: {
     <Drawer onClose={props.onClose} kicker={kicker} title={pc ? pc.title || 'Untitled course' : lc!.title}>
       {lc && (
         <section className="cb-sec">
-          {(lc.versions.length > 1 || lc.whatIfs.length > 0) && (
+          {(lc.versions.length > 1 || skillsOnly.length > 0) && (
             <label className="cb-inline">Version on this cluster
               <select value={cluster.versions[lc.code] ?? ''} aria-label="Version on this cluster" onChange={e => {
                 const chosen = e.target.value; // read now: the updater may run after the select is reset
@@ -103,7 +105,7 @@ export function ClusterCourseDrawer(props: {
               }}>
                 <option value="">Newest capture{lc.versions[0] ? ` (${lc.versions[0].instructorName ?? 'department'}, ${monthYear(lc.versions[0].createdAt)})` : ''}</option>
                 {lc.versions.slice(1).map(v => <option key={v.snapshotId} value={v.snapshotId}>Capture: {v.instructorName ?? 'department'}, {monthYear(v.createdAt)}</option>)}
-                {lc.whatIfs.map(w => <option key={w.id} value={`${WHAT_IF_PREFIX}${w.id}`}>What-if: {w.title} ({w.author}){w.skills ? ', skills only' : ''}</option>)}
+                {skillsOnly.map(w => <option key={w.id} value={`${WHAT_IF_PREFIX}${w.id}`}>What-if: {w.title} ({w.author}), skills only</option>)}
               </select>
             </label>
           )}

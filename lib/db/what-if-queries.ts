@@ -4,7 +4,7 @@
  * course materials. Every function takes a last parameter `ex` so a caller
  * (or a test) can run it inside a transaction.
  */
-import { asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { courseWhatIfs, courseWhatIfMessages, courseWhatIfAttachments, subCompetencies } from '@/lib/db/schema';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
@@ -38,12 +38,13 @@ export async function listWhatIfsForCourse(courseCode: string, ex: Tx | typeof d
   return ex.select().from(courseWhatIfs).where(eq(courseWhatIfs.courseCode, courseCode)).orderBy(desc(courseWhatIfs.createdAt));
 }
 
-/** Only what-ifs that have a page. */
+/** What-ifs anyone can open from /explore/<code>: those with a page and skills-only ones saved from a cluster (as
+ * app/explore/[code]/page.tsx lists them; a draft with neither is shown to its owner only and is not counted). */
 export async function countWhatIfsByCourse(ex: Tx | typeof db = db): Promise<Map<string, number>> {
   const rows = await ex
     .select({ courseCode: courseWhatIfs.courseCode, n: sql<number>`count(*)::int` })
     .from(courseWhatIfs)
-    .where(isNotNull(courseWhatIfs.pageCreatedAt))
+    .where(or(isNotNull(courseWhatIfs.pageCreatedAt), and(isNotNull(courseWhatIfs.skills), isNull(courseWhatIfs.profile))))
     .groupBy(courseWhatIfs.courseCode);
   return new Map(rows.map((r) => [r.courseCode, r.n]));
 }

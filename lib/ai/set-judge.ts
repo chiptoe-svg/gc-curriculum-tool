@@ -32,7 +32,7 @@ type SetOpts = { fetchImpl?: typeof fetch; retryDelayMs?: number };
 type Req = { prompt: string; maxTokens: number; logprobs: boolean };
 
 /** One request with the match judge's retry pattern; throws the last error after the retries (a failed call is never stored). */
-async function request(r: Req, fetchImpl: typeof fetch, retryDelayMs: number): Promise<Record<string, any>> {
+async function request(r: Req, fetchImpl: typeof fetch, retryDelayMs: number): Promise<Record<string, unknown>> {
   const base = (process.env.CAMPUS_LLM_BASE_URL ?? '').replace(/\/$/, '');
   const key = process.env.CAMPUS_LLM_API_KEY ?? '';
   const body = JSON.stringify({
@@ -47,7 +47,8 @@ async function request(r: Req, fetchImpl: typeof fetch, retryDelayMs: number): P
         method: 'POST', body, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
+      const json: unknown = await res.json();
+      return json && typeof json === 'object' ? (json as Record<string, unknown>) : {}; // read field by field below
     } catch (err) {
       last = err instanceof Error ? err.message : String(err);
       if (attempt < 4) await new Promise((r2) => setTimeout(r2, retryDelayMs * 2 ** attempt));
@@ -56,9 +57,15 @@ async function request(r: Req, fetchImpl: typeof fetch, retryDelayMs: number): P
   throw new Error(`The campus model did not answer (${last}).`);
 }
 
+/** `obj[key]` when obj is an object, else undefined: for reading the model's JSON reply without `any`. */
+const field = (obj: unknown, key: string | number): unknown =>
+  obj && typeof obj === 'object' ? (obj as Record<string | number, unknown>)[key] : undefined;
+/** The first choice of a chat completion reply. */
+const firstChoice = (json: Record<string, unknown>) => field(field(json, 'choices'), 0);
+
 async function yesNo(prompt: string, fetchImpl: typeof fetch, delay: number): Promise<number> {
   const json = await request({ prompt, maxTokens: 1, logprobs: true }, fetchImpl, delay);
-  const top = json.choices?.[0]?.logprobs?.content?.[0]?.top_logprobs;
+  const top = field(field(field(field(firstChoice(json), 'logprobs'), 'content'), 0), 'top_logprobs');
   const p = Array.isArray(top) ? pYes(top) : null;
   if (p === null) throw new Error('The campus model gave no yes or no answer.');
   return p;
@@ -94,7 +101,7 @@ export async function judgeSet(target: SetTarget, pool: SetPoolItem[], opts: Set
     prompt: head + 'What is the smallest set of the numbered skills that together supply the requirement? Leave out any skill that adds nothing the others already cover, and any that is only loosely related. Answer with the numbers only, comma-separated. If none supply it, answer 0.',
     maxTokens: 24, logprobs: false,
   }, fetchImpl, delay);
-  const which = gen.choices?.[0]?.message?.content;
+  const which = field(field(firstChoice(gen), 'message'), 'content');
   if (typeof which !== 'string') throw new Error('The campus model gave no answer.');
   const picked = [...new Set(which.split(/[^0-9]+/).map(Number).filter((n) => n >= 1 && n <= pool.length))];
 

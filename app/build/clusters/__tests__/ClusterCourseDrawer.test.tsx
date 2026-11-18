@@ -180,7 +180,7 @@ describe('ClusterCourseDrawer', () => {
     expect(within(pre).getByRole('button', { name: 'GC 1010 Title GC 1010' })).toBeInTheDocument();
   });
 
-  it('the version picker lists captures and every what-if, skills-only ones included', () => {
+  it('the version picker lists captures and skills-only what-ifs, not page what-ifs (they have no skills)', () => {
     const lib2 = { ...library };
     lib2.courses = library.courses.map(c => (c.code !== 'GC 2070' ? c : {
       ...c, whatIfs: [
@@ -200,9 +200,20 @@ describe('ClusterCourseDrawer', () => {
     );
     const pick = screen.getByRole('combobox', { name: 'Version on this cluster' });
     expect(within(pick).getAllByRole('option').map(o => o.textContent)).toEqual([
-      'Newest capture (department, Jan 2026)', 'What-if: Bigger lab (Ann)', 'What-if: GC 2070 as edited on Print run (Ann), skills only',
+      'Newest capture (department, Jan 2026)', 'What-if: GC 2070 as edited on Print run (Ann), skills only',
     ]);
     fireEvent.change(pick, { target: { value: 'whatif:w2' } });
     expect(applied(update, state).versions).toEqual({ 'GC 2070': 'whatif:w2' });
+    // One capture and only a page what-if: nothing to pick.
+    cleanup();
+    const lib3 = { ...library, courses: library.courses.map(c => (c.code !== 'GC 2070' ? c : { ...c, whatIfs: [lib2.courses[1]!.whatIfs[0]!] })) };
+    render(
+      <ClusterCourseDrawer courseRef="GC 2070" clusterId={ID} slug="s" library={lib3} cluster={state} update={update}
+        required={s.required['GC 2070']!} objectives={s.objectives['GC 2070']!} codeOf={r => r}
+        decisions={{}} decide={vi.fn()} errorOf={() => null} onRetry={vi.fn()} judging={{ judging: {}, retryJudge: vi.fn() }}
+        stamp={() => EDIT} who={() => 'Tester'} author={() => 'Tester'} guide={null}
+        onSelect={vi.fn()} onRemove={vi.fn()} onClose={vi.fn()} />,
+    );
+    expect(screen.queryByRole('combobox', { name: 'Version on this cluster' })).toBeNull();
   });
 });

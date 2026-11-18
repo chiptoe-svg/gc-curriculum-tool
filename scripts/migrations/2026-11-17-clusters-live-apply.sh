@@ -7,9 +7,12 @@
 #                  BEGIN/COMMIT, refusing a second apply), then verifies the four changes.
 #
 # 0070 creates two tables (curriculum_clusters, skill_set_judgments), adds course_what_ifs.skills and
-# plan_syllabus_drafts.cluster_id, relaxes plan_syllabus_drafts.plan_id to nullable, and replaces two CHECK
-# constraints. No row is changed or deleted. The running build ignores all of it, so applying before the new
-# build is deployed is safe.
+# plan_syllabus_drafts.cluster_id, relaxes plan_syllabus_drafts.plan_id to nullable, replaces one CHECK constraint
+# (skill_match_decisions_source_check, widened to allow 'cluster') and adds one (plan_syllabus_drafts_owner_check).
+# No row is changed or deleted. The destructive-statement grep below deliberately allows DROP CONSTRAINT (the replaced
+# CHECK) and DROP NOT NULL (plan_id); it refuses DROP TABLE, DELETE, UPDATE, TRUNCATE, DROP COLUMN and SET DATA TYPE.
+# The running build ignores all of it, so applying before the new build is deployed is safe; the new build needs it
+# applied first (it selects course_what_ifs.skills).
 # Undo: DROP TABLE skill_set_judgments; ALTER TABLE plan_syllabus_drafts DROP CONSTRAINT plan_syllabus_drafts_owner_check,
 #   DROP COLUMN cluster_id (then SET NOT NULL on plan_id once no cluster-only rows exist); DROP TABLE curriculum_clusters;
 #   ALTER TABLE course_what_ifs DROP COLUMN skills; restore skill_match_decisions_source_check to ('map','labeling_sheet').
