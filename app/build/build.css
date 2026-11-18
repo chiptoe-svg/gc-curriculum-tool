@@ -81,6 +81,8 @@
 .cb-index__name { font-family: var(--font-display), Georgia, serif; font-size: 1.3rem; }
 .cb-index__plan:hover .cb-index__name { text-decoration: underline; text-underline-offset: 3px; }
 .cb-index__meta { color: var(--cb-ink-soft); font-size: 0.9375rem; }
+.cb-index__clusters { margin-top: 2.5rem; }
+.cb-index__clusters > .cb-muted { max-width: 62ch; }
 
 /* ---- builder shell ------------------------------------------------------- */
 .cb-builder { display: flex; flex-direction: column; height: 100vh; background: var(--cb-ground); }

@@ -43,6 +43,7 @@ const post = (body: unknown = { message: 'Add a lab' }) => new Request(
   `http://x/api/explore/${encodeURIComponent(CODE)}/what-ifs/${ID}/chat`,
   { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) },
 );
+const skillsOnlyRow = () => row({ skills: { objectives: [], developed: [], required: [], fromCluster: 'c1' }, profile: null });
 const telemetry = { costUsdCents: 2, durationMs: 1, cachedTokens: 0, uncachedPromptTokens: 3, completionTokens: 4 };
 const estTelemetry = { costUsdCents: 5, durationMs: 1, cachedTokens: 0, uncachedPromptTokens: 7, completionTokens: 8 };
 const quickEstimate = { candidate: 'a lab', estimate: {}, profile: { ratings: [], incomingChanges: [] }, knockOn: {} };
@@ -180,3 +181,15 @@ describe('POST what-ifs/[id]/chat', () => {
     expect(src).not.toContain('captureConversations');
   });
 });
+
+describe('a skills-only what-if', () => {
+  it('chat returns 409 and never calls the provider', async () => {
+    q.getWhatIf.mockResolvedValue(skillsOnlyRow());
+    const res = await POST(post(), ctx());
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe('This version was saved from a cluster and holds skills only.');
+    expect(streamWhatIfAgent).not.toHaveBeenCalled();
+    expect(checkDailyCap).not.toHaveBeenCalled();
+  });
+});
+

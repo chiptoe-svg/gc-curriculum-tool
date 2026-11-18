@@ -6,7 +6,8 @@ import { normalizeStatement } from '@/lib/catalog/project-trail';
 import { effectiveCourse } from './edits';
 import { placeCourses, type PlacedCourse, versionOf } from './compute';
 import type { requiredByCourse, ReqResult, ReqStatus } from './threads';
-import type { Depth, Library, LibraryCourse, MatchDecision, PlanState, ProposedCourse, ObjectiveEdit, SkillEdit } from './types';
+import { statusLabel, type ClusterStatus, type StatusResult } from './cluster/status';
+import type { Depth, Library, LibraryCourse, MapCore, MatchDecision, PlanState, ProposedCourse, ObjectiveEdit, SkillEdit } from './types';
 
 /** Escapes Markdown control characters and flattens line breaks. */
 export function esc(text: string): string {
@@ -27,13 +28,21 @@ const KIND = { add: 'added', edit: 'changed', remove: 'removed' } as const;
 
 export interface ChangesInput {
   planName: string;
-  catalogYear: string | null;
+  /** A plan's catalog year (null = not set); omitted for a cluster, which has none. */
+  catalogYear?: string | null;
   exportedBy: string;
   /** ISO date (YYYY-MM-DD). */
   date: string;
   lib: Library;
-  plan: PlanState;
+  /** A cluster passes its saved state: only the MapCore fields are read when `placed` is given. */
+  plan: PlanState | MapCore;
   required: ReturnType<typeof requiredByCourse>;
+  /** The courses on the map, replacing placeCourses(lib, plan) (a cluster has no acts or terms). */
+  placed?: PlacedCourse[];
+  /** A cluster's statuses (skills only): required-skill lines read these instead of `required`. */
+  clusterStatuses?: { required: Record<string, StatusResult[]> };
+  /** A line under the header, e.g. how current the statuses are. */
+  note?: string;
   /** Draft decisions for this plan plus the non-draft ones the library holds. */
   decisions: MatchDecision[];
   /** Syllabus-drafted courses by ref: the file and date it was drafted from. Absent = read from courseEdits[ref].source. */
@@ -51,7 +60,7 @@ export function renderChangesMarkdown(input: ChangesInput): string {
   const { lib, plan, required, decisions } = input;
   const byCode = new Map<string, LibraryCourse>(lib.courses.map(c => [c.code, c]));
   const proposed = new Map<string, ProposedCourse>(plan.proposed.map(p => [p.id, p]));
-  const placed = placeCourses(lib, plan).filter(c => !c.requirement);
+  const placed = (input.placed ?? placeCourses(lib, plan as PlanState)).filter(c => !c.requirement);
   const placedByRef = new Map<string, PlacedCourse>(placed.map(c => [c.ref, c]));
   const codeOf = (ref: string) => placedByRef.get(ref)?.code ?? proposed.get(ref)?.code ?? ref;
   const titleOf = (ref: string) => byCode.get(ref)?.title ?? proposed.get(ref)?.title ?? '';
@@ -123,6 +132,8 @@ export function renderChangesMarkdown(input: ChangesInput): string {
         const afterRef = e.action === 'edit' && !e.statement ? e.target : e.statement ? hash(e.statement) : null;
         const r = required[ref]?.results.find(q => q.required.ref === afterRef);
         if (r) line += ` — ${statusLine(r)}`;
+        const cs = input.clusterStatuses?.required[ref]?.find(q => q.targetKey === `req:${ref}|${afterRef}`);
+        if (cs) line += ` — ${esc(statusLabel(cs, codeOf))}`;
       }
       return line;
     });
@@ -161,7 +172,9 @@ export function renderChangesMarkdown(input: ChangesInput): string {
   for (const c of Object.values(required)) { met += c.counts.met; metDraft += c.counts.met_draft; partly += c.counts.partly; not += c.counts.not; }
 
   lines.push(`# ${esc(input.planName)} — changes (${input.date})`, '');
-  lines.push(`- Catalog year: ${input.catalogYear ? esc(input.catalogYear) : 'not set'}`, `- Exported by: ${esc(input.exportedBy)}`, '');
+  if (input.catalogYear !== undefined) lines.push(`- Catalog year: ${input.catalogYear ? esc(input.catalogYear) : 'not set'}`);
+  lines.push(`- Exported by: ${esc(input.exportedBy)}`, '');
+  if (input.note) lines.push(input.note, '');
   lines.push('## Summary', '');
   if (!changed.length) lines.push('No changes: nothing on this map differs from the catalog and the captures.', '');
   else lines.push(
@@ -171,7 +184,11 @@ export function renderChangesMarkdown(input: ChangesInput): string {
     `- Developed skills changed: ${counts.developed}`,
     `- Prerequisites and corequisites changed: ${counts.links}`,
     `- Match decisions: ${counts.decisions}`, '');
-  lines.push(`Required skills across the map: ${met} met, ${metDraft} met* (rests on a draft), ${partly} partly met, ${not} not met.`, '');
+  if (input.clusterStatuses) {
+    const tally: Record<ClusterStatus, number> = { met: 0, met_set: 0, parts_met: 0, partly: 0, not: 0, pending: 0 };
+    for (const list of Object.values(input.clusterStatuses.required)) for (const r of list) tally[r.status]++;
+    lines.push(`Required skills across the cluster: ${tally.met + tally.met_set} met, ${tally.parts_met + tally.partly} partly met, ${tally.not} not met, ${tally.pending} still matching.`, '');
+  } else lines.push(`Required skills across the map: ${met} met, ${metDraft} met* (rests on a draft), ${partly} partly met, ${not} not met.`, '');
   lines.push('A trailing * marks a draft made on this map. Captures are never changed by a map edit; confirm drafts through capture.', '');
   lines.push(...body);
   if (changed.length) {

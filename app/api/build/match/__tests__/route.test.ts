@@ -14,6 +14,11 @@ const state = vi.hoisted(() => ({
   vectors: new Map<string, number[]>(),
   asked: [] as Array<{ model?: string; n: number }>,
   failRead: false,
+  clusters: new Map<string, { state: unknown }>(),
+  setCache: new Map<string, Record<string, unknown>>(),
+  setWrites: [] as Array<Record<string, unknown>>,
+  setAsked: 0,
+  setImpl: null as null | ((target: unknown, pool: Array<{ ref: string }>) => Promise<Record<string, unknown>>),
   judgeImpl: null as null | ((pairs: unknown[], opts: { model?: string; errorSink?: { message: string | null } }) => Promise<Array<{ pFully: number | null; pPartly: number | null }>>),
 }));
 
@@ -42,6 +47,19 @@ vi.mock('@/lib/db/match-queries', () => ({
     for (const r of rows) state.cache.set(`${r.model}|${r.requiredHash}|${r.suppliedHash}`, { pFully: r.pFully, pPartly: r.pPartly });
   },
 }));
+vi.mock('@/lib/db/cluster-queries', () => ({ getCluster: async (id: string) => state.clusters.get(id) ?? null }));
+vi.mock('@/lib/db/set-judgment-queries', () => ({
+  readSetJudgment: async (k: { targetHash: string; poolHash: string }) => state.setCache.get(`${k.targetHash}|${k.poolHash}`) ?? null,
+  writeSetJudgment: async (k: { targetHash: string; poolHash: string }, v: Record<string, unknown>) => { state.setWrites.push({ ...k, ...v }); state.setCache.set(`${k.targetHash}|${k.poolHash}`, v); },
+}));
+vi.mock('@/lib/ai/set-judge', async (orig) => ({
+  ...(await orig<typeof import('@/lib/ai/set-judge')>()),
+  judgeSet: async (target: unknown, pool: Array<{ ref: string }>) => {
+    state.setAsked++;
+    if (!state.setImpl) return { pAny: 0.8, picked: pool.slice(0, 2).map((p) => p.ref), kept: pool.slice(0, 2).map((p) => p.ref), pTogether: 0.7, pCombining: 0.4 };
+    return state.setImpl(target, pool);
+  },
+}));
 vi.mock('@/lib/ai/match-judge', async (orig) => ({
   ...(await orig<typeof import('@/lib/ai/match-judge')>()),
   judgePairs: async (pairs: unknown[], opts: { model?: string; errorSink?: { message: string | null } }) => {
@@ -56,6 +74,7 @@ const post = (body: unknown) => POST(new Request('http://x/api/build/match', { m
 
 beforeEach(() => {
   state.selects = []; state.inserted = []; state.cache.clear(); state.vectors = new Map(); state.asked = []; state.judgeImpl = null; state.failRead = false;
+  state.clusters = new Map(); state.setCache = new Map(); state.setWrites = []; state.setAsked = 0; state.setImpl = null;
 });
 
 describe('POST /api/build/match decide', () => {
@@ -128,24 +147,24 @@ describe('POST /api/build/match decide', () => {
 });
 
 describe('POST /api/build/match judge', () => {
-  const others = Array.from({ length: 8 }, (_, i) => ({ ref: `o${i}`, text: `other skill ${i}`, course: 'GC 1020', title: 'Intro' }));
+  const others = Array.from({ length: 10 }, (_, i) => ({ ref: `o${i}`, text: `other skill ${i}`, course: 'GC 1020', title: 'Intro' }));
   const anchor = { text: 'lay out a page', course: 'GC 3460', title: 'Print', side: 'required' as const };
   const setVectors = () => {
     state.vectors = new Map([[h(anchor.text), [1, 0]]]);
-    others.forEach((o, i) => state.vectors.set(h(o.text), [1 - i * 0.1, i * 0.1])); // o0 most similar
+    others.forEach((o, i) => state.vectors.set(h(o.text), [1 - i * 0.05, i * 0.05])); // o0 most similar
   };
 
-  it('judges the top 5 by similarity with the model in use only, and asks only uncached pairs', async () => {
+  it('judges the top 8 by similarity (as the batch and the composite experiment do) with the model in use only, and asks only uncached pairs', async () => {
     setVectors();
     // o0's pair is already cached for both models.
     for (const m of ['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017']) state.cache.set(`${m}|${h(anchor.text)}|${h(others[0]!.text)}`, { pFully: 0.5, pPartly: 0.6 });
     const res = await post({ action: 'judge', anchor, others });
     expect(res.status).toBe(200);
     const { results } = await res.json();
-    expect(results.map((r: { ref: string }) => r.ref)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4']);
+    expect(results.map((r: { ref: string }) => r.ref)).toEqual(['o0', 'o1', 'o2', 'o3', 'o4', 'o5', 'o6', 'o7']);
     expect(results[0]).toMatchObject({ pFully: 0.5, pPartly: 0.6 });
     expect(results[1]).toMatchObject({ pFully: 0.8, pPartly: 0.9 });
-    expect(state.asked).toEqual([{ model: 'qwen3.8-27b-fp8', n: 4 }]);
+    expect(state.asked).toEqual([{ model: 'qwen3.8-27b-fp8', n: 7 }]);
     // A second call asks nothing.
     state.asked = [];
     await post({ action: 'judge', anchor, others });
@@ -227,5 +246,112 @@ describe('POST /api/build/match judge', () => {
     expect(msg).not.toMatch(/campus|database/i);
     expect(spy).toHaveBeenCalled();
     spy.mockRestore();
+  });
+});
+
+describe('POST /api/build/match with a cluster', () => {
+  const CLUSTER = '8b1f0c2e-0000-4000-8000-0000000000c1';
+  const side = (course: string, text: string) => ({ course, title: '', snapshotId: null, ref: 'r', text });
+
+  it('decide with clusterId stores source cluster and plan_id = clusterId, reading proposed courses from the cluster', async () => {
+    state.clusters.set(CLUSTER, { state: { proposed: [{ id: 'prop-1', code: 'GC 4990', title: 'Lab' }] } });
+    state.selects = [[{ code: 'GC 1020', title: 'Intro' }]];
+    const res = await post({ action: 'decide', clusterId: CLUSTER, label: 'partly', required: side('prop-1', 'a new required skill'), supplied: side('GC 1020', 'a new supplied skill') });
+    expect(res.status).toBe(200);
+    expect(state.inserted[0]).toMatchObject({ source: 'cluster', planId: CLUSTER, draft: true });
+  });
+
+  it('decide: 400 with both planId and clusterId, 400 with neither, 404 for an unknown cluster', async () => {
+    const base = { action: 'decide', label: 'fully', required: side('GC 1', 'x'), supplied: side('GC 2', 'y') };
+    expect((await post({ ...base, planId: PLAN, clusterId: CLUSTER })).status).toBe(400);
+    expect((await post(base)).status).toBe(400);
+    expect((await post({ ...base, clusterId: CLUSTER })).status).toBe(404);
+    expect(state.inserted).toHaveLength(0);
+  });
+
+  it('judge: 400 with both planId and clusterId; a cluster supplies proposed titles', async () => {
+    const others = [{ ref: 'o0', text: 'other skill 0', course: 'prop-1', title: 'FORGED' }];
+    const anchor = { text: 'lay out a page', course: 'GC 3460', title: 'Print', side: 'required' as const };
+    expect((await post({ action: 'judge', planId: PLAN, clusterId: CLUSTER, anchor, others })).status).toBe(400);
+    state.clusters.set(CLUSTER, { state: { proposed: [{ id: 'prop-1', code: 'GC 4990', title: 'Proposed Lab' }] } });
+    state.vectors = new Map([[h(anchor.text), [1, 0]], [h('other skill 0'), [1, 0]]]);
+    state.selects = [[{ code: 'GC 3460', title: 'Print Real' }]];
+    let seen: { suppliedTitle: string } | undefined;
+    state.judgeImpl = async (pairs) => { seen = pairs[0] as typeof seen; return pairs.map(() => ({ pFully: 0.1, pPartly: 0.2 })); };
+    expect((await post({ action: 'judge', clusterId: CLUSTER, anchor, others })).status).toBe(200);
+    expect(seen?.suppliedTitle).toBe('Proposed Lab');
+  });
+});
+
+describe('POST /api/build/match judge-set', () => {
+  const CLUSTER = '8b1f0c2e-0000-4000-8000-0000000000c1';
+  const target = { key: 'cobj:1', text: 'produce a packaged print job', course: 'GC 4400', title: 'Studio' };
+  const pool = [
+    { ref: 'p1', text: 'compose a booklet', course: 'GC 1020', title: 'Intro' },
+    { ref: 'p2', text: 'prepare press files', course: 'GC 2070', title: 'Prepress' },
+  ];
+  beforeEach(() => { state.clusters.set(CLUSTER, { state: { proposed: [] } }); });
+
+  it('returns the cached verdict without calling the model, with the client refs', async () => {
+    const poolHash = textHash([h(pool[0]!.text), h(pool[1]!.text)].sort().join(','));
+    state.setCache.set(`${h(target.text)}|${poolHash}`, { pAny: 0.9, picked: [h(pool[1]!.text)], kept: [h(pool[1]!.text)], pTogether: 0.66, pCombining: 0.2 });
+    state.selects = [[], []];
+    const res = await post({ action: 'judge-set', clusterId: CLUSTER, target, pool });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ verdict: { pAny: 0.9, kept: ['p2'], pTogether: 0.66, pCombining: 0.2 } });
+    expect(state.setAsked).toBe(0);
+  });
+
+  it('judges on a miss, stores hashes, and returns the client refs', async () => {
+    state.selects = [[{ code: 'GC 4400', title: 'Studio Real' }], [{ code: 'GC 4400', description: 'x'.repeat(500) }]];
+    let seen: { ctx: string; pool: Array<{ ref: string }> } | undefined;
+    state.setImpl = async (t, p) => { seen = { ctx: (t as { context: string }).context, pool: p }; return { pAny: 0.8, picked: [p[0]!.ref], kept: [p[0]!.ref], pTogether: 0.7, pCombining: 0.4 }; };
+    const res = await post({ action: 'judge-set', clusterId: CLUSTER, target, pool });
+    expect(res.status).toBe(200);
+    expect((await res.json()).verdict).toEqual({ pAny: 0.8, kept: ['p1'], pTogether: 0.7, pCombining: 0.4 });
+    expect(seen!.ctx).toBe(`GC 4400 Studio Real (catalog: ${'x'.repeat(350)})`);
+    expect(state.setWrites).toHaveLength(1);
+    expect(state.setWrites[0]).toMatchObject({ targetHash: h(target.text), kept: [h(pool[0]!.text)] });
+  });
+
+  it('uses the newest non-empty catalog description, and passes titles', async () => {
+    const run = async (rows: Array<{ code: string; description: string; year: string }>) => {
+      state.setAsked = 0; state.setCache.clear();
+      state.selects = [[{ code: 'GC 4400', title: 'Studio Real' }], rows];
+      let seen: { ctx: string; title?: string; pt?: string } | undefined;
+      state.setImpl = async (t, p) => { seen = { ctx: (t as { context: string }).context, title: (t as { title?: string }).title, pt: (p[0] as { title?: string }).title }; return { pAny: 0.1, picked: [], kept: [], pTogether: null, pCombining: null }; };
+      await post({ action: 'judge-set', clusterId: CLUSTER, target, pool });
+      return seen!;
+    };
+    const a = await run([{ code: 'GC 4400', description: 'newer', year: '2026-27' }, { code: 'GC 4400', description: 'older', year: '2024-25' }]);
+    expect(a.ctx).toBe('GC 4400 Studio Real (catalog: newer)');
+    expect(a.title).toBe('Studio Real'); expect(a.pt).toBe('Intro');
+    const b = await run([{ code: 'GC 4400', description: '', year: '2026-27' }, { code: 'GC 4400', description: 'older', year: '2024-25' }]);
+    expect(b.ctx).toBe('GC 4400 Studio Real (catalog: older)');
+  });
+
+  it('takes the top 8 by embedding when more are sent', async () => {
+    const many = Array.from({ length: 12 }, (_, i) => ({ ref: `q${i}`, text: `skill ${i}`, course: 'GC 1020', title: 'Intro' }));
+    state.vectors = new Map([[h(target.text), [1, 0]]]);
+    many.forEach((o, i) => state.vectors.set(h(o.text), [1 - i * 0.05, i * 0.05]));
+    let n = 0; state.setImpl = async (_t, p) => { n = p.length; return { pAny: 0.1, picked: [], kept: [], pTogether: null, pCombining: null }; };
+    expect((await post({ action: 'judge-set', clusterId: CLUSTER, target, pool: many })).status).toBe(200);
+    expect(n).toBe(8);
+  });
+
+  it('502 and nothing stored when the model fails', async () => {
+    state.setImpl = async () => { throw new Error('HTTP 503 from http://campus.example/v1'); };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const res = await post({ action: 'judge-set', clusterId: CLUSTER, target, pool });
+    expect(res.status).toBe(502);
+    expect((await res.json()).error).toBe('The campus model did not answer; try again.');
+    expect(state.setWrites).toHaveLength(0);
+    warn.mockRestore();
+  });
+
+  it('400 for a bad cluster id or empty pool; 404 for an unknown cluster', async () => {
+    expect((await post({ action: 'judge-set', clusterId: 'nope', target, pool })).status).toBe(400);
+    expect((await post({ action: 'judge-set', clusterId: CLUSTER, target, pool: [] })).status).toBe(400);
+    expect((await post({ action: 'judge-set', clusterId: '8b1f0c2e-0000-4000-8000-0000000000c9', target, pool })).status).toBe(404);
   });
 });

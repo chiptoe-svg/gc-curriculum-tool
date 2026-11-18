@@ -1,0 +1,61 @@
+/* Course cluster map: the canvas, its cards and arrows, and the cluster objectives strip. Builds on build.css tokens. */
+.cl-main { display: flex; flex-direction: column; }
+.cl-objectives { background: var(--cb-paper); border-bottom: 1px solid var(--cb-rule); padding: 0.7rem 1rem 0.8rem; display: grid; gap: 0.35rem; }
+.cl-objectives h2 { font-size: 1.1rem; }
+.cl-objectives ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
+.cl-obj { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.8rem; border-top: 1px solid var(--cb-rule); padding-top: 0.25rem; }
+.cl-obj__text { flex: 1 1 22rem; }
+.cl-obj__edit { flex: 1 1 22rem; display: flex; gap: 0.5rem; align-items: center; }
+.cl-obj__edit input, .cl-obj__add input { flex: 1; border: 1px solid var(--cb-rule); border-radius: 3px; padding: 0.25rem 0.5rem; }
+.cl-obj__actions { display: flex; gap: 0.7rem; font-size: 0.9375rem; }
+.cl-obj__add { display: flex; gap: 0.5rem; max-width: 52rem; }
+.cl-status { font-size: 0.9375rem; font-weight: 500; }
+.cl-status__why { font-weight: 400; color: var(--cb-ink-soft); }
+.cl-status--met, .cl-status--met_set { color: var(--cb-req-met); }
+.cl-status--partly, .cl-status--parts_met { color: var(--cb-req-partly); }
+.cl-status--not { color: var(--cb-req-not); }
+.cl-status--pending { color: var(--cb-ink-soft); }
+.cl-status--error { color: var(--cb-short); font-weight: 400; }
+
+.cl-canvas-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.cl-help { font-size: 0.9375rem; color: var(--cb-ink-soft); padding: 0.45rem 1rem; max-width: 80ch; }
+.cl-refusal { margin: 0 1rem 0.4rem; padding: 0.35rem 0.6rem; background: #fff3ea; border: 1px solid var(--cb-short); border-radius: 3px; font-size: 0.9375rem; }
+.cl-canvas { position: relative; flex: 1; min-height: 22rem; overflow: auto; touch-action: none; }
+.cl-empty { position: absolute; left: 1rem; top: 1rem; color: var(--cb-ink-soft); }
+
+.cl-arrows { position: absolute; left: 0; top: 0; pointer-events: none; color: var(--cb-ink); overflow: visible; }
+.cl-arrow { pointer-events: auto; cursor: pointer; outline: none; }
+.cl-arrow__hit { stroke: transparent; stroke-width: 14; pointer-events: stroke; }
+.cl-arrow__line { stroke: currentColor; stroke-width: 1.5; }
+.cl-arrow--cluster .cl-arrow__line { stroke-dasharray: 6 4; }
+.cl-arrow:hover, .cl-arrow:focus-visible, .cl-arrow.is-on { color: var(--cb-accent); }
+.cl-arrow:hover .cl-arrow__line, .cl-arrow.is-on .cl-arrow__line { stroke-width: 2.5; }
+.cl-arrow__draft { stroke: var(--cb-accent); stroke-width: 2; stroke-dasharray: 4 3; color: var(--cb-accent); }
+.cl-arrowmenu { position: absolute; z-index: 5; transform: translate(-50%, -50%); display: flex; gap: 0.6rem; align-items: center; background: var(--cb-paper); border: 1px solid var(--cb-ink); border-radius: 3px; padding: 0.3rem 0.6rem; font-size: 0.9375rem; box-shadow: 2px 2px 0 var(--cb-ink); white-space: nowrap; }
+
+.cl-card { position: absolute; z-index: 2; box-sizing: border-box; display: grid; gap: 0.05rem; background: var(--cb-paper); border: 1px solid var(--cb-ink); border-radius: 3px; padding: 0.25rem 1.3rem 0.3rem 0.5rem; cursor: grab; user-select: none; }
+.cl-card:hover { box-shadow: 2px 2px 0 var(--cb-ink); }
+.cl-card.is-selected { box-shadow: 0 0 0 2px var(--cb-accent); }
+.cl-card.is-dragging { cursor: grabbing; opacity: 0.85; z-index: 3; }
+.cl-card--proposed { border-style: dashed; }
+.cl-card__top { display: flex; justify-content: space-between; gap: 0.4rem; align-items: baseline; }
+.cl-card__code { font-family: var(--font-mono-plex), ui-monospace, monospace; font-size: 0.9375rem; font-weight: 500; white-space: nowrap; }
+.cl-card__tag { font-size: 0.75rem; color: var(--cb-amber); }
+.cl-card__title { font-size: 0.875rem; color: var(--cb-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cl-card__counts { font-size: 0.8125rem; color: var(--cb-ink-soft); white-space: nowrap; }
+.cl-card__handle { position: absolute; right: -0.55rem; top: 50%; transform: translateY(-50%); width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 1px solid var(--cb-ink); background: var(--cb-paper); font-size: 0.55rem; line-height: 1; padding: 0; cursor: crosshair; color: var(--cb-accent); }
+.cl-card__handle:hover { background: var(--cb-accent); color: var(--cb-paper); }
+
+/* The course panel (ClusterCourseDrawer): statuses beside objectives and required skills, ratings, overrides. */
+.cl-status__err { color: var(--cb-short); font-weight: 400; }
+.cl-objstatus { grid-column: 1 / -1; font-size: 0.875rem; }
+.cl-obj > .cl-objstatus { flex-basis: 100%; }
+.cl-override { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; margin-left: 0.4rem; }
+.cl-override input { border: 1px solid var(--cb-rule); border-radius: 3px; padding: 0.15rem 0.4rem; min-width: 12rem; }
+.cb-req.cl-req--met, .cb-req.cl-req--met_set { border-left-color: var(--cb-req-met); }
+.cb-req.cl-req--partly, .cb-req.cl-req--parts_met { border-left-color: var(--cb-req-partly); }
+.cb-req.cl-req--not { border-left-color: var(--cb-req-not); }
+.cl-cands { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; font-size: 0.875rem; color: var(--cb-ink-soft); }
+.cl-cand { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.4rem; align-items: baseline; }
+.cl-cand__acts { display: flex; gap: 0.2rem; }
+.cl-drawer__acts .cb-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }

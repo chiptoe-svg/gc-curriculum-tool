@@ -47,3 +47,14 @@ describe('WhatIfList', () => {
     expect(screen.getByText(WHAT_IF_COPY.listNoApproved)).toBeInTheDocument();
   });
 });
+
+describe('WhatIfList: skills-only what-ifs', () => {
+  it('explore list labels a skills-only what-if', () => {
+    render(<WhatIfList courseCode="GC 3460" slug="s" canStart defaultName="Pat Faculty"
+      whatIfs={[item({ title: 'GC 3460 as edited on Press map', summary: null, pageCreatedAt: null, skillsOnly: true })]} />);
+    expect(screen.getByText('Skills only (from a cluster)')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'GC 3460 as edited on Press map' }))
+      .toHaveAttribute('href', '/explore/GC%203460/what-ifs/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa?slug=s');
+    expect(screen.queryByText(WHAT_IF_COPY.listUnfinished)).toBeNull();
+  });
+});

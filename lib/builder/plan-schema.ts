@@ -8,7 +8,7 @@ const text = (max: number) => z.string().max(max);
 const level = z.number().int().min(0).max(5).nullable();
 const depth = z.object({ k: level, u: level, d: level });
 const act = z.union([z.literal(1), z.literal(2), z.literal(3)]);
-const link = z.object({ from: id, to: id, kind: z.enum(['prereq', 'coreq']).optional() });
+export const linkSchema = z.object({ from: id, to: id, kind: z.enum(['prereq', 'coreq']).optional() });
 const bloom = z.enum(['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create']);
 const editBase = { id, by: text(120), at: text(40), origin: z.enum(['syllabus', 'faculty']).optional() };
 const action = z.enum(['add', 'edit', 'remove']);
@@ -16,7 +16,7 @@ const objectiveEdit = z.object({ ...editBase, action, target: text(600).nullable
 const skillEdit = z.object({
   ...editBase, action, target: id.nullable(), statement: text(600).nullable(), levels: depth.nullable(), conditionMissing: z.boolean().optional(),
 });
-const courseEdits = z.object({
+export const courseEditsSchema = z.object({
   objectives: z.array(objectiveEdit).max(50), required: z.array(skillEdit).max(50), developed: z.array(skillEdit).max(50),
   source: z.object({ kind: z.literal('syllabus'), draftId: id, fileName: text(200), at: text(40) }).optional(),
 });
@@ -24,6 +24,14 @@ const courseEdits = z.object({
 const coord = z.number().finite().min(0).max(20000);
 const slot = z.union([z.literal(0), z.literal(1), z.literal(2)]);
 const height = z.number().finite().min(80).max(6000).nullable();
+
+export const proposedSchema = z.array(z.object({
+  id, source: z.enum(['new', 'catalog']), code: text(40), credits: text(20).nullable(), title: text(160),
+  description: text(4000), objectives: z.array(text(500)).max(40),
+  depths: z.array(depth.extend({ competencyId: id })).max(100),
+})).max(60);
+export const courseEditsRecordSchema = z.record(id, courseEditsSchema).refine(r => Object.keys(r).length <= 200);
+export const versionsSchema = z.record(id, id);
 
 export const planStateSchema = z.object({
   goal: z.object({
@@ -49,15 +57,11 @@ export const planStateSchema = z.object({
     genEd: text(80).nullable(), notes: z.array(text(2000)).max(10),
   })).max(60).optional(),
   branches: z.array(z.object({ id, name: text(60), targetIds: z.array(id).max(20) })).max(12),
-  links: z.array(link).max(300),
-  unlinked: z.array(link).max(300),
-  proposed: z.array(z.object({
-    id, source: z.enum(['new', 'catalog']), code: text(40), credits: text(20).nullable(), title: text(160),
-    description: text(4000), objectives: z.array(text(500)).max(40),
-    depths: z.array(depth.extend({ competencyId: id })).max(100),
-  })).max(60),
-  courseEdits: z.record(id, courseEdits).refine(r => Object.keys(r).length <= 200).optional(),
-  versions: z.record(id, id),
+  links: z.array(linkSchema).max(300),
+  unlinked: z.array(linkSchema).max(300),
+  proposed: proposedSchema,
+  courseEdits: courseEditsRecordSchema.optional(),
+  versions: versionsSchema,
 });
 
 export const NAME_MAX = 120;

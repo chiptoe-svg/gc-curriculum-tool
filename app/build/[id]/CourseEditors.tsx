@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { BLOOM, proposeBloom, type BloomProcess } from '@/lib/builder/bloom';
 import type { EffectiveCourse } from '@/lib/builder/edits';
 import { editsOf, removeObjective, removeSkill, saveObjective, saveSkill, withEdits } from '@/lib/builder/edit-ops';
-import type { CourseEdits, Depth, EditBase, Link, PlanState } from '@/lib/builder/types';
+import type { CourseEdits, Depth, EditBase, Link, MapCore } from '@/lib/builder/types';
 import type { ReqResult } from '@/lib/builder/threads';
 import type { Threads, Update } from './Builder';
 import { SkillForm, statusWord } from './RequiredSkillsList';
@@ -18,7 +18,7 @@ type Stamp = () => EditBase;
 const date = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 /** Edit operations on one course, each stamped with who and when. */
-export function courseEditOps(courseRef: string, update: Update, stamp: Stamp) {
+export function courseEditOps<S extends MapCore>(courseRef: string, update: Update<S>, stamp: Stamp) {
   const on = (fn: (e: CourseEdits) => CourseEdits) => update(p => withEdits(p, courseRef, fn));
   return {
     saveRequired: (item: { ref: string; statement: string; draft: boolean } | null, statement: string, need: Depth) =>
@@ -34,9 +34,10 @@ export function courseEditOps(courseRef: string, update: Update, stamp: Stamp) {
     undo: (kind: keyof CourseEdits, id: string) => on(e => ({ ...e, [kind]: (e[kind] as Array<{ id: string }>).filter(x => x.id !== id) })),
   };
 }
-export type EditOps = ReturnType<typeof courseEditOps>;
+export type EditOps = ReturnType<typeof courseEditOps<MapCore>>;
 
-export function ObjectivesEditor(props: { eff: EffectiveCourse; ops: EditOps }) {
+/** `after`: shown under each objective (the cluster map puts its status and override there); /build passes none. */
+export function ObjectivesEditor(props: { eff: EffectiveCourse; ops: EditOps; after?: (o: EffectiveCourse['objectives'][number]) => React.ReactNode }) {
   const [editing, setEditing] = useState<number | 'new' | null>(null);
   const items = props.eff.objectives;
   return (
@@ -54,6 +55,7 @@ export function ObjectivesEditor(props: { eff: EffectiveCourse; ops: EditOps }) 
                   <button type="button" className="cb-linkbtn" onClick={() => setEditing(i)}>Edit</button>{' '}
                   <button type="button" className="cb-linkbtn" onClick={() => props.ops.removeObjective(o)}>Remove</button>
                 </span>
+                {props.after?.(o)}
               </>
             )}
           </li>
@@ -91,7 +93,10 @@ function ObjectiveForm(props: { initial?: { text: string; bloom: BloomProcess | 
 }
 
 /** A draft skill's judging state: "Matching…" while it runs, the error and Try again when it failed. */
-export function JudgeStatus(props: { threads: Threads; judgeKey: string }) {
+/** What judging shows for one skill: its state, and Try again. */
+export type JudgeView = Pick<Threads, 'judging' | 'retryJudge'>;
+
+export function JudgeStatus(props: { threads: JudgeView; judgeKey: string }) {
   const state = props.threads.judging[props.judgeKey];
   if (!state) return null;
   if (state === 'matching') return <div className="cb-req__meta" role="status">Matching…</div>;
@@ -99,7 +104,7 @@ export function JudgeStatus(props: { threads: Threads; judgeKey: string }) {
 }
 
 /** `conditionMissing`: drafted statements whose syllabus states no condition for Do, so their Do goal was held at 2. */
-export function DevelopedSkillsEditor(props: { eff: EffectiveCourse; ops: EditOps; courseRef: string; threads: Threads; conditionMissing?: Set<string> }) {
+export function DevelopedSkillsEditor(props: { eff: EffectiveCourse; ops: EditOps; courseRef: string; threads: JudgeView; conditionMissing?: Set<string> }) {
   const [editing, setEditing] = useState<string | 'new' | null>(null);
   const items = props.eff.developed;
   return (
@@ -136,8 +141,8 @@ const KIND_WORD = { objectives: 'Objective', required: 'Required skill', develop
 const ACTION_WORD = { add: 'added', edit: 'changed', remove: 'removed' } as const;
 
 /** Every map change on this course, with who and when; each can be undone. Original wording comes from `original`. */
-export function ChangesList(props: {
-  courseRef: string; plan: PlanState; ops: EditOps; update: Update; label: (ref: string) => string;
+export function ChangesList<S extends MapCore>(props: {
+  courseRef: string; plan: MapCore; ops: EditOps; update: Update<S>; label: (ref: string) => string;
   original: { required: Map<string, string>; developed: Map<string, string> };
 }) {
   const { courseRef, plan } = props;

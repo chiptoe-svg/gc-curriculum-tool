@@ -5,6 +5,7 @@ import { getRequestGrant } from '@/lib/auth/viewer';
 import { getLatestSnapshotByCourse, getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { getWhatIf, listWhatIfAttachments } from '@/lib/db/what-if-queries';
 import { canReadWhatIf, canManageWhatIf } from '@/lib/what-if/ownership';
+import { SkillsOnlyPage } from './SkillsOnlyPage';
 import { WhatIfPageLayout, type WhatIfBase } from './WhatIfPageLayout';
 
 export const dynamic = 'force-dynamic';
@@ -41,6 +42,15 @@ export default async function WhatIfPage({ params, searchParams }: Props) {
   // Not found rather than forbidden when the caller cannot read it: existence is not revealed.
   if (!whatIf || whatIf.courseCode !== code || !canReadWhatIf(grant, whatIf)) notFound();
   const canManage = canManageWhatIf(grant, whatIf);
+
+  if (whatIf.skills && !whatIf.profile) {
+    return (
+      <SkillsOnlyPage
+        view={{ id, courseCode: whatIf.courseCode, title: whatIf.title, authorName: whatIf.authorName, skills: whatIf.skills }}
+        canManage={canManage} slug={slug}
+      />
+    );
+  }
 
   const { estimate, profile, knockOn, prose, pageCreatedAt } = whatIf;
   if (!pageCreatedAt || !estimate || !profile || !knockOn || !prose) {

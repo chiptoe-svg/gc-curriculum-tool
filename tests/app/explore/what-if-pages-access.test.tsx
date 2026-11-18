@@ -57,6 +57,40 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllEnvs(); });
 
+describe('a skills-only what-if page', () => {
+  const skillsOnly = {
+    id: ID, courseCode: 'GC 3460', baseSnapshotId: 'snap-1', ownerGrantId: 'g-owner', ownerKind: 'personal',
+    authorName: 'Pat', title: 'GC 3460 as edited on Press map', pageCreatedAt: null,
+    estimate: null, profile: null, knockOn: null, prose: null,
+    skills: {
+      objectives: ['Plan a press run'],
+      developed: [{ statement: 'Mix ink to a spot color', k: 3, u: 2, d: null }],
+      required: [{ statement: 'Read a job ticket', need: { k: 2, u: null, d: 1 } }],
+      fromCluster: 'c1',
+    },
+  };
+
+  it('explore page renders with null estimate and profile', async () => {
+    grant = other; // anyone signed in can read it
+    row = { ...skillsOnly };
+    render(await WhatIfPage(props()));
+    expect(screen.getByText('GC 3460 as edited on Press map')).toBeInTheDocument();
+    expect(screen.getByText('Skills only (from a cluster)')).toBeInTheDocument();
+    expect(screen.getByText('Plan a press run')).toBeInTheDocument();
+    expect(screen.getByText(/Mix ink to a spot color/)).toBeInTheDocument();
+    expect(screen.getByText(/Read a job ticket/)).toBeInTheDocument();
+    expect(screen.queryByText('Ratings that would move')).toBeNull();
+  });
+});
+
+describe('the talk page for a skills-only what-if', () => {
+  it('redirects to the what-if page', async () => {
+    row = { ...finished, pageCreatedAt: null, estimate: null, profile: null, knockOn: null, prose: null,
+      skills: { objectives: [], developed: [], required: [], fromCluster: 'c1' } };
+    await expect(WhatIfTalkPage(props())).rejects.toThrow(/redirect \/explore\/GC%203460\/what-ifs\/.*slug=/);
+  });
+});
+
 describe('the what-if page', () => {
   it('is readable by someone who cannot manage it once it has a page, without the actions', async () => {
     grant = other;

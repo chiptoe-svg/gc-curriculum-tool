@@ -21,7 +21,7 @@ export function effectiveCourse(
   lc: LibraryCourse | ProposedCourse, version: LibraryVersion | null, edits: CourseEdits | undefined,
 ): EffectiveCourse {
   // Objectives
-  let objectives: EffectiveCourse['objectives'] = lc.objectives.map(text => ({ text, bloom: proposeBloom(text), draft: false }));
+  let objectives: EffectiveCourse['objectives'] = (version?.objectives ?? lc.objectives).map(text => ({ text, bloom: proposeBloom(text), draft: false }));
   for (const e of edits?.objectives ?? []) {
     if (e.action === 'remove') objectives = objectives.filter(o => o.text !== e.target);
     else if (e.action === 'edit') {

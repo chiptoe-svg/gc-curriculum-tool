@@ -57,7 +57,7 @@ describe('readCourse', () => {
   it('reads a chosen what-if as proposed under either lens', () => {
     const w = course('GC 4', {
       versions: [version('s', [['color', 2, 2, 2]])],
-      whatIfs: [{ id: 'w1', title: 'Add a press run', author: 'A', depths: [{ competencyId: 'color', k: 4, u: 4, d: 4 }], notComputed: [] }],
+      whatIfs: [{ id: 'w1', title: 'Add a press run', author: 'A', depths: [{ competencyId: 'color', k: 4, u: 4, d: 4 }], notComputed: [], skills: null, baseSnapshotId: null }],
     });
     for (const lens of ['discovered', 'stated'] as const) {
       expect(readCourse(w, { lens, fill: false, versions: { 'GC 4': 'whatif:w1' } })).toMatchObject({ basis: 'proposed', depths: [{ d: 4 }] });

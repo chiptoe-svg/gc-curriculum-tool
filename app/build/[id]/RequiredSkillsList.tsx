@@ -13,6 +13,9 @@ import { DepthInputs } from './controls';
 import { JudgeStatus } from './CourseEditors';
 import { dimName, fmtDepth } from './ui';
 
+/** What the list reads from the map's threads (not the edit stamp). */
+export type ReqThreads = Pick<Threads, 'byCourse' | 'decisions' | 'judging' | 'unasked' | 'retryJudge' | 'decide'>;
+
 const STATUS_WORD: Record<ReqStatus, string> = { met: 'Met', met_draft: 'Met*', partly: 'Partly met', not: 'Not met' };
 const PICK_MAX = 5;
 const date = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -23,7 +26,7 @@ export function statusWord(r: ReqResult): string {
 }
 
 export function RequiredSkillsList(props: {
-  courseRef: string; threads: Threads;
+  courseRef: string; threads: ReqThreads;
   onSave: (item: ReqResult['required'] | null, statement: string, need: Depth) => void;
   onRemove: (item: ReqResult['required']) => void;
 }) {
@@ -45,7 +48,7 @@ export function RequiredSkillsList(props: {
 }
 
 function ReqRow(props: {
-  r: ReqResult; courseRef: string; threads: Threads;
+  r: ReqResult; courseRef: string; threads: ReqThreads;
   onSave: (item: ReqResult['required'] | null, statement: string, need: Depth) => void;
   onRemove: (item: ReqResult['required']) => void;
 }) {

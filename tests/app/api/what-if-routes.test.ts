@@ -121,7 +121,7 @@ describe('GET what-ifs (list)', () => {
     expect(whatIfs[0]).toMatchObject({ hasPage: true, mine: false });
     expect(whatIfs[1]).toMatchObject({ hasPage: false, mine: true });
     expect(Object.keys(whatIfs[0]).sort()).toEqual(
-      ['authorName', 'createdAt', 'hasPage', 'id', 'mine', 'pageCreatedAt', 'summary', 'title'],
+      ['authorName', 'createdAt', 'hasPage', 'id', 'mine', 'pageCreatedAt', 'skillsOnly', 'summary', 'title'],
     );
   });
   it('an admin does not see others\' unfinished what-ifs', async () => {

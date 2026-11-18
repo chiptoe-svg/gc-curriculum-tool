@@ -9,7 +9,7 @@ import { requiredByCourse, type DraftJudgments, type ReqResult } from '@/lib/bui
 import { genEdCheck, type GenEdCategory } from '@/lib/builder/degree';
 import { problemSolvingByAct } from '@/lib/builder/problem-solving';
 import { layoutLanes, moveCard } from '@/lib/builder/layout';
-import type { Act, Candidate, EditBase, Library, MatchDecision, PlanState } from '@/lib/builder/types';
+import type { Act, Candidate, EditBase, Library, MapCore, MatchDecision, PlanState } from '@/lib/builder/types';
 import type { CatalogHit } from '@/lib/builder/library';
 import { CurriculumMap, type DropTarget, type Selection } from './Map';
 import { LibraryPanel } from './LibraryPanel';
@@ -22,11 +22,13 @@ import { RequirementDrawer } from './RequirementDrawer';
 import { ProblemSolvingDrawer } from './ProblemSolvingDrawer';
 import { SyllabusImport, type SyllabusImported } from './SyllabusImport';
 import { newId } from './ui';
+import { useThreadJudging, type JudgeJob, type JudgeOther } from '../shared/useThreadJudging';
+import { useAutosave } from '../shared/useAutosave';
 
-type SaveState = 'saved' | 'dirty' | 'saving' | 'conflict' | 'error' | 'refused';
 const MAX_PROPOSED = 60; // the server's limit (lib/builder/plan-schema.ts)
 const ZOOMS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5];
-export type Update = (fn: (p: PlanState) => PlanState) => void;
+/** A change to the map's state. Shared pieces take any map (`S` a plan or a cluster); the plan map's own drawers use the default. */
+export type Update<S extends MapCore = PlanState> = (fn: (s: S) => S) => void;
 
 /** Required-skill threads for the course panel: statuses, decisions, draft judging, and the decide call. */
 export interface Threads {
@@ -43,11 +45,25 @@ export interface Threads {
   stamp: () => EditBase;
 }
 
-/** `sig` decides whether a job was already asked: the key, plus (for a captured required skill) the courses that could supply it. */
-type JudgeJob = { key: string; sig: string; courseRef: string; side: 'required' | 'supplied'; ref: string; text: string };
-const JUDGE_OTHERS_MAX = 400; // the server's limit (app/api/build/match/route.ts)
-const CAMPUS_DOWN = 'The campus model did not answer; try again.';
-const SERVER_DOWN = 'Could not reach the server; try again.';
+type MapCourse = { placed: PlacedCourse; eff: EffectiveCourse };
+
+/** The skills a judge job is compared with on a plan map: developed skills of courses that supply its course (a required skill), or required skills of courses its course supplies (a developed one). */
+export function planJudgeOthers(effective: Map<string, MapCourse>, supplies: (sup: PlacedCourse, req: PlacedCourse) => boolean, job: JudgeJob): JudgeOther[] {
+  const me = effective.get(job.courseRef);
+  const others: JudgeOther[] = [];
+  if (me) {
+    for (const { placed, eff } of effective.values()) {
+      if (job.side === 'required' && supplies(placed, me.placed)) for (const s of eff.developed) others.push({ ref: s.skillRef, text: s.statement, course: placed.code, title: placed.title });
+      if (job.side === 'supplied' && supplies(me.placed, placed)) for (const r of eff.required) others.push({ ref: r.ref, text: r.statement, course: placed.code, title: placed.title });
+    }
+  }
+  return others;
+}
+/** A judge job's own course on a plan map, or null when it is no longer there. */
+export function planJudgeAnchor(effective: Map<string, MapCourse>, job: JudgeJob): { course: string; title: string } | null {
+  const me = effective.get(job.courseRef);
+  return me ? { course: me.placed.code, title: me.placed.title } : null;
+}
 
 /** This viewer's own view settings (zoom, library shown). Kept in this browser only; never part of the shared plan. */
 type View = { zoom: number; library: boolean; arrows: boolean; courseWidth: number | null };
@@ -71,9 +87,15 @@ export function Builder(props: {
   genEd: { year: string; categories: GenEdCategory[] };
 }) {
   const { library } = props;
-  const [plan, setPlan] = useState(props.initialState);
-  const [name, setName] = useState(props.initialName);
-  const [undo, setUndo] = useState<PlanState[]>([]);
+  const author = useCallback(() => {
+    if (props.knownName) return props.knownName;
+    try { return localStorage.getItem('cb-author') ?? ''; } catch { return ''; }
+  }, [props.knownName]);
+  const saving = useAutosave<PlanState>({
+    url: `/api/build/plans/${props.planId}`, initialState: props.initialState, initialName: props.initialName,
+    initialVersion: props.initialVersion, author, noun: 'plan',
+  });
+  const { state: plan, name, update, stepBack, save, notice, persist, overwrite } = saving;
   const [selection, setSelection] = useState<Selection>(null);
   const [panel, setPanel] = useState<'targets' | 'checks' | { act: Act } | { ps: Act } | null>(
     props.initialState.goal.targetIds.length === 0 && !props.initialState.goal.program ? 'targets' : null);
@@ -93,107 +115,6 @@ export function Builder(props: {
     const j = Math.min(ZOOMS.length - 1, Math.max(0, (i < 0 ? ZOOMS.indexOf(1) : i) + dir));
     changeView({ zoom: ZOOMS[j]! });
   };
-  const [save, setSaveState] = useState<SaveState>('saved');
-  const saveRef = useRef<SaveState>('saved');
-  const setSave = useCallback((s: SaveState) => { saveRef.current = s; setSaveState(s); }, []);
-  const [notice, setNotice] = useState('');
-  const version = useRef(props.initialVersion);
-  /** The version someone else saved, learned from a conflict. Used only if the person chooses to overwrite. */
-  const theirs = useRef<number | null>(null);
-  const inFlight = useRef(false);
-  const unsaved = useRef(false);
-  const latest = useRef({ plan, name });
-  latest.current = { plan, name };
-
-  /** An edit happened. It never clears a conflict or a refusal: those stay until the person chooses what to do. */
-  const touch = useCallback(() => {
-    unsaved.current = true;
-    if (saveRef.current !== 'conflict' && saveRef.current !== 'refused') setSave('dirty');
-  }, [setSave]);
-
-  const update: Update = useCallback(fn => {
-    const prev = latest.current.plan;
-    const next = fn(prev);
-    if (next === prev) return;
-    latest.current = { ...latest.current, plan: next }; // so two updates in one event build on each other
-    setUndo(u => [...u.slice(-40), prev]);
-    setPlan(next);
-    touch();
-  }, [touch]);
-
-  const author = useCallback(() => {
-    if (props.knownName) return props.knownName;
-    try { return localStorage.getItem('cb-author') ?? ''; } catch { return ''; }
-  }, [props.knownName]);
-
-  const putBody = useCallback(() => JSON.stringify({
-    name: latest.current.name, state: latest.current.plan, version: version.current, authorName: author(),
-  }), [author]);
-
-  // One save at a time. A conflict or a refusal stops saving until the person chooses; nothing here overwrites
-  // someone else's save unless overwrite() was called.
-  const persist = useCallback(async () => {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    setSave('saving');
-    const sent = latest.current;
-    try {
-      const res = await fetch(`/api/build/plans/${props.planId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: putBody() });
-      const body = await res.json().catch(() => ({}));
-      if (res.status === 409) {
-        theirs.current = typeof body.version === 'number' ? body.version : null;
-        setNotice(body.updatedBy ?? 'Someone else');
-        setSave('conflict');
-        return;
-      }
-      if (res.status === 400 || res.status === 401 || res.status === 403 || res.status === 404) {
-        setNotice(res.status === 404 ? 'This plan has been deleted, so it can no longer be saved.'
-          : res.status === 400 ? `The server did not accept the plan: ${body.error ?? 'it could not be read'} A blank name or a very large plan can cause this.`
-          : 'This sign-in cannot save plans.');
-        setSave('refused');
-        return;
-      }
-      if (!res.ok) throw new Error(body.error ?? 'save failed');
-      version.current = body.version;
-      const clean = latest.current.plan === sent.plan && latest.current.name === sent.name;
-      unsaved.current = !clean;
-      setSave(clean ? 'saved' : 'dirty');
-    } catch {
-      setSave('error');
-    } finally {
-      inFlight.current = false;
-      // Edits made while the save was in flight: the state is already 'dirty', so the effect below will not re-run.
-      if (unsaved.current && saveRef.current === 'dirty') setTimeout(() => { void persist(); }, 600);
-    }
-  }, [props.planId, putBody, setSave]);
-
-  /** The person chose to keep their version: save over the one someone else saved. */
-  const overwrite = useCallback(() => {
-    if (theirs.current != null) version.current = theirs.current;
-    theirs.current = null;
-    void persist();
-  }, [persist]);
-
-  useEffect(() => {
-    if (save !== 'dirty') return;
-    const t = setTimeout(() => { void persist(); }, 1200);
-    return () => clearTimeout(t);
-  }, [save, plan, name, persist]);
-
-  // Leaving with unsaved edits: send them on the way out, and warn when they cannot be sent.
-  useEffect(() => {
-    const stuck = () => saveRef.current === 'conflict' || saveRef.current === 'refused' || saveRef.current === 'error';
-    const flush = () => {
-      if (!unsaved.current || stuck() || inFlight.current) return;
-      unsaved.current = false;
-      void fetch(`/api/build/plans/${props.planId}`, { method: 'PUT', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: putBody() });
-    };
-    const warn = (e: BeforeUnloadEvent) => { if (unsaved.current && (stuck() || inFlight.current)) e.preventDefault(); };
-    window.addEventListener('pagehide', flush);
-    window.addEventListener('beforeunload', warn);
-    return () => { window.removeEventListener('pagehide', flush); window.removeEventListener('beforeunload', warn); flush(); };
-  }, [props.planId, putBody]);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName);
@@ -203,15 +124,6 @@ export function Builder(props: {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
-
-  function stepBack() {
-    const prev = undo[undo.length - 1];
-    if (!prev) return;
-    latest.current = { ...latest.current, plan: prev };
-    setUndo(undo.slice(0, -1));
-    setPlan(prev);
-    touch();
-  }
 
   // A deleted branch cannot stay selected in the view.
   const shown = view === 'all' || view === 'trunk' || plan.branches.some(b => b.id === view) ? view : 'all';
@@ -230,7 +142,6 @@ export function Builder(props: {
   const [libDecisions, setLibDecisions] = useState(library.decisions);
   const [planDecisions, setPlanDecisions] = useState(props.planDecisions);
   const [drafts, setDrafts] = useState<DraftJudgments>({});
-  const [judging, setJudging] = useState<Record<string, string>>({});
   const threadLib = useMemo(() => ({ ...library, decisions: libDecisions }), [library, libDecisions]);
   const byCourse = useMemo(() => requiredByCourse(threadLib, plan, allCourses, drafts, planDecisions), [threadLib, plan, allCourses, drafts, planDecisions]);
   const changes = useMemo(() => Object.fromEntries(allCourses.map(c => [c.ref, changeCount(plan.courseEdits?.[c.ref], plan.links, plan.unlinked, c.ref)])), [allCourses, plan.courseEdits, plan.links, plan.unlinked]);
@@ -279,66 +190,10 @@ export function Builder(props: {
     }
     return jobs;
   }, [effective, byCourse, supplies]); // edges change only with the plan, which changes `effective`
-  const requested = useRef(new Set<string>());
-  const queue = useRef<JudgeJob[]>([]);
-  const pumping = useRef(false);
-  const pump = useCallback(async () => {
-    if (pumping.current) return;
-    pumping.current = true;
-    try {
-      for (let job = queue.current.shift(); job; job = queue.current.shift()) {
-        const me = effRef.current.get(job.courseRef);
-        const others: Array<{ ref: string; text: string; course: string; title: string }> = [];
-        if (me) {
-          for (const { placed, eff } of effRef.current.values()) {
-            if (job.side === 'required' && supplies(placed, me.placed)) for (const s of eff.developed) others.push({ ref: s.skillRef, text: s.statement, course: placed.code, title: placed.title });
-            if (job.side === 'supplied' && supplies(me.placed, placed)) for (const r of eff.required) others.push({ ref: r.ref, text: r.statement, course: placed.code, title: placed.title });
-          }
-        }
-        const list = others.filter(o => o.text.trim()).slice(0, JUDGE_OTHERS_MAX);
-        if (!me || !list.length) { setJudging(j => { const n = { ...j }; delete n[job.key]; return n; }); continue; }
-        let error: string | null = null;
-        try {
-          const res = await fetch('/api/build/match', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'judge', planId: props.planId, anchor: { text: job.text, course: me.placed.code.slice(0, 40), title: me.placed.title.slice(0, 200), side: job.side }, others: list.map(o => ({ ...o, course: o.course.slice(0, 40), title: o.title.slice(0, 200) })) }),
-          });
-          const body = await res.json().catch(() => null);
-          if (res.status === 502) error = CAMPUS_DOWN;
-          else if (!res.ok) error = typeof body?.error === 'string' ? body.error : 'Matching failed; try again.';
-          else if (!Array.isArray(body?.results)) error = SERVER_DOWN;
-          else {
-            const found = body.results as Array<{ ref: string; pFully: number; pPartly: number }>;
-            const j = job;
-            setDrafts(d => {
-              const n = { ...d };
-              for (const r of found) n[j.side === 'required' ? `${j.ref}|${r.ref}` : `${r.ref}|${j.ref}`] = { pFully: r.pFully, pPartly: r.pPartly };
-              return n;
-            });
-          }
-        } catch { error = SERVER_DOWN; }
-        const k = job.key;
-        setJudging(j => { const n = { ...j }; if (error) n[k] = error; else delete n[k]; return n; });
-      }
-    } finally { pumping.current = false; }
-  }, [supplies, props.planId]);
-  const enqueue = useCallback((jobs: JudgeJob[]) => {
-    for (const j of jobs) requested.current.add(j.sig);
-    queue.current.push(...jobs);
-    setJudging(s => ({ ...s, ...Object.fromEntries(jobs.map(j => [j.key, 'matching'])) }));
-    void pump();
-  }, [pump]);
-  useEffect(() => {
-    const fresh = judgeJobs.filter(j => !requested.current.has(j.sig));
-    if (fresh.length) enqueue(fresh);
-  }, [judgeJobs, enqueue]);
-  // Read during render: the effect above sends these right after this render, which then re-renders through `judging`.
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- `judging` changes when a job is sent: re-read the ref then
-  const unasked = useMemo(() => new Set(judgeJobs.filter(j => !requested.current.has(j.sig)).map(j => j.key)), [judgeJobs, judging]);
-  const retryJudge = useCallback((key: string) => {
-    const job = judgeJobs.find(j => j.key === key);
-    if (job) enqueue([job]);
-  }, [judgeJobs, enqueue]);
+  // Read when a job is sent, from the map as it is then.
+  const othersFor = useCallback((job: JudgeJob) => planJudgeOthers(effRef.current, supplies, job), [supplies]);
+  const anchorOf = useCallback((job: JudgeJob) => planJudgeAnchor(effRef.current, job), []);
+  const { judging, unasked, retryJudge } = useThreadJudging({ jobs: judgeJobs, othersFor, anchorOf, owner: { planId: props.planId }, setDrafts });
 
   const who = useCallback(() => author().trim() || 'Department login', [author]);
   const stamp = useCallback((): EditBase => ({ id: newId('edit'), by: who().slice(0, 120), at: new Date().toISOString() }), [who]);
@@ -482,7 +337,7 @@ export function Builder(props: {
       <header className="cb-bar">
         <Link href={`/build${q}`} className="cb-back">Plans</Link>
         <input className="cb-bar__name" value={name} maxLength={120} aria-label="Plan name"
-          onChange={e => { setName(e.target.value); latest.current = { ...latest.current, name: e.target.value }; touch(); }} />
+          onChange={e => saving.rename(e.target.value)} />
 
         <div className="cb-seg" role="group" aria-label="Which reading of each course the map is built from">
           <button type="button" aria-pressed={plan.lens === 'stated'} onClick={() => update(p => ({ ...p, lens: 'stated' }))}
@@ -495,8 +350,8 @@ export function Builder(props: {
           Fill gaps
         </label>
 
-        <label className="cb-select" title="How much a skill nobody revisits is assumed to lose per act, spread evenly over the act's three terms (each counted as a semester), from the term the course sits in. It affects skill threads only, not competency levels or targets. One level is the department's working assumption, not a measurement.">
-          Fade (threads): levels a skill loses per act when nothing reinforces it
+        <label className="cb-select" title="How much a skill nobody revisits is assumed to lose per act, spread evenly over the act's three terms (each counted as a semester), from the term the course sits in. It affects skill strings only, not competency levels or targets. One level is the department's working assumption, not a measurement.">
+          Fade (strings): levels a skill loses per act when nothing reinforces it
           <select value={String(plan.fade)} onChange={e => update(p => ({ ...p, fade: Number(e.target.value) }))}>
             <option value="0">not counted</option>
             <option value="0.5">half a level per act</option>
@@ -530,7 +385,7 @@ export function Builder(props: {
         </button>
         <a className="cb-btn" href={`/api/build/plans/${props.planId}/changes.md`} download
           title="Download every change made on this map (objectives, required and developed skills, prerequisites, match decisions) as a Markdown file. Save first so the file is current.">Export changes</a>
-        <button type="button" className="cb-btn" onClick={stepBack} disabled={undo.length === 0} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
+        <button type="button" className="cb-btn" onClick={stepBack} disabled={!saving.canUndo} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
         <button type="button" className="cb-btn" aria-pressed={!libraryOpen} onClick={() => changeView({ library: !libraryOpen })}
           title="Hide or show the course library, to give the map the full width">{libraryOpen ? 'Hide library' : 'Show library'}</button>
         <label className="cb-check" title="Show or hide the prerequisite arrows between courses. Order problems are still listed under Checks and marked on the course.">
@@ -550,7 +405,7 @@ export function Builder(props: {
       {save === 'conflict' && (
         <div className="cb-banner" role="alert">
           {notice} saved this plan after you opened it. Your changes are on this screen but have not been saved, and nothing more will be saved until you choose.
-          <button type="button" onClick={() => { unsaved.current = false; window.location.reload(); }}>Load their version and drop mine</button>
+          <button type="button" onClick={() => { saving.discard(); window.location.reload(); }}>Load their version and drop mine</button>
           <button type="button" onClick={overwrite}>Keep mine and overwrite theirs</button>
         </div>
       )}
@@ -575,7 +430,7 @@ export function Builder(props: {
           onImportSyllabus={() => setImporting(true)}
         />
         {importing && (
-          <SyllabusImport planId={props.planId} library={library} plan={plan} placed={placedRefs} author={who} maxProposed={MAX_PROPOSED}
+          <SyllabusImport endpoint={`/api/build/plans/${props.planId}/syllabus`} library={library} plan={plan} placed={placedRefs} author={who} maxProposed={MAX_PROPOSED}
             onClose={() => setImporting(false)} onImported={imported} />
         )}
         <main className="cb-main">

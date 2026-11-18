@@ -6,7 +6,7 @@
  * them into the plan, which then saves and judges the drafted skills like any other draft.
  */
 import { useState } from 'react';
-import type { Act, CourseEdits, Library, Link, PlanState, ProposedCourse } from '@/lib/builder/types';
+import type { Act, CourseEdits, Library, Link, MapCore, ProposedCourse } from '@/lib/builder/types';
 import { newCourseConflict } from '@/lib/builder/syllabus-codes';
 import { newId } from './ui';
 
@@ -22,9 +22,12 @@ export interface SyllabusImported {
 const MIN = 300; // the server's minimum (lib/builder/syllabus-draft.ts)
 
 export function SyllabusImport(props: {
-  planId: string; library: Library; plan: PlanState; placed: Set<string>; author: () => string;
+  /** Where the syllabus is posted: the plan's or the cluster's import route. */
+  endpoint: string; library: Library; plan: MapCore; placed: Set<string>; author: () => string;
   /** How many new or catalog-only courses a plan can hold (the server's limit). */
   maxProposed: number;
+  /** What the map is called in messages, and whether it has acts to place a course in. Defaults: a plan, with acts. */
+  noun?: 'plan' | 'cluster'; acts?: boolean;
   onClose: () => void; onImported: (r: SyllabusImported) => void;
 }) {
   const uncaptured = props.library.courses.filter(c => c.versions.length === 0);
@@ -49,7 +52,8 @@ export function SyllabusImport(props: {
     e.preventDefault();
     if (!ready || busy) return;
     if (choice === 'new' && props.plan.proposed.length >= props.maxProposed) {
-      setError(`This plan already holds ${props.maxProposed} new or catalog-only courses. Remove one, or import into a course already on the plan.`);
+      const noun = props.noun ?? 'plan';
+      setError(`This ${noun} already holds ${props.maxProposed} new or catalog-only courses. Remove one, or import into a course already on the ${noun}.`);
       return;
     }
     setBusy(true);
@@ -67,7 +71,7 @@ export function SyllabusImport(props: {
     if (file) f.append('file', file);
     else f.append('text', text);
     try {
-      const res = await fetch(`/api/build/plans/${props.planId}/syllabus`, { method: 'POST', body: f });
+      const res = await fetch(props.endpoint, { method: 'POST', body: f });
       const body = await res.json().catch(() => null);
       if (!res.ok || !body?.edits) {
         setError(typeof body?.error === 'string' ? body.error : res.status === 502 ? 'The campus model did not answer; try again.' : 'The import failed; try again.');
@@ -127,7 +131,7 @@ export function SyllabusImport(props: {
           </label>
         )}
 
-        {!onMap && (
+        {!onMap && props.acts !== false && (
           <label className="cb-field">
             <span>Place it in</span>
             <select value={act} onChange={e => setAct(Number(e.target.value) as Act)} disabled={busy}>

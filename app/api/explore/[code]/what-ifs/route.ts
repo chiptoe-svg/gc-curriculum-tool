@@ -62,8 +62,9 @@ export async function GET(req: Request, { params }: Ctx): Promise<Response> {
       pageCreatedAt: w.pageCreatedAt,
       createdAt: w.createdAt,
       hasPage: w.pageCreatedAt !== null,
+      skillsOnly: !!w.skills && !w.profile,
       mine: w.ownerKind === me.ownerKind && w.ownerGrantId === me.ownerGrantId,
     }))
-    .filter((w) => w.hasPage || w.mine);
+    .filter((w) => w.hasPage || w.skillsOnly || w.mine);
   return NextResponse.json({ whatIfs });
 }

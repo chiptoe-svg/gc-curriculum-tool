@@ -2,14 +2,14 @@
 // (same `target`), so effectiveCourse never sees two edits of one item; taking out an item added on the map
 // deletes its add rather than recording a remove.
 import { normalizeStatement } from '@/lib/catalog/project-trail';
-import type { BloomProcess, CourseEdits, Depth, EditBase, Link, ObjectiveEdit, PlanState, SkillEdit } from './types';
+import type { BloomProcess, CourseEdits, Depth, EditBase, Link, MapCore, ObjectiveEdit, SkillEdit } from './types';
 
 export const NO_EDITS: CourseEdits = { objectives: [], required: [], developed: [] };
 
-export const editsOf = (plan: PlanState, ref: string): CourseEdits => plan.courseEdits?.[ref] ?? NO_EDITS;
+export const editsOf = (plan: Pick<MapCore, 'courseEdits'>, ref: string): CourseEdits => plan.courseEdits?.[ref] ?? NO_EDITS;
 
 /** The plan with one course's edits replaced; a course left with no edits is dropped from courseEdits. */
-export function withEdits(plan: PlanState, ref: string, fn: (e: CourseEdits) => CourseEdits): PlanState {
+export function withEdits<S extends Pick<MapCore, 'courseEdits'>>(plan: S, ref: string, fn: (e: CourseEdits) => CourseEdits): S {
   const next = fn(editsOf(plan, ref));
   const all = { ...(plan.courseEdits ?? {}) };
   if (next.objectives.length + next.required.length + next.developed.length === 0) delete all[ref];
@@ -65,10 +65,10 @@ const same = (s: string) => normalizeStatement(s).replace(/[.;:,\s]+$/, '');
  * 'syllabus'), except one whose text the course already shows (`existing`, the course as the map reads it);
  * the course's edits record the source; links the plan or the catalog already has are not repeated.
  */
-export function mergeSyllabusDraft(
-  plan: PlanState, ref: string, draft: { edits: CourseEdits; links: Link[] },
+export function mergeSyllabusDraft<S extends MapCore>(
+  plan: S, ref: string, draft: { edits: CourseEdits; links: Link[] },
   existing: { objectives: string[]; required: string[]; developed: string[] }, catalogLinks: Array<{ from: string; to: string }>,
-): PlanState {
+): S {
   const fresh = <E,>(list: E[], have: string[], text: (e: E) => string | null) => {
     const seen = new Set(have.map(same));
     return list.filter(e => { const t = text(e); if (!t || seen.has(same(t))) return false; seen.add(same(t)); return true; });

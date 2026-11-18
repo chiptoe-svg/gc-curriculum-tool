@@ -42,3 +42,11 @@ export interface WhatIfProse { description: string; whatChanges: string; neighbo
 export type UsageKind = 'chat' | 'quick_estimate' | 'estimate' | 'page';
 export type WhatIfUsage = Partial<Record<UsageKind,
   { calls: number; costUsdCents: number; promptTokens: number; completionTokens: number }>>;
+
+/** A what-if's skills sketch (migration 0070): what the course would develop and require, in skill statements. */
+export interface WhatIfSkills {
+  objectives: string[];
+  developed: Array<{ statement: string; k: number | null; u: number | null; d: number | null }>;
+  required: Array<{ statement: string; need: Kud }>;
+  fromCluster: string | null;
+}
