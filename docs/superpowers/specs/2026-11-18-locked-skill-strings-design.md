@@ -42,6 +42,7 @@ look at a string and see the progression, where it thins, and where it ends.
 
 - Chords / competencies derived from strings (the second half of the ROADMAP item).
 - Automatic string suggestions from existing links (agreed as a later phase).
+- Named cables (bundles of strings that travel together); deferred to the chords step.
 - Strings through what-ifs or map-only draft courses. Strings anchor to **captured** courses only.
 
 ## Anti-goals
@@ -75,6 +76,19 @@ Approach note (Claude's call, owner to check): the alternative, one string that 
 tree has many ends and many paths, so "depth along the string", reinforcement and fade would each need a rule for
 which path counts. Shared points give the same picture with simple per-string readings.
 
+### Merging (owner, 2026-11-18)
+
+Two strings that meet at a point can stay separate (they share the point and carry on as themselves) or **merge**:
+the skills fuse and only one carries on. A merge is recorded on the string that stops: its end is "merges into *X* at
+this point", where the point is on *X*'s path. Its own readings (depth, reinforcement, fade later) stop there; *X*
+carries on. *X*'s panel shows "*A* merged in at GC xxxx" at that stop, and the map draws *A* flowing into *X*. A merged
+string keeps its record and history; unmerging (with a reason) turns its end back into a plain end. A string can only
+merge into a string whose path includes its last point, and never into itself or into a string that merges into it.
+
+**Cables (named bundles of strings that travel together and can separate) are deferred to the chords step**
+(owner, 2026-11-18): they overlap with chords (several strings played together). Until then, strings through shared
+points look bundled on the map without a name.
+
 ### The record (department-wide, migration 0071)
 
 - `string_points`: id, course_code, role `develops | requires`, statement (saved wording), statement_hash (the
@@ -85,11 +99,12 @@ which path counts. Shared points give the same picture with simple per-string re
   pair. Shared: two strings using the same link share its why.
 - `curriculum_strings`: id, name (unique among active strings), description, status `active | unlocked`, optional
   end_note / end_by / end_at (a note on where it ends, e.g. "could continue into GC 4800"; adding past the end clears
-  it), created_by / at, updated_by / at, version (optimistic lock, as `curriculum_clusters`).
+  it), optional merged_into (a string id; set only when the string's last point is on that string's path), merged_by /
+  merged_at, created_by / at, updated_by / at, version (optimistic lock, as `curriculum_clusters`).
 - `curriculum_string_path`: string_id, position, point_id. Consecutive positions must be joined by a `string_links` row.
 - `skill_orphan_notes`: course_code, role, statement_hash, statement, reason, by, at: why a skill on no string is there.
   Resolved like a point (a reworded skill shows its note as "changed, confirm").
-- `curriculum_string_events`: append-only history (locked, extended, joined, branched, point removed, reword
+- `curriculum_string_events`: append-only history (locked, extended, joined, branched, merged, unmerged, point removed, reword
   confirmed, renamed, unlocked), with who, when, reason, and before/after wording. Unlocking keeps the rows; status
   flips. A point or link no active string uses stays stored (history) but is not drawn.
 
@@ -122,6 +137,7 @@ that meet it). Only points on captured courses can be locked; a what-if or draft
 - **Extend:** add a link from a string's end (or before its start).
 - **Join:** route a string into a skill point another string already passes through. The existing point and links
   are reused; the panel of each shows "joins *other string* at GC xxxx".
+- **Merge into:** from a string's end point, when another string passes through it: "Merge into *X*", with a reason.
 - **Branch:** from a point on a string, **Branch from here** starts a new named string that shares the path up to that
   point and then follows a new link.
 - **Unlink / remove a point:** with a reason; any string left with a gap shows it.
@@ -136,7 +152,7 @@ Strings are edited only in clusters, but their effect shows in the larger map (o
 active locked string whose points fall on courses in the plan, over its existing string drawing (`lib/builder/threads.ts`):
 
 - Locked strings are drawn distinctly from the matcher's suggested strings, and show their name on hover.
-- Joins and branches are visible where locked strings share a point; a point shared by several strings is marked.
+- Joins, branches and merges are visible where locked strings share a point (a merging string flows into the other); a point shared by several strings is marked.
 - A string that leaves the plan's courses shows where it goes ("continues to GC xxxx, not in this plan").
 - Status shows here too: a reworded or broken point reads as it does in the panel.
 - Clicking a locked string opens its panel. Nothing about strings can be edited from `/build`; the panel links to
@@ -152,8 +168,10 @@ Opened from any stop marker, from the course, or from a strings index (`/strings
 - **Depth:** a small K/U/D line across stops, flagging any slip (a later develops stop lower than an earlier one).
 - **Reinforcement:** count of `develops` stops after the first that are within one level of the peak so far (see
   "Built for fade and reinforcement later").
+- **Merges into:** when set, shown in place of "Ends at": "Merges into *X* at GC xxxx", linking to *X*.
 - **Ends at:** the string's last stop, shown plainly as "Ends at GC xxxx (Act n)" with its optional end note. `/strings`
   can sort and filter by where strings end (course, Act), so faculty can see which strings stop where.
+- **Merged in:** at each stop where another string merged into this one, "*A* merged in here".
 - **Joins and branches:** at each stop, the other strings through that point ("joined by *X*", "*Y* branches off
   here"), each opening its own panel.
 - History: the event list.
