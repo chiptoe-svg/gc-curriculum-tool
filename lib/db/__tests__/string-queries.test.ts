@@ -93,6 +93,10 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
     expect((await ids('points')).length).toBe(before + 1);
     const first = a.graph.strings.find((x) => x.name.includes(' j1 '))!;
     expect(mine(b, nm).path[0]).toBe(first.path[0]);
+    const joins = b.graph.events.filter((e) => e.kind === 'joined' && e.stringId === mine(b, nm).id);
+    expect(joins).toHaveLength(1);
+    expect(joins[0]).toMatchObject({ pointId: first.path[0], after: { with: [first.id] } });
+    expect(a.graph.events.some((e) => e.kind === 'joined')).toBe(false);
   });
 
   it('reusing an existing link keeps its why and says the supplied one was ignored', async () => {
@@ -138,6 +142,7 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
     expect(e1.graph.strings.find((x) => x.id === id)).toMatchObject({ version: 2 });
     const e2 = must(await q.extendString({ id, version: 2, at: 'start', point: pt('W', 1), why: 'before', by: 't' }));
     const path = e2.graph.strings.find((x) => x.id === id)!.path;
+    expect(e2.graph.events.filter((e) => e.kind === 'joined' && e.stringId === id)).toHaveLength(0);
     expect(path.map((p) => e2.graph.points[p]!.courseCode.replace(`${tag}-`, ''))).toEqual(['W', 'T', 'U', 'V']);
     expect(rules.checkPath(e2.graph, path)).toBeNull();
     const dup = await q.extendString({ id, version: 3, at: 'end', point: pt('T', 1), why: 'loop', by: 't' });
@@ -190,6 +195,8 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
     expect(joined).toBeDefined();
     const row = (await dbm.db.select().from(s.stringLinks).where(orm.eq(s.stringLinks.id, joined!.id)))[0]!;
     expect(row.why).toBeNull();
+    expect(joined!.why).toBeNull();
+    expect((await q.loadGraph({ courseCodes: [code('H1')] })).links.find((l) => l.id === joined!.id)?.why).toBeNull();
     const ev = r.graph.events.find((e) => e.kind === 'point_removed' && e.stringId === src.id)!;
     expect(ev.before).toEqual({ path: src.path, courseCode: code('H2') });
     expect(ev.pointId).toBe(src.path[1]);

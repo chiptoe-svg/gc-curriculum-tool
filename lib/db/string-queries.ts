@@ -81,8 +81,7 @@ export async function loadGraph(opts: { courseCodes?: string[]; includeUnlocked?
   return {
     strings: rows.map((r) => toStringRow(r, pathOf.get(r.id) ?? [])),
     points,
-    // LinkRow.why is a plain string; an unhooked link (why null in the table) reads as ''.
-    links: linkRows.map((l): LinkRow => ({ id: l.id, from: l.fromPoint, to: l.toPoint, why: l.why ?? '', createdBy: l.createdBy, createdAt: iso(l.createdAt) })),
+    links: linkRows.map((l): LinkRow => ({ id: l.id, from: l.fromPoint, to: l.toPoint, why: l.why, createdBy: l.createdBy, createdAt: iso(l.createdAt) })),
     events: eventRows.map((e): EventRow => ({
       id: e.id, stringId: e.stringId, pointId: e.pointId, kind: e.kind, at: iso(e.at), by: e.by, reason: e.reason, before: e.before ?? null, after: e.after ?? null,
     })),
@@ -178,10 +177,18 @@ async function assertPath(tx: Tx, path: string[]): Promise<void> {
     : [];
   const g: StringGraph = {
     strings: [], points: {}, events: [],
-    links: links.map((l) => ({ id: l.id, from: l.fromPoint, to: l.toPoint, why: l.why ?? '', createdBy: l.createdBy, createdAt: iso(l.createdAt) })),
+    links: links.map((l) => ({ id: l.id, from: l.fromPoint, to: l.toPoint, why: l.why, createdBy: l.createdBy, createdAt: iso(l.createdAt) })),
   };
   const bad = checkPath(g, path);
   if (bad) throw new Refuse(400, bad);
+}
+
+/** Record a `joined` event when `pointId` is also on some other active string. */
+async function recordJoin(tx: Tx, stringId: string, pointId: string, by: string): Promise<void> {
+  const others = await tx.selectDistinct({ id: curriculumStringPath.stringId }).from(curriculumStringPath)
+    .innerJoin(curriculumStrings, eq(curriculumStrings.id, curriculumStringPath.stringId))
+    .where(and(eq(curriculumStringPath.pointId, pointId), ne(curriculumStringPath.stringId, stringId), eq(curriculumStrings.status, 'active')));
+  if (others.length) await addEvent(tx, { stringId, pointId, kind: 'joined', by, after: { with: others.map((o) => o.id).sort() } });
 }
 
 async function courseCodesOf(tx: Exec, pointIds: string[]): Promise<string[]> {
@@ -266,6 +273,7 @@ export async function lockString(input: { name: string; description: string; poi
     }).returning({ id: curriculumStrings.id });
     await writePath(tx, row!.id, path);
     await addEvent(tx, { stringId: row!.id, kind: 'locked', by: input.by, after: { name, description: input.description, path } });
+    for (const pid of path) await recordJoin(tx, row!.id, pid, input.by);
     return { courseCodes: await courseCodesOf(tx, path), notes };
   });
 }
@@ -284,6 +292,7 @@ export async function extendString(input: { id: string; version: number; at: 'st
     await bump(tx, cur.id, input.version, input.by);
     await writePath(tx, cur.id, path);
     await addEvent(tx, { stringId: cur.id, pointId, kind: 'extended', by: input.by, before: { path: cur.path }, after: { path, at: input.at } });
+    await recordJoin(tx, cur.id, pointId, input.by);
     return { courseCodes: await courseCodesOf(tx, path), notes };
   });
 }
@@ -309,6 +318,7 @@ export async function branchString(input: {
     }).returning({ id: curriculumStrings.id });
     await writePath(tx, row!.id, path);
     await addEvent(tx, { stringId: row!.id, pointId, kind: 'branched', by: input.by, before: { fromId: from.id, atPosition: input.atPosition }, after: { name, path } });
+    await recordJoin(tx, row!.id, pointId, input.by);
     return { courseCodes: [...await courseCodesOf(tx, path), ...await courseCodesOf(tx, from.path)], notes };
   });
 }

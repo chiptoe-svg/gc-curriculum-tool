@@ -31,7 +31,7 @@ export interface LinkRow {
   id: string;
   from: string;
   to: string;
-  why: string;
+  why: string | null;
   createdBy: string;
   createdAt: string;
 }
