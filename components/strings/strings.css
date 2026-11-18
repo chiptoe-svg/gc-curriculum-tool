@@ -1,0 +1,21 @@
+/* Skill strings: the panel and the /strings pages. Builds on build.css tokens; no warning colors anywhere. */
+.st-page { max-width: 62rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; display: grid; gap: 1rem; }
+.st-panel { display: grid; gap: 0.6rem; background: var(--cb-paper); border: 1px solid var(--cb-rule); border-radius: 3px; padding: 1rem; }
+.st-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.8rem; }
+.st-head p { flex-basis: 100%; }
+.st-status, .st-role { font-size: 0.875rem; color: var(--cb-ink-soft); border: 1px solid var(--cb-rule); border-radius: 999px; padding: 0 0.5rem; }
+.st-tools { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: baseline; }
+.st-name input, .st-form input { border: 1px solid var(--cb-rule); border-radius: 3px; padding: 0.2rem 0.4rem; margin-left: 0.4rem; }
+.st-form { display: inline-flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; }
+.st-notice { background: var(--cb-ground); border: 1px solid var(--cb-rule); border-radius: 3px; padding: 0.3rem 0.6rem; }
+.st-act { border-top: 1px solid var(--cb-rule); padding-top: 0.5rem; }
+.st-act h3, .st-panel > h3 { font-size: 1.05rem; margin-bottom: 0.3rem; }
+.st-stops, .st-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.st-stop { display: grid; gap: 0.1rem; padding-left: 0.6rem; border-left: 3px solid var(--cb-act-1); }
+.st-stop__line { display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem; align-items: baseline; }
+.st-line, .st-why { font-size: 0.9375rem; }
+.st-end { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; align-items: baseline; }
+.st-table { width: 100%; border-collapse: collapse; }
+.st-table th, .st-table td { text-align: left; padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--cb-rule); vertical-align: top; }
+.st-controls { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; }
+.st-controls select { border: 1px solid var(--cb-rule); border-radius: 3px; padding: 0.15rem 0.3rem; }
