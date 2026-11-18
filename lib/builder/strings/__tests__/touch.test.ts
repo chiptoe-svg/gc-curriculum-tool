@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { textHash } from '@/lib/catalog/bundles';
 import { normalizeStatement } from '@/lib/catalog/project-trail';
 import type { Library } from '../../types';
-import { courseChanges, orphansOf, stringChanges, stringsAt } from '../touch';
+import { courseChanges, mapStringSegments, orphansOf, stringChanges, stringsAt } from '../touch';
 import type { EventRow, LinkRow, OrphanNote, PointRow, PointStatus, StringGraph, StringRow } from '../types';
 
 const levelOf = (c: string) => Number(c.split(' ')[1]![0]!);
@@ -158,5 +158,25 @@ describe('orphansOf', () => {
   it('a requires point with no earlier develops is unsupplied', () => {
     const g = graph(pts, [str('A', ['p2', 'p1'])]);
     expect(orphansOf(lib, g, [], 'GC 2400').unsupplied.map((s) => s.statement)).toEqual(['Read a spec', 'Name a press']);
+  });
+});
+
+describe('mapStringSegments', () => {
+  const pts = [pt('a', 'GC 1040', 'develops'), pt('b', 'GC 2400', 'develops'), pt('c', 'GC 4800', 'develops')];
+  it('draws one segment and one stub when the last course is off the map', () => {
+    const g = graph(pts, [str('A', ['a', 'b', 'c'])]);
+    expect(mapStringSegments(g, new Set(['GC 1040', 'GC 2400']))).toEqual([
+      { stringId: 'A', from: 'GC 1040', to: 'GC 2400', kind: 'segment' },
+      { stringId: 'A', from: 'GC 2400', leaves: 'GC 4800' },
+    ]);
+  });
+  it('yields nothing for an unlocked string', () => {
+    const g = graph(pts, [str('A', ['a', 'b', 'c'], { status: 'unlocked' })]);
+    expect(mapStringSegments(g, new Set(['GC 1040', 'GC 2400', 'GC 4800']))).toEqual([]);
+  });
+  it('marks the last hop of a merged string as a merge', () => {
+    const g = graph(pts, [str('A', ['a', 'b', 'c']), str('B', ['a', 'b'], { mergedInto: 'A' })]);
+    const segs = mapStringSegments(g, new Set(['GC 1040', 'GC 2400', 'GC 4800']));
+    expect(segs.filter((x) => x.stringId === 'B')).toEqual([{ stringId: 'B', from: 'GC 1040', to: 'GC 2400', kind: 'merge' }]);
   });
 });

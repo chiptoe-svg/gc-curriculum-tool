@@ -364,3 +364,24 @@ details.cb-sec summary { cursor: pointer; font-weight: 500; }
 .cb-field--grow { flex: 1; }
 .cb-btn--primary { background: var(--cb-ink); color: var(--cb-paper); }
 .cb-syl { font-size: 0.875rem; color: var(--cb-ink-soft); border-left: 3px solid var(--cb-req-met-draft); padding-left: 0.6rem; }
+
+/* Skill strings on the cluster map: one color per string, none of them a status color. */
+.cb {
+  --str-0: #0b7fab; --str-1: #6f55b8; --str-2: #b3275f; --str-3: #3d7a4a; --str-4: #8a6a1c; --str-5: #2b5fa8;
+}
+@media (prefers-color-scheme: dark) {
+  .cb { --str-0: #5bb8dc; --str-1: #a994e6; --str-2: #e079a3; --str-3: #7fc08d; --str-4: #d3b365; --str-5: #7aa5e3; }
+}
+:root[data-theme="dark"] .cb { --str-0: #5bb8dc; --str-1: #a994e6; --str-2: #e079a3; --str-3: #7fc08d; --str-4: #d3b365; --str-5: #7aa5e3; }
+
+/* Locked strings on /build (read-only): thicker colored curves with round ends, never a status color, no arrowheads. */
+.bs-string { pointer-events: auto; cursor: pointer; outline: none; }
+.bs-string__hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
+.bs-string__line { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; opacity: 0.8; }
+.bs-string--merge .bs-string__line { stroke-dasharray: 2 5; }
+.bs-string__end { fill: currentColor; }
+.bs-string__cap { stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
+.bs-string__stub { fill: currentColor; font-size: 11px; }
+.bs-string:hover .bs-string__line, .bs-string:focus-visible .bs-string__line { opacity: 1; stroke-width: 4; }
+.bs-mark { fill: var(--cb-ink); pointer-events: auto; }
+.bs-mark--changed { fill: var(--cb-paper, transparent); stroke: var(--cb-ink); stroke-width: 1.5; }

@@ -203,3 +203,32 @@ export function orphansOf(
     .map((s) => ({ ...s, note: noteFor('requires', s.hash) }));
   return { developed, unsupplied };
 }
+
+export type MapSegment =
+  | { stringId: string; from: string; to: string; kind: 'segment' | 'merge' }
+  | { stringId: string; from: string; leaves: string };
+
+/**
+ * What to draw for each active string on a plan map: a segment between consecutive courses that are both on the map
+ * (kind 'merge' for the last hop of a string that merges into another), and a stub where the string goes on to a
+ * course that is not on the map. Unlocked strings yield nothing.
+ */
+export function mapStringSegments(g: StringGraph, onMap: Set<string>): MapSegment[] {
+  const out: MapSegment[] = [];
+  for (const s of g.strings) {
+    if (s.status !== 'active') continue;
+    const codes: string[] = [];
+    for (const id of s.path) {
+      const c = g.points[id]?.courseCode;
+      if (c && codes[codes.length - 1] !== c) codes.push(c);
+    }
+    for (let i = 0; i + 1 < codes.length; i++) {
+      const from = codes[i]!;
+      const to = codes[i + 1]!;
+      if (!onMap.has(from)) continue;
+      if (!onMap.has(to)) out.push({ stringId: s.id, from, leaves: to });
+      else out.push({ stringId: s.id, from, to, kind: s.mergedInto && i + 1 === codes.length - 1 ? 'merge' : 'segment' });
+    }
+  }
+  return out;
+}

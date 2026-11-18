@@ -13,6 +13,8 @@ import { CARD_H, CARD_W, COL_W, ROW_H, slotAt, type Pos } from '@/lib/builder/la
 import { CONDITIONS, type ProblemSolvingResult } from '@/lib/builder/problem-solving';
 import { ACTS, TERMS_PER_ACT, termOf, type Act, type Branch, type Library, type PlanState, type Slot } from '@/lib/builder/types';
 import type { ReqStatus, requiredByCourse } from '@/lib/builder/threads';
+import type { PointStatus, StringGraph } from '@/lib/builder/strings/types';
+import { MapStrings } from './MapStrings';
 import { TONE_VAR, dimNote, dimsOf, stratumName, stratumRank, toneOfCheckpoint, trunkLevel, type Tone } from './ui';
 
 const COL = 44;          // one trunk
@@ -67,6 +69,9 @@ export function CurriculumMap(props: {
   /** The course area's width set with the divider, in map pixels; null = automatic. A viewer setting. */
   courseWidth: number | null;
   onCourseWidth: (w: number | null) => void;
+  /** Locked strings through the plan's catalog courses (read-only overlay) and opening one. */
+  strings?: { graph: StringGraph; status: Record<string, PointStatus> };
+  onOpenString?: (id: string) => void;
 }) {
   const { plan, result, allCourses, selection, onSelect, positions, zoom } = props;
   const mapRef = useRef<HTMLDivElement>(null);
@@ -432,6 +437,7 @@ export function CurriculumMap(props: {
       stroke={bad ? 'var(--cb-short)' : 'var(--cb-ink)'} strokeWidth={bad ? 2 : 1.4} strokeDasharray={e.source === 'plan' ? '5 3' : undefined} opacity={0.85} />;
   });
 
+  const stringRefs = useMemo(() => Object.fromEntries(allCourses.filter(c => props.library.courses.some(l => l.code === c.code)).map(c => [c.code, c.ref])), [allCourses, props.library.courses]);
   const empty = result.objectives.length === 0;
   return (
     <div className="cb-zoom" ref={outerRef} style={geom ? { width: geom.width * zoom, height: geom.height * zoom } : undefined}>
@@ -513,6 +519,9 @@ export function CurriculumMap(props: {
               ))}
             </defs>
             {arrows}
+            {props.strings && props.onOpenString && (
+              <MapStrings graph={props.strings.graph} status={props.strings.status} cards={geom.cards} refOf={stringRefs} onOpen={props.onOpenString} />
+            )}
           </svg>
         </>
       )}

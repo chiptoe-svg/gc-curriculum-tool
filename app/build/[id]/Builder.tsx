@@ -22,9 +22,15 @@ import { RequirementDrawer } from './RequirementDrawer';
 import { ProblemSolvingDrawer } from './ProblemSolvingDrawer';
 import { SyllabusImport, type SyllabusImported } from './SyllabusImport';
 import { newId } from './ui';
+import { StringPanel } from '@/components/strings/StringPanel';
+import { mergeGraph } from '@/lib/builder/strings/graph';
+import { clusterStringHref } from '@/lib/builder/strings/href';
+import type { PointStatus, StringGraph } from '@/lib/builder/strings/types';
+import { Drawer } from './controls';
 import { useThreadJudging, type JudgeJob, type JudgeOther } from '../shared/useThreadJudging';
 import { useAutosave } from '../shared/useAutosave';
 
+const NO_STRINGS: StringGraph = { strings: [], points: {}, links: [], events: [] };
 const MAX_PROPOSED = 60; // the server's limit (lib/builder/plan-schema.ts)
 const ZOOMS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5];
 /** A change to the map's state. Shared pieces take any map (`S` a plan or a cluster); the plan map's own drawers use the default. */
@@ -119,7 +125,7 @@ export function Builder(props: {
     const onKey = (e: KeyboardEvent) => {
       const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName);
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !typing) { e.preventDefault(); stepBack(); }
-      if (e.key === 'Escape') { setSelection(null); setPanel(null); }
+      if (e.key === 'Escape') { setSelection(null); setPanel(null); setOpenString(null); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -135,6 +141,21 @@ export function Builder(props: {
   const genEdShort = genEdRows.filter(r => r.status === 'short').length;
   const ps = useMemo(() => problemSolvingByAct(library, plan, result.courses, result.objectives), [library, plan, result]);
   const placedRefs = useMemo(() => new Set(plan.placements.map(p => p.ref)), [plan.placements]);
+  // ---- locked strings through the placed catalog courses (read-only here) --------
+  const [strings, setStrings] = useState<{ graph: StringGraph; status: Record<string, PointStatus> }>({ graph: NO_STRINGS, status: {} });
+  const [openString, setOpenString] = useState<string | null>(null);
+  const catalogKey = useMemo(() => plan.placements.map(p => p.ref).filter(r => library.courses.some(c => c.code === r)).sort().join('\n'), [plan.placements, library.courses]);
+  const refreshStrings = useCallback(async () => {
+    if (!catalogKey) return;
+    try {
+      const res = await fetch('/api/strings/resolve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ courseCodes: catalogKey.split('\n') }) });
+      if (!res.ok) return;
+      const data = (await res.json()) as { graph: StringGraph; status: Record<string, PointStatus> };
+      setStrings(x => ({ graph: mergeGraph(x.graph, data.graph), status: { ...x.status, ...data.status } }));
+    } catch { /* strings stay as they were; the panel offers "try again" for what could not be checked */ }
+  }, [catalogKey]);
+  useEffect(() => { void refreshStrings(); }, [refreshStrings]);
+  const levelOf = useCallback((code: string) => library.courses.find(c => c.code === code)?.level ?? 0, [library.courses]);
   const positions = useMemo(() => layoutLanes(plan.placements, new Set(plan.branches.map(b => b.id))), [plan.placements, plan.branches]);
 
   // ---- required-skill threads ---------------------------------------------
@@ -436,7 +457,8 @@ export function Builder(props: {
         <main className="cb-main">
           <CurriculumMap
             library={library} plan={plan} result={result} allCourses={allCourses} positions={positions} zoom={zoom} arrows={arrows} courseWidth={courseWidth} onCourseWidth={w => changeView({ courseWidth: w })} selection={selection}
-            onSelect={s => { setSelection(s); setPanel(null); }} threads={byCourse} changes={changes}
+            onSelect={s => { setSelection(s); setPanel(null); setOpenString(null); }} threads={byCourse}
+            strings={strings} onOpenString={id => { setSelection(null); setPanel(null); setOpenString(id); }} changes={changes}
             onOpenRequired={ref => { setSelection({ kind: 'course', ref }); setPanel(null); setFocus(f => ({ section: 'required', n: (f?.n ?? 0) + 1 })); }}
             onDropCourse={onDropCourse} onOpenTargets={() => { setPanel('targets'); setSelection(null); }}
             onOpenAct={act => { setPanel({ act }); setSelection(null); }}
@@ -450,6 +472,14 @@ export function Builder(props: {
           />
         </main>
 
+        {openString && !selection && strings.graph.strings.some(x => x.id === openString) && (
+          <Drawer wide title="String" onClose={() => setOpenString(null)}>
+            <StringPanel graph={strings.graph} status={strings.status} stringId={openString} levelOf={levelOf} editable={false}
+              onChanged={patch => setStrings(x => ({ ...x, graph: mergeGraph(x.graph, patch) }))} onRetry={() => void refreshStrings()}
+              editHref={clusterStringHref(strings.graph.strings.find(x => x.id === openString)!.path.map(id => strings.graph.points[id]?.courseCode).filter((c): c is string => !!c), q)}
+              hrefOf={id => `/strings/${id}${q}`} />
+          </Drawer>
+        )}
         {selection?.kind === 'course' && allCourses.find(c => c.ref === selection.ref)?.requirement && (
           <RequirementDrawer key={selection.ref} placed={allCourses.find(c => c.ref === selection.ref)!} onRemove={remove} onClose={() => setSelection(null)} />
         )}

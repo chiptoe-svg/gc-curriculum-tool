@@ -60,14 +60,6 @@
 .cl-cand__acts { display: flex; gap: 0.2rem; }
 .cl-drawer__acts .cb-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
-/* Skill strings on the cluster map: one color per string, none of them a status color. */
-.cb {
-  --str-0: #0b7fab; --str-1: #6f55b8; --str-2: #b3275f; --str-3: #3d7a4a; --str-4: #8a6a1c; --str-5: #2b5fa8;
-}
-@media (prefers-color-scheme: dark) {
-  .cb { --str-0: #5bb8dc; --str-1: #a994e6; --str-2: #e079a3; --str-3: #7fc08d; --str-4: #d3b365; --str-5: #7aa5e3; }
-}
-:root[data-theme="dark"] .cb { --str-0: #5bb8dc; --str-1: #a994e6; --str-2: #e079a3; --str-3: #7fc08d; --str-4: #d3b365; --str-5: #7aa5e3; }
 .cl-string { pointer-events: auto; cursor: pointer; outline: none; }
 .cl-string__hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
 .cl-string__line { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; opacity: 0.75; }
