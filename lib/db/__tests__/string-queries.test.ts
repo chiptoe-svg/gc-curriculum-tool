@@ -202,6 +202,7 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
     const ev = r.graph.events.find((e) => e.kind === 'point_removed' && e.stringId === src.id)!;
     expect(ev.before).toEqual({ path: src.path, courseCode: code('H2') });
     expect(ev.pointId).toBe(src.path[1]);
+    expect((await q.loadGraph({ courseCodes: [code('H1')] })).points[src.path[1]!]).toBeDefined();
     // Only two points remain: refuse.
     const last = await q.removePoint({ id: src.id, version: 2, position: 0, reason: 'x', by: 't' });
     expect(last).toMatchObject({ ok: false, status: 400, error: 'A string needs at least two skills. Unlock it instead.' });

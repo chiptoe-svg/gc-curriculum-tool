@@ -82,6 +82,25 @@ describe('stringChanges', () => {
     expect(stringChanges(g, { p1: dep(null, null, 3), p2: dep(null, null, 2) }, 'A', levelOf)).toEqual([]);
   });
 
+  it('no depth-moved for an unchecked stop or an empty status map', () => {
+    const g = graph([pt('p1', 'GC 1040', 'develops', { d: 3 }), pt('p2', 'GC 2400', 'requires')], [str('A', ['p1', 'p2'])], [link('l1', 'p1', 'p2')]);
+    expect(stringChanges(g, { p1: { kind: 'unchecked' } }, 'A', levelOf)).toEqual([]);
+    expect(stringChanges(g, {}, 'A', levelOf)).toEqual([]);
+  });
+
+  it('an unanchored develops stop is a real drop', () => {
+    const g = graph([pt('p1', 'GC 1040', 'develops', { d: 3 }), pt('p2', 'GC 2400', 'requires')], [str('A', ['p1', 'p2'])], [link('l1', 'p1', 'p2')]);
+    const texts = stringChanges(g, { p1: { kind: 'unanchored', why: 'skill gone' } }, 'A', levelOf).map((c) => c.text);
+    expect(texts).toContain('The depth reaching GC 2400 is now K– U– D–, was K– U– D3');
+  });
+
+  it('unhook still fires with no status entry for the removed point', () => {
+    const pts = [pt('p1', 'GC 1040', 'develops', { k: 2, u: 2, d: 2 }), pt('p2', 'GC 2400', 'develops', { k: 2, u: 2, d: 3 }), pt('p3', 'GC 4800', 'requires')];
+    const g = graph(pts, [str('A', ['p1', 'p3'])], [link('l1', 'p1', 'p3', null)], [removed('2026-02-01', 'p2', ['p1', 'p2', 'p3'], 'GC 2400')]);
+    const texts = stringChanges(g, { p1: dep(2, 2, 2) }, 'A', levelOf).map((c) => c.text);
+    expect(texts).toContain('The depth reaching GC 4800 is now K2 U2 D2, was K2 U2 D3');
+  });
+
   it('works on an unlocked string', () => {
     const g = graph([pt('p1', 'GC 1040', 'develops'), pt('p2', 'GC 2400', 'requires')], [str('A', ['p1', 'p2'], { status: 'unlocked' })], [link('l1', 'p1', 'p2')]);
     expect(stringChanges(g, { p2: { kind: 'unanchored', why: 'no capture' } }, 'A', levelOf)).toHaveLength(1);
@@ -128,6 +147,12 @@ describe('orphansOf', () => {
       { statement: 'Pull a proof', hash: h('Pull a proof'), note: 'taught late' },
     ]);
     expect(r.unsupplied.map((s) => s.statement)).toEqual(['Name a press']);
+  });
+
+  it('a requires point in another course with the same hash does not supply this course', () => {
+    const other = pt('px', 'GC 3400', 'requires', { statement: 'Read a spec', statementHash: h('Read a spec') });
+    const g = graph([...pts, other], [str('A', ['p0', 'px'])]);
+    expect(orphansOf(lib, g, [], 'GC 2400').unsupplied.map((s) => s.statement)).toContain('Read a spec');
   });
 
   it('a requires point with no earlier develops is unsupplied', () => {

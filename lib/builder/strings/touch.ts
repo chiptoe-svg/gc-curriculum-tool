@@ -5,7 +5,7 @@
 import { textHash } from '@/lib/catalog/bundles';
 import { normalizeStatement } from '@/lib/catalog/project-trail';
 import type { Depth, Library } from '../types';
-import type { OrphanNote, PointStatus, StringGraph, StringRow } from './types';
+import type { OrphanNote, PointRow, PointStatus, StringGraph, StringRow } from './types';
 
 type Dim = 'k' | 'u' | 'd';
 const DIMS: Dim[] = ['k', 'u', 'd'];
@@ -29,9 +29,11 @@ export function stringsAt(g: StringGraph, courseCode: string): StringRow[] {
   );
 }
 
-function statusDepth(s: PointStatus | undefined): Depth | null {
-  if (!s) return null;
-  return s.kind === 'intact' || s.kind === 'changed' ? s.now : null;
+/** A develops point's depth now: the status reading; unanchored counts as gone; no reading falls back to lock time. */
+function nowDepthOf(p: PointRow, s: PointStatus | undefined): Depth | null {
+  if (s?.kind === 'unanchored') return null;
+  if (s && (s.kind === 'intact' || s.kind === 'changed') && s.now) return s.now;
+  return { k: p.k, u: p.u, d: p.d };
 }
 
 function show(d: Depth): string {
@@ -121,7 +123,10 @@ export function stringChanges(
   }
 
   // Depth moved: lock time vs now, and before the latest removal vs now.
-  const nowDepth = (id: string) => statusDepth(status[id]);
+  const nowDepth = (id: string) => {
+    const p = g.points[id];
+    return p ? nowDepthOf(p, status[id]) : null;
+  };
   const now = peaksBefore(str.path, g, nowDepth);
   const lock = peaksBefore(str.path, g, (id) => {
     const p = g.points[id];

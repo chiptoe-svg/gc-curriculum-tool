@@ -75,8 +75,18 @@ export async function loadGraph(opts: { courseCodes?: string[]; includeUnlocked?
       : inArray(curriculumStringEvents.stringId, stringIds))
     .orderBy(desc(curriculumStringEvents.at), desc(curriculumStringEvents.id));
 
+  // Points a removal event's before-path names are off the path now; the changes list reads their stored depths.
+  const loaded = new Set(pointIds);
+  const extraIds = new Set<string>();
+  for (const e of eventRows) {
+    if (e.kind !== 'point_removed' || !e.stringId || !stringIds.includes(e.stringId)) continue;
+    const bp = (e.before as { path?: unknown } | null)?.path;
+    if (Array.isArray(bp)) for (const id of bp) if (typeof id === 'string' && !loaded.has(id)) extraIds.add(id);
+  }
+  const extraRows = extraIds.size ? await exec.select().from(stringPoints).where(inArray(stringPoints.id, [...extraIds])) : [];
+
   const points: Record<string, PointRow> = {};
-  for (const p of pointRows) {
+  for (const p of [...pointRows, ...extraRows]) {
     points[p.id] = {
       id: p.id, courseCode: p.courseCode, role: p.role, statement: p.statement, statementHash: p.statementHash,
       snapshotId: p.snapshotId, k: p.k, u: p.u, d: p.d, term: p.term,
