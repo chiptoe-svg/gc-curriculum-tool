@@ -13,7 +13,7 @@ const state = vi.hoisted(() => ({
 vi.mock('@/lib/db/client', () => ({
   db: {
     select: () => ({ from: () => ({ where: async () => state.rows }) }),
-    insert: () => ({ values: (v: Record<string, unknown>) => ({ onConflictDoNothing: async () => { state.inserted.push(v); } }) }),
+    insert: () => ({ values: (v: Record<string, unknown>) => ({ onConflictDoUpdate: async () => { state.inserted.push(v); } }) }),
   },
 }));
 vi.mock('@/lib/db/bundle-queries', () => ({
@@ -44,7 +44,7 @@ beforeEach(() => {
 
 describe('checkRewords', () => {
   it('cache hit makes no campus call', async () => {
-    state.rows = [{ pointId: 'p1', snapshotId: 's1', model: MODEL_IN_USE, promptVersion: PROMPT_VERSION, status: 'changed', candidateStatement: 'A', candidateHash: 'ha', pPartly: 0.5 }];
+    state.rows = [{ pointId: 'p1', snapshotId: 's1', model: MODEL_IN_USE, promptVersion: PROMPT_VERSION, status: 'changed', candidateStatement: 'A', candidateHash: 'ha', pFully: 0.9 }];
     const r = await checkRewords([item]);
     expect(r.p1).toEqual({ kind: 'changed', now: null, candidate: { statement: 'A', hash: 'ha' } });
     expect(state.judged).toBe(0);
@@ -62,6 +62,27 @@ describe('checkRewords', () => {
     const r = await checkRewords([item]);
     expect(r.p1).toEqual({ kind: 'unanchored', why: 'skill gone' });
     expect(state.inserted[0]).toMatchObject({ status: 'unanchored', candidateHash: null });
+  });
+  it('no shortlist vectors: unchecked, nothing cached', async () => {
+    state.vectors = new Map();
+    const r = await checkRewords([item]);
+    expect(r.p1).toEqual({ kind: 'unchecked' });
+    expect(state.inserted).toEqual([]);
+    expect(state.judged).toBe(0);
+  });
+  it('a cached changed whose candidate left the pool is recomputed', async () => {
+    state.rows = [{ pointId: 'p1', snapshotId: 's1', model: MODEL_IN_USE, promptVersion: PROMPT_VERSION, status: 'changed', candidateStatement: 'Z', candidateHash: 'hz', pFully: 0.9 }];
+    state.judgeImpl = async (pairs) => pairs.map(() => ({ pFully: 0.1, pPartly: 0.5 }));
+    const r = await checkRewords([item]);
+    expect(state.judged).toBe(1);
+    expect(r.p1).toEqual({ kind: 'unanchored', why: 'skill gone' });
+    expect(state.inserted).toHaveLength(1);
+  });
+  it('a cached row from another prompt version or model is ignored', async () => {
+    const base = { pointId: 'p1', snapshotId: 's1', status: 'changed', candidateStatement: 'A', candidateHash: 'ha', pFully: 0.9 };
+    state.rows = [{ ...base, model: MODEL_IN_USE, promptVersion: 'old' }, { ...base, model: 'other', promptVersion: PROMPT_VERSION }];
+    await checkRewords([item]);
+    expect(state.judged).toBe(1);
   });
   it('judge error gives unchecked and writes nothing', async () => {
     state.judgeImpl = async () => { throw new Error('boom'); };

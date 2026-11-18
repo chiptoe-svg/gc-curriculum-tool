@@ -31,7 +31,9 @@ export async function checkRewords(items: RewordItem[]): Promise<Record<string, 
   const misses: RewordItem[] = [];
   for (const it of items) {
     const r = cached.get(`${it.point.id}|${it.snapshotId}`);
-    if (!r) misses.push(it);
+    // A cached `changed` is stale if its candidate left the pool. A cached `unanchored` stays usable: the pool can only
+    // shrink within a snapshot (growth means a recapture, which changes snapshot_id and so the key).
+    if (!r || (r.status === 'changed' && !it.pool.some((s) => s.hash === r.candidateHash))) misses.push(it);
     else out[it.point.id] = r.status === 'changed' && r.candidateStatement && r.candidateHash
       ? { kind: 'changed', now: null, candidate: { statement: r.candidateStatement, hash: r.candidateHash } }
       : { kind: 'unanchored', why: 'skill gone' };
@@ -65,6 +67,7 @@ export async function checkRewords(items: RewordItem[]): Promise<Record<string, 
         requiredText: it.point.statement, requiredCourse: it.point.courseCode, requiredTitle: '',
         suppliedText: s.statement, suppliedCourse: it.point.courseCode, suppliedTitle: '',
       }));
+      if (pairs.length === 0) throw new Error('no vectors'); // a transient gap must not be cached as 'skill gone'
       const judged = pairs.length ? await judgePairs(pairs, { model }) : [];
       if (judged.some((j) => j.pFully === null || j.pPartly === null)) throw new Error('no answer');
       type Best = { s: { statement: string; hash: string }; pFully: number; pPartly: number };
@@ -78,7 +81,10 @@ export async function checkRewords(items: RewordItem[]): Promise<Record<string, 
         status: hit ? 'changed' : 'unanchored',
         candidateStatement: hit?.s.statement ?? null, candidateHash: hit?.s.hash ?? null,
         pFully: hit?.pFully ?? null, model, promptVersion: PROMPT_VERSION,
-      }).onConflictDoNothing();
+      }).onConflictDoUpdate({
+        target: [stringPointResolutions.pointId, stringPointResolutions.snapshotId, stringPointResolutions.model, stringPointResolutions.promptVersion],
+        set: { status: hit ? 'changed' : 'unanchored', candidateStatement: hit?.s.statement ?? null, candidateHash: hit?.s.hash ?? null, pFully: hit?.pFully ?? null },
+      });
       out[it.point.id] = hit
         ? { kind: 'changed', now: null, candidate: { statement: hit.s.statement, hash: hit.s.hash } }
         : { kind: 'unanchored', why: 'skill gone' };
