@@ -104,10 +104,33 @@ Opened from any stop marker, from the course, or from a strings index (`/strings
 - Stops in order, grouped by Act where known: course, role, wording, K/U/D now (and at lock if changed), status, the
   link's why, and the evidence the capture holds for that skill (see "Left to the builder").
 - **Depth:** a small K/U/D line across stops, flagging any slip (a later develops stop lower than an earlier one).
-- **Reinforcement:** count of develops stops after the first.
+- **Reinforcement:** count of `develops` stops after the first that are within one level of the peak so far (see
+  "Built for fade and reinforcement later").
 - **Dead end:** every string ends somewhere; the end is flagged as a dead end unless it has an end reason, which shows
   in its place (e.g. "leads to prepress technician roles").
 - History: the event list.
+
+### Built for fade and reinforcement later (owner, 2026-11-18)
+
+Not built in this version, but the design must not need reworking to add them. /build already models both in
+`durable()` (`lib/builder/compute.ts`): depth nobody revisits loses `fade` levels per act; a revisit within a level of
+the peak halves the loss; time runs in terms, three per act. A string is exactly the input that function wants, so:
+
+- **Every stop has a place in time.** It resolves to an Act through `defaultAct()`, and carries an optional `term`
+  (column on `curriculum_string_stops`, null in this version; null means the act's last term, as `durable()` treats it).
+  A later version can let a plan or cluster's placement override both.
+- **One pure reading function.** All panel readings come from `readString(stops, options)` in
+  `lib/builder/strings/read.ts`, returning per-stop readings plus string totals. `options.fade` exists now and is
+  `null` (no fade): readings are attained depth. Adding fade later means passing a number and mapping `develops` stops
+  to `durable()` contributions, giving "estimated depth still held" at each stop and at the dead end.
+- **Reinforcement means the same thing now and later.** In this version a stop counts as reinforcement when it is a
+  `develops` stop after the first whose depth is within one level of the string's peak so far, on any of K, U or D:
+  the same rule `durable()` uses for a revisit that makes depth stick. Lighter touches are shown but not counted.
+  This way the count doesn't change meaning when fade arrives.
+- **Gaps can switch to held depth.** The `requires` gap check compares need to attained depth now; with fade it compares
+  need to estimated held depth at that stop's term, through the same function.
+- **Related-string support** (the `support` flag in `durable()`, a related competency at integration depth) waits for
+  chords and is out of scope.
 
 ### Break warnings and marks
 
