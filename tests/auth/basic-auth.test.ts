@@ -41,6 +41,10 @@ describe('requiresBasicAuth', () => {
     expect(requiresBasicAuth(path)).toBe(false);
   });
 
+  it.each(['/strings', '/strings/abc', '/api/strings', '/api/strings/resolve'])('gates the strings surface %s', (path) => {
+    expect(requiresBasicAuth(path)).toBe(true);
+  });
+
   it('treats /partnerships as faculty (does not match /partners prefix exactly)', () => {
     // Guard against accidental prefix bleed: /partnerships is not /partners
     expect(requiresBasicAuth('/partnerships')).toBe(true);

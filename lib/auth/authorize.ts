@@ -86,8 +86,11 @@ const WHAT_IF_WRITE = /^\/api\/explore\/[^/]+\/what-ifs(?:\/[^/]+(?:\/(?:chat|at
 // POST /api/build/plans/<id>/syllabus: import a course from a syllabus onto the plan (a free campus model drafts map edits).
 // Course-cluster writes (POST /api/build/clusters, PUT/DELETE /api/build/clusters/<id>, POST …/<id>/syllabus and
 // …/<id>/versions): a cluster is a shared working document like a plan, under the same rule.
+// Locked skill strings (POST /api/strings, PATCH /api/strings/<id>, POST /api/strings/resolve, /orphan-notes and
+// /points/<id>): the department-wide string record is a shared working document too; any login that can capture a
+// course may lock, extend or merge a string, recorded with who and when. (resolve is a POST that only reads.)
 const PLAN_WRITE =
-  /^\/api\/build\/(?:plans(?:\/[0-9a-f-]{36}(?:\/syllabus)?)?|clusters(?:\/[0-9a-f-]{36}(?:\/(?:syllabus|versions))?)?|suggest|links|match)$/i;
+  /^\/api\/(?:build\/(?:plans(?:\/[0-9a-f-]{36}(?:\/syllabus)?)?|clusters(?:\/[0-9a-f-]{36}(?:\/(?:syllabus|versions))?)?|suggest|links|match)|strings(?:\/[0-9a-f-]{36})?|strings\/(?:resolve|orphan-notes)|strings\/points\/[0-9a-f-]{36})$/i;
 
 export function classify(method: string, pathname: string): Kind {
   const m = method.toUpperCase();

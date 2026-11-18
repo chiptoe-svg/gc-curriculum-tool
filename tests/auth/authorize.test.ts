@@ -207,3 +207,19 @@ describe('course-cluster writes', () => {
   it.each([['POST', `${CID}/other`], ['POST', `${C}/not-an-id`], ['POST', `${CID}/versions/x`], ['POST', `${CID}/changes.md`]])(
     '%s %s stays admin-kind', (m, p) => expect(classify(m, p)).toEqual({ kind: 'admin' }));
 });
+
+describe('locked skill string writes', () => {
+  const S = '/api/strings';
+  const SID = `${S}/8b1f0c2e-0000-4000-8000-000000000003`;
+  const writes: [string, string][] = [
+    ['POST', S], ['PATCH', SID], ['POST', `${S}/resolve`], ['POST', `${S}/orphan-notes`],
+    ['POST', `${S}/points/8b1f0c2e-0000-4000-8000-000000000004`],
+  ];
+  it.each(writes)('%s %s is a plan write', (m, p) => expect(classify(m, p)).toEqual({ kind: 'plan-write' }));
+  it.each(writes)('%s %s is allowed for a login that can capture a course', (m, p) => expect(authorize(scoped, m, p)).toEqual({ ok: true }));
+  it.each(writes)('%s %s is refused for a create-only login', (m, p) =>
+    expect(authorize(creator, m, p)).toEqual({ ok: false, reason: 'needs-capture' }));
+  it.each([['GET', S], ['GET', SID]])('%s %s is a read', (m, p) => expect(classify(m, p)).toEqual({ kind: 'read' }));
+  it.each([['POST', `${S}/not-an-id`], ['POST', `${SID}/extra`], ['POST', `${S}/resolve/x`], ['POST', `${S}/points/x`]])(
+    '%s %s stays admin-kind', (m, p) => expect(classify(m, p)).toEqual({ kind: 'admin' }));
+});
