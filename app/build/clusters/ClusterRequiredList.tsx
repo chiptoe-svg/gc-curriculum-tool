@@ -31,6 +31,8 @@ export function ClusterRequiredList(props: {
   onSave: (item: Req | null, statement: string, need: Depth) => void; onRemove: (item: Req) => void;
   /** For status overrides (ClusterState.overrides, target key `req:<courseRef>|<requiredRef>`). */
   update: Update<ClusterState>; who: () => string;
+  /** Strings controls under a required skill (LockString), when it has suppliers. */
+  lockSlot?: (req: { statement: string; need: Depth }, r: StatusResult | undefined) => React.ReactNode;
 }) {
   const [adding, setAdding] = useState(false);
   const taken = props.required.map(r => r.statement);
@@ -94,6 +96,7 @@ function Row(props: Parameters<typeof ClusterRequiredList>[0] & { req: Req; r: S
         <button type="button" className="cb-linkbtn" onClick={() => props.onRemove(req)}>Remove</button>
       </div>
       {error && <p className="cb-error cb-small" role="alert">{error}</p>}
+      {props.lockSlot?.(req, r)}
       {editing && (
         <SkillForm label="Required skill" levelsLabel="Needed" taken={props.taken} initial={{ statement: req.statement, levels: req.need }}
           onCancel={() => setEditing(false)} onSave={(s, d) => { props.onSave(req, s, d); setEditing(false); }} />

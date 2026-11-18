@@ -12,7 +12,7 @@ import { effectiveCourse } from '@/lib/builder/edits';
 import { clusterEdges, upstreamOf } from '@/lib/builder/cluster/graph';
 import type { StatusResult } from '@/lib/builder/cluster/status';
 import type { ClusterState } from '@/lib/builder/cluster/state';
-import type { Candidate, EditBase, Library, MatchDecision, ProposedCourse } from '@/lib/builder/types';
+import type { Candidate, Depth, EditBase, Library, MatchDecision, ProposedCourse } from '@/lib/builder/types';
 import type { ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
 import { ObjectiveGuidePanel } from '@/app/wiki/ObjectiveGuidePanel';
 import type { Update } from '../../[id]/Builder';
@@ -42,6 +42,8 @@ export function ClusterCourseDrawer(props: {
   guide: ObjectiveGuideSection | null;
   /** False while the cluster has changes not saved yet (a new version is read from the saved cluster). */
   saved?: boolean;
+  /** Strings controls for a required skill with suppliers (LockString); null or absent shows none. */
+  lockSlot?: (req: { statement: string; need: Depth }, r: StatusResult | undefined) => React.ReactNode;
   onSelect: (ref: string) => void; onRemove: (ref: string) => void; onClose: () => void;
 }) {
   const { courseRef, library, cluster, update } = props;
@@ -135,7 +137,7 @@ export function ClusterCourseDrawer(props: {
         <ClusterRequiredList courseRef={courseRef} required={eff.required} results={props.required} codeOf={props.codeOf}
           decisions={props.decisions} decide={props.decide}
           errorOf={r => props.errorOf(r, 'required')} onRetry={r => props.onRetry(r, 'required')}
-          onSave={ops.saveRequired} onRemove={ops.removeRequired} update={update} who={props.who} />
+          onSave={ops.saveRequired} onRemove={ops.removeRequired} update={update} who={props.who} lockSlot={props.lockSlot} />
       </section>
 
       <section className="cb-sec" aria-label="Developed skills">

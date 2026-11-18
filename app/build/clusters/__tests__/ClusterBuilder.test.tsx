@@ -167,3 +167,40 @@ describe('ClusterBuilder judging', () => {
     expect(req).not.toHaveTextContent('Not met');
   });
 });
+
+describe('ClusterBuilder strings', () => {
+  const SNAP = '8b1f0c2e-0000-4000-8000-0000000000a1';
+  const pt = (id: string, code: string, role: 'develops' | 'requires', statement: string) =>
+    ({ id, courseCode: code, role, statement, statementHash: hash(statement), snapshotId: SNAP, k: 3, u: 3, d: 3, term: null });
+  const resolved = {
+    graph: {
+      strings: [{ id: 'str1', name: 'Ink path', description: '', status: 'active', endNote: null, mergedInto: null, version: 1, path: ['a', 'b'] }],
+      points: { a: pt('a', 'GC 1010', 'develops', SUP), b: pt('b', 'GC 2070', 'requires', NEED) }, links: [], events: [],
+    },
+    status: { a: { kind: 'intact', now: { k: 3, u: 3, d: 3 } }, b: { kind: 'intact', now: NONE } }, levels: {}, notes: [],
+  };
+  const respond = (c: Call) => {
+    if (c.url === '/api/strings/resolve') return json(200, resolved);
+    if (c.body.action === 'judge') return json(200, { results: [{ ref: hash(SUP), similarity: 0.9, pFully: 0.95, pPartly: 0.95 }, { ref: hash(A), similarity: 0.2, pFully: 0.01, pPartly: 0.01 }] });
+    return json(500, {});
+  };
+
+  it('asks for the strings through the catalog courses on the cards, draws them, and opens one in the panel', async () => {
+    const calls = stubFetch(respond);
+    mount(state({ proposed: [], cards: [{ ref: 'GC 1010', x: 20, y: 20 }, { ref: 'GC 2070', x: 300, y: 20 }, { ref: 'new-1', x: 600, y: 20 }] }));
+    await waitFor(() => expect(calls.some(c => c.url === '/api/strings/resolve')).toBe(true));
+    expect(calls.find(c => c.url === '/api/strings/resolve')!.body).toEqual({ courseCodes: ['GC 1010', 'GC 2070'] });
+    fireEvent.click(await screen.findByRole('button', { name: 'String Ink path' }));
+    expect(await screen.findByRole('heading', { name: 'Ink path' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Rename' })).toBeInTheDocument();
+  });
+
+  it('offers Lock as string on a required skill that has a supplier', async () => {
+    stubFetch(respond);
+    mount(state());
+    await waitFor(() => expect(card('GC 2070')).toHaveTextContent('1 met'));
+    fireEvent.click(card('GC 2070'));
+    const lock = await screen.findByRole('button', { name: 'Lock as string' });
+    expect((lock as HTMLButtonElement).disabled).toBe(false);
+  });
+});

@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { useState } from 'react';
 import { emptyClusterState, type ClusterState } from '@/lib/builder/cluster/state';
@@ -114,5 +114,33 @@ describe('ClusterCanvas', () => {
     const spot = nextCardSpot([{ ref: 'A', x: 20, y: 300 }, { ref: 'B', x: 500, y: 60 }]);
     expect(spot.y).toBe(60);
     expect(spot.x).toBeGreaterThan(500 + 184);
+  });
+});
+
+describe('ClusterCanvas strings', () => {
+  const pt = (id: string, code: string) => ({ id, courseCode: code, role: 'develops' as const, statement: id, statementHash: id, snapshotId: null, k: 1, u: 1, d: 1, term: null });
+  const str = (id: string, name: string, path: string[], status: 'active' | 'unlocked' = 'active') =>
+    ({ id, name, description: '', status, endNote: null, mergedInto: null, version: 1, path });
+  const graph = (strings: ReturnType<typeof str>[]) => ({
+    strings, points: { a: pt('a', 'GC 1010'), b: pt('b', 'GC 2070'), c: pt('c', 'GC 4400') }, links: [], events: [],
+  });
+  const mountStrings = (g: ReturnType<typeof graph>, onOpen = () => {}) => render(
+    <ClusterCanvas library={lib()} state={state()} statuses={{}} selected={null} onSelect={() => {}} update={() => {}} strings={g} onOpenString={onOpen} />,
+  );
+
+  it('two strings sharing a card draw two curves in different colors, named in a title', () => {
+    mountStrings(graph([str('s1', 'Ink path', ['a', 'b']), str('s2', 'Color path', ['a', 'c'])]));
+    const one = screen.getByRole('button', { name: 'String Ink path' }), two = screen.getByRole('button', { name: 'String Color path' });
+    expect(one.querySelector('title')?.textContent).toBe('Ink path');
+    expect((one as unknown as SVGElement).style.color).not.toBe((two as unknown as SVGElement).style.color);
+    expect(screen.getByText('2 strings')).toBeInTheDocument();
+  });
+  it('an unlocked string draws nothing, and a click on a curve opens it', () => {
+    const open = vi.fn();
+    mountStrings(graph([str('s1', 'Old path', ['a', 'b'], 'unlocked'), str('s2', 'Live path', ['b', 'c'])]), open);
+    expect(screen.queryByRole('button', { name: 'String Old path' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'String Live path' }));
+    expect(open).toHaveBeenCalledWith('s2');
+    expect(screen.queryByText(/1010.*string/)).toBeNull();
   });
 });

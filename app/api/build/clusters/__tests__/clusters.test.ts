@@ -106,6 +106,17 @@ describe('cluster collection', () => {
   it('refuses a cluster with no name', async () => {
     expect((await create(json('/api/build/clusters', 'POST', { name: ' ' }))).status).toBe(400);
   });
+  it('places a card for each known catalog code in courses, ignoring unknown codes and repeats', async () => {
+    const res = await create(json('/api/build/clusters', 'POST', { name: 'Strings: GC 1 and 1 more', courses: ['GC 1', 'GC 2', 'GC 1', 'GC 404', 7] }));
+    expect(res.status).toBe(201);
+    const cards = (mem.clusters.get(ID)!.state as ClusterState).cards;
+    expect(cards.map(c => c.ref)).toEqual(['GC 1', 'GC 2']);
+    expect(cards[1]!.x).toBeGreaterThan(cards[0]!.x);
+  });
+  it('refuses more than 40 courses', async () => {
+    const many = Array.from({ length: 41 }, (_, i) => `GC ${i}`);
+    expect((await create(json('/api/build/clusters', 'POST', { name: 'x', courses: many }))).status).toBe(400);
+  });
 });
 
 describe('cluster item', () => {

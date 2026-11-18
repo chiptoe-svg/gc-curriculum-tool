@@ -8,22 +8,20 @@
  */
 import { useMemo, useRef, useState } from 'react';
 import { CARD_H, CARD_W } from '@/lib/builder/layout';
+import { nextCardSpot } from '@/lib/builder/cluster/spot';
 import { clusterEdges, loopMessage, wouldCycle, type ClusterEdge } from '@/lib/builder/cluster/graph';
 import type { ClusterCard, ClusterState } from '@/lib/builder/cluster/state';
 import type { StatusResult } from '@/lib/builder/cluster/status';
 import type { Library } from '@/lib/builder/types';
+import { stringsAt } from '@/lib/builder/strings/touch';
+import type { StringGraph } from '@/lib/builder/strings/types';
 import type { Update } from '../[id]/Builder';
+import { stringCurves } from './stringsOnCluster';
 
-const GAP = 56;
 const MARGIN = 40;
 const MAX_COORD = 20000; // the schema's limit (lib/builder/cluster/state.ts)
 
-/** Where a new card goes: right of the rightmost card, level with it; the top left on an empty canvas. */
-export function nextCardSpot(cards: readonly ClusterCard[]): { x: number; y: number } {
-  if (!cards.length) return { x: MARGIN, y: MARGIN };
-  const right = cards.reduce((a, b) => (b.x > a.x ? b : a));
-  return { x: Math.min(MAX_COORD - CARD_W, right.x + CARD_W + GAP), y: right.y };
-}
+export { nextCardSpot };
 
 /** A course on the cluster by its ref: a tracked course's code and title, or a proposed one's. */
 export function cardCourse(library: Library, state: ClusterState, ref: string): { code: string; title: string; proposed: boolean } {
@@ -64,6 +62,8 @@ export function ClusterCanvas(props: {
   /** Whether a required skill could not be checked (couldNotCheck: its last match failed). */
   failed?: (ref: string, r: StatusResult) => boolean;
   selected: string | null; onSelect: (ref: string | null) => void;
+  /** Locked strings to draw between the cards' courses, and what a click on one does (open its panel). */
+  strings?: StringGraph; onOpenString?: (id: string) => void;
 }) {
   const { library, state, update } = props;
   const edges = useMemo(() => clusterEdges(library, state), [library, state]);
@@ -98,6 +98,9 @@ export function ClusterCanvas(props: {
     else update(s => ({ ...s, links: s.links.filter(l => !(l.from === e.from && l.to === e.to)) }));
     setArrow(null);
   };
+
+  const cardCodes = useMemo(() => new Set(state.cards.map(c => c.ref)), [state.cards]);
+  const curves = useMemo(() => (props.strings ? stringCurves(props.strings, cardCodes) : []), [props.strings, cardCodes]);
 
   const width = Math.max(...state.cards.map(c => pos(c).x + CARD_W + 2 * MARGIN), 600);
   const height = Math.max(...state.cards.map(c => pos(c).y + CARD_H + 2 * MARGIN), 360);
@@ -164,6 +167,23 @@ export function ClusterCanvas(props: {
               </g>
             );
           })}
+          {curves.flatMap((c, ci) => c.hops.map(h => {
+            const g = arrowAt({ from: h.from, to: h.to, source: 'cluster' });
+            if (!g) return null;
+            const mx = (g.p.x + g.q.x) / 2, my = (g.p.y + g.q.y) / 2;
+            const dx = g.q.x - g.p.x, dy = g.q.y - g.p.y, len = Math.hypot(dx, dy) || 1;
+            const bend = 22 + 14 * ci;
+            const d = `M ${g.p.x} ${g.p.y} Q ${mx - (dy / len) * bend} ${my + (dx / len) * bend} ${g.q.x} ${g.q.y}`;
+            return (
+              <g key={`${c.id}:${h.from}>${h.to}`} role="button" tabIndex={0} aria-label={`String ${c.name}`} className="cl-string"
+                style={{ color: `var(--str-${c.color})` }}
+                onClick={() => props.onOpenString?.(c.id)} onKeyDown={k => { if (k.key === 'Enter' || k.key === ' ') { k.preventDefault(); props.onOpenString?.(c.id); } }}>
+                <title>{c.name}</title>
+                <path className="cl-string__hit" d={d} />
+                <path className="cl-string__line" d={d} />
+              </g>
+            );
+          }))}
           {drawing && at.get(drawing.from) && (
             <line className="cl-arrow__draft" x1={at.get(drawing.from)!.x + CARD_W} y1={at.get(drawing.from)!.y + CARD_H / 2} x2={drawing.x} y2={drawing.y} markerEnd="url(#cl-head)" />
           )}
@@ -202,6 +222,7 @@ export function ClusterCanvas(props: {
               <span className="cl-card__counts" title="Required skills checked against the courses upstream">
                 {n.met} met · {n.partly} partly · {n.not} not{n.matching ? ` · ${n.matching} matching` : ''}{n.failed ? ` · ${n.failed} could not be checked` : ''}
               </span>
+              {(() => { const n = props.strings && !proposed ? stringsAt(props.strings, c.ref).length : 0; return n > 0 ? <span className="cl-card__strings">{n} {n === 1 ? 'string' : 'strings'}</span> : null; })()}
               <button type="button" className="cl-card__handle" aria-label={`Draw an arrow from ${code}`}
                 title="Drag onto the course that needs this one"
                 onPointerDown={ev => { ev.stopPropagation(); setRefusal(null); setArrow(null); const q = local(ev); setDrawing({ from: c.ref, x: q.x, y: q.y }); }}
