@@ -20,7 +20,7 @@ const bad = (error: string, status = 400) => NextResponse.json({ error }, { stat
  * Body: { courseRef, authorName? }. Saves the course as edited on this cluster as a skills-only what-if on that
  * course (no estimate or profile; `fromCluster` names this cluster). It is based on the capture the cluster uses
  * for the course. Only a tracked course with a captured version can be saved.
- * → 201 { id } | 400 | 404
+ * → 201 { id, title } | 400 | 404
  */
 export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   const auth = await authorizeRequest(req);
@@ -56,9 +56,9 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
     required: eff.required.map(r => ({ statement: r.statement, need: { k: r.need.k, u: r.need.u, d: r.need.d } })),
     fromCluster: id,
   };
+  const title = `${lc.code} as edited on ${cluster.name}`;
   const row = await createWhatIf({
-    courseCode: lc.code, baseSnapshotId: version.snapshotId, ...ownerOf(auth.grant), authorName,
-    title: `${lc.code} as edited on ${cluster.name}`, skills,
+    courseCode: lc.code, baseSnapshotId: version.snapshotId, ...ownerOf(auth.grant), authorName, title, skills,
   });
-  return NextResponse.json({ id: row.id }, { status: 201 });
+  return NextResponse.json({ id: row.id, title }, { status: 201 });
 }

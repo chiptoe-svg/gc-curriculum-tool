@@ -195,7 +195,7 @@ describe('POST /api/build/clusters/[id]/versions', () => {
     });
     const res = await post('GC 2');
     expect(res.status).toBe(201);
-    expect(await res.json()).toEqual({ id: WHATIF_ID });
+    expect(await res.json()).toEqual({ id: WHATIF_ID, title: 'GC 2 as edited on Press cluster' });
     expect(mem.whatIfs[0]).toMatchObject({
       courseCode: 'GC 2', baseSnapshotId: 'GC 2', ownerGrantId: 'g', ownerKind: 'personal', authorName: 'Dr Who',
       title: 'GC 2 as edited on Press cluster',

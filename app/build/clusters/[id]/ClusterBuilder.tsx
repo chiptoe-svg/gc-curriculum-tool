@@ -11,13 +11,14 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { clusterVersionOf } from '@/lib/builder/compute';
+import { WHAT_IF_PREFIX, clusterVersionOf } from '@/lib/builder/compute';
 import { effectiveCourse } from '@/lib/builder/edits';
 import { mergeSyllabusDraft } from '@/lib/builder/edit-ops';
 import { clusterStatuses, type SetVerdicts, type StatusResult } from '@/lib/builder/cluster/status';
 import type { ClusterState } from '@/lib/builder/cluster/state';
 import type { DraftJudgments } from '@/lib/builder/threads';
-import type { Library, MatchDecision } from '@/lib/builder/types';
+import type { Candidate, EditBase, Library, MatchDecision } from '@/lib/builder/types';
+import type { ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
 import type { CatalogHit } from '@/lib/builder/library';
 import { LibraryPanel } from '../../[id]/LibraryPanel';
 import { SyllabusImport, type SyllabusImported } from '../../[id]/SyllabusImport';
@@ -27,6 +28,7 @@ import { useSetJudging, type SetRequest } from '../../shared/useSetJudging';
 import { useAutosave } from '../../shared/useAutosave';
 import { ClusterCanvas, cardCourse, nextCardSpot } from '../ClusterCanvas';
 import { ClusterObjectives } from '../ClusterObjectives';
+import { ClusterCourseDrawer } from './ClusterCourseDrawer';
 
 const MAX_PROPOSED = 60; // the server's limits (lib/builder/plan-schema.ts, lib/builder/cluster/state.ts)
 const MAX_CARDS = 40;
@@ -43,6 +45,8 @@ export function ClusterBuilder(props: {
   initialVersion: number; knownName: string | null;
   /** Latest decisions made on this cluster that name a draft skill; they apply only here. */
   clusterDecisions: Record<string, MatchDecision>;
+  /** The wiki's objective guide for each tracked course on the cluster when it opened, by course code. */
+  guides?: Record<string, ObjectiveGuideSection | null>;
 }) {
   const { library } = props;
   const author = useCallback(() => {
@@ -70,8 +74,10 @@ export function ClusterBuilder(props: {
   // ---- statuses and judging ----------------------------------------------
   const [drafts, setDrafts] = useState<DraftJudgments>({});
   const [sets, setSets] = useState<SetVerdicts>({});
-  const statuses = useMemo(() => clusterStatuses(library, cluster, drafts, sets, props.clusterDecisions),
-    [library, cluster, drafts, sets, props.clusterDecisions]);
+  /** Decisions in force here: the cluster's saved draft decisions, plus every rating made in this session (so it counts at once). */
+  const [decisions, setDecisions] = useState<Record<string, MatchDecision>>(props.clusterDecisions);
+  const statuses = useMemo(() => clusterStatuses(library, cluster, drafts, sets, decisions),
+    [library, cluster, drafts, sets, decisions]);
   const codeOf = useCallback((ref: string) => cardCourse(library, cluster, ref).code, [library, cluster]);
 
   /** Every target on the cluster, by judge job key. */
@@ -148,6 +154,50 @@ export function ClusterBuilder(props: {
     if (thread.judging[key] && thread.judging[key] !== 'matching') thread.retryJudge(key);
     else setJudging.retry(r.targetKey);
   }, [thread, setJudging]);
+
+  // ---- ratings and edits in the course panel -------------------------------
+  const stamp = useCallback((): EditBase => ({ id: newId('edit'), by: who().slice(0, 120), at: new Date().toISOString() }), [who]);
+
+  /**
+   * Rate a (required, upstream) pair: saved through the match API with this cluster's id, then recorded here so the status
+   * changes at once. A side read from a skills-only what-if is sent as a draft (its text is not in any capture).
+   */
+  const decide = useCallback(async (courseRef: string, r: StatusResult, cand: Candidate, label: MatchDecision['label']): Promise<string | null> => {
+    const { library: l, cluster: c } = anchorRef.current;
+    const read = (ref: string) => {
+      const lc = l.courses.find(x => x.code === ref);
+      const pc = lc ? undefined : c.proposed.find(p => p.id === ref);
+      if (!lc && !pc) return null;
+      const chosen = lc ? c.versions[lc.code] : undefined;
+      const skillsOnly = !!lc && !!chosen?.startsWith(WHAT_IF_PREFIX) && !!lc.whatIfs.find(w => `${WHAT_IF_PREFIX}${w.id}` === chosen)?.skills;
+      const v = lc ? clusterVersionOf(lc, c) : null;
+      return { course: lc ? lc.code : pc!.id, title: cardCourse(l, c, ref).title, snapshotId: v && !skillsOnly ? v.snapshotId : null,
+        eff: effectiveCourse((lc ?? pc)!, v, c.courseEdits?.[ref]) };
+    };
+    const me = read(courseRef);
+    const req = me?.eff.required.find(x => x.ref === r.judgeRef);
+    const from = r.pool.find(p => p.ref === cand.suppliedRef && p.code === cand.suppliedCourse);
+    const sup = from ? read(from.course) : null;
+    const skill = sup?.eff.developed.find(s => s.skillRef === cand.suppliedRef);
+    if (!me || !req || !sup || !skill) return 'That skill is no longer on the cluster.';
+    const reqDraft = req.draft || me.snapshotId === null, supDraft = skill.draft || sup.snapshotId === null;
+    try {
+      const res = await fetch('/api/build/match', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'decide', clusterId: props.clusterId, label, authorName: author(),
+          required: { course: me.course, title: me.title, snapshotId: reqDraft ? null : me.snapshotId, ref: req.ref, text: req.statement },
+          supplied: { course: sup.course, title: sup.title, snapshotId: supDraft ? null : sup.snapshotId, ref: skill.skillRef, text: skill.statement },
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) return typeof body.error === 'string' ? body.error : 'The rating was not saved.';
+    } catch { return 'The rating was not saved. Check the connection and try again.'; }
+    const d: MatchDecision = { requiredRef: req.ref, suppliedRef: skill.skillRef, label, by: who(), at: new Date().toISOString(), draft: reqDraft || supDraft };
+    setDecisions(x => ({ ...x, [`${req.ref}|${skill.skillRef}`]: d }));
+    return null;
+  }, [author, who, props.clusterId]);
+  const decisionsInForce = useMemo(() => ({ ...library.decisions, ...decisions }), [library.decisions, decisions]);
 
   // ---- adding and removing courses ---------------------------------------
   const onCards = useMemo(() => new Set(cluster.cards.map(c => c.ref)), [cluster.cards]);
@@ -273,22 +323,16 @@ export function ClusterBuilder(props: {
           <ClusterObjectives objectives={cluster.objectives} results={statuses.cluster} codeOf={codeOf} update={update}
             errorOf={r => errorOf(r, CLUSTER_REF, 'objective')} onRetry={r => retry(r, CLUSTER_REF, 'objective')} />
           <ClusterCanvas library={library} state={cluster} update={update} statuses={statuses.required}
-            selected={selected} onSelect={setSelected} />
+            failed={(ref, r) => !!errorOf(r, ref, 'required')} selected={selected} onSelect={setSelected} />
         </main>
 
         {sel && selected && (
-          <aside className="cb-drawer cl-drawer" aria-label={`${sel.code} ${sel.title}`}>
-            <div className="cl-drawer__head">
-              <div>
-                <p className="cl-card__code">{sel.code}</p>
-                <h2>{sel.title}</h2>
-              </div>
-              <button type="button" className="cb-linkbtn" onClick={() => setSelected(null)}>Close</button>
-            </div>
-            <div className="cl-drawer__foot">
-              <button type="button" className="cb-btn cb-btn--danger" onClick={() => remove(selected)}>Remove from cluster</button>
-            </div>
-          </aside>
+          <ClusterCourseDrawer key={selected} courseRef={selected} clusterId={props.clusterId} slug={props.slug} library={library}
+            cluster={cluster} update={update} required={statuses.required[selected] ?? []} objectives={statuses.objectives[selected] ?? []}
+            codeOf={codeOf} decisions={decisionsInForce} decide={(r, cand, label) => decide(selected, r, cand, label)}
+            errorOf={(r, kind) => errorOf(r, selected, kind)} onRetry={(r, kind) => retry(r, selected, kind)}
+            judging={thread} stamp={stamp} who={who} author={author} guide={props.guides?.[selected] ?? null}
+            saved={save === 'saved'} onSelect={setSelected} onRemove={remove} onClose={() => setSelected(null)} />
         )}
       </div>
     </div>

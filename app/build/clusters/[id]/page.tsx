@@ -8,6 +8,7 @@ import { readClusterState } from '@/lib/builder/cluster/state';
 import type { MatchDecision } from '@/lib/builder/types';
 import { planDraftDecisions } from '@/lib/db/match-queries';
 import { isUndefinedTable } from '@/lib/db/pg-errors';
+import { loadObjectiveGuideSection, type ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
 import { ClusterBuilder } from './ClusterBuilder';
 import '../../build.css';
 import '../cluster.css';
@@ -53,6 +54,15 @@ export default async function BuildClusterPage({ params, searchParams }: {
     if (!isUndefinedTable(err)) console.error('[build/clusters] decisions failed:', err instanceof Error ? err.message : err);
   }
 
+  // The wiki's objective guide for each tracked course on the cluster, shown read-only in the course panel. Only a stored
+  // guide is shown (the wiki's "no syllabus" notices are for the course page); a failed read just leaves it out.
+  const guides: Record<string, ObjectiveGuideSection | null> = {};
+  const tracked = state.cards.map(c => c.ref).filter(ref => library.courses.some(c => c.code === ref));
+  await Promise.all(tracked.map(async code => {
+    const g = await loadObjectiveGuideSection(code).catch(() => null);
+    guides[code] = g?.kind === 'guide' ? g : null;
+  }));
+
   return (
     <ClusterBuilder
       clusterId={cluster.id}
@@ -63,6 +73,7 @@ export default async function BuildClusterPage({ params, searchParams }: {
       initialVersion={cluster.version}
       knownName={personalName(grant)}
       clusterDecisions={clusterDecisions}
+      guides={guides}
     />
   );
 }

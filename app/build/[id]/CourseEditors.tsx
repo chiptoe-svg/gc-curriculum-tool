@@ -36,7 +36,8 @@ export function courseEditOps<S extends MapCore>(courseRef: string, update: Upda
 }
 export type EditOps = ReturnType<typeof courseEditOps<MapCore>>;
 
-export function ObjectivesEditor(props: { eff: EffectiveCourse; ops: EditOps }) {
+/** `after`: shown under each objective (the cluster map puts its status and override there); /build passes none. */
+export function ObjectivesEditor(props: { eff: EffectiveCourse; ops: EditOps; after?: (o: EffectiveCourse['objectives'][number]) => React.ReactNode }) {
   const [editing, setEditing] = useState<number | 'new' | null>(null);
   const items = props.eff.objectives;
   return (
@@ -54,6 +55,7 @@ export function ObjectivesEditor(props: { eff: EffectiveCourse; ops: EditOps }) 
                   <button type="button" className="cb-linkbtn" onClick={() => setEditing(i)}>Edit</button>{' '}
                   <button type="button" className="cb-linkbtn" onClick={() => props.ops.removeObjective(o)}>Remove</button>
                 </span>
+                {props.after?.(o)}
               </>
             )}
           </li>

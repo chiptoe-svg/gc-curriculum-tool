@@ -23,14 +23,14 @@ const state = (over: Partial<ClusterState> = {}): ClusterState => ({
 });
 
 /** The canvas as ClusterBuilder mounts it: the builder owns the state; `seen` records every state it was given. */
-function mount(l: Library, initial: ClusterState, statuses: Record<string, StatusResult[]> = {}) {
+function mount(l: Library, initial: ClusterState, statuses: Record<string, StatusResult[]> = {}, failed?: (ref: string, r: StatusResult) => boolean) {
   const seen: ClusterState[] = [];
   let updates = 0;
   function Harness() {
     const [s, setS] = useState(initial);
     seen.push(s);
     return (
-      <ClusterCanvas library={l} state={s} statuses={statuses} selected={null} onSelect={() => {}}
+      <ClusterCanvas library={l} state={s} statuses={statuses} failed={failed} selected={null} onSelect={() => {}}
         update={fn => { updates++; setS(prev => fn(prev)); }} />
     );
   }
@@ -85,6 +85,12 @@ describe('ClusterCanvas', () => {
     mount(lib(), state(), { 'GC 2070': [r('met'), r('met_set'), r('partly'), r('parts_met'), r('not')], 'GC 4400': [r('met'), r('pending')] });
     expect(screen.getByRole('group', { name: 'GC 2070 Title of GC 2070' })).toHaveTextContent('2 met · 2 partly · 1 not');
     expect(screen.getByRole('group', { name: 'GC 4400 Title of GC 4400' })).toHaveTextContent('1 met · 0 partly · 0 not · 1 matching');
+  });
+
+  it('counts required skills whose match failed as could not be checked, not as matching', () => {
+    const r = (status: ClusterStatus, key: string) => ({ status, targetKey: key } as StatusResult);
+    mount(lib(), state(), { 'GC 4400': [r('met', 'a'), r('pending', 'b'), r('pending', 'c')] }, (_ref, x) => x.targetKey === 'c');
+    expect(screen.getByRole('group', { name: 'GC 4400 Title of GC 4400' })).toHaveTextContent('1 met · 0 partly · 0 not · 1 matching · 1 could not be checked');
   });
 
   it('marks a proposed or edited course', () => {

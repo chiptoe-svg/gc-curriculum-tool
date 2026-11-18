@@ -115,4 +115,38 @@ describe('ClusterBuilder judging', () => {
     await waitFor(() => expect(item).toHaveTextContent('Met'));
     expect(calls.filter(c => c.body.action === 'judge')).toHaveLength(2);
   });
+
+  it('a rating in the course panel is saved with the cluster id and counts at once', async () => {
+    const calls = stubFetch(c => (c.body.action === 'judge'
+      ? json(200, { results: [{ ref: hash(SUP), similarity: 0.6, pFully: 0.01, pPartly: 0.01 }, { ref: hash(A), similarity: 0.2, pFully: 0.01, pPartly: 0.01 }] })
+      : c.body.action === 'decide' ? json(200, { ok: true }) : json(500, {})));
+    mount(state());
+    await waitFor(() => expect(card('GC 2070')).toHaveTextContent('0 met · 0 partly · 1 not'));
+    fireEvent.click(card('GC 2070'));
+    const req = screen.getByRole('region', { name: 'Required skills' });
+    expect(req).toHaveTextContent('Not met');
+    const cand = within(req).getByText(`GC 1010: ${SUP}`).closest('li')!;
+    fireEvent.click(within(cand as HTMLElement).getByRole('button', { name: 'Fully' }));
+    await waitFor(() => expect(card('GC 2070')).toHaveTextContent('1 met · 0 partly · 0 not'));
+    expect(req).toHaveTextContent(`From GC 1010: ${SUP}`);
+    const decide = calls.filter(c => c.body.action === 'decide');
+    expect(decide).toHaveLength(1);
+    expect(decide[0]!.body).toMatchObject({
+      clusterId: ID, label: 'fully', authorName: 'Tester',
+      required: { course: 'GC 2070', title: 'Title GC 2070', snapshotId: 'GC 2070', ref: hash(NEED), text: NEED },
+      supplied: { course: 'GC 1010', title: 'Title GC 1010', snapshotId: 'GC 1010', ref: hash(SUP), text: SUP },
+    });
+    expect(decide[0]!.body).not.toHaveProperty('planId');
+  });
+
+  it('a campus outage on a required skill reads "could not be checked" on the card and shows Try again in the panel', async () => {
+    stubFetch(() => json(502, { error: 'x' }));
+    mount(state());
+    await waitFor(() => expect(card('GC 2070')).toHaveTextContent('0 met · 0 partly · 0 not · 1 could not be checked'));
+    fireEvent.click(card('GC 2070'));
+    const req = screen.getByRole('region', { name: 'Required skills' });
+    expect(req).toHaveTextContent('The campus model did not answer; try again.');
+    expect(within(req).getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+    expect(req).not.toHaveTextContent('Not met');
+  });
 });

@@ -33,13 +33,17 @@ export function cardCourse(library: Library, state: ClusterState, ref: string): 
   return p ? { code: p.code, title: p.title, proposed: true } : { code: ref, title: '', proposed: false };
 }
 
-/** Required-skill counts for a card: met (alone or by a set), partly (including parts met), not, and still matching. */
-export function cardCounts(results: readonly StatusResult[]) {
-  const n = { met: 0, partly: 0, not: 0, matching: 0 };
+/**
+ * Required-skill counts for a card: met (alone or by a set), partly (including parts met), not, still matching, and
+ * waiting on a match that failed (`failed`: the campus model did not answer), which could not be checked.
+ */
+export function cardCounts(results: readonly StatusResult[], failed: (r: StatusResult) => boolean = () => false) {
+  const n = { met: 0, partly: 0, not: 0, matching: 0, failed: 0 };
   for (const r of results) {
     if (r.status === 'met' || r.status === 'met_set') n.met++;
     else if (r.status === 'partly' || r.status === 'parts_met') n.partly++;
     else if (r.status === 'not') n.not++;
+    else if (failed(r)) n.failed++;
     else n.matching++;
   }
   return n;
@@ -57,6 +61,8 @@ export function ClusterCanvas(props: {
   library: Library; state: ClusterState; update: Update<ClusterState>;
   /** Required-skill statuses by course ref (clusterStatuses(...).required). */
   statuses: Record<string, StatusResult[]>;
+  /** Whether a pending required skill's last match failed (counted as "could not be checked"). */
+  failed?: (ref: string, r: StatusResult) => boolean;
   selected: string | null; onSelect: (ref: string | null) => void;
 }) {
   const { library, state, update } = props;
@@ -179,7 +185,7 @@ export function ClusterCanvas(props: {
           const { code, title, proposed } = info(c.ref);
           const e = state.courseEdits?.[c.ref];
           const edited = !!e && e.objectives.length + e.required.length + e.developed.length > 0;
-          const n = cardCounts(props.statuses[c.ref] ?? []);
+          const n = cardCounts(props.statuses[c.ref] ?? [], r => !!props.failed?.(c.ref, r));
           const p = pos(c);
           return (
             <div key={c.ref} role="group" aria-label={`${code} ${title}`}
@@ -194,7 +200,7 @@ export function ClusterCanvas(props: {
               </div>
               <span className="cl-card__title" title={title}>{title}</span>
               <span className="cl-card__counts" title="Required skills checked against the courses upstream">
-                {n.met} met · {n.partly} partly · {n.not} not{n.matching ? ` · ${n.matching} matching` : ''}
+                {n.met} met · {n.partly} partly · {n.not} not{n.matching ? ` · ${n.matching} matching` : ''}{n.failed ? ` · ${n.failed} could not be checked` : ''}
               </span>
               <button type="button" className="cl-card__handle" aria-label={`Draw an arrow from ${code}`}
                 title="Drag onto the course that needs this one"

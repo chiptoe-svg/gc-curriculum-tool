@@ -46,7 +46,15 @@
 .cl-card__handle { position: absolute; right: -0.55rem; top: 50%; transform: translateY(-50%); width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 1px solid var(--cb-ink); background: var(--cb-paper); font-size: 0.55rem; line-height: 1; padding: 0; cursor: crosshair; color: var(--cb-accent); }
 .cl-card__handle:hover { background: var(--cb-accent); color: var(--cb-paper); }
 
-.cl-drawer { padding: 1rem; gap: 1rem; }
-.cl-drawer__head { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
-.cl-drawer__head h2 { font-size: 1.3rem; }
-.cl-drawer__foot { margin-top: auto; }
+/* The course panel (ClusterCourseDrawer): statuses beside objectives and required skills, ratings, overrides. */
+.cl-status__err { color: var(--cb-short); font-weight: 400; }
+.cl-objstatus { grid-column: 1 / -1; font-size: 0.875rem; }
+.cl-override { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; margin-left: 0.4rem; }
+.cl-override input { border: 1px solid var(--cb-rule); border-radius: 3px; padding: 0.15rem 0.4rem; min-width: 12rem; }
+.cb-req.cl-req--met, .cb-req.cl-req--met_set { border-left-color: var(--cb-req-met); }
+.cb-req.cl-req--partly, .cb-req.cl-req--parts_met { border-left-color: var(--cb-req-partly); }
+.cb-req.cl-req--not { border-left-color: var(--cb-req-not); }
+.cl-cands { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; font-size: 0.875rem; color: var(--cb-ink-soft); }
+.cl-cand { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.4rem; align-items: baseline; }
+.cl-cand__acts { display: flex; gap: 0.2rem; }
+.cl-drawer__acts .cb-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
