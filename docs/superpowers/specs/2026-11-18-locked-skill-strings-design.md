@@ -30,7 +30,9 @@ look at a string and see the progression, where it thins, and where it ends.
 ## Goals
 
 1. A department-wide string record: name, a short "what this string is", ordered stops, who locked it, when, and why.
-2. Lock a string from a cluster map, from links already on the canvas; extend an existing string from any cluster.
+2. Lock, extend, join and branch strings in a cluster map, from links already on the canvas; strings are created and
+   edited only there.
+7. Locked strings show in the larger map (`/build`), read-only, including where they join and branch (owner, 2026-11-18).
 3. A string panel with the stops in order and the four readings (depth, reinforcement, where it ends, why).
 4. String status against today's captures: intact, changed-since-locked (confirm), broken (skill gone).
 5. Break warnings where courses are changed, and "strings through this course" marks.
@@ -40,7 +42,6 @@ look at a string and see the progression, where it thins, and where it ends.
 
 - Chords / competencies derived from strings (the second half of the ROADMAP item).
 - Automatic string suggestions from existing links (agreed as a later phase).
-- Branching strings. A string is one ordered line; a skill may sit on several strings, which covers most branching.
 - Strings through what-ifs or map-only draft courses. Strings anchor to **captured** courses only.
 
 ## Anti-goals
@@ -61,20 +62,41 @@ look at a string and see the progression, where it thins, and where it ends.
 
 ## Design
 
+### Joining and branching (owner, 2026-11-18)
+
+Strings can **come together** at a skill in a course (or at an end point), and can **branch out** from a skill in a
+course. Model: the department keeps one shared set of **skill points** (a course's skill, in a role) and **links**
+between them; a named string is a path through those points. Two strings that pass through the same skill point have
+joined there; two strings that share points up to a skill and then go separate ways have branched there. Each string
+stays a single path from its start to its end, so its readings (depth, reinforcement, fade later) stay well defined; the
+joins and branches are visible wherever paths share a point.
+
+Approach note (Claude's call, owner to check): the alternative, one string that is itself a tree, was set aside: a
+tree has many ends and many paths, so "depth along the string", reinforcement and fade would each need a rule for
+which path counts. Shared points give the same picture with simple per-string readings.
+
 ### The record (department-wide, migration 0071)
 
-- `curriculum_strings`: id, name (unique among active strings), description, status `active | unlocked`,
-  created_by / at, updated_by / at, version (optimistic lock, as `curriculum_clusters`).
-- `curriculum_string_stops`: string_id, position (order), course_code, role `develops | requires`, statement (saved
-  wording at lock), statement_hash (the `skillRef` / `ref` scheme: `textHash(normalizeStatement(s))`), snapshot_id at
-  lock, k/u/d at lock, link_reason (why this stop follows the previous; null on the first stop), added_by / at.
-- `curriculum_strings` also holds an optional end_note, end_by, end_at: a faculty note on the end (e.g. "could continue
-  into GC 4800"). Optional; no note is the normal case. Adding a stop past the end clears it.
-- `skill_orphan_notes`: course_code, role, statement_hash, statement, reason, by, at: why a skill on no string is there. Resolved like a stop (a reworded skill shows its note as "changed, confirm").
-- `curriculum_string_events`: append-only history (locked, stop added, stop removed, reword confirmed, renamed,
-  unlocked), with who, when, reason, and the stop's before/after wording. Unlocking keeps the rows; status flips.
+- `string_points`: id, course_code, role `develops | requires`, statement (saved wording), statement_hash (the
+  `skillRef` / `ref` scheme: `textHash(normalizeStatement(s))`), snapshot_id and k/u/d when first locked, optional
+  `term` (see "Built for fade and reinforcement later"). Unique on (course_code, role, statement_hash). One point per
+  skill, shared by every string through it, so a join is the same row, not two copies.
+- `string_links`: from_point, to_point, why (the faculty reason this skill leads to that one), by, at. Unique on the
+  pair. Shared: two strings using the same link share its why.
+- `curriculum_strings`: id, name (unique among active strings), description, status `active | unlocked`, optional
+  end_note / end_by / end_at (a note on where it ends, e.g. "could continue into GC 4800"; adding past the end clears
+  it), created_by / at, updated_by / at, version (optimistic lock, as `curriculum_clusters`).
+- `curriculum_string_path`: string_id, position, point_id. Consecutive positions must be joined by a `string_links` row.
+- `skill_orphan_notes`: course_code, role, statement_hash, statement, reason, by, at: why a skill on no string is there.
+  Resolved like a point (a reworded skill shows its note as "changed, confirm").
+- `curriculum_string_events`: append-only history (locked, extended, joined, branched, point removed, reword
+  confirmed, renamed, unlocked), with who, when, reason, and before/after wording. Unlocking keeps the rows; status
+  flips. A point or link no active string uses stays stored (history) but is not drawn.
 
-A course can appear more than once on a string (e.g. a course that requires the skill and develops it further: two stops).
+Words: a **stop** is one string's visit to a skill point (a row in `curriculum_string_path`). Panel readings are per
+stop; status is per point.
+
+A course can appear more than once on a string (e.g. it requires the skill and develops it further: two points).
 
 ### Anchoring and status
 
@@ -87,18 +109,39 @@ resolved against the course's **current** captured snapshot:
   same". Confirming records a `reword confirmed` event and updates the stop's saved wording and hash.
 - **Broken:** no candidate. The string draws a visible gap at that stop.
 
-Resolution is computed on read and cached by (stop hash, snapshot id); it never writes to the string.
+Resolution is per skill point (a join is resolved once for every string through it), computed on read and cached by
+(point hash, snapshot id); it never writes to the record. A reworded point confirmed once is confirmed for every string.
 
-### Locking (cluster map)
+### Creating and editing (cluster map only)
 
-On a cluster canvas, a faculty member picks a link already drawn (a required skill and the upstream skill(s) that meet
-it) and chooses **Lock as string**: name, what it is, why the link holds. Or **Add to string…** to extend an existing one
-(placed by course order; the user can reorder). Only stops on captured courses can be locked; a what-if or draft course
-in the cluster shows why it can't.
+All string editing happens on a cluster canvas, from links already drawn (a required skill and the upstream skill(s)
+that meet it). Only points on captured courses can be locked; a what-if or draft course in the cluster shows why not.
+
+- **Lock as string:** pick a link; tick which supplying skills belong (default all); give a name, what it is, and why
+  each link holds. Points are ordered by Act (`defaultAct()`), then course number, develops before requires in a course.
+- **Extend:** add a link from a string's end (or before its start).
+- **Join:** route a string into a skill point another string already passes through. The existing point and links
+  are reused; the panel of each shows "joins *other string* at GC xxxx".
+- **Branch:** from a point on a string, **Branch from here** starts a new named string that shares the path up to that
+  point and then follows a new link.
+- **Unlink / remove a point:** with a reason; any string left with a gap shows it.
 
 Who (owner, 2026-11-18): any signed-in faculty who can use the cluster map can lock, extend, confirm, explain an end or
 an orphan, and unlock; unlock needs a reason. All of it is in the event history with names. Strings are faculty-only
 (owner, 2026-11-18): `/strings` and `/api/strings` are gated like `/build`; nothing appears on public wiki pages yet.
+
+### In the larger map (/build)
+
+Strings are edited only in clusters, but their effect shows in the larger map (owner, 2026-11-18). `/build` draws every
+active locked string whose points fall on courses in the plan, over its existing string drawing (`lib/builder/threads.ts`):
+
+- Locked strings are drawn distinctly from the matcher's suggested strings, and show their name on hover.
+- Joins and branches are visible where locked strings share a point; a point shared by several strings is marked.
+- A string that leaves the plan's courses shows where it goes ("continues to GC xxxx, not in this plan").
+- Status shows here too: a reworded or broken point reads as it does in the panel.
+- Clicking a locked string opens its panel. Nothing about strings can be edited from `/build`; the panel links to
+  "Edit in a cluster" (opens or creates a cluster with the string's courses).
+- `/build`'s course edits that would reword or drop a point show the break warning as a preview (below).
 
 ### The string panel
 
@@ -111,6 +154,8 @@ Opened from any stop marker, from the course, or from a strings index (`/strings
   "Built for fade and reinforcement later").
 - **Ends at:** the string's last stop, shown plainly as "Ends at GC xxxx (Act n)" with its optional end note. `/strings`
   can sort and filter by where strings end (course, Act), so faculty can see which strings stop where.
+- **Joins and branches:** at each stop, the other strings through that point ("joined by *X*", "*Y* branches off
+  here"), each opening its own panel.
 - History: the event list.
 
 ### Built for fade and reinforcement later (owner, 2026-11-18)
@@ -120,7 +165,7 @@ Not built in this version, but the design must not need reworking to add them. /
 the peak halves the loss; time runs in terms, three per act. A string is exactly the input that function wants, so:
 
 - **Every stop has a place in time.** It resolves to an Act through `defaultAct()`, and carries an optional `term`
-  (column on `curriculum_string_stops`, null in this version; null means the act's last term, as `durable()` treats it).
+  (column on `string_points`, null in this version; null means the act's last term, as `durable()` treats it).
   A later version can let a plan or cluster's placement override both.
 - **One pure reading function.** All panel readings come from `readString(stops, options)` in
   `lib/builder/strings/read.ts`, returning per-stop readings plus string totals. `options.fade` exists now and is
@@ -171,9 +216,7 @@ Orphans are a list, not a score.
   `develops` stops only. A `requires` stop whose need is above the previous `develops` stop's level shows as a gap.
 - **Anchor:** captured snapshots only, never map edits. "Current" is the course's latest snapshot (`versions[0]`, the
   same default as /build). Pinning a snapshot is not offered.
-- **Lock gesture:** one string per lock. The user ticks which of the link's supplying skills belong (default all); each
-  becomes a stop. Stops are ordered by Act (the existing default-act-by-catalog-level rule), then course number, then
-  develops before requires within a course; the user can reorder.
+- **Lock gesture:** see "Creating and editing"; ordering by Act, then course number, develops before requires.
 - **Ends (owner, 2026-11-18):** an end is a future opportunity, not a fault: no flag, just visible, with an optional
   note and a sort/filter on `/strings`.
 - **Orphans:** a developed skill is an orphan if it is on no string. A required skill is unsupplied if it is not a
@@ -189,7 +232,7 @@ Orphans are a list, not a score.
 
 ## Calls made by Claude (owner to check)
 
-- Strings are linear; a skill can be on many strings (no branching).
+- Joins and branches are shared skill points between single-path strings, not a tree-shaped string.
 - Captured courses only.
 - Unlock needs a reason; full history.
 - End notes and orphan notes are free text, one per string end or skill, editable by any faculty.
