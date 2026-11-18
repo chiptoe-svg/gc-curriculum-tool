@@ -14,7 +14,7 @@ const graph: StringGraph = {
   events: [],
 };
 const intact: PointStatus = { kind: 'intact', now: { k: 2, u: 2, d: 2 } };
-const reply = (status: PointStatus) => ({ graph, status: { p1: intact, p2: status }, levels: { 'GC 1010': 1, 'GC 2400': 2 }, notes: [] });
+const reply = (status: PointStatus) => ({ graph, status: { p1: intact, p2: status }, levels: { 'GC 1010': 1, 'GC 2400': 2 }, notes: [], orphans: { 'GC 2400': { developed: [{ statement: 'Mix spot inks', hash: 'x', note: null }], unsupplied: [] } } });
 const json = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body }) as Response;
 const stub = (res: Response) => { const f = vi.fn().mockResolvedValue(res); vi.stubGlobal('fetch', f); return f; };
 
@@ -61,15 +61,16 @@ describe('CourseStrings', () => {
 
   it('lists skills on no string and posts an orphan note', async () => {
     const f = stub(json(200, reply(intact)));
-    render(<CourseStrings courseCode="GC 2400" mode="course" skills={['Mix spot inks']} required={[]} />);
+    render(<CourseStrings courseCode="GC 2400" mode="course" />);
     expect(await screen.findByText('Skills on no string')).toBeInTheDocument();
     expect(screen.getByText('Mix spot inks')).toBeInTheDocument();
-    f.mockResolvedValue(json(200, { graph, notes: [{ courseCode: 'GC 2400', role: 'develops', statementHash: 'x', statement: 'Mix spot inks', reason: 'Taught as a one-off', by: 'a', at: '2026-01-02' }] }));
+    f.mockResolvedValue(json(200, { ...reply(intact), orphans: { 'GC 2400': { developed: [{ statement: 'Mix spot inks', hash: 'x', note: 'Taught as a one-off' }], unsupplied: [] } } }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a note' }));
     fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Taught as a one-off' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save note' }));
     await waitFor(() => expect(f.mock.calls.some((c) => c[0] === '/api/strings/orphan-notes')).toBe(true));
     const call = f.mock.calls.find((c) => c[0] === '/api/strings/orphan-notes')!;
     expect(JSON.parse(call[1].body)).toMatchObject({ courseCode: 'GC 2400', role: 'develops', statement: 'Mix spot inks', reason: 'Taught as a one-off' });
+    expect(await screen.findByText(/Taught as a one-off/)).toBeInTheDocument();
   });
 });

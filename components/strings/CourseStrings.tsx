@@ -1,31 +1,21 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { courseChanges, orphansOf, stringsAt } from '@/lib/builder/strings/touch';
+import { courseChanges, stringsAt, type OrphanSkill } from '@/lib/builder/strings/touch';
 import type { OrphanNote, PointStatus, Role, StringGraph } from '@/lib/builder/strings/types';
-import type { Library } from '@/lib/builder/types';
 
-interface Resolved { graph: StringGraph; status: Record<string, PointStatus>; levels: Record<string, number>; notes: OrphanNote[] }
+interface Resolved { graph: StringGraph; status: Record<string, PointStatus>; levels: Record<string, number>; notes: OrphanNote[]; orphans?: Record<string, { developed: OrphanSkill[]; unsupplied: OrphanSkill[] }> }
 
 export interface CourseStringsProps {
   courseCode: string;
   mode: 'course' | 'capture';
   /** The page's access query (`?slug=...`), kept on links to /strings/[id]. */
   query?: string;
-  /** The course's current developed and required skill statements, for "Skills on no string". Omitted: that section is left out. */
-  skills?: string[];
-  required?: string[];
 }
 
 const STANDING: Record<string, string> = {
   intact: 'Holds', changed: 'Reworded', unanchored: 'No longer anchored', unchecked: "Couldn't check",
 };
-
-/** orphansOf reads only this course's newest version's skills and required statements. */
-function libraryOf(code: string, skills: string[], required: string[]): Library {
-  const version = { skills: skills.map((statement) => ({ statement })), required: required.map((statement) => ({ statement })) };
-  return { courses: [{ code, versions: [version] }] } as unknown as Library;
-}
 
 function NoteForm({ onSave }: { onSave: (reason: string) => Promise<boolean> }) {
   const [shown, setShown] = useState(false);
@@ -40,7 +30,7 @@ function NoteForm({ onSave }: { onSave: (reason: string) => Promise<boolean> }) 
   );
 }
 
-export function CourseStrings({ courseCode, mode, query = '', skills, required }: CourseStringsProps) {
+export function CourseStrings({ courseCode, mode, query = '' }: CourseStringsProps) {
   const [data, setData] = useState<Resolved | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'hidden' | 'failed'>('loading');
   const [name, setName] = useState('');
@@ -61,11 +51,11 @@ export function CourseStrings({ courseCode, mode, query = '', skills, required }
   if (state === 'loading' || state === 'hidden') return null;
   if (state === 'failed' || !data) return <p className="cb-muted">Couldn&apos;t load strings.</p>;
 
-  const { graph, status, levels, notes } = data;
+  const { graph, status, levels } = data;
   const levelOf = (code: string) => levels[code] ?? 0;
   const here = stringsAt(graph, courseCode);
   const changes = courseChanges(graph, status, courseCode, levelOf);
-  const orphans = skills || required ? orphansOf(libraryOf(courseCode, skills ?? [], required ?? []), graph, notes, courseCode) : null;
+  const orphans = data.orphans?.[courseCode] ?? null;
   const orphanCount = orphans ? orphans.developed.length + orphans.unsupplied.length : 0;
 
   async function post(url: string, body: Record<string, unknown>): Promise<Response | null> {
@@ -85,9 +75,7 @@ export function CourseStrings({ courseCode, mode, query = '', skills, required }
   async function saveNote(role: Role, statement: string, reason: string): Promise<boolean> {
     const res = await post('/api/strings/orphan-notes', { courseCode, role, statement, reason });
     if (!res) return false;
-    const out = (await res.json().catch(() => ({}))) as { notes?: OrphanNote[] };
-    if (out.notes) setData({ ...data!, notes: out.notes.filter((n) => n.courseCode === courseCode) });
-    else await load();
+    await load();
     return true;
   }
 
@@ -105,7 +93,7 @@ export function CourseStrings({ courseCode, mode, query = '', skills, required }
   ));
 
   return (
-    <section className="st-panel" data-mode={mode}>
+    <section className="cb st-panel" data-mode={mode}>
       {here.length > 0 && (
         <div>
           <h3>Strings through this course</h3>

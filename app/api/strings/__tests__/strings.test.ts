@@ -223,6 +223,12 @@ describe('POST /api/strings/resolve', () => {
     expect(Object.keys(j.status).sort()).toEqual([P1, P2].sort());
     expect(j.notes).toEqual([]);
     expect(mem.notesFor).toEqual([['GC 2010', 'GC 4010']]);
+    expect(j.orphans).toEqual({ 'GC 2010': { developed: [], unsupplied: [] }, 'GC 4010': { developed: [], unsupplied: [] } });
+  });
+  it('courseCodes: lists a requested course\'s skills that sit on no active string', async () => {
+    mem.lib = { courses: [course('GC 4010', 4, [{ s: 'Spare skill', k: 1, u: 1, d: 1 }])] } as unknown as Library;
+    const j = await (await resolve(req('/api/strings/resolve', 'POST', { courseCodes: ['GC 4010'] }))).json();
+    expect(j.orphans['GC 4010'].developed).toMatchObject([{ statement: 'Spare skill', note: null }]);
   });
   it('stringId: returns that string even when unlocked, with no orphan notes', async () => {
     const r = await resolve(req('/api/strings/resolve', 'POST', { stringId: B }));
@@ -231,6 +237,7 @@ describe('POST /api/strings/resolve', () => {
     expect(j.graph.strings[0].status).toBe('unlocked');
     expect(j.levels).toEqual({ 'GC 2010': 2, 'GC 3010': 3 });
     expect(j.notes).toEqual([]);
+    expect(j.orphans).toEqual({});
   });
   it('caps the course list and each code', async () => {
     const many = await resolve(req('/api/strings/resolve', 'POST', { courseCodes: Array.from({ length: 201 }, (_, i) => `GC ${i}`) }));
