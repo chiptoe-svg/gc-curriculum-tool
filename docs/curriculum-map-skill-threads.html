@@ -1,191 +1,274 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Skill-Thread Curriculum Map</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skill-Thread Curriculum Map — Graphic Communications, Clemson</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
 <style>
-  :root {
-    --rail: #141412; --rail-text: #8a8780; --rail-active: #E8A44A; --rail-hover: #2a2925;
-    --bg: #F7F5F0; --bg-card: #FFFFFF; --bg-alt: #F0EDE6;
-    --text: #1C1C18; --text-muted: #6B6860; --text-faint: #9E9B94;
-    --accent: #C8682A; --accent-light: #F5E6D8;
-    --border: #E2DDD4; --border-strong: #C8C4BA;
-    --mono: 'DM Mono', monospace; --serif: 'Source Serif 4', Georgia, serif; --display: 'Playfair Display', Georgia, serif;
-    --t1: #2A5C8C;
-    --met: #2F7D4F; --met-bg: #E3F1E8; --part: #B7791F; --part-bg: #FBF0DC; --not: #B3412E; --not-bg: #F8E1DC; --nodata: #8a8780; --nodata-bg: #EEECE7;
-    --k: #6A5ACD; --u: #2A7F9E; --d: #C8682A;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body { font-family: var(--serif); background: var(--bg); color: var(--text); display: flex; min-height: 100vh; font-size: 16px; line-height: 1.7; }
-  #rail { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; background: var(--rail); display: flex; flex-direction: column; overflow-y: auto; z-index: 100; }
-  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
-  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
-  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
-  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
-  .rail-nav { padding: 20px 0; flex: 1; }
-  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
-  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
-  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
-  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1120px; min-width: 0; }
-  .doc-head { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
-  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
-  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; margin-bottom: 20px; }
-  .doc-subtitle { font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 760px; font-style: italic; font-weight: 300; }
-  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
-  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
-  section { margin-bottom: 56px; scroll-margin-top: 32px; }
-  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
-  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
-  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; }
-  p { margin-bottom: 14px; max-width: 780px; }
-  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
-  ul, ol { margin: 14px 0 22px 22px; max-width: 780px; }
-  li { margin-bottom: 8px; }
-  sup.nv { font-family: var(--mono); font-size: 0.72em; color: var(--text-faint); margin-left: 1px; cursor: help; }
-  code { font-family: var(--mono); font-size: 0.86em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; }
-  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 840px; }
-  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
-  .callout.note { border-left-color: var(--t1); }
-  .callout.note .callout-title { color: var(--t1); }
-  .table-wrap { overflow-x: auto; max-width: 860px; margin: 18px 0 24px; }
-  table.grid { border-collapse: collapse; width: 100%; font-size: 15px; }
-  table.grid th, table.grid td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
-  table.grid th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); background: var(--bg-alt); font-weight: 500; }
-  ol.refs li { margin-bottom: 8px; font-size: 15px; }
-  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
 
-  /* layer diagram */
-  .layers { display: grid; grid-template-columns: 1fr; gap: 10px; max-width: 860px; margin: 22px 0 28px; }
-  .layer { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; display: grid; grid-template-columns: 170px 1fr; gap: 16px; align-items: start; }
-  .layer .lname { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); padding-top: 3px; }
-  .layer .ldesc { font-size: 15px; }
-  .layer .ldesc em { font-style: normal; font-weight: 600; }
-  .arrow { text-align: center; font-family: var(--mono); font-size: 11px; color: var(--text-muted); letter-spacing: 0.06em; }
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
 
-  /* demo */
-  .demo { background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: 8px; padding: 18px; margin: 22px 0 30px; max-width: 980px; }
-  .demo-bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 14px; font-family: var(--mono); font-size: 11.5px; color: var(--text-muted); }
-  .demo-bar button { font-family: var(--mono); font-size: 11.5px; border: 1px solid var(--border-strong); background: var(--bg); color: var(--text); padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-  .demo-bar button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .terms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-  .term-col h4 { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); font-weight: 500; margin-bottom: 8px; }
-  .course { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; background: var(--bg); }
-  .course + .course { margin-top: 10px; }
-  .course-name { font-family: var(--display); font-size: 16px; font-weight: 600; margin-bottom: 6px; }
-  .grp { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); margin: 8px 0 4px; }
-  .skill { font-size: 13.5px; line-height: 1.4; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-card); margin-bottom: 5px; cursor: pointer; }
-  .skill:hover, .skill.hl { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-  .skill .kud { font-family: var(--mono); font-size: 10.5px; color: var(--text-muted); display: block; margin-top: 3px; }
-  .skill .kud b { font-weight: 500; }
-  .kk { color: var(--k); } .uu { color: var(--u); } .dd { color: var(--d); }
-  .badge { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; margin-left: 4px; white-space: nowrap; }
-  .b-met { color: var(--met); background: var(--met-bg); } .b-part { color: var(--part); background: var(--part-bg); } .b-not { color: var(--not); background: var(--not-bg); } .b-nodata { color: var(--nodata); background: var(--nodata-bg); }
-  .b-edit { color: var(--t1); background: #E1EBF4; }
-  .req.st-met { border-left: 3px solid var(--met); } .req.st-part { border-left: 3px solid var(--part); } .req.st-not { border-left: 3px solid var(--not); }
-  .bucket-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
-  .bucket { font-size: 12.5px; border: 1px dashed var(--border-strong); border-radius: 14px; padding: 3px 10px; color: var(--text-muted); background: var(--bg); }
-  .bucket b { font-family: var(--mono); font-weight: 500; font-size: 11px; color: var(--text); margin-left: 4px; }
-  .detail { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 14px; min-height: 64px; }
-  .detail .dt { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
-  .detail ul { margin: 6px 0 6px 18px; }
-  .detail li { margin-bottom: 3px; }
-  .editor { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px; font-family: var(--mono); font-size: 11.5px; }
-  .editor label { display: flex; gap: 4px; align-items: center; }
-  .editor select { font-family: var(--mono); font-size: 11.5px; padding: 2px 4px; }
-  .obj { font-size: 13px; padding: 5px 8px; border-radius: 4px; background: var(--bg-alt); margin-bottom: 4px; cursor: pointer; }
-  .obj .bl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--t1); margin-right: 6px; }
-  .obj.warn { background: var(--part-bg); }
-  .shape { display: grid; grid-template-columns: 150px repeat(3, 1fr); gap: 4px 8px; font-family: var(--mono); font-size: 11.5px; max-width: 520px; margin-top: 8px; }
-  .shape .h { color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; font-size: 10px; }
-  .bar { height: 12px; border-radius: 2px; background: var(--bg-alt); position: relative; }
-  .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; }
-  .bar s { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); text-decoration: none; }
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
 
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #1a1916; --bg-card: #23221e; --bg-alt: #2c2a25; --text: #ECE8DF; --text-muted: #B3AEA3; --text-faint: #858076;
-      --border: #3a3832; --border-strong: #4d4a43; --accent-light: #3d2a1c;
-      --met-bg: #1f3428; --part-bg: #3a2e18; --not-bg: #3d2420; --nodata-bg: #2c2a25; --met: #6fc391; --part: #e2b25a; --not: #ec8a77;
-      --k: #a99cf0; --u: #6cc0dc; --d: #EE9A5C; --t1: #7fb0e0;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #1a1916; --bg-card: #23221e; --bg-alt: #2c2a25; --text: #ECE8DF; --text-muted: #B3AEA3; --text-faint: #858076;
-    --border: #3a3832; --border-strong: #4d4a43; --accent-light: #3d2a1c;
-    --met-bg: #1f3428; --part-bg: #3a2e18; --not-bg: #3d2420; --nodata-bg: #2c2a25; --met: #6fc391; --part: #e2b25a; --not: #ec8a77;
-    --k: #a99cf0; --u: #6cc0dc; --d: #EE9A5C; --t1: #7fb0e0;
-  }
-  @media (max-width: 900px) {
-    #rail { position: static; width: 100%; height: auto; }
-    body { display: block; }
-    main { margin-left: 0; padding: 32px 16px 64px; }
-    .terms { grid-template-columns: 1fr; }
-    .layer { grid-template-columns: 1fr; gap: 4px; }
-    .shape { grid-template-columns: 110px repeat(3, 1fr); }
-  }
-  .draft { font-style: italic; }
-  .b-draft { color: var(--met); background: var(--met-bg); font-style: italic; }
-  .b-prop { color: var(--text-muted); background: transparent; border: 1px dashed var(--border-strong); }
-  .b-comp { color: var(--met); background: transparent; border: 1px solid var(--met); }
-  .b-fade { color: var(--part); background: transparent; border: 1px dashed var(--part); }
-  .req.st-draft, .req.st-prop { border-left: 3px dashed var(--met); }
-  .skill.draft { border-style: dashed; }
-  .addgoal { font-family: var(--mono); font-size: 11px; margin-top: 6px; border: 1px dashed var(--border-strong); background: transparent; color: var(--text-muted); padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-  .todo { margin-top: 10px; padding: 8px; border-radius: 4px; background: var(--part-bg); font-size: 13px; }
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
+
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
+
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
+
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
+
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
+
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
+
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* ---------- Page: skill-thread curriculum map (guide tokens only) ---------- */
+.paper > .hero{order:-1;flex:1 1 100%;margin-inline:calc(-1 * var(--pad))}
+.toc .label{display:block;margin:14px 0 2px}
+.toc .label:first-child{margin-top:0}
+.toc a.out{padding-left:26px}
+.article section{scroll-margin-top:24px}
+.article h3{font-size:24px;line-height:1.25;margin-top:12px}
+.article ul,.article ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.note > div{display:flex;flex-direction:column;gap:6px}
+.meta{font-size:14px;color:var(--muted)}
+ol.refs{font-size:15px;overflow-wrap:anywhere}
+.doc-foot{font-size:14px;color:var(--muted)}
+.draft{font-style:italic}
+/* K / U / D labels: categorical, letters carry the meaning */
+.kk{color:var(--ink)}.uu{color:var(--purple)}.dd{color:var(--muted)}
+.kk,.uu,.dd{font-weight:600}
+/* status badges: cue colors by meaning */
+.badge{font:500 12px var(--mono);letter-spacing:.02em;border-radius:999px;padding:2px 10px;margin-left:4px;white-space:nowrap;display:inline-block}
+.b-met{background:#E4F0E6;color:#2F6B3A}
+.b-draft{background:#E4F0E6;color:#2F6B3A;font-style:italic}
+.b-prop{background:#EFEEF2;color:#5D5966;border:1px dashed #5D5966}
+.b-part{background:#FFF4DB;color:#8A5A00}
+.b-comp{background:#ECE6F4;color:#522D80}
+.b-nodata{background:#EFEEF2;color:#5D5966}
+.b-not{background:#F9E3E3;color:#9B2C2C}
+.b-fade{background:#FFF4DB;color:#8A5A00;border:1px dashed #8A5A00}
+.b-edit{background:var(--purple-soft);color:var(--purple-dark)}
+/* layer diagram */
+.layers{display:flex;flex-direction:column;gap:8px;padding:0}
+.layer{background:var(--panel);border:1px solid var(--rule-soft);border-radius:16px;padding:18px 22px;display:flex;flex-direction:column;gap:6px}
+.layer .lname{font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--orange)}
+.layer .ldesc{font-size:16px;line-height:1.55}
+.layer .ldesc em{font-style:normal;font-weight:600}
+.arrow{text-align:center;font:500 12px var(--mono);color:var(--muted);letter-spacing:.04em}
+/* demo */
+.demo{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:24px}
+.demo-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px;font:500 12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.demo-bar .pill{font-size:14px;text-transform:none;letter-spacing:0}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.term-col h4{font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.course{border:1px solid var(--rule);border-radius:16px;padding:14px;background:var(--inset)}
+.course-name{font:600 20px var(--serif);margin-bottom:6px}
+.grp{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+.skill{font-size:14px;line-height:1.4;padding:8px 10px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);margin-bottom:6px;cursor:pointer}
+.skill:hover{border-color:var(--purple)}
+.skill.hl{border:2px solid var(--purple);padding:7px 9px;background:var(--purple-soft)}
+.skill.draft{border-style:dashed}
+.skill .kud{font:500 12px var(--mono);color:var(--muted);display:block;margin-top:4px}
+.bucket-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.bucket{font-size:14px;border:1px dashed var(--rule);border-radius:999px;padding:4px 12px;color:var(--muted);background:var(--panel)}
+.bucket b{font:500 12px var(--mono);color:var(--ink);margin-left:4px}
+.detail{margin-top:20px;border-top:1px solid var(--rule);padding-top:16px;font-size:15px;min-height:64px}
+.detail .dt{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin-bottom:6px}
+.detail ul{margin:6px 0 6px 18px;padding:0;display:block}
+.detail li{margin-bottom:3px}
+.editor{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:8px;font:500 12px var(--mono)}
+.editor label{display:flex;gap:6px;align-items:center}
+.editor select{font:500 14px var(--mono);min-height:36px;padding:0 6px;border:1px solid var(--rule);border-radius:10px;background:#fff}
+.obj{font-size:14px;padding:8px 10px;border-radius:10px;background:var(--panel);border:1px solid var(--rule);margin-bottom:6px;cursor:pointer}
+.obj:hover{border-color:var(--purple)}
+.obj .bl{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:6px}
+.obj.warn{background:#FFF4DB}
+.addgoal{min-height:44px;font:500 14px var(--sans);margin-top:6px;border:1px dashed var(--purple);background:transparent;color:var(--purple);padding:0 14px;border-radius:999px;cursor:pointer}
+.todo{margin-top:12px;padding:10px 12px;border-radius:10px;background:#FFF4DB;font-size:14px}
+.shape .h{color:var(--muted)}
+.demo .table-box table{min-width:560px;font-size:14px}
+.demo .dt{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
 </style>
 </head>
 <body>
-
-<aside id="rail">
-  <div class="rail-header">
-    <div class="rail-dept">Clemson · Graphic Communications</div>
-    <div class="rail-title">GC Curriculum Tool</div>
-    <div class="rail-doc-type">Design concept</div>
-  </div>
-  <nav class="rail-nav">
-    <div class="nav-group-label">Sections</div>
-    <a class="nav-link" href="#idea">The idea in brief</a>
-    <a class="nav-link" href="#layers">Layers and links</a>
-    <a class="nav-link" href="#demo">Try it: a three-course thread</a>
-    <a class="nav-link" href="#threads">Skills as threads</a>
-    <a class="nav-link" href="#buckets">Competencies as evidence</a>
-    <a class="nav-link" href="#bloom">Objectives and goals</a>
-    <a class="nav-link" href="#drafts">Drafting while mapping</a>
-    <a class="nav-link" href="#status">Requirement statuses</a>
-    <a class="nav-link" href="#review">Reviewing by exception</a>
-    <a class="nav-link" href="#whatif">From drafts to a what-if</a>
-    <a class="nav-link" href="#first">A smaller first step</a>
-    <a class="nav-link" href="#build">What exists, what is new</a>
-    <a class="nav-link" href="#open">Decisions still open</a>
-    <a class="nav-link" href="#refs">References</a>
-    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
-    <a class="nav-link" href="./background.html">KUD+ Background</a>
-    <a class="nav-link" href="./curriculum-map-deep-dive.html">Curriculum maps deep dive</a>
-    <a class="nav-link" href="./curriculum-map.html">Curriculum map demo</a>
-  </nav>
-</aside>
-
-<main>
-
-<header class="doc-head">
-  <div class="doc-eyebrow">Design concept &middot; for faculty review</div>
-  <h1 class="doc-title">Skill-Thread Curriculum Map</h1>
-  <p class="doc-subtitle">A course&rsquo;s skills connect it to the courses before and after it. Catalog competencies collect those skills as evidence. Objectives and goals, set with Bloom&rsquo;s taxonomy, say what a course aims for. Only a capture can show what it achieves.</p>
-  <div class="doc-meta">
-    <span><strong>Date</strong> 2026-11-16</span>
-    <span><strong>Status</strong> Proposal, not built</span>
-    <span><strong>Audience</strong> Faculty, curriculum committee</span>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
   </div>
 </header>
 
+<div class="wrap paper paper--long">
+  <nav class="toc" id="rail" aria-label="Contents">
+    <span class="label">Sections</span>
+    <a href="#idea"><span class="n">1</span><span>The idea in brief</span></a>
+    <a href="#layers"><span class="n">2</span><span>Layers and links</span></a>
+    <a href="#demo"><span class="n">3</span><span>Try it: a three-course thread</span></a>
+    <a href="#threads"><span class="n">4</span><span>Skills as threads</span></a>
+    <a href="#buckets"><span class="n">5</span><span>Competencies as evidence</span></a>
+    <a href="#bloom"><span class="n">6</span><span>Objectives and goals</span></a>
+    <a href="#drafts"><span class="n">7</span><span>Drafting while mapping</span></a>
+    <a href="#status"><span class="n">8</span><span>Requirement statuses</span></a>
+    <a href="#review"><span class="n">9</span><span>Reviewing by exception</span></a>
+    <a href="#whatif"><span class="n">10</span><span>From drafts to a what-if</span></a>
+    <a href="#first"><span class="n">11</span><span>A smaller first step</span></a>
+    <a href="#build"><span class="n">12</span><span>What exists, what is new</span></a>
+    <a href="#open"><span class="n">13</span><span>Decisions still open</span></a>
+    <a href="#refs"><span class="n">14</span><span>References</span></a>
+    <span class="label">See also</span>
+    <a class="out" href="./background.html">KUD+ Background</a>
+    <a class="out" href="./curriculum-map-deep-dive.html">Curriculum maps deep dive</a>
+    <a class="out" href="./curriculum-map.html">Curriculum map demo</a>
+  </nav>
+
+  <section class="hero">
+    <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="eyebrow">Design concept &middot; for faculty review</span>
+      <h1 class="title-paper">Skill-Thread Curriculum Map</h1>
+      <p class="lede">A course&rsquo;s skills connect it to the courses before and after it. Catalog competencies collect those skills as evidence. Objectives and goals, set with Bloom&rsquo;s taxonomy, say what a course aims for. Only a capture can show what it achieves.</p>
+      <div class="meta-row">
+        <span><strong>Date</strong> 2026-11-16</span>
+        <span><strong>Status</strong> <span class="cue cue-draft">Proposal, not built</span></span>
+        <span><strong>Audience</strong> Faculty, curriculum committee</span>
+      </div>
+    </div>
+  </section>
+
+  <article class="article">
 <section id="idea">
-  <h2><span class="num">&sect; 1</span>The idea in brief</h2>
+  <div><span class="sec-num">01</span><h2 class="sec-title">The idea in brief</h2></div>
   <p>The current curriculum map links courses through catalog competencies: a course raises Color management to a level, and a later course needs that level. This concept adds the step below, the <strong>skills</strong> a course actually develops and requires. A skill is written as the course writes it and is scored on Know, Understand and Do. A later course states the skills it needs on arrival, and the map shows which earlier skill meets each one.</p>
   <p>Competencies keep their place with a different job. A competency is no longer the connector. It becomes a <strong>bucket of evidence</strong>: the skills linked to it, across all courses, are the record that students have had the chance to develop it, and to what level. Career targets and program targets still read competencies.</p>
   <p><strong>Two kinds of statement are kept apart throughout.</strong></p>
@@ -198,7 +281,7 @@
 </section>
 
 <section id="layers">
-  <h2><span class="num">&sect; 2</span>Layers and links</h2>
+  <div><span class="sec-num">02</span><h2 class="sec-title">Layers and links</h2></div>
   <div class="layers" role="list">
     <div class="layer" role="listitem"><div class="lname">Objectives &amp; goals</div><div class="ldesc">What a course <em>aims</em> for. An objective is written with a <em>Bloom verb</em> and the knowledge it acts on. Each objective carries one or more KUD goals: a skill and a target level. These are goals, never evidence.</div></div>
     <div class="arrow">objective &harr; skill &middot; one link table, read both ways</div>
@@ -214,7 +297,7 @@
 </section>
 
 <section id="demo">
-  <h2><span class="num">&sect; 3</span>Try it: a three-course thread</h2>
+  <div><span class="sec-num">03</span><h2 class="sec-title">Try it: a three-course thread</h2></div>
   <p>An invented three-course sequence, not real course data. Click a skill or objective to see its links. In the later courses, each required skill shows its status. Two things to try:</p>
   <ul>
     <li>Click <em>Diagnoses preflight errors</em> in Course B and set its Do goal to 3. Course C&rsquo;s first requirement turns to <span class="badge b-draft">met*</span>: met on a draft, not yet on evidence.</li>
@@ -224,20 +307,20 @@
   <div class="demo" id="demo-box">
     <div class="demo-bar">
       <span>Show:</span>
-      <button type="button" data-view="skills" aria-pressed="true">Skills and threads</button>
-      <button type="button" data-view="objectives" aria-pressed="false">Objectives and goals</button>
-      <button type="button" data-view="buckets" aria-pressed="false">Competency buckets</button>
-      <button type="button" id="demo-reset">Reset drafts</button>
+      <button type="button" class="pill" data-view="skills" aria-pressed="true">Skills and threads</button>
+      <button type="button" class="pill" data-view="objectives" aria-pressed="false">Objectives and goals</button>
+      <button type="button" class="pill" data-view="buckets" aria-pressed="false">Competency buckets</button>
+      <button type="button" class="pill" id="demo-reset">Reset drafts</button>
     </div>
     <div class="terms" id="terms"></div>
     <div class="bucket-row" id="buckets"></div>
     <div class="detail" id="detail" aria-live="polite"><div class="dt">Details</div>Click a skill or an objective.</div>
   </div>
-  <p style="font-size:14px;color:var(--text-muted)">The demo shows five statuses. &ldquo;Met through the competency&rdquo; and &ldquo;no data&rdquo; (&sect;8) need a course that has not been captured, so they are not shown here.</p>
+  <p class="meta">The demo shows five statuses. &ldquo;Met through the competency&rdquo; and &ldquo;no data&rdquo; (&sect;8) need a course that has not been captured, so they are not shown here.</p>
 </section>
 
 <section id="threads">
-  <h2><span class="num">&sect; 4</span>Skills as threads</h2>
+  <div><span class="sec-num">04</span><h2 class="sec-title">Skills as threads</h2></div>
   <p>The KUD Background sets the framework&rsquo;s job as tracing &ldquo;a competency from one course to the next, through an entire curriculum, and into a career destination&rdquo; (<a href="./background.html#kud">&sect;5</a>). Tracing at the skill level keeps more of what each course says. A course that needs students to &ldquo;set up a press-ready file with correct bleed and color handling&rdquo; is asking for something narrower than &ldquo;Color management at Do 3,&rdquo; and the earlier skill that supplies it should be visible.</p>
   <h3>A thread links a required skill to a developed skill</h3>
   <p>Each thread records how fully the earlier skill covers the requirement, <strong>fully</strong> or <strong>partly</strong>, and whether faculty have confirmed it. A requirement is met by one thread rated <em>fully</em> whose skill reaches the required level on every dimension the requirement names. A <em>partly</em> thread is shown as a partial source and never meets a requirement on its own. When several fully-rated threads each meet the requirement, the best one counts. Levels are not added, because they are ordinal (Background <a href="./background.html#prereq-gap-method">&sect;12</a>).</p>
@@ -254,7 +337,7 @@
 </section>
 
 <section id="buckets">
-  <h2><span class="num">&sect; 5</span>Competencies as evidence</h2>
+  <div><span class="sec-num">05</span><h2 class="sec-title">Competencies as evidence</h2></div>
   <p>A competency collects the skills linked to it across courses, and its level is read from them. That is how the builder has worked since the skill links went live on 2026-11-15. A skill counts toward a competency through a link that is proposed, confirmed or rejected. The competency&rsquo;s level comes from the highest linked skill, unless faculty set it.</p>
   <p>Treating a competency as a claim supported by evidence, rather than a thing a course covers, follows established assessment design. Evidence-centered design separates what is to be known about a student from the observations that support it: &ldquo;A Student Model defines one or more variables related to the knowledge, skills, and abilities we wish to measure&rdquo; <a href="#ref-mislevy-2004">(Mislevy, Almond &amp; Lukas, 2004, p. 7)</a>. Its measurement models &ldquo;concern the accumulation and synthesis of evidence across tasks, in terms of student model variables&rdquo; (p. 10). Read onto this map, a competency plays the part of a student-model variable, the skills in many courses are the observations, and the roll-up is the accumulation. This is an analogy, not a claim that the map is a measurement model in their sense. Its levels are faculty-confirmed judgments of what courses give students the chance to develop, not estimates of what one student knows.</p>
   <p>Only captured outcomes fill a bucket. Draft goals (&sect;7) are shown beside a bucket, marked, and never raise its evidenced level. A competency with links only from courses not yet captured shows as <em>claimed</em>, as the prerequisite-gap method already does.</p>
@@ -262,13 +345,13 @@
 </section>
 
 <section id="bloom">
-  <h2><span class="num">&sect; 6</span>Objectives and goals, set with Bloom</h2>
+  <div><span class="sec-num">06</span><h2 class="sec-title">Objectives and goals, set with Bloom</h2></div>
   <p>Learning objectives are written with the revised Bloom&rsquo;s taxonomy. That is a department convention for how objectives are worded, and it fits what the KUD Background already says: Bloom is the right tool for a course&rsquo;s objectives and assessments, and KUD is the tool for tracing across courses to careers (<a href="./background.html#kud">&sect;5</a>). Bloom here <strong>sets goals only</strong>. An objective&rsquo;s Bloom wording never says that a level was reached. Reached levels come from the capture.</p>
   <h3>What Bloom gives an objective</h3>
   <p>In the revised taxonomy an objective has two parts. Objectives &ldquo;consist of a noun or noun phrase&mdash;the subject matter content&mdash;and a verb or verb phrase&mdash;the cognitive process(es)&rdquo;, and the revision separates them, &ldquo;the noun providing the basis for the Knowledge dimension and the verb forming the basis for the Cognitive Process dimension&rdquo; <a href="#ref-krathwohl-2002">(Krathwohl, 2002, p. 213)</a>. The six processes run from &ldquo;Remember &ndash; Retrieving relevant knowledge from long-term memory&rdquo; to &ldquo;Create &ndash; Putting elements together to form a novel, coherent whole or make an original product&rdquo; (p. 215). An objective with two verbs belongs in two cells; Krathwohl&rsquo;s example is placed in &ldquo;two cells of the Taxonomy Table&rdquo; (p. 216).</p>
   <h3>From an objective to KUD goals</h3>
   <p>Each objective carries one or more <strong>KUD goals</strong>: a skill, the dimension it aims at, and a target level. The Bloom wording proposes the dimension. The target level is set by the instructor, helped by the condition phrase in the objective. The table below proposes; the instructor decides.</p>
-  <div class="table-wrap">
+  <div class="table-box">
   <table class="grid">
     <thead><tr><th>Bloom process</th><th>Proposed dimension</th><th>What helps set the target level</th></tr></thead>
     <tbody>
@@ -281,11 +364,13 @@
     </tbody>
   </table>
   </div>
-  <div class="callout note">
-    <div class="callout-title">Two cautions built into the link</div>
+  <aside class="note">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+    <div><strong>Two cautions built into the link</strong>
     <p><strong>&ldquo;Understand&rdquo; means two things.</strong> Bloom&rsquo;s Understand is &ldquo;Determining the meaning of instructional messages&rdquo; <a href="#ref-krathwohl-2002">(Krathwohl, 2002, p. 215)</a>, a lower level than KUD&rsquo;s Understand, which is reasoning about why. The interface always labels which one it means.</p>
     <p><strong>Bloom does not grade independence.</strong> Apply is &ldquo;Carrying out or using a procedure in a given situation&rdquo; (p. 215) whether or not the student needs direction. So a Do target needs a condition phrase or the instructor&rsquo;s choice (Background <a href="./background.html#kud">&sect;5</a>). An Apply or Create objective with no condition is marked &ldquo;condition missing&rdquo; until a level is chosen.</p>
-  </div>
+    </div>
+  </aside>
   <p>The verb alone cannot settle the Bloom level either. Stanny compared 30 published verb lists: of 433 distinct verbs, &ldquo;197 verbs (45.5%) appeared in two to six categories&rdquo;, and &ldquo;No verb was assigned consistently to the same category by all 30 lists in the sample&rdquo; <a href="#ref-stanny-2016">(Stanny, 2016, p. 4)</a>. Her conclusion is the rule this design follows: &ldquo;reviewers must consider both the verb and the remaining content of an SLO when they make judgments about the level of expertise an SLO describes&rdquo; (p. 10). The Bloom cell is proposed from the whole objective, verb and object together, and the instructor confirms it.</p>
   <p>Faculty can agree well on Bloom levels. In a study of computing programs, two blind faculty raters assigned Bloom levels to a sample of competency statements and agreed at &ldquo;Bloom level &kappa; = 0.86&rdquo; <a href="#ref-turaev-2026">(Turaev et al., 2026, p. 1)</a>. Their few large disagreements came on multi-verb outcomes, where leveling by the leading verb &ldquo;parts company with leveling by the highest-order verb&rdquo; (p. 10). That was one field, and a Bloom level, not a KUD level. This design gives each verb its own cell, as in Krathwohl&rsquo;s two-cell example, which avoids choosing between the two conventions; that is this design&rsquo;s choice, not a tested result. Software proposals are useful but not reliable enough to stand alone. In one study of 600 labeled sentences from exam questions and learning outcomes, a trained classifier reached &ldquo;94% accuracy, recall, and F1-scores&rdquo;, while language models asked without examples reached &ldquo;0.72&ndash;0.73 accuracy&rdquo; at best <a href="#ref-kumar-2025">(Kumar, Gulwani &amp; Singh, 2025, PDF p. 1)</a>. That study used the original Bloom categories and a single dataset, which the authors name as a limit (&ldquo;we work on a small-size and a single dataset&rdquo;, PDF p. 6).</p>
   <h3>One link table, read both ways</h3>
@@ -300,7 +385,7 @@
 </section>
 
 <section id="drafts">
-  <h2><span class="num">&sect; 7</span>Drafting while mapping</h2>
+  <div><span class="sec-num">07</span><h2 class="sec-title">Drafting while mapping</h2></div>
   <p>While mapping, a faculty member can add to any course in the plan:</p>
   <ul>
     <li>a <strong>draft objective</strong>, with its Bloom wording and KUD goals;</li>
@@ -317,9 +402,9 @@
 </section>
 
 <section id="status">
-  <h2><span class="num">&sect; 8</span>Requirement statuses</h2>
+  <div><span class="sec-num">08</span><h2 class="sec-title">Requirement statuses</h2></div>
   <p>Every required skill of every course shows one status, taken from the first row of this table that applies. Statuses are computed for the plan or what-if being viewed.</p>
-  <div class="table-wrap">
+  <div class="table-box">
   <table class="grid">
     <thead><tr><th>Status</th><th>Rule</th></tr></thead>
     <tbody>
@@ -338,7 +423,7 @@
 </section>
 
 <section id="review">
-  <h2><span class="num">&sect; 9</span>Reviewing by exception</h2>
+  <div><span class="sec-num">09</span><h2 class="sec-title">Reviewing by exception</h2></div>
   <p>With about 470 captured skills and a similar number of requirements to come, confirming every proposed thread would ask each instructor for dozens of decisions. Review works by exception instead:</p>
   <ul>
     <li><strong>Who reviews.</strong> The instructor of the later course owns its threads, since the requirement is theirs. The earlier course&rsquo;s instructor sees every thread that depends on their skills and can comment. Each decision is recorded with the person&rsquo;s own login.</li>
@@ -351,12 +436,12 @@
 </section>
 
 <section id="whatif">
-  <h2><span class="num">&sect; 10</span>From drafts to a what-if</h2>
+  <div><span class="sec-num">10</span><h2 class="sec-title">From drafts to a what-if</h2></div>
   <p>Drafts live in a what-if, never on the course record. The what-if feature specified on 2026-11-13 already holds a changed version of one course and shows what follows across the program. Drafting adds the skill level to it. A faculty member opens a what-if from their course, adds draft goals or objectives, and watches later courses&rsquo; requirements change to met* or stay short.</p>
   <h3>The needed shape</h3>
   <p>Threads give each course a <strong>needed shape</strong>: a list, not one merged number. Each entry is a requirement in a later course that relies on this course, the level it needs, and whether another earlier course already meets it. Only entries that no other course meets are marked as this course&rsquo;s to close. Competency targets per act are shown in a separate list, since they are a different kind of need.</p>
   <div class="demo" style="max-width:680px">
-    <div class="dt" style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Course B&rsquo;s needed shape (from the &sect;3 demo)</div>
+    <div class="dt" style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);margin-bottom:6px">Course B&rsquo;s needed shape (from the &sect;3 demo)</div>
     <div id="shape"></div>
   </div>
   <p>Rows that Course B supplies and are not met are Course B&rsquo;s to close; a row another course already meets is shown but not counted. Later courses&rsquo; requirements are themselves claims that can be wrong. The needed shape shows who asked for each entry, so a gap can be settled by changing either course.</p>
@@ -364,7 +449,7 @@
 </section>
 
 <section id="first">
-  <h2><span class="num">&sect; 11</span>A smaller first step</h2>
+  <div><span class="sec-num">11</span><h2 class="sec-title">A smaller first step</h2></div>
   <p>Most of the value can be tested before threads are stored:</p>
   <ol>
     <li>Link each required skill to a competency (the fourth link type), proposed and confirmed like the others.</li>
@@ -376,8 +461,8 @@
 </section>
 
 <section id="build">
-  <h2><span class="num">&sect; 12</span>What exists, what is new</h2>
-  <div class="table-wrap">
+  <div><span class="sec-num">12</span><h2 class="sec-title">What exists, what is new</h2></div>
+  <div class="table-box">
   <table class="grid">
     <thead><tr><th>Piece</th><th>Today</th><th>New</th></tr></thead>
     <tbody>
@@ -395,7 +480,7 @@
 </section>
 
 <section id="open">
-  <h2><span class="num">&sect; 13</span>Decisions still open</h2>
+  <div><span class="sec-num">13</span><h2 class="sec-title">Decisions still open</h2></div>
   <ol>
     <li><strong>The first step.</strong> Take &sect;11 first, or build threads directly?</li>
     <li><strong>Review budget.</strong> How many decisions per instructor per round is acceptable?</li>
@@ -405,8 +490,13 @@
   </ol>
 </section>
 
+  <a class="xlink" href="curriculum-map.html">
+    <span><span class="label">Explore the data · Tool</span><span class="t">GC Curriculum Map</span><span class="d">Work back from a career to the competencies it relies on and the courses that build them, year by year.</span></span>
+    <span class="link-arrow">Open the tool →</span>
+  </a>
+
 <section id="refs">
-  <h2 style="font-size: 18px;">References</h2>
+  <h2 class="sec-title">References</h2>
   <ol class="refs">
     <li id="ref-biggs-1996">Biggs, J. (1996). Enhancing teaching through constructive alignment. <em>Higher Education</em>, 32(3), 347&ndash;364.</li>
     <li id="ref-jayalath-2026">Jayalath, V., Barthakur, A., Baker, R. S., Dawson, S., &amp; Kovanovic, V. (2026). Capturing professional skill development: A curriculum analytics approach. <em>LAK26</em>, 589&ndash;597.</li>
@@ -420,10 +510,39 @@
   </ol>
 </section>
 
-<div class="doc-foot">GC Curriculum Tool &middot; design concept &middot; 2026-11-16 &middot; proposal for faculty review, not built</div>
 
-</main>
+  <p class="doc-foot">GC Curriculum Tool &middot; design concept &middot; 2026-11-16 &middot; proposal for faculty review, not built</p>
+  </article>
+</div>
 
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
+</footer>
+
+<script>
+/* Marks the contents link of the section in view. Without JS the contents column still works as plain links. */
+(() => {
+  const toc = document.querySelector('.toc');
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const secs = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  const inView = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+    const cur = secs.find((s) => inView.has(s.id));
+    if (!cur) return;
+    const a = byId.get(cur.id);
+    links.forEach((l) => l.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'true');
+    // When the sticky column is taller than the screen, keep the marked link visible inside it.
+    if (toc.scrollHeight > toc.clientHeight && (a.offsetTop < toc.scrollTop || a.offsetTop + a.offsetHeight > toc.scrollTop + toc.clientHeight)) {
+      toc.scrollTop = a.offsetTop - toc.clientHeight / 2;
+    }
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  secs.forEach((s) => io.observe(s));
+})();
+</script>
 <script>
 (function () {
   // Invented example data: three courses in three terms. Not real course data.
@@ -581,7 +700,7 @@
     render();
     detail('<div class="dt">' + (s.draft ? 'Draft goal' : 'Developed skill') + ' · ' + x.c.name + '</div><strong class="' + (s.draft ? 'draft' : '') + '">' + esc(s.text) + (s.draft ? '*' : '') + '</strong>' +
       '<div style="margin-top:4px">' + (s.draft ? 'No captured level: this is a goal only.' : 'Captured: K' + lv(s.k) + ' U' + lv(s.u) + ' D' + lv(s.d) + ' (evidence; drafts never change it).') + '</div>' +
-      '<div class="editor">' + sel('k') + sel('u') + sel('d') + '<span style="color:var(--text-faint)">counts toward ' + esc(s.comp) + '</span></div>' +
+      '<div class="editor">' + sel('k') + sel('u') + sel('d') + '<span style="color:var(--muted)">counts toward ' + esc(s.comp) + '</span></div>' +
       '<div style="margin-top:8px">Serves objectives:</div><ul>' + (objs.length ? objs.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') : '<li>none. The tool can draft one for the instructor to edit.</li>') + '</ul>' +
       '<div>Later requirements that rely on it:</div><ul>' + (users.length ? users.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') : '<li>none yet</li>') + '</ul>');
   }
@@ -619,7 +738,7 @@
         rows.push('<tr><td>' + esc(c.name) + ': ' + esc(r.text) + '</td><td>' + needTxt(r.need) + '</td><td>' + (others ? 'another course' : 'Course B') + '</td><td><span class="badge ' + BADGE[st] + '">' + LABEL[st] + '</span></td></tr>');
       });
     });
-    box.innerHTML = '<div class="table-wrap" style="margin:0"><table class="grid" style="font-size:13.5px"><thead><tr><th>Later requirement</th><th>Needs</th><th>Supplied by</th><th>Now</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+    box.innerHTML = '<div class="table-box" style="margin:0"><table class="grid" style="font-size:13.5px"><thead><tr><th>Later requirement</th><th>Needs</th><th>Supplied by</th><th>Now</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
   }
 
   var root = document.getElementById('demo-box');
