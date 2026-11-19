@@ -1,33 +1,36 @@
 /*
+ * Colors mapped to the GC design system v1.1 (docs/GC-DESIGN-SYSTEM.md), 2026-11-18:
+ * status = the five cues, action = purple, categories = ink/purple/orange/muted.
+ *
  * Curriculum builder. Drawn like a press sheet: one key ink on white paper,
  * depth as ink weight, and anything resting on a claim rather than evidence
  * printed as a halftone. Colour is reserved for the state of a target.
  */
 .cb {
-  --cb-ink: #17212b;
-  --cb-ink-soft: #55616d;
+  --cb-ink: #1D1B22;
+  --cb-ink-soft: #5D5966;
   --cb-paper: #ffffff;
-  --cb-ground: #f4f6f5;
-  --cb-rule: #d5dadd;
-  --cb-reached: #1f6f54;
-  --cb-amber: #a8770b;
-  --cb-short: #d9520a;
-  --cb-untouched: #98a2ab;
-  --cb-plain: #55616d;
-  --cb-accent: #0b7fab;
+  --cb-ground: #FBFBFA;
+  --cb-rule: #DCD9E2;
+  --cb-reached: #2F6B3A;
+  --cb-amber: #8A5A00;
+  --cb-short: #9B2C2C;
+  --cb-untouched: #B9B4C4;
+  --cb-plain: #5D5966;
+  --cb-accent: #522D80;
   /* Required-skill status (spec 2026-11-16 §3): Met, Met* (counts a map edit), Partly met, Not met. */
-  --cb-req-met: #2e8b57;
-  --cb-req-met-draft: #e3b505;
-  --cb-req-partly: #ee7f1b;
-  --cb-req-not: #c8322b;
-  --cb-select: rgba(11, 127, 171, 0.1);
-  --cb-act-1: #eef3ef;
-  --cb-act-2: #e9f0f3;
-  --cb-act-3: #efedf4;
-  --cb-branch-0: #0b7fab;
-  --cb-branch-1: #b3275f;
-  --cb-branch-2: #6f55b8;
-  --cb-branch-3: #a8770b;
+  --cb-req-met: #2F6B3A;
+  --cb-req-met-draft: #6AA674;
+  --cb-req-partly: #B57600;
+  --cb-req-not: #9B2C2C;
+  --cb-select: rgba(82, 45, 128, 0.08);
+  --cb-act-1: #F7F6F9;
+  --cb-act-2: #F3F2F6;
+  --cb-act-3: #ECE6F4;
+  --cb-branch-0: #522D80;
+  --cb-branch-1: #C24F00;
+  --cb-branch-2: #1D1B22;
+  --cb-branch-3: #5D5966;
   color: var(--cb-ink);
   font-family: var(--font-body), system-ui, sans-serif;
   font-size: 1.0625rem;
@@ -72,7 +75,7 @@
 .cb-new fieldset { border: 0; padding: 0; margin: 0; grid-column: 1 / -1; display: flex; gap: 1.4rem; flex-wrap: wrap; }
 .cb-new legend { font-size: 0.9375rem; color: var(--cb-ink-soft); padding: 0; margin-bottom: 0.25rem; }
 .cb-new fieldset label { display: flex; gap: 0.4rem; align-items: center; color: var(--cb-ink); font-size: 1.0625rem; }
-.cb-new button { justify-self: start; border: 0; background: var(--cb-ink); color: var(--cb-paper); padding: 0.5rem 1.1rem; border-radius: 3px; cursor: pointer; }
+.cb-new button { justify-self: start; border: 0; background: var(--cb-accent); border-radius: 999px !important; min-height: 44px; padding-inline: 1.25rem !important; color: var(--cb-paper); padding: 0.5rem 1.1rem; border-radius: 3px; cursor: pointer; }
 .cb-new button:disabled { opacity: 0.5; }
 .cb-index__list h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
 .cb-index__list ul { list-style: none; margin: 0; padding: 0; }
@@ -106,7 +109,7 @@
 .cb-save { font-size: 0.9375rem; color: var(--cb-ink-soft); min-width: 4.5rem; text-align: right; white-space: nowrap; }
 .cb-save--saved { color: var(--cb-reached); }
 .cb-save--error, .cb-save--conflict { color: var(--cb-short); }
-.cb-banner { background: #fff3ea; border-bottom: 1px solid var(--cb-short); padding: 0.5rem 1rem; display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
+.cb-banner { background: #F9E3E3; border-bottom: 1px solid var(--cb-short); padding: 0.5rem 1rem; display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
 .cb-banner button { border: 1px solid var(--cb-ink); background: var(--cb-paper); border-radius: 3px; padding: 0.2rem 0.6rem; cursor: pointer; }
 .cb-body { flex: 1; display: flex; min-height: 0; position: relative; }
 .cb-main { flex: 1; min-width: 0; overflow: auto; }
@@ -123,7 +126,7 @@
 .cb-lib__scroll h3 { font-family: var(--font-body), sans-serif; font-size: 0.9375rem; font-weight: 600; color: var(--cb-ink-soft); margin: 0.8rem 0 0.2rem; display: flex; justify-content: space-between; }
 .cb-lib__scroll h3 span { font-weight: 400; }
 .cb-lib ul { list-style: none; margin: 0; padding: 0; }
-.cb-libitem { display: flex; align-items: center; gap: 0.3rem; border-bottom: 1px solid #edf0f1; cursor: grab; }
+.cb-libitem { display: flex; align-items: center; gap: 0.3rem; border-bottom: 1px solid #EEECF2; cursor: grab; }
 .cb-libitem__main { flex: 1; min-width: 0; display: grid; grid-template-columns: auto auto 1fr; gap: 0.4rem; align-items: center; border: 0; background: none; padding: 0.3rem 0; text-align: left; cursor: pointer; }
 .cb-libitem__code { font-size: 0.9375rem; white-space: nowrap; }
 .cb-libitem__title { font-size: 0.9375rem; color: var(--cb-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -196,7 +199,7 @@
 /* Cards sit where they were put: absolute positions from lib/builder/layout.ts. */
 .cb-lane__cards { position: relative; flex: 1; }
 .cb-lane__cards > .cb-card { position: absolute; }
-.cb-term { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(23, 33, 43, 0.14); pointer-events: none; }
+.cb-term { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(29, 27, 34, 0.14); pointer-events: none; }
 .cb-term:first-child { border-top: 0; }
 .cb-ghost { position: absolute; width: 9.6rem; height: 3rem; border: 2px dashed var(--cb-accent); border-radius: 3px; pointer-events: none; }
 .cb-lane__empty { font-size: 0.9375rem; color: var(--cb-untouched); padding: 0.4rem 0.2rem; }
@@ -210,7 +213,7 @@
 .cb-card--stated .cb-card__mark { background: radial-gradient(var(--cb-ink) 38%, transparent 42%) 0 0 / 4px 4px; }
 .cb-card--proposed { border-style: dashed; }
 .cb-card--proposed .cb-card__mark { background: radial-gradient(var(--cb-ink) 38%, transparent 42%) 0 0 / 4px 4px; border-style: dashed; }
-.cb-card--requirement { border-style: dashed; border-color: var(--cb-ink-soft); background: repeating-linear-gradient(135deg, var(--cb-paper) 0 6px, #f4f5f6 6px 12px); }
+.cb-card--requirement { border-style: dashed; border-color: var(--cb-ink-soft); background: repeating-linear-gradient(135deg, var(--cb-paper) 0 6px, #F3F2F6 6px 12px); }
 .cb-card--requirement .cb-card__mark { border-style: dashed; border-color: var(--cb-ink-soft); }
 .cb-card--requirement .cb-card__code { font-weight: 500; color: var(--cb-ink-soft); }
 .cb-table--gened td { vertical-align: top; }
@@ -272,7 +275,7 @@
 .cb-drawer__kicker { font-size: 0.9375rem; color: var(--cb-ink-soft); }
 .cb-drawer__head h2 { font-size: 1.35rem; line-height: 1.2; }
 .cb-drawer__body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0 1.1rem 2rem; }
-.cb-sec { padding: 0.9rem 0; border-bottom: 1px solid #edf0f1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+.cb-sec { padding: 0.9rem 0; border-bottom: 1px solid #EEECF2; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
 .cb-sec > * { min-width: 0; }
 .cb-sec h3 { font-size: 1rem; }
 .cb-sec--row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.8rem; }
@@ -296,7 +299,7 @@ details.cb-sec summary { cursor: pointer; font-weight: 500; }
 .cb-descr dt { color: var(--cb-ink-soft); }
 .cb-descr dd { margin: 0; }
 .cb-table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
-.cb-table th, .cb-table td { text-align: left; padding: 0.3rem 0.5rem 0.3rem 0; border-bottom: 1px solid #edf0f1; vertical-align: middle; font-weight: 400; }
+.cb-table th, .cb-table td { text-align: left; padding: 0.3rem 0.5rem 0.3rem 0; border-bottom: 1px solid #EEECF2; vertical-align: middle; font-weight: 400; }
 .cb-table thead th { color: var(--cb-ink-soft); border-bottom: 1px solid var(--cb-ink); vertical-align: bottom; }
 .cb-table td.cb-mono { white-space: nowrap; }
 .cb-table--center td, .cb-table--center thead th { text-align: center; }
@@ -355,7 +358,7 @@ details.cb-sec summary { cursor: pointer; font-weight: 500; }
 .cb-changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.875rem; }
 
 /* ---- import a course from a syllabus ----------------------------------------- */
-.cb-modal { position: fixed; inset: 0; z-index: 50; background: rgba(23, 33, 43, 0.35); display: grid; place-items: center; padding: 1rem; }
+.cb-modal { position: fixed; inset: 0; z-index: 50; background: rgba(29, 27, 34, 0.35); display: grid; place-items: center; padding: 1rem; }
 .cb-modal__box { background: var(--cb-paper); border-radius: 4px; padding: 1.2rem 1.4rem; width: min(36rem, 100%); max-height: calc(100vh - 2rem); overflow: auto; display: grid; gap: 0.75rem; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2); }
 .cb-modal__box h2 { margin: 0; font-size: 1.25rem; }
 .cb-modal__box p { margin: 0; }
@@ -368,7 +371,7 @@ details.cb-sec summary { cursor: pointer; font-weight: 500; }
 
 /* Skill strings on the cluster map: one color per string, none of them a status color. */
 .cb {
-  --str-0: #0b7fab; --str-1: #6f55b8; --str-2: #b3275f; --str-3: #3d7a4a; --str-4: #8a6a1c; --str-5: #2b5fa8;
+  --str-0: #522D80; --str-1: #C24F00; --str-2: #1D1B22; --str-3: #2F6B3A; --str-4: #8A5A00; --str-5: #7A5BAE;
 }
 @media (prefers-color-scheme: dark) {
   .cb { --str-0: #5bb8dc; --str-1: #a994e6; --str-2: #e079a3; --str-3: #7fc08d; --str-4: #d3b365; --str-5: #7aa5e3; }

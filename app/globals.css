@@ -4,6 +4,35 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* GC design system v1.1 — Tailwind palette remap (stage 2a, 2026-11-18).
+ * Rather than edit ~1,200 hard-coded color classes, each Tailwind hue family
+ * is redefined onto the design system's meanings: neutrals -> ink/muted/rule,
+ * amber/yellow -> cue-input (needs input), red/rose -> cue-issue (problem),
+ * green/emerald/teal/lime -> cue-done, blue/sky/indigo/violet/purple/cyan ->
+ * the purple action/read ramp. Orange is left alone (marks only).
+ * Amounts that used warm hues are moved to the D0-D5 ramp screen by screen. */
+@theme {
+  --color-slate-50: #F7F6F9; --color-slate-100: #F3F2F6; --color-slate-200: #E6E3EC; --color-slate-300: #DCD9E2; --color-slate-400: #B9B4C4; --color-slate-500: #5D5966; --color-slate-600: #5D5966; --color-slate-700: #46424F; --color-slate-800: #2E2A36; --color-slate-900: #1D1B22; --color-slate-950: #141218;
+  --color-gray-50: #F7F6F9; --color-gray-100: #F3F2F6; --color-gray-200: #E6E3EC; --color-gray-300: #DCD9E2; --color-gray-400: #B9B4C4; --color-gray-500: #5D5966; --color-gray-600: #5D5966; --color-gray-700: #46424F; --color-gray-800: #2E2A36; --color-gray-900: #1D1B22; --color-gray-950: #141218;
+  --color-zinc-50: #F7F6F9; --color-zinc-100: #F3F2F6; --color-zinc-200: #E6E3EC; --color-zinc-300: #DCD9E2; --color-zinc-400: #B9B4C4; --color-zinc-500: #5D5966; --color-zinc-600: #5D5966; --color-zinc-700: #46424F; --color-zinc-800: #2E2A36; --color-zinc-900: #1D1B22; --color-zinc-950: #141218;
+  --color-neutral-50: #F7F6F9; --color-neutral-100: #F3F2F6; --color-neutral-200: #E6E3EC; --color-neutral-300: #DCD9E2; --color-neutral-400: #B9B4C4; --color-neutral-500: #5D5966; --color-neutral-600: #5D5966; --color-neutral-700: #46424F; --color-neutral-800: #2E2A36; --color-neutral-900: #1D1B22; --color-neutral-950: #141218;
+  --color-stone-50: #F7F6F9; --color-stone-100: #F3F2F6; --color-stone-200: #E6E3EC; --color-stone-300: #DCD9E2; --color-stone-400: #B9B4C4; --color-stone-500: #5D5966; --color-stone-600: #5D5966; --color-stone-700: #46424F; --color-stone-800: #2E2A36; --color-stone-900: #1D1B22; --color-stone-950: #141218;
+  --color-amber-50: #FFF9EC; --color-amber-100: #FFF4DB; --color-amber-200: #F8E3B0; --color-amber-300: #EBC777; --color-amber-400: #D49A2A; --color-amber-500: #B57600; --color-amber-600: #9C6600; --color-amber-700: #8A5A00; --color-amber-800: #6E4800; --color-amber-900: #573900; --color-amber-950: #3F2900;
+  --color-yellow-50: #FFF9EC; --color-yellow-100: #FFF4DB; --color-yellow-200: #F8E3B0; --color-yellow-300: #EBC777; --color-yellow-400: #D49A2A; --color-yellow-500: #B57600; --color-yellow-600: #9C6600; --color-yellow-700: #8A5A00; --color-yellow-800: #6E4800; --color-yellow-900: #573900; --color-yellow-950: #3F2900;
+  --color-red-50: #FCF1F1; --color-red-100: #F9E3E3; --color-red-200: #F0C4C4; --color-red-300: #E19B9B; --color-red-400: #C96262; --color-red-500: #B23C3C; --color-red-600: #9B2C2C; --color-red-700: #852424; --color-red-800: #6B1D1D; --color-red-900: #551717; --color-red-950: #3D1010;
+  --color-rose-50: #FCF1F1; --color-rose-100: #F9E3E3; --color-rose-200: #F0C4C4; --color-rose-300: #E19B9B; --color-rose-400: #C96262; --color-rose-500: #B23C3C; --color-rose-600: #9B2C2C; --color-rose-700: #852424; --color-rose-800: #6B1D1D; --color-rose-900: #551717; --color-rose-950: #3D1010;
+  --color-green-50: #F1F7F2; --color-green-100: #E4F0E6; --color-green-200: #C8E0CC; --color-green-300: #9EC7A5; --color-green-400: #6AA674; --color-green-500: #44884F; --color-green-600: #2F6B3A; --color-green-700: #275A31; --color-green-800: #1F4827; --color-green-900: #18391F; --color-green-950: #102816;
+  --color-emerald-50: #F1F7F2; --color-emerald-100: #E4F0E6; --color-emerald-200: #C8E0CC; --color-emerald-300: #9EC7A5; --color-emerald-400: #6AA674; --color-emerald-500: #44884F; --color-emerald-600: #2F6B3A; --color-emerald-700: #275A31; --color-emerald-800: #1F4827; --color-emerald-900: #18391F; --color-emerald-950: #102816;
+  --color-teal-50: #F1F7F2; --color-teal-100: #E4F0E6; --color-teal-200: #C8E0CC; --color-teal-300: #9EC7A5; --color-teal-400: #6AA674; --color-teal-500: #44884F; --color-teal-600: #2F6B3A; --color-teal-700: #275A31; --color-teal-800: #1F4827; --color-teal-900: #18391F; --color-teal-950: #102816;
+  --color-lime-50: #F1F7F2; --color-lime-100: #E4F0E6; --color-lime-200: #C8E0CC; --color-lime-300: #9EC7A5; --color-lime-400: #6AA674; --color-lime-500: #44884F; --color-lime-600: #2F6B3A; --color-lime-700: #275A31; --color-lime-800: #1F4827; --color-lime-900: #18391F; --color-lime-950: #102816;
+  --color-blue-50: #F6F3FA; --color-blue-100: #ECE6F4; --color-blue-200: #E0D6EE; --color-blue-300: #C7B5E0; --color-blue-400: #A08AC8; --color-blue-500: #7A5BAE; --color-blue-600: #5E3F94; --color-blue-700: #522D80; --color-blue-800: #3F2470; --color-blue-900: #3A1F5C; --color-blue-950: #2B1752;
+  --color-sky-50: #F6F3FA; --color-sky-100: #ECE6F4; --color-sky-200: #E0D6EE; --color-sky-300: #C7B5E0; --color-sky-400: #A08AC8; --color-sky-500: #7A5BAE; --color-sky-600: #5E3F94; --color-sky-700: #522D80; --color-sky-800: #3F2470; --color-sky-900: #3A1F5C; --color-sky-950: #2B1752;
+  --color-indigo-50: #F6F3FA; --color-indigo-100: #ECE6F4; --color-indigo-200: #E0D6EE; --color-indigo-300: #C7B5E0; --color-indigo-400: #A08AC8; --color-indigo-500: #7A5BAE; --color-indigo-600: #5E3F94; --color-indigo-700: #522D80; --color-indigo-800: #3F2470; --color-indigo-900: #3A1F5C; --color-indigo-950: #2B1752;
+  --color-violet-50: #F6F3FA; --color-violet-100: #ECE6F4; --color-violet-200: #E0D6EE; --color-violet-300: #C7B5E0; --color-violet-400: #A08AC8; --color-violet-500: #7A5BAE; --color-violet-600: #5E3F94; --color-violet-700: #522D80; --color-violet-800: #3F2470; --color-violet-900: #3A1F5C; --color-violet-950: #2B1752;
+  --color-purple-50: #F6F3FA; --color-purple-100: #ECE6F4; --color-purple-200: #E0D6EE; --color-purple-300: #C7B5E0; --color-purple-400: #A08AC8; --color-purple-500: #7A5BAE; --color-purple-600: #5E3F94; --color-purple-700: #522D80; --color-purple-800: #3F2470; --color-purple-900: #3A1F5C; --color-purple-950: #2B1752;
+  --color-cyan-50: #F6F3FA; --color-cyan-100: #ECE6F4; --color-cyan-200: #E0D6EE; --color-cyan-300: #C7B5E0; --color-cyan-400: #A08AC8; --color-cyan-500: #7A5BAE; --color-cyan-600: #5E3F94; --color-cyan-700: #522D80; --color-cyan-800: #3F2470; --color-cyan-900: #3A1F5C; --color-cyan-950: #2B1752;
+}
+
 @theme inline {
   /* Readability floor (2026-10-06): the two small steps are one notch larger
      than Tailwind's defaults (12px / 14px). Arbitrary text-[9-12px] sizes were
