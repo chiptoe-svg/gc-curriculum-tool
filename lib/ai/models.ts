@@ -89,9 +89,11 @@ export const FALLBACK_PRICING = { input: 2.5, output: 15.0 };  // assume workhor
  * 2026-10-06: gpt-6.1-sol runs at low (the 2026-10-05 evaluation and blind
  * evidence check: as consistent as medium/high, closest to the evidence,
  * cheapest). Models not listed get no reasoning_effort, so their requests
- * are unchanged.
+ * are unchanged. gpt-6.1-terra runs at medium (owner 2026-11-19: Terra medium for the interview;
+ * the GC 3400 blind review ran it at medium). Without this, a custom Terra setting carries no effort
+ * and the Pi loop would send none.
  */
-export const DEFAULT_REASONING_EFFORT: Record<string, string> = { 'gpt-6.1-sol': 'low' };
+export const DEFAULT_REASONING_EFFORT: Record<string, string> = { 'gpt-6.1-sol': 'low', 'gpt-6.1-terra': 'medium' };
 
 /** gpt-6* models 400 on Chat Completions when function tools are present, so
  * tool-using calls go through the stateless Responses API for them. */
