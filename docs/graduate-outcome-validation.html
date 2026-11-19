@@ -212,6 +212,8 @@ ol.refs{font-size:15px;overflow-wrap:anywhere}
 .doc-foot{font-size:14px;color:var(--muted)}
 .doc-foot span{display:block}
 @media (max-width:640px){.stat-number{font-size:36px}.coverage-pct{font-size:44px}.function-card{padding:22px}.card{padding:20px}}
+.toc a[href^="#"]{display:flex;flex-direction:row;gap:12px;padding:6px 0}
+.toc a[href^="#"] .n{width:20px}
 </style>
 </head>
 <body>
@@ -237,8 +239,8 @@ ol.refs{font-size:15px;overflow-wrap:anywhere}
   </div>
 </section>
 
-<div class="wrap paper">
-  <nav class="toc" aria-label="In this series">
+<div class="wrap paper paper--long">
+  <nav class="toc" aria-label="Series and contents">
     <span class="label">In this series</span>
     <a href="./executive-brief.html"><span><strong>Executive Brief</strong><span class="d">What / why / status in brief</span></span></a>
     <a href="./superpowers/vision/gc-curriculum-tool-vision.html"><span><strong>Vision</strong><span class="d">The product picture, surfaces, governance, and roadmap</span></span></a>
@@ -246,6 +248,18 @@ ol.refs{font-size:15px;overflow-wrap:anywhere}
     <a href="./problem-solving-deep-dive.html"><span><strong>Problem-Solving Deep-Dive</strong><span class="d">Research on how problem-solving competence develops</span></span></a>
     <a href="./three-act-deep-dive.html"><span><strong>3-Act Companion</strong><span class="d">The program-structure research</span></span></a>
     <span class="here"><span><strong>Graduate Outcome Study</strong> <em>you are here</em><span class="d">The external-alignment check against graduate destinations</span></span></span>
+    <span class="label" style="margin-top:20px">Contents</span>
+    <a href="#s1"><span class="n">1</span><span>Background</span></a>
+    <a href="#s2"><span class="n">2</span><span>Study Design</span></a>
+    <a href="#s3"><span class="n">3</span><span>The Student-Researcher Role</span></a>
+    <a href="#s4"><span class="n">4</span><span>Pre-Registration &amp; Validation Plan</span></a>
+    <a href="#s5"><span class="n">5</span><span>Pilot: Graduate Employment Distribution</span></a>
+    <a href="#s6"><span class="n">6</span><span>Classification Coverage Analysis</span></a>
+    <a href="#s7"><span class="n">7</span><span>Research Motivation</span></a>
+    <a href="#s8"><span class="n">8</span><span>The Proposed Analysis Functions</span></a>
+    <a href="#s9"><span class="n">9</span><span>Methodological Significance</span></a>
+    <a href="#s10"><span class="n">10</span><span>Data Collection</span></a>
+    <a href="#references"><span class="n"></span><span>References</span></a>
   </nav>
 
   <article class="article">
@@ -856,5 +870,29 @@ ol.refs{font-size:15px;overflow-wrap:anywhere}
 <footer class="site-footer">
   <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
 </footer>
+<script>
+/* Marks the contents link of the section in view. Without JS the contents column still works as plain links. */
+(() => {
+  const toc = document.querySelector('.toc');
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const secs = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  const inView = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+    const cur = secs.find((s) => inView.has(s.id));
+    if (!cur) return;
+    const a = byId.get(cur.id);
+    links.forEach((l) => l.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'true');
+    // When the sticky column is taller than the screen, keep the marked link visible inside it.
+    if (toc.scrollHeight > toc.clientHeight && (a.offsetTop < toc.scrollTop || a.offsetTop + a.offsetHeight > toc.scrollTop + toc.clientHeight)) {
+      toc.scrollTop = a.offsetTop - toc.clientHeight / 2;
+    }
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  secs.forEach((s) => io.observe(s));
+})();
+</script>
 </body>
 </html>
