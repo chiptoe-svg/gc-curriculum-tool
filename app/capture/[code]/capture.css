@@ -2,7 +2,7 @@
    Purple acts, orange marks, the five cue colors mean status and keep their shape. */
 
 .cap-eyebrow {
-  font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace);
+  font: 500 13px/1.4 var(--font-mono, ui-monospace, monospace);
   letter-spacing: .08em;
   text-transform: uppercase;
   color: #C24F00;
@@ -43,7 +43,7 @@
 /* Status cues — same as the docs pages. */
 .cap-cue {
   display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px;
-  border-radius: 999px; font: 500 13px var(--font-sans, system-ui, sans-serif); white-space: nowrap;
+  border-radius: 999px; font: 500 14px var(--font-sans, system-ui, sans-serif); white-space: nowrap;
 }
 .cap-cue::before { content: ""; width: 8px; height: 8px; flex: none; }
 .cap-cue-input { background: #FFF4DB; color: #8A5A00; }
