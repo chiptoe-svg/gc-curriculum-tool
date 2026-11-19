@@ -347,15 +347,15 @@ function CompetencyRow({
       type="button"
       onClick={onExpand}
       aria-label={`Edit "${competency.statement}" — ${humanizeSource(competency.source)}`}
-      className="flex w-full items-center gap-2 rounded border bg-background px-2.5 py-1.5 text-left text-xs hover:bg-muted focus:outline-none focus:ring-1 focus:ring-ring"
+      className="flex w-full flex-wrap items-baseline gap-x-2 gap-y-1 rounded border bg-background px-3 py-2 text-left text-sm hover:bg-muted focus:outline-none focus:ring-1 focus:ring-ring"
     >
       <span aria-hidden className="text-muted-foreground">▸</span>
-      <span className="flex-1 truncate font-medium">{competency.statement}</span>
+      <span className="min-w-0 flex-1 basis-80 font-medium">{competency.statement}</span>
       <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
         {humanizeSource(competency.source)}
       </span>
-      {/* Compact plain levels so the statement keeps the line; the full
-          phrase is on hover and in the card when opened. */}
+      {/* Compact plain levels; the statement wraps rather than being cut off
+          (design system: never truncate names). Full phrase on hover and in the card. */}
       <span
         data-testid="row-depth"
         title={plainScores(levels)}
@@ -1860,7 +1860,7 @@ export function ProfileReviewPanel({
                   ? approveLockTitle
                   : undefined
               }
-              className="rounded-md bg-amber-700 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="min-h-11 rounded-full bg-primary px-5 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-[#3A1F5C] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {approveLabel}
             </button>

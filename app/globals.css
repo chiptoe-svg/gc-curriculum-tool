@@ -12,6 +12,12 @@
  * the purple action/read ramp. Orange is left alone (marks only).
  * Amounts that used warm hues are moved to the D0-D5 ramp screen by screen. */
 @theme {
+  /* Readability floor (moved out of @theme inline 2026-11-18 so pages can raise it:
+     utilities now read var(--text-xs), see .capture-type below). */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: calc(1.125 / 0.8125);
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: calc(1.375 / 0.9375);
   --color-slate-50: #F7F6F9; --color-slate-100: #F3F2F6; --color-slate-200: #E6E3EC; --color-slate-300: #DCD9E2; --color-slate-400: #B9B4C4; --color-slate-500: #5D5966; --color-slate-600: #5D5966; --color-slate-700: #46424F; --color-slate-800: #2E2A36; --color-slate-900: #1D1B22; --color-slate-950: #141218;
   --color-gray-50: #F7F6F9; --color-gray-100: #F3F2F6; --color-gray-200: #E6E3EC; --color-gray-300: #DCD9E2; --color-gray-400: #B9B4C4; --color-gray-500: #5D5966; --color-gray-600: #5D5966; --color-gray-700: #46424F; --color-gray-800: #2E2A36; --color-gray-900: #1D1B22; --color-gray-950: #141218;
   --color-zinc-50: #F7F6F9; --color-zinc-100: #F3F2F6; --color-zinc-200: #E6E3EC; --color-zinc-300: #DCD9E2; --color-zinc-400: #B9B4C4; --color-zinc-500: #5D5966; --color-zinc-600: #5D5966; --color-zinc-700: #46424F; --color-zinc-800: #2E2A36; --color-zinc-900: #1D1B22; --color-zinc-950: #141218;
@@ -38,10 +44,6 @@
      than Tailwind's defaults (12px / 14px). Arbitrary text-[9-12px] sizes were
      folded into text-xs, so 13px is now the smallest UI text. Body (text-base,
      16px) is unchanged. */
-  --text-xs: 0.8125rem;
-  --text-xs--line-height: calc(1.125 / 0.8125);
-  --text-sm: 0.9375rem;
-  --text-sm--line-height: calc(1.375 / 0.9375);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-body), "Segoe UI", system-ui, sans-serif;
@@ -612,3 +614,11 @@
 .wiki-beta strong { color: var(--foreground); font-weight: 600; }
 .wiki-index__about { margin: 0.6rem 0 0; font-size: 0.9375rem; color: var(--wiki-muted); }
 .wiki-index__about a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--wiki-accent) 60%, transparent); }
+
+/* Course capture reads a lot of small print (owner, 2026-11-18): its smallest
+   size goes from 14.6px to 15.75px, and small muted text is a shade darker. */
+.capture-type {
+  --text-xs: 0.875rem;
+  --text-xs--line-height: calc(1.3 / 0.875);
+}
+.capture-type .text-muted-foreground { color: #46424F; }

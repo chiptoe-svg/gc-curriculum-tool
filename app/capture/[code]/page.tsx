@@ -179,7 +179,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
   }));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="capture-type min-h-screen bg-background">
       <CreditsBanner />
       <header className="border-b">
         <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">

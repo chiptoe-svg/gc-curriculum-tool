@@ -58,12 +58,13 @@ export function OrphanSkills({ courseCode, orphans, authorName, onSaved }: {
   ));
 
   return (
-    <div>
-      <h3>Skills on no string</h3>
+    <details className="st-orphans">
+      {/* Collapsed by default: on course capture it sat above the review as a long list (owner, 2026-11-18). */}
+      <summary><h3><span>Skills on no string</span> <span className="cb-muted">({orphanCountOf(orphans)})</span></h3></summary>
       {orphans.developed.length > 0 && <><p className="cb-muted">Developed here</p><ul>{list('develops', orphans.developed)}</ul></>}
       {orphans.unsupplied.length > 0 && <><p className="cb-muted">Needed on entry</p><ul>{list('requires', orphans.unsupplied)}</ul></>}
       {askName && !authorName && <label className="st-name">Your name <input value={typed} onChange={(e) => setTyped(e.target.value)} /></label>}
       {message && <p className="st-notice">{message}</p>}
-    </div>
+    </details>
   );
 }
