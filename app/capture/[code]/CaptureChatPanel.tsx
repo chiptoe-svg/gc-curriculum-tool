@@ -56,9 +56,9 @@ function ReadinessStrip({
   peakScore: number;
 }) {
   const tone =
-    readiness.score >= 75 ? 'bg-green-500'
-      : readiness.score >= 50 ? 'bg-amber-500'
-      : 'bg-slate-400';
+    readiness.score >= 75 ? 'bg-[#2F6B3A]'
+      : readiness.score >= 50 ? 'bg-[#B57600]'
+      : 'bg-[#9C97A6]';
   // A meaningful regression — the agent dropped its estimate by ≥15 points
   // from a previous high. Almost always means the catalog changed (faculty
   // edited objectives / skills) and the agent is honestly re-probing the
@@ -66,22 +66,22 @@ function ReadinessStrip({
   // loss or a bug.
   const regressed = peakScore - readiness.score >= 15;
   return (
-    <div className="border-t bg-muted/20 px-4 py-2 space-y-1.5">
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-muted-foreground">
+    <div className="border-t border-[#E4E2E8] bg-white px-4 py-3 space-y-1.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <span className="text-sm font-medium text-[#5D5966]">
           Interviewer readiness
         </span>
-        <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+        <div className="h-2 min-w-[8rem] flex-1 rounded-full bg-[#ECEAF0] overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${tone}`}
             style={{ width: `${readiness.score}%` }}
           />
         </div>
-        <span className="text-xs font-mono tabular-nums text-muted-foreground">
+        <span className="text-sm font-mono tabular-nums text-[#5D5966]">
           {readiness.score}%
           {regressed && (
             <span
-              className="ml-1 text-amber-700"
+              className="ml-1 text-[#8A5A00]"
               title={`Earlier in this session the agent reported ${peakScore}%. The drop usually means the catalog (objectives, skills) changed and the agent is re-probing — not a state-loss bug. Covered items stay in the checklist beside the chat.`}
             >
               (↓ from {peakScore}% — re-probing)
@@ -90,7 +90,7 @@ function ReadinessStrip({
         </span>
         {readiness.good_enough_to_generate && (
           <span
-            className="rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-800"
+            className="cap-cue cap-cue-done"
             title="The interviewer reports it has enough evidence to generate a defensible profile."
           >
             ready
@@ -320,10 +320,11 @@ export function CaptureChatPanel({
   }
 
   return (
-    <section className="rounded-md border bg-card shadow-sm">
-      <div className="flex items-start justify-between gap-3 border-b px-4 py-2">
-        <div>
-          <h2 className="text-sm font-semibold">Interview conversation</h2>
+    <section className="cap-card overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#E4E2E8] px-4 py-3">
+        <div className="min-w-0">
+          <p className="cap-eyebrow">Interview</p>
+          <h2 className="cap-title text-xl">Interview conversation</h2>
           <p className="text-xs text-muted-foreground">
             The interviewer reads everything already in the system and asks clarifying questions about
             prereqs, stated vs. evidenced outcomes, and any contradictions across sources.
@@ -374,29 +375,29 @@ export function CaptureChatPanel({
       </div>
 
       {chooserMode !== 'fresh' && priorBriefings && priorBriefings.length > 0 && (
-        <details className="mb-3 rounded border border-stone-200 bg-stone-50 text-sm">
-          <summary className="cursor-pointer select-none px-3 py-2 font-medium text-stone-700">
+        <details className="mx-4 mt-3 rounded-2xl border border-[#E4E2E8] bg-white text-sm">
+          <summary className="cursor-pointer select-none px-4 py-2.5 font-medium text-[#1D1B22]">
             Where we left off · {priorBriefings.length} prior session{priorBriefings.length > 1 ? 's' : ''}
           </summary>
           <div className="space-y-3 px-3 pb-3">
             {priorBriefings.map(b => (
-              <div key={b.sessionId} className="border-t border-stone-200 pt-2 first:border-t-0 first:pt-0">
-                <div className="text-xs text-stone-500">
+              <div key={b.sessionId} className="border-t border-[#E4E2E8] pt-2 first:border-t-0 first:pt-0">
+                <div className="text-xs text-[#5D5966]">
                   {/* startedAt is UTC ISO; render in the browser's local timezone so the date isn't off-by-one. */}
                   {new Date(b.startedAt).toLocaleDateString()} · {b.turnCount} turns · readiness {b.readiness.score ?? '?'}%
                 </div>
                 {(b.readiness.covered.length > 0 || b.readiness.remaining.length > 0) && (
                   <div className="mt-1 flex flex-wrap gap-1">
                     {b.readiness.covered.map((c, i) => (
-                      <span key={`c-${i}`} className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-800">{c}</span>
+                      <span key={`c-${i}`} className="rounded-full bg-[#E4F0E6] px-2.5 py-0.5 text-xs text-[#2F6B3A]">{c}</span>
                     ))}
                     {b.readiness.remaining.map((c, i) => (
-                      <span key={`r-${i}`} className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">{c}</span>
+                      <span key={`r-${i}`} className="rounded-full bg-[#FFF4DB] px-2.5 py-0.5 text-xs text-[#8A5A00]">{c}</span>
                     ))}
                   </div>
                 )}
                 {b.stickyFindings.length > 0 && (
-                  <ul className="mt-1 list-disc pl-5 text-stone-700">
+                  <ul className="mt-1 list-disc pl-5 text-[#1D1B22]">
                     {b.stickyFindings.map((f, i) => (
                       <li key={i}>{f.text}</li>
                     ))}
@@ -431,7 +432,7 @@ export function CaptureChatPanel({
               type="button"
               onClick={handleStart}
               disabled={busy || chooserInstructor.trim() === '' || (modeRequired && chooserMode === null)}
-              className="mt-3 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cap-btn cap-btn-primary mt-3 font-semibold"
             >
               {busy ? 'Starting…' : 'Start the interview'}
             </button>
@@ -446,8 +447,8 @@ export function CaptureChatPanel({
           messages.map((m, i) => {
             if (m.role === 'user') {
               return (
-                <div key={i} className="rounded-lg bg-primary/10 px-3 py-2 ml-12">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">You</p>
+                <div key={i} className="ml-6 rounded-2xl rounded-br-md bg-[#ECE6F4] px-4 py-2.5 sm:ml-12">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#522D80]">You</p>
                   <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{m.content}</p>
                 </div>
               );
@@ -461,11 +462,11 @@ export function CaptureChatPanel({
               <div
                 key={i}
                 className={
-                  'rounded-lg bg-muted/40 mr-12 '
-                  + (isCurrent ? 'px-4 py-3' : 'px-3 py-2')
+                  'mr-6 rounded-2xl rounded-bl-md border border-[#E4E2E8] bg-white sm:mr-12 '
+                  + (isCurrent ? 'px-4 py-3' : 'px-4 py-2.5')
                 }
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Interviewer</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#5D5966]">Interviewer</p>
                 {body && (
                   <p className={'mt-1 whitespace-pre-wrap text-sm ' + (isCurrent ? 'leading-relaxed' : 'leading-snug')}>
                     {body}
@@ -484,9 +485,9 @@ export function CaptureChatPanel({
                           excerpt: c.excerpt,
                         })}
                         title={c.excerpt}
-                        className="inline-flex max-w-full items-center gap-1.5 rounded border border-border/70 bg-background/60 px-1.5 py-0.5 text-xs font-mono leading-tight text-muted-foreground/90 hover:bg-muted hover:text-foreground"
+                        className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#D9D6DF] bg-white px-2.5 py-0.5 text-xs font-mono leading-tight text-[#5D5966] hover:border-[#B9B4C4] hover:text-[#1D1B22]"
                       >
-                        <span className={'font-semibold ' + (c.type === 'chunk' ? 'text-teal-700' : 'text-amber-700')}>
+                        <span className={'font-semibold ' + (c.type === 'chunk' ? 'text-[#522D80]' : 'text-[#8A5A00]')}>
                           {c.type === 'chunk' ? 'CH' : 'IN'}
                         </span>
                         <span className="max-w-[280px] truncate">{c.excerpt}</span>
@@ -497,10 +498,10 @@ export function CaptureChatPanel({
                 {question && (isCurrent ? (
                   <div
                     data-testid="interviewer-question"
-                    className="mt-4 rounded-r-md border-l-4 border-foreground bg-background px-4 py-3 shadow-sm"
+                    className="mt-4 rounded-xl border border-[#E4E2E8] border-l-4 border-l-[#522D80] bg-[#F7F5FA] px-4 py-3"
                   >
-                    <p className="text-xs font-medium text-muted-foreground">Question for you</p>
-                    <p className="mt-1 whitespace-pre-wrap text-base font-semibold leading-snug text-foreground">
+                    <p className="cap-eyebrow">Question for you</p>
+                    <p className="mt-1 whitespace-pre-wrap text-base font-semibold leading-snug text-[#1D1B22]">
                       {question}
                     </p>
                   </div>
@@ -516,7 +517,7 @@ export function CaptureChatPanel({
         )}
       </div>
       {messages.length > 0 && (
-        <div className="border-t px-4 py-3 lg:max-h-[55vh] lg:overflow-y-auto lg:border-l lg:border-t-0">
+        <div className="border-t border-[#E4E2E8] bg-[#FAF9FB] px-4 py-3 lg:max-h-[55vh] lg:overflow-y-auto lg:border-l lg:border-t-0">
           <InterviewChecklist checklist={checklist} justCovered={justCovered} updating={busy} />
         </div>
       )}
@@ -526,7 +527,7 @@ export function CaptureChatPanel({
           fails (e.g. the shared OpenAI credits are used up) leaves no messages,
           so the error can't live inside the reply area. */}
       {error && (
-        <div role="alert" className="mx-4 my-3 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div role="alert" className="mx-4 my-3 rounded-2xl bg-[#F9E3E3] px-4 py-3 text-sm text-[#9B2C2C]">
           {error}
         </div>
       )}
@@ -536,8 +537,8 @@ export function CaptureChatPanel({
           sit between the question and the reply box; it now sits with the
           finish actions it informs. */}
       {messages.length > 0 && (
-        <div className="border-t px-4 pt-5 pb-4">
-          <label htmlFor="capture-reply" className="block text-xs font-medium text-muted-foreground">
+        <div className="border-t border-[#E4E2E8] px-4 pt-5 pb-4">
+          <label htmlFor="capture-reply" className="block text-sm font-medium text-[#1D1B22]">
             Your reply
           </label>
           <textarea
@@ -555,7 +556,7 @@ export function CaptureChatPanel({
             }}
             rows={3}
             placeholder="Type a reply, or use voice. Enter to send, Shift+Enter for a new line."
-            className="mt-1.5 w-full resize-y rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="mt-1.5 w-full resize-y rounded-[10px] border border-[#D9D6DF] bg-white px-3 py-2 text-sm focus:border-[#522D80] focus:outline-none focus:ring-2 focus:ring-[#522D80]/25"
           />
           <div className="mt-4 flex items-center justify-between gap-3">
             <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
@@ -563,7 +564,7 @@ export function CaptureChatPanel({
               type="button"
               onClick={handleSend}
               disabled={!input.trim() || busy}
-              className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cap-btn cap-btn-primary"
             >
               {busy ? 'Sending…' : 'Send'}
             </button>
@@ -579,7 +580,7 @@ export function CaptureChatPanel({
       )}
 
       {messages.length > 0 && (
-        <div className="border-t px-4 pt-4 pb-4">
+        <div className="border-t border-[#E4E2E8] px-4 pt-4 pb-4">
           {/* "I'm done" → generate. Pulled out of the Record/Send row and placed
               full-width below the whole input area so it reads as finishing the
               interview, not as another per-message action. */}
@@ -589,12 +590,12 @@ export function CaptureChatPanel({
               onClick={lastQuestionAsked ? handleGenerateClick : handleOneLastQuestion}
               disabled={!canGenerate || busy}
               className={
-                'w-full rounded-md border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed '
+                'cap-btn w-full min-h-11 font-semibold whitespace-normal '
                 + (readiness?.good_enough_to_generate
-                  ? 'border-green-400 bg-green-50 text-green-800 hover:bg-green-100'
+                  ? 'cap-btn-primary'
                   : (readiness?.score ?? 0) >= 50
-                  ? 'border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                  : 'border-input bg-background hover:bg-muted')
+                  ? '!border-[#B57600] !bg-[#FFF4DB] !text-[#8A5A00]'
+                  : '')
               }
               title={
                 !canGenerate

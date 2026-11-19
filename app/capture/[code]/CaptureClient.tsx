@@ -517,8 +517,8 @@ export function CaptureClient({
             />
           )}
           {savedConversationAt && initialMessages.length > 0 && (
-            <div className="flex items-center justify-between gap-3 rounded-md border bg-amber-50 px-4 py-2 text-xs">
-              <p className="text-amber-800">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#ECE6F4] px-4 py-2.5 text-sm">
+              <p className="min-w-0 text-[#1D1B22]">
                 <span className="font-medium">Resuming saved conversation</span> from{' '}
                 {new Date(savedConversationAt).toLocaleString()}.{' '}
                 {initialReadiness && <>Interviewer readiness was <span className="font-mono">{initialReadiness.score}%</span> when last saved.</>}
@@ -526,7 +526,7 @@ export function CaptureClient({
               <button
                 type="button"
                 onClick={handleClearConversation}
-                className="rounded border border-amber-300 bg-white px-2 py-1 font-medium text-amber-900 hover:bg-amber-100"
+                className="cap-btn min-h-9 text-sm"
               >
                 Start over
               </button>
@@ -539,7 +539,7 @@ export function CaptureClient({
                 <button
                   type="button"
                   onClick={() => setEvidenceAck(true)}
-                  className="rounded-md border border-amber-400 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+                  className="cap-btn min-h-9 text-sm"
                 >
                   Continue anyway
                 </button>
@@ -578,7 +578,7 @@ export function CaptureClient({
               type="button"
               onClick={handleResetAudit}
               disabled={resetState === 'resetting'}
-              className="rounded border border-stone-300 bg-white px-2 py-1 font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50"
+              className="cap-btn min-h-9 text-sm"
               title="Clear the working draft for this course and start the interview chat fresh. Prior sessions and indexed materials stay."
             >
               {resetState === 'resetting' ? 'Resetting…' : 'Reset interview'}
@@ -590,12 +590,12 @@ export function CaptureClient({
               className={
                 'rounded-md border px-4 py-3 text-sm ' +
                 (materialsHealth.severity === 'severe'
-                  ? 'border-destructive/40 bg-red-50'
-                  : 'border-amber-300 bg-amber-50')
+                  ? 'border-[#9B2C2C]/30 bg-[#F9E3E3] rounded-2xl'
+                  : 'border-[#B57600]/40 bg-[#FFF4DB] rounded-2xl')
               }
               role="alert"
             >
-              <p className={materialsHealth.severity === 'severe' ? 'font-medium text-destructive' : 'font-medium text-amber-800'}>
+              <p className={materialsHealth.severity === 'severe' ? 'font-medium text-[#9B2C2C]' : 'font-medium text-[#8A5A00]'}>
                 ⚠ {materialsHealth.failedExtraction} of {materialsHealth.total} materials failed to extract
                 {materialsHealth.severity === 'severe'
                   ? ' — this profile is under-evidenced. Fix or re-upload these before trusting the scores.'
@@ -610,15 +610,15 @@ export function CaptureClient({
             </div>
           )}
           {generationError && (
-            <div className="rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm">
-              <p className="font-medium text-destructive">Generation failed: {generationError}</p>
+            <div className="rounded-2xl bg-[#F9E3E3] px-4 py-3 text-sm">
+              <p className="font-medium text-[#9B2C2C]">Generation failed: {generationError}</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Your conversation is saved — you can try again now, or come back later and resume from where you left off.
               </p>
             </div>
           )}
           {profile && (
-            <div className="rounded-md border bg-muted/20 px-4 py-3 text-sm">
+            <div className="cap-card px-4 py-3 text-sm">
               <p className="font-medium">A prior profile exists for this course.</p>
               <p className="mt-1 text-muted-foreground">
                 Reviewer status: <span className="font-mono">{

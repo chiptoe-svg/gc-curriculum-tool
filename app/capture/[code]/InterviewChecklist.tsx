@@ -26,7 +26,7 @@ export function InterviewChecklist({
   return (
     <aside data-testid="interview-checklist" aria-label="Interview checklist" className="space-y-3 text-xs">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">Interview checklist</h3>
+        <h3 className="cap-title text-base">Interview checklist</h3>
         {updating && (
           <span className="flex items-center gap-1.5 text-muted-foreground" role="status">
             <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" aria-hidden />
@@ -46,7 +46,7 @@ export function InterviewChecklist({
           <ul className="space-y-1">
             {checklist.remaining.map(item => (
               <li key={item} className="flex gap-1.5 leading-snug">
-                <span className="mt-0.5 inline-block h-3 w-3 shrink-0 rounded-sm border border-muted-foreground/50" aria-hidden />
+                <span className="mt-0.5 inline-block h-3 w-3 shrink-0 rounded-sm border-[1.5px] border-[#B57600]" aria-hidden />
                 <span>{item}</span>
               </li>
             ))}
@@ -63,9 +63,9 @@ export function InterviewChecklist({
                 key={item}
                 data-testid={`covered-${item}`}
                 data-new={fresh.has(item) ? 'true' : undefined}
-                className={'flex gap-1.5 leading-snug ' + (fresh.has(item) ? 'rounded bg-green-50 font-medium text-green-900' : 'text-muted-foreground')}
+                className={'flex gap-1.5 leading-snug ' + (fresh.has(item) ? 'rounded-md bg-[#E4F0E6] px-1 font-medium text-[#2F6B3A]' : 'text-[#5D5966]')}
               >
-                <span className="shrink-0 text-green-700" aria-hidden>✓</span>
+                <span className="shrink-0 text-[#2F6B3A]" aria-hidden>✓</span>
                 <span>{item}{fresh.has(item) && <span className="sr-only"> (just covered)</span>}</span>
               </li>
             ))}
