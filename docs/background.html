@@ -1,266 +1,302 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KUD+ Framework — Background and Justification</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The KUD+ Framework — Graphic Communications, Clemson</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
 <style>
-  :root {
-    --rail: #141412;
-    --rail-text: #8a8780;
-    --rail-active: #E8A44A;
-    --rail-hover: #2a2925;
-    --bg: #F7F5F0;
-    --bg-card: #FFFFFF;
-    --bg-alt: #F0EDE6;
-    --text: #1C1C18;
-    --text-muted: #6B6860;
-    --text-faint: #9E9B94;
-    --accent: #C8682A;
-    --accent-light: #F5E6D8;
-    --border: #E2DDD4;
-    --border-strong: #C8C4BA;
-    --mono: 'DM Mono', monospace;
-    --serif: 'Source Serif 4', Georgia, serif;
-    --display: 'Playfair Display', Georgia, serif;
-    --t1: #2A5C8C;
-  }
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
 
-  body {
-    font-family: var(--serif);
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-    min-height: 100vh;
-    font-size: 16px;
-    line-height: 1.7;
-  }
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
 
-  #rail {
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    width: 240px;
-    background: var(--rail);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    z-index: 100;
-  }
-  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
-  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
-  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
-  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
-  .rail-nav { padding: 20px 0; flex: 1; }
-  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
-  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
-  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
-  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
-  .rail-footer a { color: var(--rail-text); text-decoration: none; }
-  .rail-footer a:hover { color: var(--rail-active); }
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
 
-  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; }
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
-  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
-  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
-  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
-  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
-  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
-  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
 
-  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
 
-  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
-  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
-  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
-  h4 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin: 24px 0 10px; font-weight: 500; }
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
 
-  p { margin-bottom: 14px; max-width: 760px; }
-  p.wide { max-width: none; }
-  strong { color: var(--text); font-weight: 600; }
-  em { color: var(--text); font-style: italic; }
-  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
-  a:hover { color: #a85020; }
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
 
-  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
-  li { margin-bottom: 8px; }
-  li strong { color: var(--text); }
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
 
-  blockquote {
-    border-left: 3px solid var(--border-strong);
-    padding: 4px 0 4px 18px;
-    margin: 18px 0;
-    color: var(--text-muted);
-    font-style: italic;
-    max-width: 740px;
-  }
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* ---------- Page: KUD+ background (guide tokens only) ---------- */
+.paper > .hero{order:-1;flex:1 1 100%;margin-inline:calc(-1 * var(--pad))}
+.toc .label{display:block;margin:14px 0 2px}
+.toc a.out{padding-left:26px}
+.toc .n{width:20px}
+.article section{scroll-margin-top:24px}
+.article h3{font-size:24px;line-height:1.25;margin-top:12px}
+.article ul,.article ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.note > div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.note .table-box{border-top:0}
+.note table{min-width:520px;font-size:14px}
+.note table.reading td:first-child{white-space:nowrap}
+.note table.reading td{border-top:0;padding-block:6px}
+sup.nv{font:500 .72em var(--mono);color:var(--muted);margin-left:1px;cursor:help}
+.dagger-legend{font-size:14px;color:var(--muted)}
+ol.refs{font-size:15px;overflow-wrap:anywhere}
+.doc-foot{font-size:14px;color:var(--muted)}
+.muted{color:var(--muted)}
+.hl{color:var(--purple)}
+.formula{text-align:center;font-family:var(--mono);font-size:15px;line-height:1.5}
+code{font:500 .88em var(--mono)}
+.article .cue{white-space:normal;height:auto;min-height:24px;padding-block:2px;vertical-align:middle;margin-inline:2px}
+table.compact td.kud{white-space:nowrap;font-family:var(--mono);font-size:14px}
+table.ingestion td:nth-child(2) .cue{font-size:12.5px}
+table.ingestion td:first-child{font-weight:500}
+caption{text-align:left;font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-bottom:10px}
+.scale{margin:0;background:var(--inset);border-radius:16px;padding:20px 24px;font:400 14px/1.7 var(--mono);color:var(--ink);overflow-x:auto;white-space:pre}
+figure.fig{margin:8px 0;display:flex;flex-direction:column;gap:12px}
+figure.fig figcaption{font-size:14px;line-height:1.55;color:var(--muted)}
+figure.fig figcaption b{color:var(--ink);font-weight:600}
+.quad{display:grid;grid-template-columns:132px 1fr 1fr;min-width:560px;border:1px solid var(--rule);border-radius:16px;overflow:hidden;background:var(--panel)}
+.quad > div{border-right:1px solid var(--rule-soft);border-bottom:1px solid var(--rule-soft);padding:14px 16px}
+.quad .qh{font:500 11px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--inset);display:flex;align-items:center}
+.quad .qcorner{background:var(--inset)}
+.quad .qcell{font-size:14.5px;line-height:1.5}
+.quad .qn{font-weight:600;display:block;margin-bottom:4px;color:var(--ink)}
+.quad .qg{color:var(--muted);font-size:14px}
+.quad .qcell.target{background:var(--purple-soft)}
+.quad .qcell.target .qn{color:var(--purple-dark)}
+.barwrap{max-width:460px}
+.bars{display:flex;align-items:flex-end;gap:38px;height:184px;padding:0 10px;border-bottom:2px solid var(--rule)}
+.bars .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.bars .col{width:100%;border-radius:4px 4px 0 0;background:var(--rule);border:1px solid var(--muted);border-bottom:0}
+.bars .bar:nth-child(1) .col{height:30px}.bars .bar:nth-child(2) .col{height:90px}.bars .bar:nth-child(3) .col{height:150px}
+.bars .bar.hi .col{background:var(--purple);border-color:var(--purple)}
+.bars .pct{font:500 14px var(--mono);color:var(--ink);margin-bottom:5px}
+.barlabels{display:flex;gap:38px;padding:8px 10px 0}
+.barlabels span{flex:1;text-align:center;font-size:14px;color:var(--muted);line-height:1.4}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
+.flow .fbox{flex:1 1 0;min-width:130px;background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.4;display:flex;align-items:center}
+.flow .fbox.accent{background:var(--purple-soft);border-color:var(--purple);color:var(--purple-dark);font-weight:600}
+.flow .farr{display:flex;align-items:center;color:var(--purple);font-size:18px;flex:0 0 auto}
+.flow-neg{margin-top:10px;border:1px dashed var(--rule);border-radius:10px;padding:10px 14px;font-size:14px;color:var(--muted);background:var(--inset)}
+.flow-neg .x{color:#9B2C2C;font-weight:700;margin-right:7px}
+@media (max-width:640px){.bars{gap:16px}.barlabels{gap:16px}.flow .farr{display:none}}
+table.ingestion td:nth-child(2){min-width:210px}
 
-  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
-  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-  .callout p:last-child { margin-bottom: 0; }
-  .callout.note { border-left-color: var(--t1); }
-  .callout.note .callout-title { color: var(--t1); }
-
-  .scale {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 18px 22px;
-    margin: 18px 0;
-    font-family: var(--mono);
-    font-size: 13px;
-    line-height: 1.7;
-    max-width: 820px;
-    white-space: pre;
-    overflow-x: auto;
-  }
-
-  .scale-row { display: grid; grid-template-columns: 24px 1fr; gap: 14px; }
-  .scale-row .num { color: var(--accent); font-weight: 500; }
-
-  table.compact { border-collapse: collapse; margin: 18px 0 22px; max-width: 820px; font-size: 14px; }
-  table.compact th, table.compact td { padding: 8px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
-  table.compact thead th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-strong); }
-  table.compact td.kud { font-family: var(--mono); font-size: 12.5px; color: var(--text); }
-
-  .refs { font-size: 14px; line-height: 1.55; max-width: 820px; }
-  .refs li { margin-bottom: 10px; padding-left: 4px; }
-
-  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
-
-  .status-tag { display: inline-block; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; vertical-align: middle; font-weight: 500; margin-left: 6px; }
-  .status-live { background: #e6f0e6; color: #2d6b2d; }
-  .status-specified { background: #e8edf5; color: #2a4a7a; }
-  .status-planned { background: #f0eaf5; color: #5a3a7a; }
-  .status-endstate { background: #f5f0e8; color: #7a5a2a; }
-  .status-illustrative { background: #f0eeea; color: #6a6456; }
-
-  table.ingestion { border-collapse: collapse; margin: 18px 0 22px; width: 100%; max-width: 900px; font-size: 13.5px; }
-  table.ingestion th, table.ingestion td { padding: 8px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
-  table.ingestion thead th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-strong); }
-  table.ingestion td:first-child { font-weight: 500; white-space: nowrap; }
-  table.ingestion td:nth-child(2) { font-family: var(--mono); font-size: 12px; }
-
-  /* ── Figures (added 2026-06-20) ─────────────────────────────────── */
-  figure.fig { margin: 28px 0; max-width: 820px; }
-  figure.fig figcaption { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; line-height: 1.6; color: var(--text-muted); margin-top: 12px; }
-  figure.fig figcaption b { color: var(--text); font-weight: 500; }
-  /* 2×2 quadrant */
-  .quad { display: grid; grid-template-columns: 98px 1fr 1fr; border: 1px solid var(--border-strong); border-radius: 5px; overflow: hidden; background: var(--bg-card); }
-  .quad > div { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 12px 14px; }
-  .quad .qh { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); background: var(--bg-alt); display: flex; align-items: center; line-height: 1.4; }
-  .quad .qcorner { background: var(--bg-alt); }
-  .quad .qcell { font-size: 13px; line-height: 1.5; }
-  .quad .qcell .qn { font-weight: 600; display: block; margin-bottom: 4px; color: var(--text); }
-  .quad .qcell .qg { color: var(--text-muted); font-size: 12.5px; }
-  .quad .qcell.target { background: var(--accent-light); }
-  .quad .qcell.target .qn { color: var(--accent); }
-  /* bar chart */
-  .barwrap { max-width: 460px; }
-  .bars { display: flex; align-items: flex-end; gap: 38px; height: 184px; padding: 0 10px; border-bottom: 2px solid var(--border-strong); }
-  .bars .bar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
-  .bars .col { width: 100%; border-radius: 3px 3px 0 0; background: var(--accent-light); border: 1px solid var(--accent); border-bottom: 0; }
-  .bars .bar.hi .col { background: var(--accent); }
-  .bars .pct { font-family: var(--mono); font-size: 13.5px; color: var(--text); margin-bottom: 5px; }
-  .barlabels { display: flex; gap: 38px; padding: 8px 10px 0; }
-  .barlabels span { flex: 1; text-align: center; font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
-  /* flow */
-  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
-  .flow .fbox { flex: 1 1 0; min-width: 116px; background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: 5px; padding: 10px 12px; font-size: 12.5px; line-height: 1.4; display: flex; align-items: center; }
-  .flow .fbox.accent { background: var(--accent-light); border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  .flow .farr { display: flex; align-items: center; color: var(--accent); font-size: 18px; flex: 0 0 auto; }
-  .flow-neg { margin-top: 10px; border: 1px dashed var(--border-strong); border-radius: 5px; padding: 9px 13px; font-size: 12.5px; color: var(--text-muted); background: var(--bg-alt); }
-  .flow-neg .x { color: #B23A2E; font-weight: 700; margin-right: 7px; }
-  sup.nv { font-family: var(--mono); font-size: 0.72em; color: var(--text-faint); margin-left: 1px; cursor: help; }
 </style>
 </head>
 <body>
-
-<aside id="rail">
-  <div class="rail-header">
-    <div class="rail-dept">Clemson · Graphic Communications</div>
-    <div class="rail-title">GC Curriculum Tool</div>
-    <div class="rail-doc-type">Background</div>
-  </div>
-  <nav class="rail-nav">
-    <div class="nav-group-label">Background</div>
-    <a class="nav-link" href="#problem">The problem this addresses</a>
-    <a class="nav-link" href="#grounding">Theoretical grounding</a>
-    <a class="nav-link" href="#alternatives">Why not other frameworks</a>
-    <a class="nav-link" href="#problem-solving">Problem-solving as program-level</a>
-    <a class="nav-link" href="#kud">The KUD model</a>
-    <a class="nav-link" href="#depth">The depth extension (KUD+)</a>
-    <a class="nav-link" href="#anchors">Student-side anchors</a>
-    <a class="nav-link" href="#foundational">Foundational competencies</a>
-    <a class="nav-link" href="#program-structure">Program-level structure: the 3-Act model</a>
-    <a class="nav-link" href="#course-impl">Course-by-course implementation</a>
-    <a class="nav-link" href="#career-impl">Career-path alignment</a>
-    <a class="nav-link" href="#prereq-gap-method">Prerequisite-gap method</a>
-    <a class="nav-link" href="#validation">Validation</a>
-    <a class="nav-link" href="#not">What this is not</a>
-    <a class="nav-link" href="#hypotheses">Open hypotheses</a>
-    <a class="nav-link" href="#ai-workplace">KUD+ in the AI-augmented workplace</a>
-    <a class="nav-link" href="#references">References</a>
-    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
-    <a class="nav-link" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>
-    <a class="nav-link" href="./graduate-outcome-validation.html">Validation proposal</a>
-  </nav>
-  <div class="rail-footer">
-    <a href="./superpowers/vision/gc-curriculum-tool-vision.html">← Vision</a>
-  </div>
-</aside>
-
-<main>
-
-<header class="doc-head">
-  <div class="doc-eyebrow">Background &amp; Justification</div>
-  <h1 class="doc-title">The KUD+ Framework</h1>
-  <p class="doc-subtitle">A theoretical and practical account of how the GC Curriculum Tool measures what a course is evidenced to require, assess, and support — scored on Know, Understand, and Do depth scales — and how those measurements feed program-level analysis and career-path alignment.</p>
-  <div class="doc-meta">
-    <span><strong>Companion to:</strong> Vision document</span>
-    <span><strong>Audience:</strong> Faculty, curriculum committee, advisory board</span>
-    <span><strong>Status:</strong> Working v1</span>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
   </div>
 </header>
 
-<div class="callout note" style="margin-bottom: 40px;">
-  <div class="callout-title">What to read</div>
-  <table class="compact" style="margin: 0; font-size: 13px;">
+<div class="wrap paper paper--long">
+  <nav class="toc" id="rail" aria-label="Contents">
+    <span class="label">Background</span>
+    <a href="#problem"><span class="n">1</span><span>The problem this addresses</span></a>
+    <a href="#grounding"><span class="n">2</span><span>Theoretical grounding</span></a>
+    <a href="#alternatives"><span class="n">3</span><span>Why not other frameworks</span></a>
+    <a href="#problem-solving"><span class="n">4</span><span>Problem-solving as program-level</span></a>
+    <a href="#kud"><span class="n">5</span><span>The KUD model</span></a>
+    <a href="#depth"><span class="n">6</span><span>The depth extension (KUD+)</span></a>
+    <a href="#anchors"><span class="n">7</span><span>Student-side anchors</span></a>
+    <a href="#foundational"><span class="n">8</span><span>Foundational competencies</span></a>
+    <a href="#program-structure"><span class="n">9</span><span>Program-level structure: the 3-Act model</span></a>
+    <a href="#course-impl"><span class="n">10</span><span>Course-by-course implementation</span></a>
+    <a href="#career-impl"><span class="n">11</span><span>Career-path alignment</span></a>
+    <a href="#prereq-gap-method"><span class="n">12</span><span>Prerequisite-gap method</span></a>
+    <a href="#validation"><span class="n">13</span><span>Validation</span></a>
+    <a href="#not"><span class="n">14</span><span>What this is not</span></a>
+    <a href="#hypotheses"><span class="n">15</span><span>Open hypotheses</span></a>
+    <a href="#ai-workplace"><span class="n">16</span><span>KUD+ in the AI-augmented workplace</span></a>
+    <a href="#references"><span class="n">17</span><span>References</span></a>
+    <span class="label">See also</span>
+    <a class="out" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>
+    <a class="out" href="./graduate-outcome-validation.html">Validation proposal</a>
+    <a class="out" href="./superpowers/vision/gc-curriculum-tool-vision.html">← Vision</a>
+  </nav>
+
+  <section class="hero">
+    <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="eyebrow">Background &amp; Justification</span>
+      <h1 class="title-paper">The KUD+ Framework</h1>
+      <p class="lede">A theoretical and practical account of how the GC Curriculum Tool measures what a course is evidenced to require, assess, and support — scored on Know, Understand, and Do depth scales — and how those measurements feed program-level analysis and career-path alignment.</p>
+      <div class="meta-row">
+        <span><strong>Companion to:</strong> Vision document</span>
+        <span><strong>Audience:</strong> Faculty, curriculum committee, advisory board</span>
+        <span><strong>Status:</strong> Working v1</span>
+      </div>
+    </div>
+  </section>
+
+  <article class="article">
+<aside class="note">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+    <div><strong>What to read</strong>
+  <div class="table-box"><table class="compact reading">
     <tbody>
-      <tr><td style="white-space:nowrap; padding-right:18px;"><a href="executive-brief.html">Executive Brief</a></td><td>3-minute what / why / status</td></tr>
-      <tr><td style="white-space:nowrap; padding-right:18px;"><a href="superpowers/vision/gc-curriculum-tool-vision.html">Vision</a></td><td>The product picture, surfaces, and roadmap</td></tr>
-      <tr><td style="white-space:nowrap; padding-right:18px;"><strong>Background</strong> (you are here)</td><td>The academic case — KUD+, why-not-Bloom, evidence rule</td></tr>
-      <tr><td style="white-space:nowrap; padding-right:18px;"><a href="problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a></td><td>Research on how problem-solving develops</td></tr>
-      <tr><td style="white-space:nowrap; padding-right:18px;"><a href="three-act-deep-dive.html">3-Act Companion</a></td><td>The program-structure research</td></tr>
-      <tr><td style="white-space:nowrap; padding-right:18px;"><a href="measurement-hypotheses-deep-dive.html">Open Hypotheses</a></td><td>The forward research agenda (durability, cross-walk, uncertainty, relatedness)</td></tr>
+      <tr><td><a href="executive-brief.html">Executive Brief</a></td><td>3-minute what / why / status</td></tr>
+      <tr><td><a href="superpowers/vision/gc-curriculum-tool-vision.html">Vision</a></td><td>The product picture, surfaces, and roadmap</td></tr>
+      <tr><td><strong>Background</strong> (you are here)</td><td>The academic case — KUD+, why-not-Bloom, evidence rule</td></tr>
+      <tr><td><a href="problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a></td><td>Research on how problem-solving develops</td></tr>
+      <tr><td><a href="three-act-deep-dive.html">3-Act Companion</a></td><td>The program-structure research</td></tr>
+      <tr><td><a href="measurement-hypotheses-deep-dive.html">Open Hypotheses</a></td><td>The forward research agenda (durability, cross-walk, uncertainty, relatedness)</td></tr>
     </tbody>
-  </table>
+  </table></div>
 </div>
+  </aside>
 
 
 <section id="problem">
-  <h2><span class="num">§ 1</span>The problem this addresses</h2>
+  <div><span class="sec-num">01</span><h2 class="sec-title">The problem this addresses</h2></div>
 
   <p>Curriculum review at most programs operates on long cycles — several years between accreditation reviews, longer for systemic redesign — and on coarse evidence: catalog descriptions, faculty self-report, and the occasional advisory-board conversation. Between reviews, a program's understanding of itself drifts. Courses evolve, faculty change, employer expectations shift, and the gap between what the curriculum claims to deliver and what its assignments actually produce widens without anyone tracking it.</p>
 
   <p>The trouble turns concrete the moment you ask what a claim actually rests on. A syllabus bullet and an evidence-backed depth score answer very different questions:</p>
 
-  <div class="callout note">
-    <div class="callout-title">Ordinary claim &rarr; what KUD+ asks for</div>
-    <table class="compact">
+  <aside class="note">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+    <div><strong>Ordinary claim &rarr; what KUD+ asks for</strong>
+    <div class="table-box"><table class="compact">
       <thead><tr><th>Ordinary curriculum claim</th><th>What KUD+ requires as evidence</th></tr></thead>
       <tbody>
         <tr><td>&ldquo;Covers color management&rdquo;</td><td>Do students actually diagnose or correct color under <em>assessed</em>, novel conditions? A <strong>Do</strong> score needs the graded artifact, not the topic in a list.</td></tr>
         <tr><td>&ldquo;Students understand branding&rdquo;</td><td>Where do students explain tradeoffs, defend choices, or revise from critique? An <strong>Understand</strong> score needs student-produced reasoning.</td></tr>
         <tr><td>&ldquo;Develops problem-solving&rdquo;</td><td>Where do upper-depth domain work, productive struggle, reflection, and transfer scaffolding appear <em>across the sequence</em>? (See <a href="#problem-solving">&sect;4</a>.)</td></tr>
       </tbody>
-    </table>
+    </table></div>
   </div>
+  </aside>
 
   <p>This is the framework's <strong>evidence-above-zero</strong> rule, and it is the heart of the approach: a course does not earn credit for a competency because the syllabus names it — it earns credit when assignments, rubrics, student-produced reasoning, or instructor-confirmed work show students actually engage it. Know above 1, and Understand or Do above 0, must point at assessed student work; Know at 1 needs only evidence the topic was actually taught. Even then, a score describes the depth of learning the course&rsquo;s assessed work asks for and evidences, not a measurement of what each student attained; that distinction is drawn in <a href="#anchors">&sect;7</a>. Everything that follows — the depth scales, the program views, the career alignment — exists to make that one rule usable at scale.</p>
 
@@ -283,7 +319,7 @@
 </section>
 
 <section id="grounding">
-  <h2><span class="num">§ 2</span>Theoretical grounding</h2>
+  <div><span class="sec-num">02</span><h2 class="sec-title">Theoretical grounding</h2></div>
 
   <p>The framework is consistent with several established traditions in curriculum design. None of them prescribe the specific depth scales used here; the language below describes how the framework is <em>consistent with</em> each tradition, not derived from any of them. The specific design choices — 0–5 grain, student-side anchors, the evidence-typed scoring rule, the null-vs-zero treatment of foundationals — are framework commitments that go beyond what the cited traditions individually establish, and are presented as such throughout this document.</p>
 
@@ -315,11 +351,11 @@
 </section>
 
 <section id="alternatives">
-  <h2><span class="num">§ 3</span>Why not other frameworks</h2>
+  <div><span class="sec-num">03</span><h2 class="sec-title">Why not other frameworks</h2></div>
 
   <p>Several alternative frameworks deserve specific mention, both for completeness and because the choice not to use them clarifies what KUD+ is trying to accomplish.</p>
 
-  <table class="compact">
+  <div class="table-box"><table class="compact">
     <thead><tr><th>Framework</th><th>Strength</th><th>Why not used as the primary lens</th></tr></thead>
     <tbody>
       <tr>
@@ -353,22 +389,24 @@
         <td>Their generic-skill tier (Critical Thinking, Complex Problem Solving) is the context-free-skill construct §4 rejects — and the National Academies' 2010 review found that same tier weak in construct validity. Atomizing competence into an external checklist optimizes for adequacy over integration (Gonczi, 1994; Brockmann, Clarke, &amp; Winch, 2008) and historically backfired (UK NVQ Level 2 delivered poor-to-negative wage returns on its classroom route; Dearden, McGranahan, &amp; Sianesi, 2004, discussed in §11). Used only at the <em>domain</em> tier (Knowledge / Work Activities / Tasks) as external validation, and on the demand side as a benchmark — never as the structural backbone or at the generic-skill tier. Detailed verdict + sources: <a href="./superpowers/specs/2026-06-15-occupational-frameworks-onet-research.md">occupational-frameworks research memo</a>.</td>
       </tr>
     </tbody>
-  </table>
+  </table></div>
 
   <p>The framework's design choice — three outcome categories with depth scales — is therefore not a rejection of these traditions but a selection among them, with explicit attention to which one is well-suited for the program-mapping task and which one is well-suited for the assessment-design task.</p>
 </section>
 
 <section id="problem-solving">
-  <h2><span class="num">§ 4</span>Problem-solving as a program-level emergent property</h2>
+  <div><span class="sec-num">04</span><h2 class="sec-title">Problem-solving as a program-level emergent property</h2></div>
 
   <p>Problem-solving is among the attributes employers most consistently value when reviewing graduates' resumes — repeatedly ranked near the top of NACE's annual Job Outlook resume-attribute surveys, alongside teamwork and written communication <a href="#ref-nace">(NACE, 2023)</a><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>. The natural curricular response is to add a "Problem-Solving" course, or to list problem-solving as a generic transferable skill the program develops. Both responses tend to underperform, in characteristic ways the cognitive-science research below explains, and the framework is deliberately structured to surface why and to support the alternative.</p>
 
-  <div class="callout note">
-    <div class="callout-title">What problem-solving is, in this framework — stated before the critique</div>
+  <aside class="note">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+    <div><strong>What problem-solving is, in this framework — stated before the critique</strong>
     <p>Problem-solving is real, the framework tracks it, and it is <em>not</em> removed from the curriculum map — it is <em>relocated</em>. Rather than a generic course or a sixth foundational checkbox, the framework treats it as a <strong>program-level emergent property</strong>: the signal appears in the pattern <em>across</em> courses, not in any single course's label. What the tool actually looks for is a combination of conditions:</p>
-    <p style="text-align:center; font-family:var(--mono,monospace); line-height:1.5;"><strong>Problem-solving opportunity = upper-depth domain work (U4+ or D4+) + productive failure + structured reflection + abstraction/bridging across varied cases — read at the program level, not the course level.</strong></p>
-    <p style="margin-bottom:0;"><em>This is what the framework looks for, not a computed score.</em> &ldquo;Emergent&rdquo; does not mean invisible: it means the tool measures the <em>conditions under which problem-solving forms</em> — enough domain depth to attempt meaningful solutions, struggle that exposes gaps, reflection that converts failure into understanding, and repeated chances to abstract principles across varied cases. The critique that follows — why a generic &ldquo;Problem-Solving 101&rdquo; underperforms — therefore lands on a reader who already holds the replacement.</p>
+    <p class="formula"><strong>Problem-solving opportunity = upper-depth domain work (U4+ or D4+) + productive failure + structured reflection + abstraction/bridging across varied cases — read at the program level, not the course level.</strong></p>
+    <p><em>This is what the framework looks for, not a computed score.</em> &ldquo;Emergent&rdquo; does not mean invisible: it means the tool measures the <em>conditions under which problem-solving forms</em> — enough domain depth to attempt meaningful solutions, struggle that exposes gaps, reflection that converts failure into understanding, and repeated chances to abstract principles across varied cases. The critique that follows — why a generic &ldquo;Problem-Solving 101&rdquo; underperforms — therefore lands on a reader who already holds the replacement.</p>
   </div>
+  </aside>
 
   <p><strong>One distinction up front dissolves most of the apparent contradiction below.</strong> &ldquo;Problem-solving,&rdquo; as employers use the word, blends at least three things: <strong>technical-diagnostic troubleshooting</strong> (&ldquo;why is this plate scumming?&rdquo;), <strong>adaptive transfer</strong> to unfamiliar constraints, and <strong>professional problem-framing</strong> (clarifying goals, stakeholders, tradeoffs). The transfer literature is pessimistic about the second as a <em>trained generic skill</em>, but not about the first in-domain or the third as a disposition — which is how &ldquo;far transfer is rare&rdquo; and &ldquo;deep domains build problem-solvers&rdquo; are both true. The framework is strongest on the first two and keeps the third visible through the foundational dispositions (§8); the full treatment is in the companion <a href="./problem-solving-deep-dive.html">problem-solving deep dive</a>.</p>
 
@@ -387,7 +425,7 @@
   <p><strong>Productive failure</strong> — Manu Kapur's program of research — has identified a well-evidenced design pattern for this <a href="#ref-kapur-2008">(Kapur, 2008</a>; <a href="#ref-kapur-2016">Kapur, 2016)</a>. The unit of instruction is two-phase: students work on an ill-structured problem with their current knowledge, fail in various characteristic ways, and the consolidation phase uses those failure modes as scaffolding for the canonical approach. The 2021 meta-analytic review found an overall effect favoring problem-solving followed by instruction for conceptual knowledge and transfer (g ≈ 0.36 across 53 studies, 166 comparisons), with no significant advantage for procedural knowledge <a href="#ref-sinha-kapur-2021">(Sinha &amp; Kapur, 2021)</a>. The effect is larger when designs follow productive-failure principles closely: the review's overall fidelity score predicted effect size, and instruction that builds on the students' own solutions was among its strongest single predictors. Kapur (2016) explicitly distinguishes productive from <em>unproductive</em> failure: unguided problem-solving with no later consolidation is the design that, in his words, can &ldquo;maximize neither performance nor learning,&rdquo; and he cites agreement across camps that unguided discovery &ldquo;often leads to dismal learning outcomes.&rdquo; The mechanism is not failure as such; it is failure followed by sense-making.</p>
 
   <figure class="fig">
-    <div class="quad">
+    <div class="table-box"><div class="quad">
       <div class="qcorner"></div>
       <div class="qh">Productive<br>(learning gain)</div>
       <div class="qh">Unproductive<br>(no gain)</div>
@@ -397,7 +435,7 @@
       <div class="qh">Success<br>(instruction first)</div>
       <div class="qcell"><span class="qn">Productive success</span><span class="qg">A plate-exposure problem worked through with step-by-step guidance, so the student succeeds and learns the method in doing it. Guided problem-solving that succeeds.</span></div>
       <div class="qcell"><span class="qn">Unproductive success</span><span class="qg">D5 fluency from drilling one press — then a freeze on an unfamiliar substrate. Smooth performance, brittle depth; invisible to a depth-only view.</span></div>
-    </div>
+    </div></div>
     <figcaption><b>Figure 1 — Kapur's four design possibilities: productive/unproductive × failure/success</b> (Kapur, 2016), one GC example per cell (the examples and the grid are ours). The highlighted cell — failure <em>followed by</em> consolidation — is the design the audit probes for. It is not the only route to transferable depth: Kapur treats productive success as a second route and says &ldquo;it is not clear if one is better than the other.&rdquo; Nor does he equate productive success with direct instruction: his examples are problem-based learning and guided inquiry, and he asks whether direct instruction could be &ldquo;a form of unproductive success,&rdquo; finding it &ldquo;wanting against productive failure and productive success&rdquo; while calling that label &ldquo;rather harsh.&rdquo; <em>Unproductive success</em> is the trap a depth-only reading misses: high performance with what Kapur calls &ldquo;an illusion of learning.&rdquo;</figcaption>
   </figure>
 
@@ -431,9 +469,9 @@
   <figure class="fig">
     <div class="barwrap">
       <div class="bars">
-        <div class="bar"><span class="pct">~10%</span><div class="col" style="height:30px"></div></div>
-        <div class="bar"><span class="pct">~30%</span><div class="col" style="height:90px"></div></div>
-        <div class="bar hi"><span class="pct">~50%</span><div class="col" style="height:150px"></div></div>
+        <div class="bar"><span class="pct">~10%</span><div class="col" data-h="30"></div></div>
+        <div class="bar"><span class="pct">~30%</span><div class="col" data-h="90"></div></div>
+        <div class="bar hi"><span class="pct">~50%</span><div class="col" data-h="150"></div></div>
       </div>
       <div class="barlabels"><span>No analog<br>(control)</span><span>One analog<br>(no hint)</span><span>Two analogs<br>compared</span></div>
     </div>
@@ -466,16 +504,18 @@
 
   <p>Two operational decisions follow.</p>
 
-  <p>First, <strong>the CourseCapture audit explicitly probes for productive-failure and reflection conditions in every course.</strong> <span class="status-tag status-live">Live</span> Audit Area 7 of the capture chat surfaces, per course: whether any assignment requires students to attempt solutions before being taught the canonical method (Kapur's generate-then-consolidate structure); whether the course assigns open-ended ill-structured problems; whether revision cycles respond to specific identified failures or are merely point-recovery iterations; whether structured post-mortems tie reflection to concrete failure modes; whether students abstract a principle across several surface-varied cases and carry it to a new context (abstraction-and-bridging); and the maximum domain depth the course reaches in its strongest technical competencies. These are graded findings — present, partial, or absent for the five qualitative conditions, and a numeric depth for the supporting depth — surfaced into the snapshot's audit notes alongside prerequisite gaps and objective misalignments. Two of the five conditions are evidence-gated the way K/U/D scores are: a structured post-mortem or abstraction-and-bridging rated above absent must cite a graded artifact. The other three are judged from the materials and the conversation, so the instructor's account can carry them. They feed program-level analyses without distorting the K/U/D scoring of competencies.</p>
+  <p>First, <strong>the CourseCapture audit explicitly probes for productive-failure and reflection conditions in every course.</strong> <span class="cue cue-done">Live</span> Audit Area 7 of the capture chat surfaces, per course: whether any assignment requires students to attempt solutions before being taught the canonical method (Kapur's generate-then-consolidate structure); whether the course assigns open-ended ill-structured problems; whether revision cycles respond to specific identified failures or are merely point-recovery iterations; whether structured post-mortems tie reflection to concrete failure modes; whether students abstract a principle across several surface-varied cases and carry it to a new context (abstraction-and-bridging); and the maximum domain depth the course reaches in its strongest technical competencies. These are graded findings — present, partial, or absent for the five qualitative conditions, and a numeric depth for the supporting depth — surfaced into the snapshot's audit notes alongside prerequisite gaps and objective misalignments. Two of the five conditions are evidence-gated the way K/U/D scores are: a structured post-mortem or abstraction-and-bridging rated above absent must cite a graded artifact. The other three are judged from the materials and the conversation, so the instructor's account can carry them. They feed program-level analyses without distorting the K/U/D scoring of competencies.</p>
 
-  <p>Second, <strong>the program-level views read these findings together with the depth distribution to produce a problem-solving opportunity/risk read — the conditions for formation, not a validated measure that it occurred.</strong> The Program Coverage Matrix <span class="status-tag status-live">Live (faculty trial)</span> surfaces where the curriculum reaches U4+ or D4+ against each career target's sub-competencies (its problem-solving lens reads the higher of a cell's U and D) — the depth surface where problem-solving lives. The Scaffolding Analysis <span class="status-tag status-live">Live (Stage 1)</span> reads the productive-failure conditions of the courses that address each sub-competency and sums them into a cumulative score (the weighting is given in the first of the five acknowledgments below). Two questions remain for faculty to read off the Stage 1 view: whether productive-failure experiences sit in courses where prior coursework has built enough K/U/D base for the failure to be productive, and whether reflection scaffolding is present in the upper-division courses where the cumulative pattern should consolidate. The AI-narrative Stage 2 that would answer them is not built. A practitioner account describes the failure this read is built to catch: a capstone that, for many students, was the first place they met the skill it was meant to certify, which turned &ldquo;what should have been an opportunity for reinforcement and mastery into a high-stakes crash course&rdquo; <a href="#ref-nelson-2026">(Nelson, 2026)</a>.</p>
+  <p>Second, <strong>the program-level views read these findings together with the depth distribution to produce a problem-solving opportunity/risk read — the conditions for formation, not a validated measure that it occurred.</strong> The Program Coverage Matrix <span class="cue cue-done">Live (faculty trial)</span> surfaces where the curriculum reaches U4+ or D4+ against each career target's sub-competencies (its problem-solving lens reads the higher of a cell's U and D) — the depth surface where problem-solving lives. The Scaffolding Analysis <span class="cue cue-done">Live (Stage 1)</span> reads the productive-failure conditions of the courses that address each sub-competency and sums them into a cumulative score (the weighting is given in the first of the five acknowledgments below). Two questions remain for faculty to read off the Stage 1 view: whether productive-failure experiences sit in courses where prior coursework has built enough K/U/D base for the failure to be productive, and whether reflection scaffolding is present in the upper-division courses where the cumulative pattern should consolidate. The AI-narrative Stage 2 that would answer them is not built. A practitioner account describes the failure this read is built to catch: a capstone that, for many students, was the first place they met the skill it was meant to certify, which turned &ldquo;what should have been an opportunity for reinforcement and mastery into a high-stakes crash course&rdquo; <a href="#ref-nelson-2026">(Nelson, 2026)</a>.</p>
 
   <p><strong>One caveat these maps carry — and a roadmap it opens.</strong> A depth cell records the depth a course <em>reaches at the moment it is taught</em>, not the durable depth a student carries to graduation. Skill decays without practice: a meta-analysis summarizes the loss in its abstract as ranging from d = &minus;0.01 immediately after training to d = &minus;1.4 after more than a year of non-use, across all task types, with cognitive tasks decaying more than physical ones <a href="#ref-arthur-1998">(Arthur et al., 1998)</a>; see <a href="#depth">§6</a>. In a 50-year study of school Spanish, retention fell for the first 3&ndash;6 years and then held steady for up to 30 years; how much reached this stable &ldquo;permastore&rdquo; depended on the level of training and the grades earned, through what the author calls &ldquo;a discrete transition&rdquo; during training <a href="#ref-bahrick-1984">(Bahrick, 1984, pp. 1, 23&ndash;25)</a>. Learners with the least training and lowest grades kept almost none of their recall vocabulary in permastore (0% for one-level, C-grade learners), while more training and higher grades put a growing share there (p. 23). So a D5 reached freshman year and never revisited is not a D5 at graduation, and the &ldquo;unproductive success&rdquo; quadrant of Figure 1 is doubly cautionary: depth from massed, single-context drilling is both <em>brittle</em> to novelty and <em>poorly retained</em>: massed practice gives better short-term but &ldquo;markedly inferior long-term performance or recall&rdquo; (<a href="#ref-bjork-1994">Bjork, 1994</a>, p. 190). The opportunity map should be read as opportunity <em>at the moment of the course</em>, reinforced or not by the rest of the sequence. The same repeated-snapshot design that builds the map is, in principle, what could eventually estimate that decay — turning the caveat into a measurable durability model rather than a standing asterisk.</p>
 
-  <div class="callout note" style="margin: 22px 0;">
-    <div class="callout-title">Deeper treatment</div>
+  <aside class="note">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+    <div><strong>Deeper treatment</strong>
     <p>This section summarizes the framework's position. The full research synthesis — including the Kapur 2×2 productive/unproductive framework, the Sinha &amp; Kapur 2021 finding that the productive-failure advantage is outcome-dependent, with no significant advantage for procedural knowledge, and the framework's caution about applying the paradigm to domain-general dispositions or design judgment, the operational chain from cognitive science to audit probe to program-level opportunity read, and the framework's commitment to function as its own research instrument — is in the companion document <a href="./problem-solving-deep-dive.html"><strong>Problem-Solving as a Program-Level Emergent Property: A Research Deep Dive</strong></a>.</p>
   </div>
+  </aside>
 
   <h3>Caveats and where the research is honestly thin</h3>
 
@@ -486,14 +526,14 @@
   <p>Third, the productive-failure evidence base is concentrated in mathematics and physics: nearly 75% of the comparisons in the 2021 meta-analysis, whose authors say more studies are needed in other STEM and non-STEM domains &ldquo;before we can generalize the effectiveness of PS-I&rdquo; <a href="#ref-sinha-kapur-2021">(Sinha &amp; Kapur, 2021)</a>. The GC curriculum's core is the part of the program closest to that evidence: press operation, ink, plates, prepress and file diagnostics, color management, finishing — operations with canonical correct solutions and concrete, measurable failure modes. Productive failure is a plausible analog for these canonical technical modules — strongest where assignments target conceptual troubleshooting rather than procedural fluency, since the PS-I evidence is for conceptual knowledge and transfer, not procedural skill <a href="#ref-sinha-kapur-2021">(Sinha &amp; Kapur, 2021)</a>. A smaller portion of the program reaches design-judgment territory where multiple defensible solutions coexist (typography, layout, brand identity); for those modules <em>productive struggle</em> — critique, iteration, revision, reflective practice in the Schön tradition — is the more defensible framing. Program-level cumulative claims about how repeated cycles build dispositional habits remain framework hypotheses awaiting the longitudinal evidence the <a href="./graduate-outcome-validation.html">graduate-outcome study</a> is designed to produce.</p>
 
   <figure class="fig">
-    <table class="compact">
+    <div class="table-box"><table class="compact">
       <thead><tr><th>GC module type</th><th>Pedagogical mechanism</th><th>Fit to the PF / PS-I evidence</th></tr></thead>
       <tbody>
-        <tr><td><strong>Technical-diagnostic core</strong><br><span style="color:var(--text-muted)">"why is this plate scumming?"</span></td><td>Productive failure &rarr; consolidation</td><td><strong style="color:var(--accent)">Closest</strong> &mdash; conceptual knowledge &amp; transfer (evidence mostly from math and physics)</td></tr>
-        <tr><td><strong>Routine procedural operation</strong><br><span style="color:var(--text-muted)">running the press correctly</span></td><td>Worked examples &rarr; direct instruction</td><td><strong>Not indicated</strong> &mdash; procedural skill shows no PS-I advantage</td></tr>
-        <tr><td><strong>Design judgment</strong><br><span style="color:var(--text-muted)">typography, layout, brand</span></td><td>Productive struggle &mdash; critique, iteration, reflective practice</td><td>Weaker, <strong>analogical</strong> &mdash; multiple defensible solutions coexist</td></tr>
+        <tr><td><strong>Technical-diagnostic core</strong><br><span class="muted">"why is this plate scumming?"</span></td><td>Productive failure &rarr; consolidation</td><td><strong class="hl">Closest</strong> &mdash; conceptual knowledge &amp; transfer (evidence mostly from math and physics)</td></tr>
+        <tr><td><strong>Routine procedural operation</strong><br><span class="muted">running the press correctly</span></td><td>Worked examples &rarr; direct instruction</td><td><strong>Not indicated</strong> &mdash; procedural skill shows no PS-I advantage</td></tr>
+        <tr><td><strong>Design judgment</strong><br><span class="muted">typography, layout, brand</span></td><td>Productive struggle &mdash; critique, iteration, reflective practice</td><td>Weaker, <strong>analogical</strong> &mdash; multiple defensible solutions coexist</td></tr>
       </tbody>
-    </table>
+    </table></div>
     <figcaption><b>Figure 4 — The GC core is not one pedagogy.</b> Productive failure fits the <em>diagnostic</em> (conceptual) layer, not the <em>procedural</em> layer — the distinction Sinha &amp; Kapur (2021) draw between conceptual/transfer gains and the null procedural result. Reading the curriculum as uniformly "PF-fit" would over-claim for the procedural modules. The tool does not yet apply this distinction: courses carry no pedagogical-regime tag, the audit asks the same Area 7 questions of every course, and the Stage 1 scaffolding score treats every course alike, so an <em>absent</em> productive-failure condition in a procedural module should not be read as a defect.</figcaption>
   </figure>
 
@@ -505,7 +545,7 @@
 </section>
 
 <section id="kud">
-  <h2><span class="num">§ 5</span>The KUD model</h2>
+  <div><span class="sec-num">05</span><h2 class="sec-title">The KUD model</h2></div>
 
   <p>The framework adopts the three-category Know / Understand / Do structure as a planning vocabulary; Tomlinson's work on differentiated instruction <a href="#ref-tomlinson-1999">(Tomlinson, 1999, pp. 40, 42&ndash;43)</a> uses this same structure as a categorical pre-unit planning aid (&ldquo;During planning, a teacher should generate specific lists of what students should know (facts), understand (concepts and principles), and be able to do (skills) by the time the unit ends&rdquo;), and Wiggins &amp; McTighe's <em>Understanding by Design</em> <a href="#ref-wiggins-2005">(Wiggins &amp; McTighe, 2005, p. 22, Figure 1.2)</a> uses a structurally similar separation of desired understandings, knowledge, and skills in Stage 1 of backward design (&ldquo;Students will understand that&nbsp;.&nbsp;.&nbsp;.&rdquo; / &ldquo;Students will know&nbsp;.&nbsp;.&nbsp;.&rdquo; / &ldquo;Students will be able to&nbsp;.&nbsp;.&nbsp;.&rdquo;). Neither Tomlinson nor Wiggins/McTighe attach numerical depth scales to the categories; the depth extension introduced in §6 is this framework's contribution. The three categories are intended to separate what is often conflated in outcome statements:</p>
 
@@ -535,7 +575,7 @@
 
   <p>Measuring K, U, and D independently is worthwhile because well-taught courses develop them together but failure modes are dimension-specific. The framework is designed to make the following patterns visible:</p>
 
-  <table class="compact">
+  <div class="table-box"><table class="compact">
     <thead>
       <tr><th>Pattern</th><th>What it means</th><th>Where it shows up</th></tr>
     </thead>
@@ -546,19 +586,19 @@
       <tr><td class="kud">D-high, U-low</td><td>Craft without articulation</td><td>Studio-heavy courses without written rationale</td></tr>
       <tr><td class="kud">K1 only</td><td>Topic mentioned but never engaged</td><td>Items listed on syllabus but absent from assessment</td></tr>
     </tbody>
-  </table>
+  </table></div>
 
   <p>Each pattern is actionable. A K-high/U-low result for a foundational vocabulary course is a question to ask the instructor; a U-high/D-low result for a capstone is a curriculum-committee concern.</p>
 </section>
 
 <section id="depth">
-  <h2><span class="num">§ 6</span>The depth extension (KUD+)</h2>
+  <div><span class="sec-num">06</span><h2 class="sec-title">The depth extension (KUD+)</h2></div>
 
   <p>KUD as written treats coverage as essentially binary. A course either addresses a competency at the Know level or it does not; either at the Understand level or not; either at Do or not. Early piloting on the GC curriculum confirmed the limitation predicted by this design: when nearly every relevant course "covers" a competency, the binary cells collapse and the matrix loses its ability to discriminate. The prerequisite analyzer cannot distinguish a course that briefly mentions a skill from one that requires students to perform it independently; career-path alignment becomes a recitation of intersections rather than a depth-aware judgment.</p>
 
   <p>KUD+ extends each of Know, Understand, and Do with a <strong>0–5 depth scale</strong> anchored to observable student attainment. The scale's structure is intentionally uniform across dimensions; the anchors at each level differ because the underlying cognitive operations differ.</p>
 
-  <div class="scale">
+  <pre class="scale" tabindex="0">
 KNOW — recall and identification of content
   0  Not present in this course
   1  Exposure — student encountered it (heard about, read about), not tested
@@ -582,7 +622,7 @@ DO — behavioral output
   3  Performs independently in familiar conditions
   4  Adapts performance to new conditions or constraints
   5  Performs creatively with critical judgment; can guide others
-  </div>
+</pre>
 
   <p>Three properties of this scale are deliberate and worth naming explicitly.</p>
 
@@ -612,7 +652,7 @@ DO — behavioral output
 </section>
 
 <section id="anchors">
-  <h2><span class="num">§ 7</span>Student-side anchors and the evidence rule</h2>
+  <div><span class="sec-num">07</span><h2 class="sec-title">Student-side anchors and the evidence rule</h2></div>
 
   <p>Each level on each scale describes <em>what the student does or grasps</em>, not what the syllabus claims the course will teach. This is the most important practical commitment in the framework: <strong>aspirational syllabus language alone is not sufficient evidence for any score above the lowest meaningful level on its dimension.</strong> A syllabus statement that "students will understand X" does not by itself justify any Understand score above 0; that evidence must come from student-produced reasoning (a graded written rationale, an oral defense, a journal entry, a memo that requires explaining the principle).</p>
 
@@ -676,7 +716,7 @@ DO — behavioral output
 </section>
 
 <section id="foundational">
-  <h2><span class="num">§ 8</span>Foundational competencies</h2>
+  <div><span class="sec-num">08</span><h2 class="sec-title">Foundational competencies</h2></div>
 
   <p>The KUD model fits cognitive and procedural outcomes cleanly. It fits affective and dispositional outcomes — agency, attention to detail, resilience, curiosity, communication — less cleanly, because there is no meaningful "Know resilience" or "Understand attention to detail" event in undergraduate practice. Students do not recall facts about resilience or reason their way through it in the moment; they exhibit it.</p>
 
@@ -704,7 +744,7 @@ DO — behavioral output
 </section>
 
 <section id="program-structure">
-  <h2><span class="num">§ 9</span>Program-level structure: the 3-Act model</h2>
+  <div><span class="sec-num">09</span><h2 class="sec-title">Program-level structure: the 3-Act model</h2></div>
 
   <p>Program-level analyses — scaffolding, prerequisite-gap, problem-solving capacity — require an organizing structure for the program against which the analyses can be run. A flat list of 28 courses is too undifferentiated for the scaffolding analysis to surface useful findings; a faculty-readable structure that says <em>where</em> in the program each course sits is what makes "this course expects mastery of something never introduced earlier" a tractable diagnostic. The framework requires a program-organization model. It does not prescribe a specific one.</p>
 
@@ -722,7 +762,7 @@ DO — behavioral output
 </section>
 
 <section id="course-impl">
-  <h2><span class="num">§ 10</span>Course-by-course implementation</h2>
+  <div><span class="sec-num">10</span><h2 class="sec-title">Course-by-course implementation</h2></div>
 
   <p>The mechanism that produces a Course Outcome Profile from the framework is the <strong>CourseCapture</strong> workflow. A single course is captured in one instructor-facing session and confirmed before its data feeds program-level views.</p>
 
@@ -730,30 +770,30 @@ DO — behavioral output
 
   <p>The capture session draws on every source the system holds for the course. The table below is the canonical record of what the pipeline supports; §14 and other references to ingestion should be read against this table rather than maintained separately.</p>
 
-  <table class="ingestion">
-    <caption style="text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); padding-bottom:10px;">Source coverage and scoring implication. A source marked "Supported" means the audit pipeline can retrieve and prompt against it; instructor confirmation during the audit conversation upgrades retrieval evidence to evidence-of-intent.</caption>
+  <div class="table-box"><table class="ingestion">
+    <caption>Source coverage and scoring implication. A source marked "Supported" means the audit pipeline can retrieve and prompt against it; instructor confirmation during the audit conversation upgrades retrieval evidence to evidence-of-intent.</caption>
     <thead>
       <tr><th>Source</th><th>Status</th><th>Notes</th></tr>
     </thead>
     <tbody>
-      <tr><td>Canvas: Syllabus body</td><td>Supported (always kept)</td><td>Kept even when the shared Google Sheet supplies learning objectives; flagged as the course syllabus, the source of the objective assessment guide's objectives</td></tr>
-      <tr><td>Canvas: Assignments</td><td>Supported</td><td>Includes inline rubric criteria with points and ratings</td></tr>
-      <tr><td>Canvas: Rubrics</td><td>Supported</td><td>Extracted inline with assignments</td></tr>
-      <tr><td>Canvas: Pages</td><td>Supported</td><td>Wiki-style course pages</td></tr>
-      <tr><td>Canvas: Discussions</td><td>Supported</td><td>Prompt text + graded-assignment flag</td></tr>
-      <tr><td>Canvas: Classic Quizzes</td><td>Supported</td><td>Questions, answer choices, points, correct-answer marks</td></tr>
-      <tr><td>Canvas: New Quizzes</td><td>Supported</td><td>Same as Classic; source distinction recorded</td></tr>
-      <tr><td>Canvas: Modules (item titles)</td><td>Supported</td><td>Titles + type labels; for link items imported through the Canvas API the target URL is included, so the link scan can fetch a linked Google document, Drive PDF or YouTube video. File items are listed by title only</td></tr>
-      <tr><td>Canvas: File attachments</td><td>Supported (digest)</td><td>PDF/DOCX text extracted; images/video recorded as failed</td></tr>
-      <tr><td>Google Docs / Sheets / Slides</td><td>Supported (digest)</td><td>Auto-fetched from URLs found in materials</td></tr>
-      <tr><td>Drive PDFs</td><td>Supported (digest)</td><td>Fetched from Drive links found in materials</td></tr>
-      <tr><td>YouTube</td><td>Supported (full text by default)</td><td>Captions via <code>youtube-transcript</code>; falls back to Whisper audio transcription when captions are missing or non-English</td></tr>
-      <tr><td>Panopto / Canvas Studio / Vimeo / Kaltura</td><td>Not supported</td><td>No code path retrieves these</td></tr>
-      <tr><td>Direct file uploads</td><td>Supported (digest)</td><td>PDF/DOCX/PPTX/XLSX/CSV/HTML/images; vision fallback for image PDFs</td></tr>
-      <tr><td>Voice/chat audit</td><td>Persisted as the session transcript</td><td>Stored append-only in <code>capture_messages</code>, carried into the snapshot and the wiki; not ingested as a separate searchable material</td></tr>
-      <tr><td>Catalog values (Google Sheet sync)</td><td>Used (not as a material)</td><td>Learning objectives / skills / projects stored on the course row</td></tr>
+      <tr><td>Canvas: Syllabus body</td><td><span class="cue cue-done">Supported (always kept)</span></td><td>Kept even when the shared Google Sheet supplies learning objectives; flagged as the course syllabus, the source of the objective assessment guide's objectives</td></tr>
+      <tr><td>Canvas: Assignments</td><td><span class="cue cue-done">Supported</span></td><td>Includes inline rubric criteria with points and ratings</td></tr>
+      <tr><td>Canvas: Rubrics</td><td><span class="cue cue-done">Supported</span></td><td>Extracted inline with assignments</td></tr>
+      <tr><td>Canvas: Pages</td><td><span class="cue cue-done">Supported</span></td><td>Wiki-style course pages</td></tr>
+      <tr><td>Canvas: Discussions</td><td><span class="cue cue-done">Supported</span></td><td>Prompt text + graded-assignment flag</td></tr>
+      <tr><td>Canvas: Classic Quizzes</td><td><span class="cue cue-done">Supported</span></td><td>Questions, answer choices, points, correct-answer marks</td></tr>
+      <tr><td>Canvas: New Quizzes</td><td><span class="cue cue-done">Supported</span></td><td>Same as Classic; source distinction recorded</td></tr>
+      <tr><td>Canvas: Modules (item titles)</td><td><span class="cue cue-done">Supported</span></td><td>Titles + type labels; for link items imported through the Canvas API the target URL is included, so the link scan can fetch a linked Google document, Drive PDF or YouTube video. File items are listed by title only</td></tr>
+      <tr><td>Canvas: File attachments</td><td><span class="cue cue-done">Supported (digest)</span></td><td>PDF/DOCX text extracted; images/video recorded as failed</td></tr>
+      <tr><td>Google Docs / Sheets / Slides</td><td><span class="cue cue-done">Supported (digest)</span></td><td>Auto-fetched from URLs found in materials</td></tr>
+      <tr><td>Drive PDFs</td><td><span class="cue cue-done">Supported (digest)</span></td><td>Fetched from Drive links found in materials</td></tr>
+      <tr><td>YouTube</td><td><span class="cue cue-done">Supported (full text by default)</span></td><td>Captions via <code>youtube-transcript</code>; falls back to Whisper audio transcription when captions are missing or non-English</td></tr>
+      <tr><td>Panopto / Canvas Studio / Vimeo / Kaltura</td><td><span class="cue cue-issue">Not supported</span></td><td>No code path retrieves these</td></tr>
+      <tr><td>Direct file uploads</td><td><span class="cue cue-done">Supported (digest)</span></td><td>PDF/DOCX/PPTX/XLSX/CSV/HTML/images; vision fallback for image PDFs</td></tr>
+      <tr><td>Voice/chat audit</td><td><span class="cue cue-read">Persisted as the session transcript</span></td><td>Stored append-only in <code>capture_messages</code>, carried into the snapshot and the wiki; not ingested as a separate searchable material</td></tr>
+      <tr><td>Catalog values (Google Sheet sync)</td><td><span class="cue cue-read">Used (not as a material)</span></td><td>Learning objectives / skills / projects stored on the course row</td></tr>
     </tbody>
-  </table>
+  </table></div>
 
   <p>Every material that passes the materials policy gets a summary digest when it is ingested, whatever its length, and by default the audit prompt reads the digest in place of the full text ("digest" in the table). The exceptions are the Canvas-imported materials (syllabus, assignments, pages, discussions, quizzes, module list) and YouTube transcripts, which are read in full by default. A material the policy sets aside (for example, a spreadsheet whose name marks it as grades or a roster) gets no digest, and neither does one whose digest step fails. Faculty can switch any material between its digest and its full text.</p>
 
@@ -808,13 +848,13 @@ DO — behavioral output
 </section>
 
 <section id="career-impl">
-  <h2><span class="num">§ 11</span>Career-path alignment</h2>
+  <div><span class="sec-num">11</span><h2 class="sec-title">Career-path alignment</h2></div>
 
   <p>The career-path side of the framework is implemented through a parallel <strong>CareerCapture</strong> workflow that produces a Role Outcome Profile for each named career destination. The current scope identifies five destinations specific to the GC program — Account Management, Brand Strategy, Production &amp; Operations, Creative Generalist, and AI Workflow Orchestrator — with the understanding that the set is subject to revision as evidence accumulates.</p>
 
   <h3>From employer input to Role Outcome Profile</h3>
 
-  <p>The CareerCapture workflow <span class="status-tag status-live">Live (faculty trial)</span> follows the same capture-and-confirm pattern as CourseCapture, with employer-side inputs in place of course materials: a job description, plain-language descriptions of typical work and first-six-month expectations, common graduate gaps, evidence of readiness, and (optionally) interview questions or portfolio prompts. The system drafts a Role Outcome Profile scoped to the same KUD+ structure used on the course side, with depth values describing entry-level expectation rather than course delivery. The profile is reviewed and amended by the employer respondent before being used for alignment.</p>
+  <p>The CareerCapture workflow <span class="cue cue-done">Live (faculty trial)</span> follows the same capture-and-confirm pattern as CourseCapture, with employer-side inputs in place of course materials: a job description, plain-language descriptions of typical work and first-six-month expectations, common graduate gaps, evidence of readiness, and (optionally) interview questions or portfolio prompts. The system drafts a Role Outcome Profile scoped to the same KUD+ structure used on the course side, with depth values describing entry-level expectation rather than course delivery. The profile is reviewed and amended by the employer respondent before being used for alignment.</p>
 
   <p>At scale, the framework intends for each career destination to be informed by multiple employer inputs (a working triangulation target of N ≥ 3 per role before the synthesized profile is treated as anything but a draft), and for the synthesis layer to surface consensus views and minority dissent rather than averaging into a single number.</p>
 
@@ -823,9 +863,9 @@ DO — behavioral output
   <p>This comparison is possible at all only because both sides are measured on the same ruler: the KUD+ depth scale describes what the curriculum <em>develops</em> and what the role <em>demands</em> in the identical 0–5 vocabulary, so career-readiness becomes a literal same-axis comparison — demand minus attainment — rather than a translation between a syllabus and a job posting. With Course Outcome Profiles on one side and Role Outcome Profiles on the other, alignment becomes a depth-aware comparison: for each sub-competency the role requires at a given level, the program reports the chain of courses that develop the sub-competency and at what depth. Three views operate at the program level:</p>
 
   <ul>
-    <li><strong>Coverage matrix.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Courses × career-target sub-competencies, with depth rendered as fill intensity. Surfaces the heat-map shape: which targets are densely served, which are thin, which sub-competencies are not addressed anywhere.</li>
-    <li><strong>Scaffolding analysis.</strong> <span class="status-tag status-live">Live (Stage 1)</span> Across the full degree plan, whether a competency is introduced (K1–2 / U1–2), practiced (K3–4 / U2–3 / D2–3), and brought to integration (U4–5 / D4–5) in the right course-level sequence. Surfaces brittle scaffolds: a competency first worked at integration depth with no earlier course introducing or practicing it (Stage 1 orders courses by catalog level, not by act; see <a href="#program-structure">§9</a>). (Deterministic Stage 1 at <code>/program/scaffolding</code>; the AI-narrative Stage 2 is the next build.)</li>
-    <li><strong>Prerequisite-gap analysis.</strong> <span class="status-tag status-live">Live</span> For any focal course, the prior coursework students actually take is checked against what the focal course's assignments require, dimension by dimension. (Shipped as persisted skill-tagged prerequisite edges at <code>/courses/[code]</code>; program-wide graph view deferred.)</li>
+    <li><strong>Coverage matrix.</strong> <span class="cue cue-done">Live (faculty trial)</span> Courses × career-target sub-competencies, with depth rendered as fill intensity. Surfaces the heat-map shape: which targets are densely served, which are thin, which sub-competencies are not addressed anywhere.</li>
+    <li><strong>Scaffolding analysis.</strong> <span class="cue cue-done">Live (Stage 1)</span> Across the full degree plan, whether a competency is introduced (K1–2 / U1–2), practiced (K3–4 / U2–3 / D2–3), and brought to integration (U4–5 / D4–5) in the right course-level sequence. Surfaces brittle scaffolds: a competency first worked at integration depth with no earlier course introducing or practicing it (Stage 1 orders courses by catalog level, not by act; see <a href="#program-structure">§9</a>). (Deterministic Stage 1 at <code>/program/scaffolding</code>; the AI-narrative Stage 2 is the next build.)</li>
+    <li><strong>Prerequisite-gap analysis.</strong> <span class="cue cue-done">Live</span> For any focal course, the prior coursework students actually take is checked against what the focal course's assignments require, dimension by dimension. (Shipped as persisted skill-tagged prerequisite edges at <code>/courses/[code]</code>; program-wide graph view deferred.)</li>
   </ul>
 
   <p>These views are not produced by the framework itself but by program-level analyses that consume the confirmed Course Outcome Profiles and Role Outcome Profiles. The framework's contribution is to make the underlying data commensurable across courses and across the course-employer boundary. The coverage matrix and the per-course prerequisite-gap view are implemented and reading confirmed snapshots; the scaffolding analysis is live in its deterministic Stage 1 (the AI-narrative Stage 2 is specified, not yet built).</p>
@@ -892,7 +932,7 @@ DO — behavioral output
 </section>
 
 <section id="prereq-gap-method">
-  <h2><span class="num">§ 12</span>Prerequisite-gap method</h2>
+  <div><span class="sec-num">12</span><h2 class="sec-title">Prerequisite-gap method</h2></div>
 
   <p>The prerequisite-gap analysis answers Q2 at the course level: <em>do the skills students bring in from declared prerequisite courses actually support what this course's assignments require?</em> The method is implemented as a set of persisted, faculty-confirmed <strong>prerequisite edges</strong> from which a deterministic gap engine reads. This section explains the methodological commitments that distinguish this approach from simpler alternatives.</p>
 
@@ -937,15 +977,17 @@ DO — behavioral output
 
   <p>The result is a per-(course × sub-competency × dimension) gap record, stamped with its evidence basis, that feeds both the per-course gap view and any future program-wide rollup. The subtraction in step 4 treats the rungs as evenly spaced, so a gap of 2 reads as twice a gap of 1; that is the simplification <a href="#depth">§6</a> names, and a gap is best read as an ordinal signal (none, one rung, more than one) rather than a measured distance.</p>
 
-  <div class="callout note">
-    <div class="callout-title">Design status</div>
+  <aside class="note">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+    <div><strong>Design status</strong>
     <p>The prerequisite-edge method described here is implemented in the tool as of 2026-06-05. The per-course gap view is live at <code>/courses/[code]</code> for confirmed snapshots. Chain traversal (transitivity) is not implemented; the engine reads direct edges only. The program-wide graph visualization is deferred.</p>
     <p>The <code>intended</code>-basis rough pass is also live as of 2026-06-05. A one-LLM-call-per-course extractor (<code>intended-skills-extract</code>) reads catalog fields (description, learning objectives, major projects, required skills) against the sub-competency catalog and stores syllabus-asserted K/U/D depths in a separate <code>course_intended_coverage</code> table, banded <code>claimed</code> on the evidence ladder. This is the mechanism that produces <code>intended</code> coverage for uncaptured courses, feeding the gap engine's <code>basis:'intended'</code> seam so cold-start gap views are non-empty before the prerequisite courses have been audited. The <strong>binding rule</strong> applies without exception: intended coverage is reference-only in CourseCapture. The credibility band leaves <code>claimed</code> only through real evidence gathered in the audit conversation — never by the instructor confirming what the syllabus already says. This rule prevents acquiescence-bias laundering, where an instructor's natural inclination to agree with their own syllabus would otherwise launder aspiration into attainment.</p>
   </div>
+  </aside>
 </section>
 
 <section id="validation">
-  <h2><span class="num">§ 13</span>Validation: how we'd know if this works</h2>
+  <div><span class="sec-num">13</span><h2 class="sec-title">Validation: how we'd know if this works</h2></div>
 
   <p>The framework makes substantive commitments that established research does not directly validate. The depth scales are working-hypothesis instruments. The 3-Act program structure is a proposed organizing model. The claim that cumulative depth + productive-failure scaffolding + reflection produces transferable problem-solving competence four years out is theoretically coherent but empirically untested at the program scale this tool operates at. The framework's stance is not that these commitments are settled — it's that the tool is itself the research instrument that generates the evidence to test them.</p>
 
@@ -957,7 +999,7 @@ DO — behavioral output
 
   <h3>External validation: graduate-outcome data against career-target competencies</h3>
 
-  <p>The empirical question the framework most needs answered is whether graduates who pass through a 3-Act-structured curriculum, with the coverage and scaffolding patterns the matrix surfaces, actually achieve the career-target competencies the framework predicts. The companion <a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> <span class="status-tag status-planned">Data collected; second-coder check pending</span> describes the external-data check: a dataset of Clemson GC graduates — a 268-record pilot coded for 2022–2025, now extended to 1,337 validated graduates, with 672 coded first jobs in the study's 2016–2026 window spread across 103 occupations — used to test whether the framework's career-target classifications and competency predictions match actual graduate employment trajectories. This is the closest the framework can come to a randomized comparison — the alternative-program comparison-group data the literature would ideally call for does not exist for graphic communications at the scale needed. The graduate-outcome dataset is the framework's path to evidence-against-an-external-standard. Three confounds limit what it can show. The course profiles are being captured in 2026, so applying them to graduates from 2016 onward assumes the courses taught then resemble the courses captured now; students choose their electives and emphases, so graduates who took a well-scaffolded path may differ from the rest before any course acted on them; and the outcome recorded is a graduate's first job, which measures placement, not how well they perform in it.</p>
+  <p>The empirical question the framework most needs answered is whether graduates who pass through a 3-Act-structured curriculum, with the coverage and scaffolding patterns the matrix surfaces, actually achieve the career-target competencies the framework predicts. The companion <a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> <span class="cue cue-draft">Data collected; second-coder check pending</span> describes the external-data check: a dataset of Clemson GC graduates — a 268-record pilot coded for 2022–2025, now extended to 1,337 validated graduates, with 672 coded first jobs in the study's 2016–2026 window spread across 103 occupations — used to test whether the framework's career-target classifications and competency predictions match actual graduate employment trajectories. This is the closest the framework can come to a randomized comparison — the alternative-program comparison-group data the literature would ideally call for does not exist for graphic communications at the scale needed. The graduate-outcome dataset is the framework's path to evidence-against-an-external-standard. Three confounds limit what it can show. The course profiles are being captured in 2026, so applying them to graduates from 2016 onward assumes the courses taught then resemble the courses captured now; students choose their electives and emphases, so graduates who took a well-scaffolded path may differ from the rest before any course acted on them; and the outcome recorded is a graduate's first job, which measures placement, not how well they perform in it.</p>
 
   <h3>Process validation: faculty and advisory-board review</h3>
 
@@ -978,7 +1020,7 @@ DO — behavioral output
 </section>
 
 <section id="not">
-  <h2><span class="num">§ 14</span>What this framework is not</h2>
+  <div><span class="sec-num">14</span><h2 class="sec-title">What this framework is not</h2></div>
 
   <p>Several limitations and scope decisions are worth naming explicitly.</p>
 
@@ -986,14 +1028,14 @@ DO — behavioral output
     <li><strong>Not an evaluation of faculty or students.</strong> Depth scores describe what the course's materials and assignments require, not how well any instructor delivers the course or how well any student performs in it.</li>
     <li><strong>Not an automated curriculum designer.</strong> The framework surfaces what is and supports faculty deliberation; redesign decisions remain committee work informed by the evidence, not generated by it.</li>
     <li><strong>Not a replacement for faculty judgment.</strong> The auditor drafts, the instructor confirms. Every depth value is editable in the review step; reviewer status is recorded on each profile.</li>
-    <li><strong>Not empirically validated yet.</strong> The framework's specific scales, the 3-Act structure, and the cumulative-scaffolding claim are working hypotheses. The framework's response to the absence of validation is structural rather than evasive: the tool generates the longitudinal evidence its own commitments would need from external research. The full three-layer validation approach — internal flag-and-dispute pipeline <span class="status-tag status-live">Live</span>, external graduate-outcome comparison <span class="status-tag status-planned">Data collected; comparison planned</span>, faculty/advisory-board review — is described in <a href="#validation">§13 above</a>, with the graduate-outcome dataset path detailed separately in the <a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> proposal.</li>
+    <li><strong>Not empirically validated yet.</strong> The framework's specific scales, the 3-Act structure, and the cumulative-scaffolding claim are working hypotheses. The framework's response to the absence of validation is structural rather than evasive: the tool generates the longitudinal evidence its own commitments would need from external research. The full three-layer validation approach — internal flag-and-dispute pipeline <span class="cue cue-done">Live</span>, external graduate-outcome comparison <span class="cue cue-draft">Data collected; comparison planned</span>, faculty/advisory-board review — is described in <a href="#validation">§13 above</a>, with the graduate-outcome dataset path detailed separately in the <a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> proposal.</li>
     <li><strong>Not extensible to fully automated assessment scoring.</strong> Bloom's taxonomy and AAC&amp;U VALUE rubrics remain the appropriate lenses for evaluating student work; this framework is designed for describing what a course develops, not for grading what a student produced.</li>
     <li><strong>Not insensitive to material limitations.</strong> The pipeline's source coverage — what it can retrieve, what it cannot, and the scoring implication for each — is documented in the canonical ingestion table in <a href="#course-impl">§10</a>. In brief: Canvas materials (assignments, rubrics, pages, discussions, quizzes, modules, file attachments), linked Google Docs/Sheets/Slides and Drive PDFs, YouTube captions, direct uploads, and catalog values are all within reach. Video platforms other than YouTube (Panopto, Canvas Studio, Vimeo, Kaltura) and external LTI content are not. The auditor is required to detect references to unsupported sources, flag them with their specifics, and keep scoring conservative pending instructor confirmation; profiles produced from incomplete materials carry that uncertainty in their rationale fields.</li>
   </ul>
 </section>
 
 <section id="hypotheses">
-  <h2><span class="num">§ 15</span>Open hypotheses and the research agenda</h2>
+  <div><span class="sec-num">15</span><h2 class="sec-title">Open hypotheses and the research agenda</h2></div>
 
   <p>Everything above is the framework as it currently stands and is prepared to defend. This section gathers, in one place, the <em>forward</em> work — open hypotheses and design directions that are deliberately <strong>not</strong> part of the validated case. They are unbuilt, and most are gated on the same external dependency: the <a href="#validation">graduate-outcome study (§13)</a>. They are summarized here so the research arc is visible rather than scattered through the sections; each is developed in full, with its literature, in the companion <a href="./measurement-hypotheses-deep-dive.html"><strong>Curriculum Measurement — Open Hypotheses &amp; Research Agenda</strong></a>.</p>
 
@@ -1010,7 +1052,7 @@ DO — behavioral output
 </section>
 
 <section id="ai-workplace">
-  <h2><span class="num">§ 16</span>KUD+ in the AI-augmented workplace</h2>
+  <div><span class="sec-num">16</span><h2 class="sec-title">KUD+ in the AI-augmented workplace</h2></div>
 
   <p>KUD+ was designed to fix three problems in how courses are described. The 0&ndash;5 depth scale replaces a yes-or-no &ldquo;covered&rdquo; checkmark. Scoring know, understand and do separately shows when a course builds one without the others, such as vocabulary without the reasoning behind it. The evidence rule keeps a score from resting on what the syllabus promises rather than on what students actually showed. Recent workplace research suggests these same three distinctions now matter for a second reason: they line up with how generative AI is changing which parts of knowledge work people still do. This does not revise the framework; it may shift its emphasis, and it sharpens one measurement risk. A caution first: every study cited here observed <em>experienced professionals using AI to do work</em>, not <em>students using AI to learn</em>; the findings are recent and, in one case, contested. They bear on career-demand emphasis (<a href="#career-impl">§11</a>) and on the evidence discipline (<a href="#anchors">§7</a>), not on the learning claims <a href="#problem-solving">§4</a> grounds.</p>
 
@@ -1018,8 +1060,9 @@ DO — behavioral output
 
   <p>A preregistered field experiment at Procter &amp; Gamble <a href="#ref-dellacqua-2026">(Dell&rsquo;Acqua et al., 2026)</a> found that AI raised the quality of the solutions professionals produced &mdash; the Do-side output. Yet participants using AI were 9.2 percentage points <em>less</em> likely to expect their solution to rank in the top 10%, which the authors read as &ldquo;a disconnect between actual and perceived performance.&rdquo; In their Figure 10 the gap sits with individuals working alone (about 17% with AI against 26% without); teams working with AI expected slightly more than the control group. Two limits matter. The finding is <em>under</em>-confidence about one&rsquo;s own AI-assisted work, not evidence that people cannot direct or critique AI. And for individuals working alone with AI, the gain in top-10% solutions was itself &ldquo;not statistically significant.&rdquo; The paper makes no claim about judgment as a skill or about labor markets. A related pattern appears in a survey of 319 knowledge workers reporting 936 examples of their own AI use: higher confidence in the AI was associated with less critical thinking, and the authors report &ldquo;a shift in cognitive effort as knowledge workers increasingly move from task execution to oversight when using GenAI&rdquo; <a href="#ref-lee-2025">(Lee et al., 2025)</a>. That is self-report, and it describes how effort shifts within tasks, not what employers pay for. (The claim, sometimes attributed to these studies, that AI users produce less diverse outputs is earlier work Lee et al. cite as &ldquo;mechanised convergence&rdquo;, not one of their findings.) In this framework&rsquo;s terms, judging the quality of one&rsquo;s own work is an Understand-side capacity; neither paper uses that framing. The framework already refuses to collapse Understand and Do into one &ldquo;covered&rdquo; bit and names the D-high/U-low dissociation &mdash; craft without articulation (<a href="#kud">&sect;5</a>) &mdash; as a case to surface; these studies suggest AI may widen that seam.</p>
 
-  <div class="callout note">
-    <div class="callout-title">A forward-looking hypothesis, not a finding</div>
+  <aside class="note">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+    <div><strong>A forward-looking hypothesis, not a finding</strong>
     <p>One reading of this evidence is that as AI takes over more production, evaluative judgment &mdash; directing, checking and critiquing work, the Understand side &mdash; becomes the scarcer human contribution. If so, a program that certifies polished output (Do) without the judgment to direct and critique it would be certifying the part AI most readily supplies. No source cited in this section measures how the labor market prices judgment against production, so this is a hypothesis to test, not a result. What each source shows, and does not show:</p>
     <ul>
       <li><strong>Dell&rsquo;Acqua et al. (2026)</strong> show that AI raised output quality, that AI &ldquo;can effectively substitute for the expertise and guidance typically provided by team members that are familiar with the task at hand,&rdquo; and that AI users under-rated their own output. They do not address judgment as a skill that the market prices, or labor markets at all.</li>
@@ -1029,6 +1072,7 @@ DO — behavioral output
     </ul>
     <p>The two readings fit together only if the Do that keeps its value is deployment under varied conditions (the upper anchors) rather than a single polished artifact, and that is itself untested. The <a href="./graduate-outcome-validation.html">graduate-outcome study</a> is one place where the hypothesis could begin to be checked.</p>
   </div>
+  </aside>
 
   <h3>AI inflates the Do-evidence signal</h3>
 
@@ -1050,7 +1094,7 @@ DO — behavioral output
 
   <p>Read alongside the Cybernetic Teammate result, where non-specialists working alone with AI matched teams that included a specialist (which the authors say &ldquo;suggests that AI can effectively substitute for the expertise and guidance typically provided by team members that are familiar with the task at hand&rdquo;), a plausible mechanism appears even where the number is disputed: the execution-apprenticeship rung — the traditional on-ramp by which judgment was acquired <em>after</em> hiring — may be the part most exposed (our reading, not a measured result). If that rung thins, &ldquo;does the curriculum build students toward the careers we claim to prepare them for&rdquo; becomes necessary but no longer sufficient: the program may need to supply more of the judgment the first job used to build. <a href="#ref-autor-thompson-2025">Autor and Thompson (2025)</a> supply the mechanism that association alone does not: in their <em>expertise</em> framework, the direction of the effect depends on <em>which</em> tasks automation removes. Strip an occupation’s <em>less-expert</em> tasks and the surviving job demands more expertise — wages rise, employment falls, and fewer workers qualify to enter; strip its <em>expert</em> tasks and requirements fall, admitting less-expert workers at lower wages. Applied to the creative occupations this program feeds, the first case is the one to watch: if AI absorbs production execution and routine comping, the model predicts that the remaining work demands more expertise, held by fewer people. Whether that remaining expertise is mainly evaluative judgment, and whether the on-ramp that built it is the part being absorbed, is our reading, not theirs. Two caveats belong with the citation: their empirical result covers four decades of <em>automation</em>, not generative AI specifically, so the application here is an inference about mechanism rather than a demonstrated AI finding; and their model is deliberately stylized (unidimensional expertise, exogenous task bundling). The same payroll evidence now proposes a <em>mechanism</em> for why the young are affected and the experienced are not, and it lands squarely on this framework&rsquo;s territory: AI &ldquo;substitutes more effectively for <strong>codified knowledge</strong> &mdash; formal, standardized, documented knowledge that can be taught through education, textbooks, or written procedures &mdash; while complementing <strong>tacit knowledge</strong> acquired through practice, mentorship, and repeated exposure to real situations.&rdquo; Empirically they find employment declines for young workers in codified-knowledge occupations, while tacit-knowledge occupations see faster employment growth for experienced workers. That is an external, administrative-data echo of the position the <a href="./problem-solving-deep-dive.html">problem-solving synthesis</a> reaches from the learning-science side, and it sharpens what a curriculum can do about it: the part AI substitutes for is the part a syllabus is best at delivering, and the part it complements is the part that requires productive failure, mentorship and repeated exposure &mdash; which is what the <strong>Do</strong> axis is built to detect and what <a href="#depth">&sect;6</a>&rsquo;s upper depths describe. A nuance from their own footnote decides which half of the mechanism is load-bearing: the <strong>codified</strong> gradient is <em>not significant once college share is controlled</em>, &ldquo;demonstrating its overlap with education&rdquo;, while the <strong>tacit</strong> gradient for experienced workers survives. Codified knowledge overlaps heavily with education; the durable half is the tacit half — which is precisely the half a syllabus cannot deliver alone and the Do axis exists to detect. (This is the tension flagged in the hypothesis box above: on this reading, practice-built Do is the protected half, not the de-priced one.) A program-specific measurement sharpens what all of this means for GC in particular. Joining the <a href="#ref-openai-transition-2026">AI Jobs Transition Framework</a>'s public per-occupation <a href="#ref-ajtf-data-2026">data download</a> to validated Clemson GC graduate first jobs (analysis by the GC Alumni project; snapshot of 2026-10-05), the distribution is not the national one. The study's ten-year window is the primary figure; all cohorts back to 1990 are shown for contrast, because older graduates went disproportionately into prepress:</p>
 
-  <table>
+  <div class="table-box"><table>
     <thead><tr><th>Framework archetype</th><th>US employment-weighted</th><th>GC first jobs, 2016&ndash;2026<br>(672 coded; 97.0% matched to the framework&rsquo;s occupation data; shares are of the matched)</th><th>GC first jobs, all cohorts<br>(1,184 coded; 96.4% matched; shares are of the matched)</th></tr></thead>
     <tbody>
       <tr><td>Grows with AI</td><td>11.9%</td><td><strong>64.6%</strong></td><td>57.5%</td></tr>
@@ -1058,7 +1102,7 @@ DO — behavioral output
       <tr><td>Will reorganize</td><td>23.2%</td><td>14.7%</td><td>18.2%</td></tr>
       <tr><td>Less immediate change</td><td><strong>47.3%</strong></td><td><strong>3.8%</strong></td><td>3.3%</td></tr>
     </tbody>
-  </table>
+  </table></div>
 
   <p>Two readings matter and a third does not. <strong>Recent GC graduates are more than 5&times; over-represented in occupations the framework expects to grow with AI</strong> (64.6% against 11.9%), and they are <strong>almost entirely absent from the quiet half of the economy</strong> — 3.8% against 47.3% — so about 96% of first destinations sit in a bucket where AI is expected to act at all, against roughly 53% nationally. What is <em>not</em> true: GC graduates are <strong>not</strong> unusually exposed to automation risk. For the ten-year window the share is 16.9% against 17.7% nationally, essentially the national rate. Across all cohorts it is 20.9%, and the difference is the older prepress destinations, not a recent trend. <strong>Caveats that must travel:</strong> the framework's archetypes rest on model-generated inputs — its demand-elasticity term is an LLM &ldquo;price-response prior,&rdquo; explicitly &ldquo;not a full forecast,&rdquo; without confidence intervals — its authors state the categories &ldquo;are not job-loss forecasts&rdquo; but a map, and we read occupations near the elasticity boundary (~1.0) as unclassified rather than assigned (our caveat, not the authors&rsquo;). In the data download, GC's two signature occupations sit clear of that boundary (Graphic Designers at 1.08, above the maximum found anywhere in the higher-risk bucket; Prepress Technicians at 0.56, mid-bucket), which is why the split between them is reportable at all. The occupation coding behind these shares has not yet been checked by an independent second coder, a step the study's pre-registration requires before any confirmatory claim; treat them as descriptive.</p>
 
@@ -1067,10 +1111,15 @@ DO — behavioral output
   <p><strong>Net.</strong> Three consequences follow, all refinements of emphasis rather than new machinery, and the first is provisional: consider giving Understand more weight as a readiness signal in AI-augmented destinations, a consideration pending the <a href="./graduate-outcome-validation.html">graduate-outcome study</a> rather than a settled rule; harden the evidence rule for Do and Understand against AI-authored work by leaning on the deployment-probing upper anchors; and keep the destination side evidence-derived rather than taxonomy-anchored. The framework&rsquo;s response to a world where AI can manufacture the artifact is to raise the evidentiary bar, not to lower it.</p>
 </section>
 
-<section id="references">
-  <h2><span class="num">§ 17</span>References</h2>
+  <a class="xlink" href="curriculum-map.html">
+    <span><span class="label">Explore the data · Tool</span><span class="t">GC Curriculum Map</span><span class="d">Work back from a career to the competencies it relies on and the courses that build them, year by year.</span></span>
+    <span class="link-arrow">Open the tool →</span>
+  </a>
 
-  <p class="dagger-legend" style="font-size: 14px; color: var(--text-muted);">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
+<section id="references">
+  <div><span class="sec-num">17</span><h2 class="sec-title">References</h2></div>
+
+  <p class="dagger-legend">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
 
   <ol class="refs">
     <li id="ref-anderson-2001"><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> Anderson, L. W., &amp; Krathwohl, D. R. (Eds.). (2001). <em>A Taxonomy for Learning, Teaching, and Assessing: A Revision of Bloom's Taxonomy of Educational Objectives</em>. Longman.</li>
@@ -1189,14 +1238,43 @@ DO — behavioral output
   </ol>
 </section>
 
-<footer class="doc-foot">
+
+  <p class="doc-foot">
   GC Curriculum Tool · Background v1 · Companion to the
-  <a href="./superpowers/vision/gc-curriculum-tool-vision.html" style="color: var(--accent);">Vision</a> document
+  <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> document
   and the
-  <a href="./graduate-outcome-validation.html" style="color: var(--accent);">Validation</a> proposal.
+  <a href="./graduate-outcome-validation.html">Validation</a> proposal.
+</p>
+  </article>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
 </footer>
 
-</main>
-
+<script>
+/* Marks the contents link of the section in view. Without JS the contents column still works as plain links. */
+(() => {
+  const toc = document.querySelector('.toc');
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const secs = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  const inView = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+    const cur = secs.find((s) => inView.has(s.id));
+    if (!cur) return;
+    const a = byId.get(cur.id);
+    links.forEach((l) => l.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'true');
+    // When the sticky column is taller than the screen, keep the marked link visible inside it.
+    if (toc.scrollHeight > toc.clientHeight && (a.offsetTop < toc.scrollTop || a.offsetTop + a.offsetHeight > toc.scrollTop + toc.clientHeight)) {
+      toc.scrollTop = a.offsetTop - toc.clientHeight / 2;
+    }
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  secs.forEach((s) => io.observe(s));
+})();
+</script>
 </body>
 </html>

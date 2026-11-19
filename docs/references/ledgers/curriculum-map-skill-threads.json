@@ -1,0 +1,190 @@
+{
+ "page": "curriculum-map-skill-threads.html",
+ "generated": "2026-11-16",
+ "claims": [
+  {
+   "id": "st-mislevy-1",
+   "location": "§5",
+   "claim_text": "Student model defines variables for knowledge, skills and abilities",
+   "held_file": "pdfs:mislevy-2003-brief-ecd.pdf",
+   "quote": "A Student Model defines one or more variables related to the knowledge, skills, and abilities we wish to measure",
+   "page": "printed p. 7 (PDF p. 9)"
+  },
+  {
+   "id": "st-mislevy-2",
+   "location": "§5",
+   "claim_text": "Measurement models accumulate evidence across tasks",
+   "held_file": "pdfs:mislevy-2003-brief-ecd.pdf",
+   "quote": "Measurement models concern the accumulation and synthesis of evidence across tasks",
+   "page": "printed p. 10 (PDF p. 12)"
+  },
+  {
+   "id": "st-jayalath-1",
+   "location": "§5",
+   "claim_text": "Each assessment mapped to skills with weights summing to one",
+   "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+   "quote": "Each assessment was mapped to one or more skills, with weights adding up to 100 per assessment",
+   "page": "PDF p. 4 (printed p. 592)"
+  },
+  {
+   "id": "st-jayalath-2",
+   "location": "§5",
+   "claim_text": "Usual mapping records presence or absence",
+   "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+   "quote": "merely records the presence or absence of skills embedded in assessments",
+   "page": "PDF p. 1 (printed p. 589)"
+  },
+  {
+   "id": "st-krath-1",
+   "location": "§6",
+   "claim_text": "Objectives consist of a noun phrase and a verb phrase",
+   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+   "quote": "consist of a noun or noun phrase—the subject matter content—and a verb or verb phrase—the cognitive process(es)",
+   "page": "p. 213"
+  },
+  {
+   "id": "st-krath-2",
+   "location": "§6",
+   "claim_text": "Noun gives the Knowledge dimension, verb the Cognitive Process dimension",
+   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+   "quote": "the noun providing the basis for the Knowledge dimension and the verb forming the basis for the Cognitive Process dimension",
+   "page": "p. 213"
+  },
+  {
+   "id": "st-krath-3",
+   "location": "§6",
+   "claim_text": "Remember definition",
+   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+   "quote": "Remember – Retrieving relevant knowledge from long-term memory",
+   "page": "p. 215 (Table 3)"
+  },
+  {
+   "id": "st-krath-4",
+   "location": "§6",
+   "claim_text": "Create definition",
+   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+   "quote": "Create – Putting elements together to form a novel, coherent whole or make an original product",
+   "page": "p. 215 (Table 3)"
+  },
+  {
+   "id": "st-krath-5",
+   "location": "§6",
+   "claim_text": "A two-verb objective goes in two cells",
+   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+   "quote": "two cells of the Taxonomy Table",
+   "page": "p. 216"
+  },
+  {
+   "id": "st-krath-6",
+   "location": "§6 callout",
+   "claim_text": "Bloom Understand definition",
+   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+   "quote": "Determining the meaning of instructional messages",
+   "page": "p. 215 (Table 3)"
+  },
+  {
+   "id": "st-krath-7",
+   "location": "§6 callout",
+   "claim_text": "Apply definition",
+   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+   "quote": "Carrying out or using a procedure in a given situation",
+   "page": "p. 215 (Table 3)"
+  },
+  {
+   "id": "st-stanny-1",
+   "location": "§6",
+   "claim_text": "45.5% of verbs appear in two to six categories",
+   "held_file": "pdfs:stanny-2016-bloom-verbs.pdf",
+   "quote": "197 verbs (45.5%) appeared in two to six categories",
+   "page": "p. 4"
+  },
+  {
+   "id": "st-stanny-2",
+   "location": "§6",
+   "claim_text": "No verb consistent across 30 lists",
+   "held_file": "pdfs:stanny-2016-bloom-verbs.pdf",
+   "quote": "No verb was assigned consistently to the same category by all 30 lists in the sample",
+   "page": "p. 4"
+  },
+  {
+   "id": "st-stanny-3",
+   "location": "§6",
+   "claim_text": "Judge verb plus content",
+   "held_file": "pdfs:stanny-2016-bloom-verbs.pdf",
+   "quote": "reviewers must consider both the verb and the remaining content of an SLO when they make judgments about the level of expertise an SLO describes",
+   "page": "p. 10"
+  },
+  {
+   "id": "st-turaev-1",
+   "location": "§6",
+   "claim_text": "Faculty raters agreed on Bloom level at kappa 0.86",
+   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+   "quote": "Bloom level κ = 0.86",
+   "page": "p. 1 (abstract)"
+  },
+  {
+   "id": "st-turaev-2",
+   "location": "§6",
+   "claim_text": "Their few large disagreements came on multi-verb outcomes",
+   "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+   "quote": "parts company with leveling by the highest-order verb",
+   "page": "p. 10"
+  },
+  {
+   "id": "st-kumar-1",
+   "location": "§6",
+   "claim_text": "Trained SVM reached 94%",
+   "held_file": "pdfs:bloom-classification-2511.10903.pdf",
+   "quote": "94% accuracy, recall, and F1-scores",
+   "page": "PDF p. 1 (abstract)"
+  },
+  {
+   "id": "st-kumar-2",
+   "location": "§6",
+   "claim_text": "Zero-shot LLMs 0.72–0.73 at best",
+   "held_file": "pdfs:bloom-classification-2511.10903.pdf",
+   "quote": "0.72–0.73 accuracy",
+   "page": "PDF p. 1 (abstract)"
+  },
+  {
+   "id": "st-kumar-3",
+   "location": "§6",
+   "claim_text": "Small single dataset limit",
+   "held_file": "pdfs:bloom-classification-2511.10903.pdf",
+   "quote": "we work on a small-size and a single dataset",
+   "page": "PDF p. 6"
+  },
+  {
+   "id": "st-biggs-1",
+   "location": "§6",
+   "claim_text": "Performances of understanding",
+   "held_file": "pdfs:biggs-1996-constructive-alignment.pdf",
+   "quote": "performances of understanding",
+   "page": "p. 347 (abstract)"
+  },
+  {
+   "id": "st-wiggins-1",
+   "location": "§6",
+   "claim_text": "Backward design question",
+   "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+   "quote": "What should students know, understand, and be able to do?",
+   "page": "printed p. 17 (PDF p. 29)"
+  },
+  {
+   "id": "st-le-1",
+   "location": "§9",
+   "claim_text": "Constrained evidence-producing tagger",
+   "held_file": "pdfs:le-abel-laforge-2026-competency-tagging.pdf",
+   "quote": "uses a large language model (LLM) as a constrained, evidence-producing tagger",
+   "page": "p. 1 (abstract)"
+  },
+  {
+   "id": "st-krath-8",
+   "location": "§13",
+   "claim_text": "Metacognitive knowledge definition",
+   "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+   "quote": "Knowledge of cognition in general as well as awareness and knowledge of one’s own cognition",
+   "page": "p. 214 (Table 2)"
+  }
+ ]
+}

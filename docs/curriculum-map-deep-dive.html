@@ -1,170 +1,273 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Curriculum Maps — A Research Synthesis</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curriculum Maps — Graphic Communications, Clemson</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
 <style>
-  :root {
-    --rail: #141412;
-    --rail-text: #8a8780;
-    --rail-active: #E8A44A;
-    --rail-hover: #2a2925;
-    --bg: #F7F5F0;
-    --bg-card: #FFFFFF;
-    --bg-alt: #F0EDE6;
-    --text: #1C1C18;
-    --text-muted: #6B6860;
-    --text-faint: #9E9B94;
-    --accent: #C8682A;
-    --accent-light: #F5E6D8;
-    --border: #E2DDD4;
-    --border-strong: #C8C4BA;
-    --mono: 'DM Mono', monospace;
-    --serif: 'Source Serif 4', Georgia, serif;
-    --display: 'Playfair Display', Georgia, serif;
-    --t1: #2A5C8C;
-  }
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
 
-  body { font-family: var(--serif); background: var(--bg); color: var(--text); display: flex; min-height: 100vh; font-size: 16px; line-height: 1.7; }
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
 
-  #rail { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; background: var(--rail); display: flex; flex-direction: column; overflow-y: auto; z-index: 100; }
-  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
-  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
-  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
-  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
-  .rail-nav { padding: 20px 0; flex: 1; }
-  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
-  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
-  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
-  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
-  .rail-footer a { color: var(--rail-text); text-decoration: none; }
-  .rail-footer a:hover { color: var(--rail-active); }
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
 
-  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; }
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
-  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
-  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
-  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
-  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
-  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
-  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
 
-  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
 
-  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
-  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
-  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
-  .part-head { font-family: var(--display); font-size: 22px; font-weight: 600; margin: 24px 0 8px; color: var(--text-muted); border: none; padding: 0; display: block; }
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
 
-  p { margin-bottom: 14px; max-width: 760px; }
-  strong { color: var(--text); font-weight: 600; }
-  em { color: var(--text); font-style: italic; }
-  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
-  a:hover { color: #a85020; }
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
 
-  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
-  sup.nv { font-family: var(--mono); font-size: 0.72em; color: var(--text-faint); margin-left: 1px; cursor: help; }
-  ol.refs li { margin-bottom: 8px; font-size: 15px; }
-  li { margin-bottom: 8px; }
-  li strong { color: var(--text); }
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
 
-  code { font-family: var(--mono); font-size: 0.88em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; color: var(--text); }
-
-  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
-  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-  .callout p:last-child { margin-bottom: 0; }
-  .callout.note { border-left-color: var(--t1); }
-  .callout.note .callout-title { color: var(--t1); }
-
-  table.grid { border-collapse: collapse; margin: 18px 0 24px; max-width: 820px; width: 100%; font-size: 15px; }
-  table.grid th, table.grid td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
-  table.grid th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); background: var(--bg-alt); font-weight: 500; }
-
-  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
-
-  @media (max-width: 900px) {
-    #rail { position: static; width: 100%; height: auto; }
-    main { margin-left: 0; padding: 32px 16px 64px; }
-    table.grid { font-size: 14px; }
-  }
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* ---------- Page (guide tokens only) ---------- */
+/* The hero sits inside .paper after the contents column in the DOM, so the old rail's
+   words keep their reading order; order:-1 puts it first on screen. */
+.paper > .hero{order:-1;flex:1 1 100%;margin-inline:calc(-1 * var(--pad))}
+.toc .label{display:block;margin:14px 0 2px}
+.toc a.out{padding-left:26px}
+.article section{scroll-margin-top:24px}
+.article h3{font-size:24px;line-height:1.25;margin-top:12px}
+.article ul,.article ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.part{display:flex;flex-direction:column;gap:16px;border-top:1px solid var(--rule);padding-top:24px}
+.part-title{font-size:26px;line-height:1.2;color:var(--muted)}
+.note > div{display:flex;flex-direction:column;gap:6px}
+.note ul{margin:0}
+sup.nv{font:500 .72em var(--mono);color:var(--muted);margin-left:1px;cursor:help}
+.dagger-legend{font-size:14px;color:var(--muted)}
+ol.refs{font-size:15px;overflow-wrap:anywhere}
+.doc-foot{font-size:14px;color:var(--muted)}
+.doc-foot a{color:var(--purple)}
+code,kbd{font:500 .86em var(--mono);background:var(--inset);padding:1px 6px;border-radius:5px;overflow-wrap:anywhere}
+td code{white-space:nowrap}
+.cue{vertical-align:middle;margin-left:6px;font-family:var(--sans)}
+.attribution{font-size:14px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
+/* Flow diagram (competency catalog) */
+.flow{display:grid;grid-template-columns:1fr .9fr 1fr;gap:16px}
+.lane{display:flex;flex-direction:column}
+.lane.mid{justify-content:center}
+.lane-label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:8px}
+.box{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.45}
+.box b{display:block;font-weight:600;font-size:15px;margin-bottom:2px}
+.box small{display:block;margin-top:2px;font:400 13px var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.box.hub{background:var(--inset);border:2px solid var(--ink)}
+.box.planned{border:1.5px dashed var(--muted)}
+.arrow{text-align:center;color:var(--muted);font-size:16px;line-height:1;padding:5px 0}
+.side-arrow{font:400 13px var(--mono);color:var(--muted);text-align:center;padding:8px 0}
+.flow-legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;color:var(--muted)}
+.swatch{display:inline-block;width:16px;height:11px;vertical-align:middle;margin-right:6px;border-radius:3px}
+.swatch.solid{border:1px solid var(--rule);background:var(--panel)}
+.swatch.hub{border:2px solid var(--ink);background:var(--inset)}
+.swatch.dash{border:1.5px dashed var(--muted)}
+/* Two-stage scoring strip */
+.stages{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;counter-reset:stage}
+.stage{background:var(--panel);border:1px solid var(--rule-soft);border-radius:16px;padding:16px;font-size:15px;line-height:1.5}
+.stage::before{counter-increment:stage;content:"Step " counter(stage);display:block;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin-bottom:6px}
+.stage b{display:block;margin-bottom:4px}
+@media (max-width:640px){.flow{grid-template-columns:1fr}.stages{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.stages{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-
-<aside id="rail">
-  <div class="rail-header">
-    <div class="rail-dept">Clemson · Graphic Communications</div>
-    <div class="rail-title">GC Curriculum Tool</div>
-    <div class="rail-doc-type">Research Deep Dive</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
   </div>
-  <nav class="rail-nav">
-    <div class="nav-group-label">Sections</div>
-    <a class="nav-link" href="#why">Why this document exists</a>
-    <div class="nav-group-label">Part I — What a map is</div>
-    <a class="nav-link" href="#forms">Origins and standard forms</a>
-    <a class="nav-link" href="#purpose">What a map is for</a>
-    <div class="nav-group-label">Part II — How maps fail</div>
-    <a class="nav-link" href="#three-curricula">Stated vs. taught vs. learned</a>
-    <a class="nav-link" href="#compliance">Presence-and-absence maps</a>
-    <a class="nav-link" href="#judgment">Whose judgment, how reliable</a>
-    <a class="nav-link" href="#buyin">Buy-in and staleness</a>
-    <div class="nav-group-label">Part III — What makes maps useful</div>
-    <a class="nav-link" href="#useful">Lessons from mapping projects</a>
-    <a class="nav-link" href="#analytics">Curriculum analytics</a>
-    <a class="nav-link" href="#progressions">Progressions and spirals</a>
-    <div class="nav-group-label">Part IV — Sequence and time</div>
-    <a class="nav-link" href="#prereqs">Prerequisites and branches</a>
-    <a class="nav-link" href="#decay">Reinforcement and fading</a>
-    <div class="nav-group-label">Part V — Graphic communications</div>
-    <a class="nav-link" href="#gc">What the GC literature offers</a>
-    <div class="nav-group-label">Part VI — Accounting</div>
-    <a class="nav-link" href="#accounting">Supported, committed, assumed</a>
-    <a class="nav-link" href="#implications">Design implications</a>
-    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
-    <a class="nav-link" href="./three-act-deep-dive.html">3-Act deep dive</a>
-    <a class="nav-link" href="./background.html">KUD+ Background</a>
-    <a class="nav-link" href="./competency-catalog-deep-dive.html">Competency catalog</a>
+</header>
+
+<div class="wrap paper paper--long">
+  <nav class="toc" id="rail" aria-label="Contents">
+    <span class="label">Sections</span>
+    <a href="#why"><span class="n">1</span><span>Why this document exists</span></a>
+    <span class="label">Part I — What a map is</span>
+    <a href="#forms"><span class="n">2</span><span>Origins and standard forms</span></a>
+    <a href="#purpose"><span class="n">3</span><span>What a map is for</span></a>
+    <span class="label">Part II — How maps fail</span>
+    <a href="#three-curricula"><span class="n">4</span><span>Stated vs. taught vs. learned</span></a>
+    <a href="#compliance"><span class="n">5</span><span>Presence-and-absence maps</span></a>
+    <a href="#judgment"><span class="n">6</span><span>Whose judgment, how reliable</span></a>
+    <a href="#buyin"><span class="n">7</span><span>Buy-in and staleness</span></a>
+    <span class="label">Part III — What makes maps useful</span>
+    <a href="#useful"><span class="n">8</span><span>Lessons from mapping projects</span></a>
+    <a href="#analytics"><span class="n">9</span><span>Curriculum analytics</span></a>
+    <a href="#progressions"><span class="n">10</span><span>Progressions and spirals</span></a>
+    <span class="label">Part IV — Sequence and time</span>
+    <a href="#prereqs"><span class="n">11</span><span>Prerequisites and branches</span></a>
+    <a href="#decay"><span class="n">12</span><span>Reinforcement and fading</span></a>
+    <span class="label">Part V — Graphic communications</span>
+    <a href="#gc"><span class="n">13</span><span>What the GC literature offers</span></a>
+    <span class="label">Part VI — Accounting</span>
+    <a href="#accounting"><span class="n">14</span><span>Supported, committed, assumed</span></a>
+    <a href="#implications"><span class="n">15</span><span>Design implications</span></a>
+    <span class="label">See also</span>
+    <a class="out" href="./three-act-deep-dive.html">3-Act deep dive</a>
+    <a class="out" href="./background.html">KUD+ Background</a>
+    <a class="out" href="./competency-catalog-deep-dive.html">Competency catalog</a>
+    <a class="out" href="./three-act-deep-dive.html">&larr; 3-Act deep dive</a>
   </nav>
-  <div class="rail-footer">
-    <a href="./three-act-deep-dive.html">&larr; 3-Act deep dive</a>
-  </div>
-</aside>
 
-<main>
-
-<header class="doc-head">
-  <div class="doc-eyebrow">Research synthesis &amp; tool design</div>
-  <h1 class="doc-title">Curriculum Maps</h1>
-  <p class="doc-subtitle">How curriculum maps are built, why so many end up as paperwork, and what the research says a mapping tool must do to be worth a faculty group&rsquo;s time &mdash; read against the design of the GC curriculum builder.</p>
-  <div class="doc-meta">
+  <section class="hero">
+    <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="eyebrow">Research synthesis &amp; tool design</span>
+      <h1 class="title-paper">Curriculum Maps</h1>
+      <p class="lede">How curriculum maps are built, why so many end up as paperwork, and what the research says a mapping tool must do to be worth a faculty group&rsquo;s time &mdash; read against the design of the GC curriculum builder.</p>
+      <div class="meta-row">
     <span><strong>Date</strong> 2026-11-15</span>
     <span><strong>Status</strong> Research synthesis for the curriculum builder</span>
     <span><strong>Audience</strong> Faculty, curriculum committee</span>
   </div>
-</header>
+    </div>
+  </section>
 
+  <article class="article">
 <section id="why">
-  <h2><span class="num">§ 1</span>Why this document exists</h2>
+  <div><span class="sec-num">01</span><h2 class="sec-title">Why this document exists</h2></div>
   <p>A curriculum map is a picture of a degree program: which courses teach which skills and ideas, in what order, and how well. Most departments have made one at some point, usually a spreadsheet with courses down one side, outcomes across the top, and letters in the cells. The department is now building an interactive version. Faculty stack courses into the program&rsquo;s three acts, watch each competency rise toward the levels a career path needs, and see where it falls short, fades, or depends on a course that comes too late.</p>
   <p>Before committing to that design, it is worth asking what the published work on curriculum mapping says. Three questions organize this page. What is a curriculum map, and what is it supposed to do? Why do so many maps get made, filed, and never used again? And what features make a mapping tool useful to the faculty who have to build and act on it?</p>
   <p>The page ends with an honest accounting. Some of the builder&rsquo;s choices rest on research. Some are framework commitments, defensible choices the department has made. Some are working assumptions that the tool&rsquo;s own data will have to test. The fading estimate is the clearest example of the last kind.</p>
-  <div class="callout note">
-    <div class="callout-title">How sources are handled</div>
+  <aside class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg><div><strong>How sources are handled</strong>
     <p>Every claim here comes from a source whose full text we hold, with the quoted passage and page recorded in the page&rsquo;s citation ledger. A work we know about but do not hold in full carries a dagger (<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>). Some influential works on curriculum mapping are books or paywalled articles we could not obtain, so a few founding ideas are reported here through later authors who quote them.</p>
-  </div>
+  </div></aside>
 </section>
 
-<h2 class="part-head">Part I — What a curriculum map is</h2>
+<div class="part"><h2 class="part-title">Part I — What a curriculum map is</h2></div>
 
 <section id="forms">
-  <h2><span class="num">§ 2</span>Origins and standard forms</h2>
+  <div><span class="sec-num">02</span><h2 class="sec-title">Origins and standard forms</h2></div>
   <p>Curriculum mapping took two routes into higher education. In school education, Heidi Hayes Jacobs&rsquo;s <a href="#ref-jacobs-1997"><em>Mapping the Big Picture</em></a><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> (1997) popularized mapping as a way for teachers to record what is actually taught across grades. In medical education, Ronald Harden&rsquo;s <a href="#ref-harden-2001">AMEE Guide No. 21</a><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> (2001) is the guide both of the mapping accounts we hold cite. We do not hold Harden&rsquo;s guide. <a href="#ref-plaza-2007">Plaza et al. (2007)</a> summarize it this way: &ldquo;Harden detailed the 2 main functions of curriculum maps in medical education: to make the curriculum more transparent to all the stakeholders and to demonstrate the links between the various components of the curriculum.&rdquo; Those components are &ldquo;learning outcomes, learning opportunities, content, and assessment.&rdquo;</p>
   <p>In practice, three forms recur.</p>
   <h3>The coverage grid</h3>
@@ -176,7 +279,7 @@
 </section>
 
 <section id="purpose">
-  <h2><span class="num">§ 3</span>What a map is for</h2>
+  <div><span class="sec-num">03</span><h2 class="sec-title">What a map is for</h2></div>
   <p>Accounts of mapping name a short, consistent list of purposes. <a href="#ref-rawle-2017">Rawle et al.</a> note that &ldquo;curriculum mapping can also be used to identify gaps (Lam &amp; Tsui, 2013), and can lead to increased transparency (Harden, 2001)&rdquo; (p. 75). <a href="#ref-barthakur-2024">Barthakur et al. (2024)</a> describe it as being &ldquo;used to identify potential gaps, redundancies and misalignments between assessments and the stated outcomes&rdquo; (PDF p. 4). Put plainly, a map is meant to answer four questions:</p>
   <ul>
     <li><strong>Coverage.</strong> Is every program outcome taught somewhere, and where is it taught twice?</li>
@@ -187,10 +290,10 @@
   <p>The builder adds a fifth question that grids rarely ask: <em>how deep</em>, and <em>does it last until it is needed</em>. That addition is what the rest of this page tests against the literature.</p>
 </section>
 
-<h2 class="part-head">Part II — How maps fail</h2>
+<div class="part"><h2 class="part-title">Part II — How maps fail</h2></div>
 
 <section id="three-curricula">
-  <h2><span class="num">§ 4</span>Stated vs. taught vs. learned</h2>
+  <div><span class="sec-num">04</span><h2 class="sec-title">Stated vs. taught vs. learned</h2></div>
   <p>The most serious problem with curriculum maps is that they usually record the wrong curriculum. Education research has long separated three curricula. In the model used by the TIMSS international studies, &ldquo;the TIMSS curriculum model has three aspects: the intended curriculum, the implemented curriculum, and the achieved curriculum&rdquo;. The second two are &ldquo;what is actually taught in classrooms, the characteristics of those teaching it, and how it is taught; and, finally, what it is that students have learned&rdquo; (<a href="#ref-timss-2011">TIMSS 2011 Assessment Frameworks</a>, Introduction, p. 10). <a href="#ref-plaza-2007">Plaza et al.</a> give the higher-education version: &ldquo;the designed or intended curriculum is the institutional and program requirements, the delivered or enacted curriculum is the instructional delivery, and the experienced or learned curriculum is what the students actually experience.&rdquo;</p>
   <p>Most maps are built from syllabi and faculty self-report, so they describe the intended curriculum. Barthakur et al. are blunt about the consequence: &ldquo;A map of the intended or declared curriculum is created, which may substantially deviate from the ways in which learners actually engage and are assessed.&rdquo; They conclude that &ldquo;it is, therefore, difficult to claim a curriculum map is valid, assuming that the evidentiary basis of validity is what students actually do, experience and achieve&rdquo; (PDF p. 2).</p>
   <p>The gap can be measured. Plaza et al. review a medical-school study that compared all three curricula for cultural competency and found it &ldquo;was mostly &lsquo;hidden&rsquo; and teachers reported a greater extent of coverage than did students.&rdquo; A prerequisite can show the same gap. <a href="#ref-sato-2017">Sato et al. (2017)</a> studied one microbiology lecture and lab pair after the prerequisite link between them was dropped, and found in that case that the lecture had not been helping students in the lab: &ldquo;Both sources of data provided complementary evidence that MLec does not impact success in MLab.&rdquo; Even some formal models simply assume the gap away. <a href="#ref-frej-2024">Frej et al. (2024)</a> name as a limitation a &ldquo;fundamental assumption&rdquo; of their course recommender: &ldquo;that completing a course will automatically result in the acquisition of the associated skills by the learners&rdquo; (p. 8).</p>
@@ -198,14 +301,14 @@
 </section>
 
 <section id="compliance">
-  <h2><span class="num">§ 5</span>Presence-and-absence maps and compliance artifacts</h2>
+  <div><span class="sec-num">05</span><h2 class="sec-title">Presence-and-absence maps and compliance artifacts</h2></div>
   <p>The second failure is a map made for an outside reviewer. Accreditation is the most common reason departments start mapping. <a href="#ref-jayalath-2026">Jayalath et al. (2026)</a> observe that mapping &ldquo;is often applied in a simplistic, accreditation-driven manner that merely records the presence or absence of skills embedded in assessments&rdquo; (p. 589). Barthakur et al. add that &ldquo;few studies have adopted an analytical approach to ensure programme quality assurance steps are traceable to a fundamental level of these maps: single courses and their assessment items&rdquo; (PDF p. 1).</p>
   <p>A presence-and-absence map cannot tell a passing mention from sustained practice. In KUD+ terms, it cannot tell K1 from D4. Once the review is over, it has no further use. <a href="#ref-nelson-2026">Nelson</a> argues the opposite stance: &ldquo;Curriculum mapping is not simply a one-time administrative project or bureaucratic task; it is an ongoing leadership responsibility.&rdquo;</p>
   <p>The builder already answers the first half of this critique, since depth replaces checkmarks. The second half, staying in use after the review, depends on whether faculty keep returning to the tool to make decisions (§7, §8).</p>
 </section>
 
 <section id="judgment">
-  <h2><span class="num">§ 6</span>Whose judgment, and how reliable</h2>
+  <div><span class="sec-num">06</span><h2 class="sec-title">Whose judgment, and how reliable</h2></div>
   <p>Every map rests on someone&rsquo;s judgment that course X develops outcome Y to level Z. Those judgments are less consistent than the clean grid suggests. Barthakur et al. note that manual mapping from course documents &ldquo;is not only time-consuming but susceptible to human error and subjective bias&rdquo; (PDF p. 2). Plaza et al. note that a map built retrospectively from recollection is &ldquo;subject to recall bias from faculty members and students&rdquo;; their own map, built from syllabi, avoided that but rested on &ldquo;the assumption that the intended curriculum was the same as the delivered curriculum.&rdquo; When <a href="#ref-jayalath-2025">Jayalath et al. (2025)</a> measured agreement directly, the expert reviewers who built their reference mapping reached a Krippendorff&rsquo;s alpha of 0.70 overall, which the authors read as &ldquo;a strong consensus among the two reviewers&rdquo; (p. 299) and which still leaves room for the two to disagree. When the authors then compared a generative-AI mapper against those experts, agreement depended heavily on the skill: &ldquo;Oral Communication stands out with near-perfect agreement&rdquo; (p. 301), while &ldquo;Written Communication and International Perspectives had lower alpha values&rdquo; (p. 302). They conclude that difficulties persist with skills that are &ldquo;less explicitly defined in course documents&rdquo; (p. 305). The skill-by-skill figures come from one program and measure AI against experts; only the 0.70 is expert against expert. So they show that agreement varies by competency, not which GC competencies will be hardest to read.</p>
   <p><strong>What this means for the builder.</strong> A reading of D3 is an estimate with a spread around it, and the spread is wider for some competencies than others. The measurement-hypotheses spec already requires that derived values be shown as bands, not points (<a href="./superpowers/specs/2026-06-19-curriculum-measurement-hypotheses.md">spec</a> §4.2). The research supports applying the same humility to the inputs: when two readings disagree by a level, the builder should treat that as normal noise rather than a finding.</p>
   <h3>When software does the tagging</h3>
@@ -214,7 +317,7 @@
 </section>
 
 <section id="buyin">
-  <h2><span class="num">§ 7</span>Buy-in and staleness</h2>
+  <div><span class="sec-num">07</span><h2 class="sec-title">Buy-in and staleness</h2></div>
   <p>The third failure is social. <a href="#ref-heileman-2018">Heileman et al. (2018)</a>, writing from experience with curriculum reform, describe the climate: &ldquo;The mantra often stated when the subject of curriculum is broached is, &lsquo;faculty own curriculum,&rsquo; taken by many to mean &lsquo;stay out of the faculty&rsquo;s business&rsquo;&rdquo; (PDF p. 2). A map imposed from outside meets that resistance. In the Toronto initiative, &ldquo;one other department had to drop out because of the lack of support from other faculty members&rdquo; (<a href="#ref-rawle-2017">Rawle et al.</a>, p. 82). Language was a barrier too: &ldquo;pedagogical jargon tends to be a barrier across disciplines&rdquo; (p. 79).</p>
   <p>The same accounts report what helped:</p>
   <ul>
@@ -227,10 +330,10 @@
   <p>Staleness is the quieter failure. In the Toronto study, &ldquo;most departments use excel to organize their curricular data&rdquo; (p. 79). A spreadsheet map is out of date the first time a course changes. A map tied to live course captures, as the builder&rsquo;s is, can avoid that, but only if each reading shows its date and version so faculty can tell a current reading from an old one.</p>
 </section>
 
-<h2 class="part-head">Part III — What makes a mapping tool useful</h2>
+<div class="part"><h2 class="part-title">Part III — What makes a mapping tool useful</h2></div>
 
 <section id="useful">
-  <h2><span class="num">§ 8</span>Lessons from mapping projects</h2>
+  <div><span class="sec-num">08</span><h2 class="sec-title">Lessons from mapping projects</h2></div>
   <p>The held literature on <em>tools</em>, as opposed to mapping <em>processes</em>, is thin. It consists mostly of case reports from single institutions. No controlled study we hold compares a map faculty used with one they ignored. With that caution, the case reports agree on a few points.</p>
   <ul>
     <li><strong>Make the problems stand out.</strong> One Toronto institute set out to &ldquo;create a coloured visualization that would highlight overlaps, gaps, and inconsistencies&rdquo; (Rawle et al., p. 81). A map that needs careful reading to find its problems will not be read.</li>
@@ -245,7 +348,7 @@
 </section>
 
 <section id="analytics">
-  <h2><span class="num">§ 9</span>Curriculum analytics: the structure of the program itself</h2>
+  <div><span class="sec-num">09</span><h2 class="sec-title">Curriculum analytics: the structure of the program itself</h2></div>
   <p>A separate line of research treats the curriculum as a network and measures it. <a href="#ref-aldrich-2014">Aldrich (2014)</a> treats &ldquo;the curriculum as a complex system with &hellip; nodes representing courses and links between nodes the &hellip; course prerequisites&rdquo; taken from the catalog. In that network, courses play &ldquo;different roles in the overall organization, such as &hellip; information sources, hubs, and bridges&rdquo; (p. 1).</p>
   <p><a href="#ref-heileman-2018">Heileman et al. (2018)</a> turn this into measures of <em>structural complexity</em>. Their starting assumption is that, &ldquo;assuming instructional factors are held constant, student success (as measured by completion rates) and structural complexity are inversely related&rdquo; (PDF p. 8). Two of their measures matter directly for a builder:</p>
   <ul>
@@ -259,7 +362,7 @@
 </section>
 
 <section id="progressions">
-  <h2><span class="num">§ 10</span>Learning progressions, spirals and prerequisite structure</h2>
+  <div><span class="sec-num">10</span><h2 class="sec-title">Learning progressions, spirals and prerequisite structure</h2></div>
   <p>The builder draws each competency as a trunk that rises over time. That picture has three bodies of research behind it, and each adds a caution.</p>
   <p><strong>Spiral curriculum.</strong> In <a href="#ref-gibbs-2014">Gibbs&rsquo;s (2014)</a> summary, &ldquo;students revisit a topic, theme, or subject several times throughout their schooling, where the complexity of the topic is increased with each visit so the new learning is connected to the old learning.&rdquo; The builder&rsquo;s &ldquo;reinforced thread&rdquo; is a spiral seen from the side. The <a href="./three-act-deep-dive.html#bruner">3-Act deep dive</a> covers Gibbs&rsquo;s argument that the spiral works best at a tighter scale than whole program stages.</p>
   <p><strong>Learning progressions.</strong> In science education, <a href="#ref-corcoran-2009">Corcoran, Mosher and Rogat</a>, summarizing their 2009 report, define learning progressions as &ldquo;empirically grounded and testable hypotheses about how students&rsquo; understanding and ability to use knowledge and skills in core school subjects&rdquo; grow. Two of their points apply directly. First, a progression is never finally proven: &ldquo;we should not think that testing these propositions can establish the validity of a progression once and for all&rdquo; (PDF p. 11). Second, lower levels are not always smaller versions of the top level. They &ldquo;may reflect mistaken or imperfect understandings of the target concepts that have to be revised or abandoned before the student can move on, rather than, as standards seem often to conceive of them, correct but incomplete understandings&rdquo; (PDF p. 5).</p>
@@ -267,10 +370,10 @@
   <p><strong>What this means for the builder.</strong> The act targets and their starting values are a hypothesized progression, and should be presented that way: as a claim the department expects to revise as evidence accumulates. Corcoran et al.&rsquo;s second point also bears on the ordinal-maximum rule (§14).</p>
 </section>
 
-<h2 class="part-head">Part IV — Sequence and time</h2>
+<div class="part"><h2 class="part-title">Part IV — Sequence and time</h2></div>
 
 <section id="prereqs">
-  <h2><span class="num">§ 11</span>Prerequisites, flexibility and branches</h2>
+  <div><span class="sec-num">11</span><h2 class="sec-title">Prerequisites, flexibility and branches</h2></div>
   <p>Every program trades coherence against flexibility. A tightly sequenced program can promise that each course builds on the last. A flexible one lets students arrive by many routes. <a href="#ref-nelson-2026">Nelson</a> names the risk on the flexible side: &ldquo;when students can complete the curriculum in any order, essential skills are often presumed to be learned somewhere along the way, rather than intentionally integrated and reinforced throughout.&rdquo; Her own capstone expected mastery of a skill that many students were meeting there for the first time: &ldquo;This made what should have been an opportunity for reinforcement and mastery into a high-stakes crash course.&rdquo; Heileman et al.&rsquo;s blocking and delay measures (§9) name the risk on the tight side.</p>
   <p>The literature reviewed here does not give a rule for where the balance should fall. It does support three practical points for the builder:</p>
   <ul>
@@ -282,7 +385,7 @@
 </section>
 
 <section id="decay">
-  <h2><span class="num">§ 12</span>Reinforcement, spacing and fading</h2>
+  <div><span class="sec-num">12</span><h2 class="sec-title">Reinforcement, spacing and fading</h2></div>
   <p>The I/R/M matrix assumes that &ldquo;reinforced&rdquo; means something. The memory and skill-retention research explains why it does, and why a single high-depth course is a weaker guarantee than a grid suggests. This section draws on sources already reviewed for the <a href="./superpowers/specs/2026-06-19-curriculum-measurement-hypotheses.md">measurement-hypotheses spec</a> (§2) and does not re-derive them.</p>
   <ul>
     <li><strong>Spaced practice beats massed practice for long-term retention.</strong> Massing practice &ldquo;produces better short-term performance or recall of that procedure or information, but markedly inferior long-term performance or recall&rdquo; (<a href="#ref-bjork-1994">Bjork, 1994</a>, p. 190). In <a href="#ref-cepeda-2006">Cepeda et al.&rsquo;s (2006)</a> meta-analysis, &ldquo;there is no hint that massed presentation was preferable to spaced, whether retention interval was very short (less than 1 min) or very long (over 30 days)&rdquo; (p. 359).</li>
@@ -294,18 +397,18 @@
   <p>For display, the I/R/M vocabulary maps onto the builder&rsquo;s threads cleanly. <em>Introduced</em> is a first reading at low depth. <em>Reinforced</em> is a later course working the competency within a level of its peak; a later passing mention does not count. <em>Mastered</em> is the act target met and still held at the checkpoint. The &ldquo;fading&rdquo; status is the case grids cannot show: reached, but not held.</p>
 </section>
 
-<h2 class="part-head">Part V — Graphic communications</h2>
+<div class="part"><h2 class="part-title">Part V — Graphic communications</h2></div>
 
 <section id="gc">
-  <h2><span class="num">§ 13</span>What the GC literature offers</h2>
+  <div><span class="sec-num">13</span><h2 class="sec-title">What the GC literature offers</h2></div>
   <p>Research on curriculum in graphic communications specifically is sparse. The most relevant held study is <a href="#ref-bridges-2020">Bridges (2020)</a>, a modified Delphi study of the competencies and tools higher-education GC programs need. Its panel was drawn from &ldquo;educators and industry professionals located in the southeast United States.&rdquo; Of roughly 300 invited, &ldquo;13 educators and 21 industry professionals committed to the research project&rdquo; (p. 245), and response fell in later rounds. Panelists rated each competency &ldquo;using a Likert scale ranging from one to seven&rdquo; (p. 245). Its headline result: &ldquo;Participants of the study overwhelmingly identified soft skills as being the most needed skills, while software applications were identified as the most needed tools&rdquo; (p. 243). &ldquo;Critical thinking skills were, again, the highest-ranking competency in round three&rdquo; (p. 249).</p>
   <p><strong>How the builder can use it, and its limits.</strong> Bridges is a reasonable source for <em>which</em> competencies a GC career-path target should include and how heavily to weight them. It does not say <em>how deep</em>. The study rated importance, not required depth, and it has no K/U/D or level structure. The builder therefore keeps importance and depth apart. A career path&rsquo;s importance weights decide which competencies belong to the path and weight its &ldquo;% of the way&rdquo; figure (and every weight is still a draft); they do not set the depth. Until faculty set required levels, every competency starts from the same values, about K2 U1 D1 after Act 1 and 3 on each dimension after Acts 2 and 3, labeled &ldquo;starting values, not yet reviewed.&rdquo; The panel is also small, regional, and pre-dates current AI tools. Bridges also ties back to §6. The competencies the panel ranked highest are general skills, such as &ldquo;critical thinking skills, problem solving and analytical skills, teamwork, communication skills, and business and personal ethics&rdquo; (p. 248), not named tools or processes. Jayalath et al. found mapping harder for skills less explicitly defined in course documents. The builder should not assume its readings for these competencies are as firm as those for a named software or process skill.</p>
 </section>
 
-<h2 class="part-head">Part VI — Accounting</h2>
+<div class="part"><h2 class="part-title">Part VI — Accounting</h2></div>
 
 <section id="accounting">
-  <h2><span class="num">§ 14</span>What is supported, what is committed, what is assumed</h2>
+  <div><span class="sec-num">14</span><h2 class="sec-title">What is supported, what is committed, what is assumed</h2></div>
 
   <h3>Research-supported</h3>
   <ul>
@@ -346,7 +449,7 @@
 </section>
 
 <section id="implications">
-  <h2><span class="num">§ 15</span>Design implications for the builder</h2>
+  <div><span class="sec-num">15</span><h2 class="sec-title">Design implications for the builder</h2></div>
   <ol>
     <li><strong>Keep the stated / discovered distinction visible at every level, including career summaries.</strong> The intended curriculum is not the learned one (TIMSS; Barthakur et al.). <em>Supported.</em></li>
     <li><strong>Let any cell be traced to the course reading and evidence behind it.</strong> Faculty must be able to see why a figure says what it says (Barthakur et al.). <em>Supported.</em></li>
@@ -365,10 +468,15 @@
     <li><strong>When software proposes a tag or a relation, have it choose from a shortlist, show its evidence, and ask &ldquo;is the activity actually there?&rdquo; as a separate question; faculty confirm</strong> (L&ecirc; et al.; Veys et al.; the July 2026 measurement). <em>Supported.</em></li>
   </ol>
 </section>
+  <a class="xlink" href="curriculum-map.html">
+    <span><span class="label">Explore the data · Tool</span><span class="t">GC Curriculum Map</span><span class="d">Work back from a career to the competencies it relies on and the courses that build them, year by year.</span></span>
+    <span class="link-arrow">Open the tool →</span>
+  </a>
 
-<section id="references" style="margin-top: 56px;">
-  <h2 style="font-size: 18px;">References</h2>
-  <p class="dagger-legend" style="font-size: 14px; color: var(--text-muted);">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
+
+<section id="references">
+  <div><h2 class="sec-title">References</h2></div>
+  <p class="dagger-legend">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
   <ol class="refs">
     <li id="ref-aldrich-2014">Aldrich, P. R. (2014). The curriculum prerequisite network: A tool for visualizing and analyzing academic curricula. arXiv:1408.5340. (&sect;9.)</li>
     <li id="ref-arthur-1998">Arthur, W., Bennett, W., Stanush, P. L., &amp; McNelly, T. L. (1998). Factors that influence skill decay and retention: A quantitative review and analysis. <em>Human Performance</em>, 11(1), 57&ndash;101. (&sect;12.)</li>
@@ -401,13 +509,41 @@
   </ol>
 </section>
 
-<footer class="doc-foot">
+<div class="doc-foot">
   GC Curriculum Tool · Curriculum Maps Deep Dive · Companion to the
-  <a href="./three-act-deep-dive.html" style="color: var(--accent);">3-Act deep dive</a> and the
-  <a href="./background.html" style="color: var(--accent);">KUD+ Background</a>.
+  <a href="./three-act-deep-dive.html">3-Act deep dive</a> and the
+  <a href="./background.html">KUD+ Background</a>.
+</div>
+  </article>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
 </footer>
 
-</main>
-
+<script>
+/* Marks the contents link of the section in view. Without JS the contents column still works as plain links. */
+(() => {
+  const toc = document.querySelector('.toc');
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const secs = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  const inView = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+    const cur = secs.find((s) => inView.has(s.id));
+    if (!cur) return;
+    const a = byId.get(cur.id);
+    links.forEach((l) => l.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'true');
+    // When the sticky column is taller than the screen, keep the marked link visible inside it.
+    if (toc.scrollHeight > toc.clientHeight && (a.offsetTop < toc.scrollTop || a.offsetTop + a.offsetHeight > toc.scrollTop + toc.clientHeight)) {
+      toc.scrollTop = a.offsetTop - toc.clientHeight / 2;
+    }
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  secs.forEach((s) => io.observe(s));
+})();
+</script>
 </body>
 </html>

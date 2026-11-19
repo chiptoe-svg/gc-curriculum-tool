@@ -1,201 +1,257 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>How the Competency Catalog Works — A Mechanics Deep Dive</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How the Competency Catalog Works — Graphic Communications, Clemson</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
 <style>
-  :root {
-    --rail: #141412;
-    --rail-text: #8a8780;
-    --rail-active: #E8A44A;
-    --rail-hover: #2a2925;
-    --bg: #F7F5F0;
-    --bg-card: #FFFFFF;
-    --bg-alt: #F0EDE6;
-    --text: #1C1C18;
-    --text-muted: #6B6860;
-    --text-faint: #9E9B94;
-    --accent: #C8682A;
-    --accent-light: #F5E6D8;
-    --border: #E2DDD4;
-    --border-strong: #C8C4BA;
-    --mono: 'DM Mono', monospace;
-    --serif: 'Source Serif 4', Georgia, serif;
-    --display: 'Playfair Display', Georgia, serif;
-    --t1: #2A5C8C;
-    --t1-light: #E3ECF5;
-    --live: #3D7A4A;
-    --live-light: #E4F0E6;
-  }
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
 
-  body { font-family: var(--serif); background: var(--bg); color: var(--text); display: flex; min-height: 100vh; font-size: 16px; line-height: 1.7; }
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
 
-  #rail { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; background: var(--rail); display: flex; flex-direction: column; overflow-y: auto; z-index: 100; }
-  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
-  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
-  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
-  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
-  .rail-nav { padding: 20px 0; flex: 1; }
-  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
-  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
-  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
-  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
-  .rail-footer a { color: var(--rail-text); text-decoration: none; }
-  .rail-footer a:hover { color: var(--rail-active); }
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
 
-  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; min-width: 0; }
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
-  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
-  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
-  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
-  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
-  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
-  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
 
-  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
 
-  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
-  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
-  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
 
-  p { margin-bottom: 14px; max-width: 760px; }
-  strong { color: var(--text); font-weight: 600; }
-  em { color: var(--text); font-style: italic; }
-  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
-  a:hover { color: #a85020; }
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
 
-  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
-  li { margin-bottom: 8px; }
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
 
-  code { font-family: var(--mono); font-size: 0.86em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; color: var(--text); overflow-wrap: anywhere; }
-
-  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
-  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
-  .callout.note { border-left-color: var(--t1); }
-  .callout.note .callout-title { color: var(--t1); }
-  .callout.planned { border-left-style: dashed; border-left-color: var(--t1); background: var(--t1-light); }
-  .callout.planned .callout-title { color: var(--t1); }
-
-  .status { display: inline-block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; vertical-align: middle; margin-left: 6px; }
-  .status.live { background: var(--live-light); color: var(--live); }
-  .status.planned { background: var(--t1-light); color: var(--t1); border: 1px dashed var(--t1); }
-
-  /* Tables */
-  .table-wrap { overflow-x: auto; margin: 18px 0 26px; max-width: 860px; }
-  table { border-collapse: collapse; width: 100%; font-size: 14.5px; background: var(--bg-card); }
-  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--border); }
-  th { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; background: var(--bg-alt); }
-  td code { white-space: nowrap; }
-
-  /* Flow diagram */
-  .flow { display: grid; grid-template-columns: 1fr 0.9fr 1fr; gap: 18px; margin: 28px 0 10px; max-width: 900px; }
-  .lane { display: flex; flex-direction: column; align-items: stretch; }
-  .lane-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
-  .box { background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: 4px; padding: 10px 12px; font-size: 13.5px; line-height: 1.45; }
-  .box b { display: block; font-family: var(--serif); font-weight: 600; font-size: 14px; margin-bottom: 2px; }
-  .box small { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); letter-spacing: 0.02em; }
-  .box.hub { border: 2px solid var(--accent); background: var(--accent-light); }
-  .box.planned { border: 1.5px dashed var(--t1); background: var(--t1-light); }
-  .arrow { text-align: center; color: var(--text-faint); font-size: 16px; line-height: 1; padding: 5px 0; }
-  .arrow.planned { color: var(--t1); }
-  .lane.mid { justify-content: center; }
-  .side-arrow { font-family: var(--mono); font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px 0; }
-  .flow-legend { font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 26px; display: flex; gap: 20px; flex-wrap: wrap; max-width: 900px; }
-  .swatch { display: inline-block; width: 14px; height: 10px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
-  .swatch.solid { border: 1px solid var(--border-strong); background: var(--bg-card); }
-  .swatch.hub { border: 2px solid var(--accent); background: var(--accent-light); }
-  .swatch.dash { border: 1.5px dashed var(--t1); background: var(--t1-light); }
-
-  /* Two-stage scoring strip */
-  .stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 22px 0 26px; max-width: 900px; counter-reset: stage; }
-  .stage { background: var(--bg-card); border: 1px solid var(--border); border-top: 3px solid var(--accent); padding: 12px 14px; font-size: 14px; line-height: 1.5; }
-  .stage::before { counter-increment: stage; content: "Step " counter(stage); display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
-  .stage b { display: block; margin-bottom: 4px; }
-
-  .attribution { font-size: 14px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; margin-top: 18px; max-width: 760px; }
-
-  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; line-height: 1.8; }
-  .doc-foot p { max-width: 820px; }
-
-  a:focus-visible, .nav-link:focus-visible { outline: 2px solid var(--rail-active); outline-offset: 2px; }
-
-  @media (max-width: 900px) {
-    body { display: block; }
-    #rail { position: static; width: 100%; height: auto; }
-    .rail-nav { display: none; }
-    main { margin-left: 0; padding: 32px 16px 64px; }
-    .doc-title { font-size: 32px; }
-    h2 { font-size: 24px; }
-    .flow { grid-template-columns: 1fr; }
-    .stages { grid-template-columns: 1fr 1fr; }
-  }
-  @media (max-width: 520px) {
-    .stages { grid-template-columns: 1fr; }
-    td code { white-space: normal; }
-  }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* ---------- Page (guide tokens only) ---------- */
+/* The hero sits inside .paper after the contents column in the DOM, so the old rail's
+   words keep their reading order; order:-1 puts it first on screen. */
+.paper > .hero{order:-1;flex:1 1 100%;margin-inline:calc(-1 * var(--pad))}
+.toc .label{display:block;margin:14px 0 2px}
+.toc a.out{padding-left:26px}
+.article section{scroll-margin-top:24px}
+.article h3{font-size:24px;line-height:1.25;margin-top:12px}
+.article ul,.article ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.part{display:flex;flex-direction:column;gap:16px;border-top:1px solid var(--rule);padding-top:24px}
+.part-title{font-size:26px;line-height:1.2;color:var(--muted)}
+.note > div{display:flex;flex-direction:column;gap:6px}
+.note ul{margin:0}
+sup.nv{font:500 .72em var(--mono);color:var(--muted);margin-left:1px;cursor:help}
+.dagger-legend{font-size:14px;color:var(--muted)}
+ol.refs{font-size:15px;overflow-wrap:anywhere}
+.doc-foot{font-size:14px;color:var(--muted)}
+.doc-foot a{color:var(--purple)}
+code,kbd{font:500 .86em var(--mono);background:var(--inset);padding:1px 6px;border-radius:5px;overflow-wrap:anywhere}
+td code{white-space:nowrap}
+.cue{vertical-align:middle;margin-left:6px;font-family:var(--sans)}
+.attribution{font-size:14px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
+/* Flow diagram (competency catalog) */
+.flow{display:grid;grid-template-columns:1fr .9fr 1fr;gap:16px}
+.lane{display:flex;flex-direction:column}
+.lane.mid{justify-content:center}
+.lane-label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:8px}
+.box{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.45}
+.box b{display:block;font-weight:600;font-size:15px;margin-bottom:2px}
+.box small{display:block;margin-top:2px;font:400 13px var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.box.hub{background:var(--inset);border:2px solid var(--ink)}
+.box.planned{border:1.5px dashed var(--muted)}
+.arrow{text-align:center;color:var(--muted);font-size:16px;line-height:1;padding:5px 0}
+.side-arrow{font:400 13px var(--mono);color:var(--muted);text-align:center;padding:8px 0}
+.flow-legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;color:var(--muted)}
+.swatch{display:inline-block;width:16px;height:11px;vertical-align:middle;margin-right:6px;border-radius:3px}
+.swatch.solid{border:1px solid var(--rule);background:var(--panel)}
+.swatch.hub{border:2px solid var(--ink);background:var(--inset)}
+.swatch.dash{border:1.5px dashed var(--muted)}
+/* Two-stage scoring strip */
+.stages{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;counter-reset:stage}
+.stage{background:var(--panel);border:1px solid var(--rule-soft);border-radius:16px;padding:16px;font-size:15px;line-height:1.5}
+.stage::before{counter-increment:stage;content:"Step " counter(stage);display:block;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin-bottom:6px}
+.stage b{display:block;margin-bottom:4px}
+@media (max-width:640px){.flow{grid-template-columns:1fr}.stages{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.stages{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-
-<aside id="rail">
-  <div class="rail-header">
-    <div class="rail-dept">Clemson · Graphic Communications</div>
-    <div class="rail-title">GC Curriculum Tool</div>
-    <div class="rail-doc-type">Mechanics Deep Dive</div>
-  </div>
-  <nav class="rail-nav">
-    <div class="nav-group-label">Overview</div>
-    <a class="nav-link" href="#short">The short version</a>
-    <div class="nav-group-label">Part I — The catalog</div>
-    <a class="nav-link" href="#catalog">One shared list</a>
-    <a class="nav-link" href="#targets">How careers claim competencies</a>
-    <a class="nav-link" href="#merges">Merges</a>
-    <div class="nav-group-label">Part II — What courses build</div>
-    <a class="nav-link" href="#scoring">How a course is scored</a>
-    <a class="nav-link" href="#rollups">From scores to career views</a>
-    <div class="nav-group-label">Part III — What careers ask</div>
-    <a class="nav-link" href="#mixes">Occupation mixes</a>
-    <a class="nav-link" href="#onet">The O*NET store</a>
-    <a class="nav-link" href="#business">Business-acumen competencies</a>
-    <div class="nav-group-label">Part IV — Ahead &amp; limits</div>
-    <a class="nav-link" href="#next">What comes next</a>
-    <a class="nav-link" href="#limits">Honest limits</a>
-    <a class="nav-link" href="#hood">Under the hood</a>
-    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
-    <a class="nav-link" href="./background.html">KUD+ Background</a>
-    <a class="nav-link" href="./graduate-outcome-validation.html">Graduate outcome study</a>
-    <a class="nav-link" href="./architecture.html">Architecture overview</a>
-  </nav>
-  <div class="rail-footer">
-    <a href="./index.html">← All documents</a>
-  </div>
-</aside>
-
-<main>
-
-<header class="doc-head">
-  <div class="doc-eyebrow">Mechanics deep dive</div>
-  <h1 class="doc-title">How the Competency Catalog Works</h1>
-  <p class="doc-subtitle">One shared list of competencies sits between two kinds of evidence: what GC courses demonstrably build, and what the occupations GC graduates enter actually ask for. This page explains how each side is gathered, how they meet, what is live today, and what is still to come.</p>
-  <div class="doc-meta">
-    <span><strong>Scope</strong>Live system after catalog phases P0a, P0b and P1</span>
-    <span><strong>Audience</strong>Faculty and department; engineering detail at the end</span>
-    <span><strong>As of</strong>October 2026</span>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
   </div>
 </header>
 
+<div class="wrap paper paper--long">
+  <nav class="toc" id="rail" aria-label="Contents">
+    <span class="label">Overview</span>
+    <a href="#short"><span class="n">1</span><span>The short version</span></a>
+    <span class="label">Part I — The catalog</span>
+    <a href="#catalog"><span class="n">2</span><span>One shared list</span></a>
+    <a href="#targets"><span class="n">3</span><span>How careers claim competencies</span></a>
+    <a href="#merges"><span class="n">4</span><span>Merges</span></a>
+    <span class="label">Part II — What courses build</span>
+    <a href="#scoring"><span class="n">5</span><span>How a course is scored</span></a>
+    <a href="#rollups"><span class="n">6</span><span>From scores to career views</span></a>
+    <span class="label">Part III — What careers ask</span>
+    <a href="#mixes"><span class="n">7</span><span>Occupation mixes</span></a>
+    <a href="#onet"><span class="n">8</span><span>The O*NET store</span></a>
+    <a href="#business"><span class="n">9</span><span>Business-acumen competencies</span></a>
+    <span class="label">Part IV — Ahead &amp; limits</span>
+    <a href="#next"><span class="n">10</span><span>What comes next</span></a>
+    <a href="#limits"><span class="n">11</span><span>Honest limits</span></a>
+    <a href="#hood"><span class="n">12</span><span>Under the hood</span></a>
+    <span class="label">See also</span>
+    <a class="out" href="./background.html">KUD+ Background</a>
+    <a class="out" href="./graduate-outcome-validation.html">Graduate outcome study</a>
+    <a class="out" href="./architecture.html">Architecture overview</a>
+    <a class="out" href="./index.html">← All documents</a>
+  </nav>
+
+  <section class="hero">
+    <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="eyebrow">Mechanics deep dive</span>
+      <h1 class="title-paper">How the Competency Catalog Works</h1>
+      <p class="lede">One shared list of competencies sits between two kinds of evidence: what GC courses demonstrably build, and what the occupations GC graduates enter actually ask for. This page explains how each side is gathered, how they meet, what is live today, and what is still to come.</p>
+      <div class="meta-row">
+    <span><strong>Scope</strong> Live system after catalog phases P0a, P0b and P1</span>
+    <span><strong>Audience</strong> Faculty and department; engineering detail at the end</span>
+    <span><strong>As of</strong> October 2026</span>
+  </div>
+    </div>
+  </section>
+
+  <article class="article">
 <!-- ============================================================ -->
 <section id="short">
-  <h2><span class="num">01</span>The short version</h2>
+  <div><span class="sec-num">01</span><h2 class="sec-title">The short version</h2></div>
 
   <p>The tool answers one question above all others: <em>how well does the GC curriculum build students toward the careers we say we prepare them for?</em> Answering it needs three things kept apart and then joined carefully:</p>
   <ul>
@@ -246,14 +302,14 @@
 
 <!-- ============================================================ -->
 <section id="catalog">
-  <h2><span class="num">02</span>One shared list of competencies</h2>
+  <div><span class="sec-num">02</span><h2 class="sec-title">One shared list of competencies</h2></div>
 
   <p>A <strong>competency</strong> in this tool is a named skill with three descriptors: what a student <em>knows</em> about it, what they <em>understand</em> (why it works, when to use it), and what they can <em>do</em>. Each course's depth on a competency is read on a 0–5 scale per dimension, anchored to student-side evidence. The scale and its evidence rule are set out in the <a href="./background.html#depth">KUD+ Background, depth scale</a> and <a href="./background.html#anchors">anchors</a>; this page does not restate them.</p>
 
   <p>Until October 2026 each competency belonged to exactly one career target. That forced duplicates: the same knowledge of color, substrates and production process was written three times, once for each career that needed it, and each copy was scored separately. The catalog phases changed this. Competencies now form <strong>one list that belongs to no career</strong>; careers point at the competencies they need.</p>
 
   <h3>The states a competency can be in</h3>
-  <div class="table-wrap">
+  <div class="table-box">
   <table>
     <thead><tr><th>State</th><th>What it means</th><th>Scored?</th></tr></thead>
     <tbody>
@@ -276,7 +332,7 @@
 
 <!-- ============================================================ -->
 <section id="targets">
-  <h2><span class="num">03</span>How careers claim competencies</h2>
+  <div><span class="sec-num">03</span><h2 class="sec-title">How careers claim competencies</h2></div>
 
   <p>There are five career targets: Production &amp; Operations; Sales Solutions &amp; Account Management; Brand Strategy &amp; Experience; Purposeful Design &amp; Creative Generalist; and Creative Technology &amp; Systems. A target claims a competency by having a <strong>requirement</strong> row for it. One competency can be claimed by several targets, so a single scored reading of a course serves every career that needs that skill.</p>
 
@@ -288,15 +344,14 @@
     <li><strong>Source</strong> of the weight and of the depth (O*NET, employer or faculty), and a <strong>status</strong> of <em>draft</em> or <em>confirmed</em>.</li>
   </ul>
 
-  <div class="callout note">
-    <div class="callout-title">Today</div>
+  <aside class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg><div><strong>Today</strong>
     <p>Every live requirement row is an <em>entry</em>-horizon membership row with status <em>draft</em> and <strong>no weight and no required depth</strong>. That is deliberate. Weights and depths will be drafted only after the competencies are linked to O*NET and ESCO and those links are confirmed ("links before weights"). So that no requirement silently gains a weight, none has one yet.</p>
-  </div>
+  </div></aside>
 </section>
 
 <!-- ============================================================ -->
 <section id="merges">
-  <h2><span class="num">04</span>Merges: when two entries are one competency</h2>
+  <div><span class="sec-num">04</span><h2 class="sec-title">Merges: when two entries are one competency</h2></div>
 
   <p>With one shared list, near-duplicates become visible. In October 2026 the program chair approved two merges and kept the other candidates separate:</p>
   <ul>
@@ -315,7 +370,7 @@
 
 <!-- ============================================================ -->
 <section id="scoring">
-  <h2><span class="num">05</span>How a course gets scored</h2>
+  <div><span class="sec-num">05</span><h2 class="sec-title">How a course gets scored</h2></div>
 
   <p>Scoring happens in two separate stages, and the separation matters.</p>
 
@@ -342,20 +397,19 @@
   <p>Scoring covers every <strong>program-visible</strong> course, meaning a GC course that is currently offered. External, sandbox, proposed and retired courses are left out. A program-visible course is scored whether or not it sits on a career path. For each course, the latest current snapshot <em>per instructor</em> is scored, so the same course taught by different faculty appears as separate readings and the variation stays visible.</p>
   <p>Unlinked competencies are scored like any other. A competency can be built, measured and reported before any career claims it. Linking it later needs no re-scoring.</p>
 
-  <div class="callout note">
-    <div class="callout-title">Refreshing</div>
+  <aside class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg><div><strong>Refreshing</strong>
     <p>When a competency has no reading yet for a course's current snapshot, that snapshot counts as needing scoring. The refresh button on <code>/program</code> scores each such snapshot in one paid AI call. The four business-acumen competencies added in P1 have not been scored yet; a refresh will score them for every program-visible course.</p>
-  </div>
+  </div></aside>
 </section>
 
 <!-- ============================================================ -->
 <section id="rollups">
-  <h2><span class="num">06</span>From scores to career views</h2>
+  <div><span class="sec-num">06</span><h2 class="sec-title">From scores to career views</h2></div>
 
   <p>Career views do not store scores of their own. They read the per-competency coverage readings through the requirement rows: <em>for this career, take the competencies it claims, and show each course's reading on them.</em> Because careers share competencies, a change to one reading appears in every career that claims that competency.</p>
 
   <h3>Two different "which courses" questions</h3>
-  <div class="table-wrap">
+  <div class="table-box">
   <table>
     <thead><tr><th>Question</th><th>Answer today</th></tr></thead>
     <tbody>
@@ -367,15 +421,14 @@
 
   <p>When the program's reach on a competency is summarized, the reading is the <strong>deepest any course reached</strong>, never an average: one course building a skill to depth 4 is not cancelled out by five that mention it.</p>
 
-  <div class="callout planned">
-    <div class="callout-title">Planned: a selectable course set</div>
+  <aside class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg><div><strong>Planned: a selectable course set</strong>
     <p>Counting every program-visible course suits the department-level view, but an individual pathway differs: a student takes a minor and some electives, not all of them. A later phase will make the course set for a career view <strong>selectable</strong> (core plus a chosen minor and electives). This is planned, not live.</p>
-  </div>
+  </div></aside>
 </section>
 
 <!-- ============================================================ -->
 <section id="mixes">
-  <h2><span class="num">07</span>What careers ask: occupation mixes</h2>
+  <div><span class="sec-num">07</span><h2 class="sec-title">What careers ask: occupation mixes</h2></div>
 
   <p>A career target is not a single job title. Graduates who fit "Production &amp; Operations" become prepress technicians, project management specialists, production managers and more. So the demand side starts with <strong>where GC graduates actually go</strong>.</p>
 
@@ -389,7 +442,7 @@
 
   <h3>From SOC codes to O*NET occupations</h3>
   <p>The alumni data uses SOC codes; O*NET rates its own, slightly finer occupation codes. Each mix row is matched to O*NET in one of three ways:</p>
-  <div class="table-wrap">
+  <div class="table-box">
   <table>
     <thead><tr><th>Status</th><th>When</th><th>Effect</th></tr></thead>
     <tbody>
@@ -404,12 +457,12 @@
 
 <!-- ============================================================ -->
 <section id="onet">
-  <h2><span class="num">08</span>The O*NET reference store</h2>
+  <div><span class="sec-num">08</span><h2 class="sec-title">The O*NET reference store</h2></div>
 
   <p>O*NET is the U.S. Department of Labor's occupational database. For each occupation it rates knowledge areas, abilities, work activities and skills on <strong>Importance</strong> (1–5: how much it matters) and <strong>Level</strong> (0–7: how much of it is needed), and lists the occupation's tasks with their own importance, relevance and frequency ratings.</p>
 
   <p>The tool holds a read-only copy of <strong>release 31.0</strong>, limited to the occupations that actually appear as rated in the GC mixes:</p>
-  <div class="table-wrap">
+  <div class="table-box">
   <table>
     <thead><tr><th>Loaded</th><th>Rows</th></tr></thead>
     <tbody>
@@ -429,7 +482,7 @@
 
 <!-- ============================================================ -->
 <section id="business">
-  <h2><span class="num">09</span>The business-acumen competencies</h2>
+  <div><span class="sec-num">09</span><h2 class="sec-title">The business-acumen competencies</h2></div>
 
   <p>Looking at the occupations graduates enter showed a gap in the catalog. Customer service, sales and management knowledge rank highly in O*NET for the destination occupations, yet no catalog competency covered how a business itself makes money, how deals are negotiated, or who carries contract and licensing risk. Four competencies were drafted from the career-target descriptions, the share-weighted O*NET ratings and the existing catalog (to avoid overlap), then proposed by the program chair. They are proposals for faculty discussion and have not been adopted by the department:</p>
   <ul>
@@ -443,14 +496,13 @@
 
 <!-- ============================================================ -->
 <section id="next">
-  <h2><span class="num">10</span>What comes next <span class="status planned">Planned, not live</span></h2>
+  <div><span class="sec-num">10</span><h2 class="sec-title">What comes next <span class="cue cue-draft">Planned, not live</span></h2></div>
 
-  <div class="callout planned">
-    <div class="callout-title">Everything in this section is planned</div>
+  <aside class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg><div><strong>Everything in this section is planned</strong>
     <p>The steps below are the agreed direction from the catalog design. Only the first (P2) has started going live, and details may change during design.</p>
-  </div>
+  </div></aside>
 
-  <h3>P2: bundle membership <span class="status planned">Rolling out</span></h3>
+  <h3>P2: bundle membership <span class="cue cue-draft">Rolling out</span></h3>
   <p>The first piece of linking the catalog to O*NET is built. Each catalog competency ("bundle") now has a <strong>card</strong> — what it includes and excludes, how it differs from its nearest neighbors, worked examples — AI-drafted, for the program chair to review and approve. Every bundle's card is placed, by AI, against the O*NET elements and task statements that describe real occupations, each candidate judged <strong>core</strong>, <strong>related</strong>, or <strong>fringe</strong> to the bundle, or marked "no clean match" where none fits. A faculty review queue on <code>/admin/bundles</code> lets a reviewer confirm or reject every proposed placement, one at a time or in bulk, with the AI's placement shown. A <strong>blind golden sample</strong> — a subset of bundles a human reviewer scores without seeing the AI's placements first — measures how often the AI and the reviewer agree, before any of it is trusted. <strong>Nothing from this pipeline is auto-confirmed</strong>: every card and every placement sits in a review queue until a person acts on it. ESCO links (the European skills classification) are not yet attempted.</p>
   <p>This is built and was rehearsed end to end against a scratch copy of the database. Its tables and review page went live in October 2026, but no card has been approved and no placement made or reviewed yet. Placements are used only after the cards are approved and the placements reviewed.</p>
 
@@ -463,7 +515,7 @@
 
 <!-- ============================================================ -->
 <section id="limits">
-  <h2><span class="num">11</span>Honest limits</h2>
+  <div><span class="sec-num">11</span><h2 class="sec-title">Honest limits</h2></div>
   <ul>
     <li><strong>Scores are judgments, anchored to evidence.</strong> Every coverage reading is an AI model's judgment of a snapshot, constrained by the evidence rule and the descriptors, with its confidence and rationale on record. It measures what the captured evidence shows, which depends on how complete the capture is. Faculty can flag any reading they dispute.</li>
     <li><strong>The alumni occupation coding has one coder.</strong> A blind second-coder sample has been drawn but not yet coded, so there is no agreement statistic yet. A batch of systematic SOC-coding corrections (for example, producer and video roles that had been coded as actors or athletes) was applied in October 2026 as an AI-assisted review, not independent human double-coding. The mixes should be read with that caveat.</li>
@@ -478,11 +530,11 @@
 
 <!-- ============================================================ -->
 <section id="hood">
-  <h2><span class="num">12</span>Under the hood</h2>
+  <div><span class="sec-num">12</span><h2 class="sec-title">Under the hood</h2></div>
   <p>For maintainers. Schema lives in Postgres; the catalog migrations are hand-written SQL applied with a verified backup and a fail-closed verify.</p>
 
   <h3>Tables and views</h3>
-  <div class="table-wrap">
+  <div class="table-box">
   <table>
     <thead><tr><th>Object</th><th>Role</th></tr></thead>
     <tbody>
@@ -510,7 +562,7 @@
   </ul>
 
   <h3>Migrations</h3>
-  <div class="table-wrap">
+  <div class="table-box">
   <table>
     <thead><tr><th>Migration</th><th>Phase</th><th>What it did</th></tr></thead>
     <tbody>
@@ -522,12 +574,46 @@
   </div>
   <p>Design: <code>docs/superpowers/specs/2026-10-11-competency-catalog-and-career-demand-design.md</code>. Plans: <code>docs/superpowers/plans/2026-10-11-competency-catalog-p0a.md</code>, <code>2026-10-12-competency-catalog-p0b.md</code> (with Amendment 1) and <code>2026-10-12-competency-catalog-p1.md</code>.</p>
 </section>
+  <a class="xlink" href="curriculum-map.html">
+    <span><span class="label">Explore the data · Tool</span><span class="t">GC Curriculum Map</span><span class="d">Work back from a career to the competencies it relies on and the courses that build them, year by year.</span></span>
+    <span class="link-arrow">Open the tool →</span>
+  </a>
 
-<footer class="doc-foot">
+
+<div class="doc-foot">
   <p>GC Curriculum Tool · Clemson University Department of Graphic Communications.</p>
   <p>This product includes information from O*NET 31.0 Database by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license.</p>
+</div>
+  </article>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
 </footer>
 
-</main>
+<script>
+/* Marks the contents link of the section in view. Without JS the contents column still works as plain links. */
+(() => {
+  const toc = document.querySelector('.toc');
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const secs = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  const inView = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+    const cur = secs.find((s) => inView.has(s.id));
+    if (!cur) return;
+    const a = byId.get(cur.id);
+    links.forEach((l) => l.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'true');
+    // When the sticky column is taller than the screen, keep the marked link visible inside it.
+    if (toc.scrollHeight > toc.clientHeight && (a.offsetTop < toc.scrollTop || a.offsetTop + a.offsetHeight > toc.scrollTop + toc.clientHeight)) {
+      toc.scrollTop = a.offsetTop - toc.clientHeight / 2;
+    }
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  secs.forEach((s) => io.observe(s));
+})();
+</script>
 </body>
 </html>

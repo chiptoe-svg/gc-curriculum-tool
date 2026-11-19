@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skill-String Curriculum Map — Graphic Communications, Clemson</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
+<style>
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
+
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
+
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
+
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
+
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
+
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
+
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
+
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
+
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
+
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* ---------- Page: skill-thread curriculum map (guide tokens only) ---------- */
+.paper > .hero{order:-1;flex:1 1 100%;margin-inline:calc(-1 * var(--pad))}
+.toc .label{display:block;margin:14px 0 2px}
+.toc .label:first-child{margin-top:0}
+.toc a.out{padding-left:26px}
+.article section{scroll-margin-top:24px}
+.article h3{font-size:24px;line-height:1.25;margin-top:12px}
+.article ul,.article ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.note > div{display:flex;flex-direction:column;gap:6px}
+.meta{font-size:14px;color:var(--muted)}
+ol.refs{font-size:15px;overflow-wrap:anywhere}
+.doc-foot{font-size:14px;color:var(--muted)}
+.draft{font-style:italic}
+/* K / U / D labels: categorical, letters carry the meaning */
+.kk{color:var(--ink)}.uu{color:var(--purple)}.dd{color:var(--muted)}
+.kk,.uu,.dd{font-weight:600}
+/* status badges: cue colors by meaning */
+.badge{font:500 12px var(--mono);letter-spacing:.02em;border-radius:999px;padding:2px 10px;margin-left:4px;white-space:nowrap;display:inline-block}
+.b-met{background:#E4F0E6;color:#2F6B3A}
+.b-draft{background:#E4F0E6;color:#2F6B3A;font-style:italic}
+.b-prop{background:#EFEEF2;color:#5D5966;border:1px dashed #5D5966}
+.b-part{background:#FFF4DB;color:#8A5A00}
+.b-comp{background:#ECE6F4;color:#522D80}
+.b-nodata{background:#EFEEF2;color:#5D5966}
+.b-not{background:#F9E3E3;color:#9B2C2C}
+.b-fade{background:#FFF4DB;color:#8A5A00;border:1px dashed #8A5A00}
+.b-edit{background:var(--purple-soft);color:var(--purple-dark)}
+/* layer diagram */
+.layers{display:flex;flex-direction:column;gap:8px;padding:0}
+.layer{background:var(--panel);border:1px solid var(--rule-soft);border-radius:16px;padding:18px 22px;display:flex;flex-direction:column;gap:6px}
+.layer .lname{font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--orange)}
+.layer .ldesc{font-size:16px;line-height:1.55}
+.layer .ldesc em{font-style:normal;font-weight:600}
+.arrow{text-align:center;font:500 12px var(--mono);color:var(--muted);letter-spacing:.04em}
+/* demo */
+.demo{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:24px}
+.demo-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px;font:500 12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.demo-bar .pill{font-size:14px;text-transform:none;letter-spacing:0}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.term-col h4{font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.course{border:1px solid var(--rule);border-radius:16px;padding:14px;background:var(--inset)}
+.course-name{font:600 20px var(--serif);margin-bottom:6px}
+.grp{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+.skill{font-size:14px;line-height:1.4;padding:8px 10px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);margin-bottom:6px;cursor:pointer}
+.skill:hover{border-color:var(--purple)}
+.skill.hl{border:2px solid var(--purple);padding:7px 9px;background:var(--purple-soft)}
+.skill.draft{border-style:dashed}
+.skill .kud{font:500 12px var(--mono);color:var(--muted);display:block;margin-top:4px}
+.bucket-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.bucket{font-size:14px;border:1px dashed var(--rule);border-radius:999px;padding:4px 12px;color:var(--muted);background:var(--panel)}
+.bucket b{font:500 12px var(--mono);color:var(--ink);margin-left:4px}
+.detail{margin-top:20px;border-top:1px solid var(--rule);padding-top:16px;font-size:15px;min-height:64px}
+.detail .dt{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin-bottom:6px}
+.detail ul{margin:6px 0 6px 18px;padding:0;display:block}
+.detail li{margin-bottom:3px}
+.editor{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:8px;font:500 12px var(--mono)}
+.editor label{display:flex;gap:6px;align-items:center}
+.editor select{font:500 14px var(--mono);min-height:36px;padding:0 6px;border:1px solid var(--rule);border-radius:10px;background:#fff}
+.obj{font-size:14px;padding:8px 10px;border-radius:10px;background:var(--panel);border:1px solid var(--rule);margin-bottom:6px;cursor:pointer}
+.obj:hover{border-color:var(--purple)}
+.obj .bl{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:6px}
+.obj.warn{background:#FFF4DB}
+.addgoal{min-height:44px;font:500 14px var(--sans);margin-top:6px;border:1px dashed var(--purple);background:transparent;color:var(--purple);padding:0 14px;border-radius:999px;cursor:pointer}
+.todo{margin-top:12px;padding:10px 12px;border-radius:10px;background:#FFF4DB;font-size:14px}
+.shape .h{color:var(--muted)}
+.demo .table-box table{min-width:560px;font-size:14px}
+.demo .dt{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap paper paper--long">
+  <nav class="toc" id="rail" aria-label="Contents">
+    <span class="label">Sections</span>
+    <a href="#idea"><span class="n">1</span><span>The idea in brief</span></a>
+    <a href="#layers"><span class="n">2</span><span>Layers and links</span></a>
+    <a href="#demo"><span class="n">3</span><span>Try it: a three-course string</span></a>
+    <a href="#threads"><span class="n">4</span><span>Skills as strings</span></a>
+    <a href="#buckets"><span class="n">5</span><span>Competencies as evidence</span></a>
+    <a href="#bloom"><span class="n">6</span><span>Objectives and goals</span></a>
+    <a href="#drafts"><span class="n">7</span><span>Drafting while mapping</span></a>
+    <a href="#status"><span class="n">8</span><span>Requirement statuses</span></a>
+    <a href="#review"><span class="n">9</span><span>Reviewing by exception</span></a>
+    <a href="#whatif"><span class="n">10</span><span>From drafts to a what-if</span></a>
+    <a href="#first"><span class="n">11</span><span>A smaller first step</span></a>
+    <a href="#build"><span class="n">12</span><span>What exists, what is new</span></a>
+    <a href="#open"><span class="n">13</span><span>Decisions still open</span></a>
+    <a href="#refs"><span class="n">14</span><span>References</span></a>
+    <span class="label">See also</span>
+    <a class="out" href="./background.html">KUD+ Background</a>
+    <a class="out" href="./curriculum-map-deep-dive.html">Curriculum maps deep dive</a>
+    <a class="out" href="./curriculum-map.html">Curriculum map demo</a>
+  </nav>
+
+  <section class="hero">
+    <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="eyebrow">Design concept &middot; for faculty review</span>
+      <h1 class="title-paper">Skill-String Curriculum Map</h1>
+      <p class="lede">A course&rsquo;s skills connect it to the courses before and after it. Catalog competencies collect those skills as evidence. Objectives and goals, set with Bloom&rsquo;s taxonomy, say what a course aims for. Only a capture can show what it achieves.</p>
+      <div class="meta-row">
+        <span><strong>Date</strong> 2026-11-16</span>
+        <span><strong>Status</strong> <span class="cue cue-draft">Partly built</span></span>
+        <span><strong>Audience</strong> Faculty, curriculum committee</span>
+      </div>
+    </div>
+  </section>
+
+  <article class="article">
+<section id="idea">
+  <div><span class="sec-num">01</span><h2 class="sec-title">The idea in brief</h2></div>
+  <p>The current curriculum map links courses through catalog competencies: a course raises Color management to a level, and a later course needs that level. This concept adds the step below, the <strong>skills</strong> a course actually develops and requires. A skill is written as the course writes it and is scored on Know, Understand and Do. A later course states the skills it needs on arrival, and the map shows which earlier skill meets each one.</p>
+  <p>Competencies keep their place with a different job. A competency is no longer the connector. It becomes a <strong>bucket of evidence</strong>: the skills linked to it, across all courses, are the record that students have had the chance to develop it, and to what level. Career targets and program targets still read competencies.</p>
+  <p><strong>Two kinds of statement are kept apart throughout.</strong></p>
+  <ul>
+    <li><strong>Goals</strong> say what a course aims for: its learning objectives, written with Bloom&rsquo;s taxonomy, and the KUD goals that go with them.</li>
+    <li><strong>Outcomes</strong> say what students actually do, and they come only from evidence: the course capture, with its assessed student work.</li>
+  </ul>
+  <p>Mapping is <strong>a drafting process</strong>. While mapping, faculty can add objectives and KUD goals to a course and use them to check off later courses&rsquo; requirements. Every such draft is marked in the map (<span class="draft">italic, with an asterisk*</span>). It stays listed on the course as work to be confirmed through a capture before it counts as achieved.</p>
+  <p>All the skill-to-competency work done so far still applies: those links are the buckets.</p>
+  <aside class="note">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+    <div><strong>What is built (November 2026)</strong>
+    <p><strong>Built.</strong> On the curriculum builder&rsquo;s map, each required skill is linked to the earlier skills that supply it. A model on the campus servers rates each link fully or partly, with cut-offs set from faculty decisions, and faculty can confirm or change it. Each required skill shows Met, Met* (met only through a draft), Partly met or Not met (&sect;8). Faculty can draft changes to a course on the map, and a draft that meets a requirement is listed to be confirmed through capture (&sect;7). Strings can be locked into named, lasting connections across courses, and a locked string keeps its links when a course is captured again (&sect;9).</p>
+    <p><strong>Not built.</strong> Objectives as records with Bloom cells and KUD goals (&sect;6), the competency fallback and the Proposed, Via competency and No data statuses (&sect;4, &sect;8), requirements split into parts, review by exception (&sect;9) and the needed shape (&sect;10).</p>
+    </div>
+  </aside>
+</section>
+
+<section id="layers">
+  <div><span class="sec-num">02</span><h2 class="sec-title">Layers and links</h2></div>
+  <div class="layers" role="list">
+    <div class="layer" role="listitem"><div class="lname">Objectives &amp; goals</div><div class="ldesc">What a course <em>aims</em> for. An objective is written with a <em>Bloom verb</em> and the knowledge it acts on. Each objective carries one or more KUD goals: a skill and a target level. These are goals, never evidence.</div></div>
+    <div class="arrow">objective &harr; skill &middot; one link table, read both ways</div>
+    <div class="layer" role="listitem"><div class="lname">Skills</div><div class="ldesc"><em>Developed skills</em> are captured outcomes, scored <em>K / U / D</em> 0&ndash;5 from assessed work. <em>Required skills</em> are what a course needs on arrival (the capture&rsquo;s incoming expectations). A skill added while mapping is a draft goal until a capture confirms it.</div></div>
+    <div class="arrow">required skill &larr; developed skill &middot; strings, grouped under prerequisite edges</div>
+    <div class="layer" role="listitem"><div class="lname">Competencies</div><div class="ldesc">The department&rsquo;s catalog (52 today). Each collects linked skills as <em>evidence</em>; its level at any point in a plan is a roll-up of that evidence.</div></div>
+    <div class="arrow">competency &rarr; target &middot; unchanged</div>
+    <div class="layer" role="listitem"><div class="lname">Targets</div><div class="ldesc">Program targets per act and career-path targets, read from competencies as the builder does today.</div></div>
+  </div>
+  <h3>Where strings sit: under prerequisite edges</h3>
+  <p>The tool already has a prerequisite edge for each pair of courses: a later course, an earlier course, a competency, and the K/U/D levels the later course relies on (Background <a href="./background.html#prereq-gap-method">&sect;12</a>). The gap engine reads those edges, and so do what-ifs. Strings do not replace them. <strong>A string adds skill-level detail inside an edge</strong>: which of the earlier course&rsquo;s skills supplies which of the later course&rsquo;s required skills. The gap engine stays the judge at competency level, with its basis stamp (measured, mixed, intended, none) unchanged. Strings explain the result and can narrow it, but they never pass a requirement the edge fails.</p>
+  <p>Every link is a separate record that software proposes and faculty confirm or change. A captured skill&rsquo;s wording and scores never change because of a link or a draft.</p>
+</section>
+
+<section id="demo">
+  <div><span class="sec-num">03</span><h2 class="sec-title">Try it: a three-course string</h2></div>
+  <p>An invented three-course sequence, not real course data. Click a skill or objective to see its links. In the later courses, each required skill shows its status. Two things to try:</p>
+  <ul>
+    <li>Click <em>Diagnoses preflight errors</em> in Course B and set its Do goal to 3. Course C&rsquo;s first requirement turns to <span class="badge b-draft">met*</span>: met on a draft, not yet on evidence.</li>
+    <li>Course C needs job estimating, which nothing teaches. Use <em>Add a draft goal</em> on Course B to plan it there.</li>
+  </ul>
+
+  <div class="demo" id="demo-box">
+    <div class="demo-bar">
+      <span>Show:</span>
+      <button type="button" class="pill" data-view="skills" aria-pressed="true">Skills and strings</button>
+      <button type="button" class="pill" data-view="objectives" aria-pressed="false">Objectives and goals</button>
+      <button type="button" class="pill" data-view="buckets" aria-pressed="false">Competency buckets</button>
+      <button type="button" class="pill" id="demo-reset">Reset drafts</button>
+    </div>
+    <div class="terms" id="terms"></div>
+    <div class="bucket-row" id="buckets"></div>
+    <div class="detail" id="detail" aria-live="polite"><div class="dt">Details</div>Click a skill or an objective.</div>
+  </div>
+  <p class="meta">The demo shows five statuses. &ldquo;Met through the competency&rdquo; and &ldquo;no data&rdquo; (&sect;8) need a course that has not been captured, so they are not shown here.</p>
+</section>
+
+<section id="threads">
+  <div><span class="sec-num">04</span><h2 class="sec-title">Skills as strings</h2></div>
+  <p>The KUD Background sets the framework&rsquo;s job as tracing &ldquo;a competency from one course to the next, through an entire curriculum, and into a career destination&rdquo; (<a href="./background.html#kud">&sect;5</a>). Tracing at the skill level keeps more of what each course says. A course that needs students to &ldquo;set up a press-ready file with correct bleed and color handling&rdquo; is asking for something narrower than &ldquo;Color management at Do 3,&rdquo; and the earlier skill that supplies it should be visible.</p>
+  <h3>A string links a required skill to a developed skill</h3>
+  <p>Each string records how fully the earlier skill covers the requirement, <strong>fully</strong> or <strong>partly</strong>, and whether faculty have confirmed it. A requirement is met by one string rated <em>fully</em> whose skill reaches the required level on every dimension the requirement names. A <em>partly</em> string is shown as a partial source and never meets a requirement on its own. When several fully-rated strings each meet the requirement, the best one counts. Levels are not added, because they are ordinal (Background <a href="./background.html#prereq-gap-method">&sect;12</a>).</p>
+  <h3>Requirements that need several skills</h3>
+  <p>&ldquo;Prepare a press-ready file with correct color handling&rdquo; needs both file preparation and color conversion. Such a requirement is split into parts, held together as an <strong>all of</strong> group. The group is met only when every part is met, and its weakest part decides its status. Splitting is proposed by software and confirmed by the instructor of the later course.</p>
+  <h3>How strings are proposed</h3>
+  <ol>
+    <li><strong>Shortlist.</strong> The candidates are developed skills from earlier courses, inside an existing prerequisite edge or under the same competency as the requirement, plus the nearest skills by embedding.</li>
+    <li><strong>Judge.</strong> A model on the campus servers reads both skills and both courses&rsquo; context and answers whether the earlier skill covers the requirement fully, partly or not. This is the judge planned for skill-to-competency links. On public benchmarks, asking a model directly, with course context, matched more costly methods (<a href="./superpowers/2026-11-15-skill-matching-probe-results.md">2026-11-15 results note</a>). Two cautions apply. Those benchmarks matched objectives or job sentences to skill catalogs, not one course&rsquo;s skill to another&rsquo;s, and setting cut-offs on faculty decisions is this design&rsquo;s plan, not something the tests did. A one-course test comes first.</li>
+    <li><strong>Confirm by exception</strong> (&sect;9).</li>
+  </ol>
+  <h3>Competencies as the fallback</h3>
+  <p>A required skill with no string can still be read against its competency bucket. That needs a link from each required skill to a competency, which does not exist yet: required skills today have a wording and expected levels, but no competency. It is a fourth kind of link, proposed and confirmed like the others. It also tells the tool when a requirement belongs to a foundational competency, which is scored on Do only.</p>
+</section>
+
+<section id="buckets">
+  <div><span class="sec-num">05</span><h2 class="sec-title">Competencies as evidence</h2></div>
+  <p>A competency collects the skills linked to it across courses, and its level is read from them. That is how the builder has worked since the skill links went live on 2026-11-15. A skill counts toward a competency through a link that is proposed, confirmed or rejected. The competency&rsquo;s level comes from the highest linked skill, unless faculty set it.</p>
+  <p>Treating a competency as a claim supported by evidence, rather than a thing a course covers, follows established assessment design. Evidence-centered design separates what is to be known about a student from the observations that support it: &ldquo;A Student Model defines one or more variables related to the knowledge, skills, and abilities we wish to measure&rdquo; <a href="#ref-mislevy-2004">(Mislevy, Almond &amp; Lukas, 2004, p. 7)</a>. Its measurement models &ldquo;concern the accumulation and synthesis of evidence across tasks, in terms of student model variables&rdquo; (p. 10). Read onto this map, a competency plays the part of a student-model variable, the skills in many courses are the observations, and the roll-up is the accumulation. This is an analogy, not a claim that the map is a measurement model in their sense. Its levels are faculty-confirmed judgments of what courses give students the chance to develop, not estimates of what one student knows.</p>
+  <p>Only captured outcomes fill a bucket. Draft goals (&sect;7) are shown beside a bucket, marked, and never raise its evidenced level. A competency with links only from courses not yet captured shows as <em>claimed</em>, as the prerequisite-gap method already does.</p>
+  <p>Mapping skills to assessments and reading skill development from assessment results has been done before. Jayalath et al. mapped each assessment &ldquo;to one or more skills, with weights adding up to 100 per assessment&rdquo; <a href="#ref-jayalath-2026">(Jayalath et al., 2026, PDF p. 4)</a>. They note that mapping is often done in a way that &ldquo;merely records the presence or absence of skills embedded in assessments&rdquo; (PDF p. 1).</p>
+</section>
+
+<section id="bloom">
+  <div><span class="sec-num">06</span><h2 class="sec-title">Objectives and goals, set with Bloom</h2></div>
+  <p>Learning objectives are written with the revised Bloom&rsquo;s taxonomy. That is a department convention for how objectives are worded, and it fits what the KUD Background already says: Bloom is the right tool for a course&rsquo;s objectives and assessments, and KUD is the tool for tracing across courses to careers (<a href="./background.html#kud">&sect;5</a>). Bloom here <strong>sets goals only</strong>. An objective&rsquo;s Bloom wording never says that a level was reached. Reached levels come from the capture.</p>
+  <h3>What Bloom gives an objective</h3>
+  <p>In the revised taxonomy an objective has two parts. Objectives &ldquo;consist of a noun or noun phrase&mdash;the subject matter content&mdash;and a verb or verb phrase&mdash;the cognitive process(es)&rdquo;, and the revision separates them, &ldquo;the noun providing the basis for the Knowledge dimension and the verb forming the basis for the Cognitive Process dimension&rdquo; <a href="#ref-krathwohl-2002">(Krathwohl, 2002, p. 213)</a>. The six processes run from &ldquo;Remember &ndash; Retrieving relevant knowledge from long-term memory&rdquo; to &ldquo;Create &ndash; Putting elements together to form a novel, coherent whole or make an original product&rdquo; (p. 215). An objective with two verbs belongs in two cells; Krathwohl&rsquo;s example is placed in &ldquo;two cells of the Taxonomy Table&rdquo; (p. 216).</p>
+  <h3>From an objective to KUD goals</h3>
+  <p>Each objective carries one or more <strong>KUD goals</strong>: a skill, the dimension it aims at, and a target level. The Bloom wording proposes the dimension. The target level is set by the instructor, helped by the condition phrase in the objective. The table below proposes; the instructor decides.</p>
+  <div class="table-box">
+  <table class="grid">
+    <thead><tr><th>Bloom process</th><th>Proposed dimension</th><th>What helps set the target level</th></tr></thead>
+    <tbody>
+      <tr><td>Remember</td><td><span class="kk">Know</span></td><td>Recognize (K2) or recall unprompted (K3)</td></tr>
+      <tr><td>Understand <em>(Bloom)</em></td><td><span class="uu">Understand</span> (lower levels) or <span class="kk">Know</span></td><td>Explaining in one&rsquo;s own words (U2); using terms correctly (K4)</td></tr>
+      <tr><td>Apply</td><td><span class="dd">Do</span></td><td>The condition phrase: with guidance (D1), with a reference (D2), independently (D3), in unfamiliar conditions (D4)</td></tr>
+      <tr><td>Analyze</td><td><span class="uu">Understand</span></td><td>Predicting consequences (U3) or reasoning through new cases (U4)</td></tr>
+      <tr><td>Evaluate</td><td><span class="uu">Understand</span>, or <span class="dd">Do</span> when the judgment is exercised in producing work</td><td>Critique against criteria (U4&ndash;5); judging one&rsquo;s own production work is a Do goal</td></tr>
+      <tr><td>Create</td><td><span class="dd">Do</span>, usually with <span class="uu">Understand</span></td><td>The condition phrase, as for Apply. With none, the instructor sets the level; the verb alone proposes no Do depth</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <aside class="note">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+    <div><strong>Two cautions built into the link</strong>
+    <p><strong>&ldquo;Understand&rdquo; means two things.</strong> Bloom&rsquo;s Understand is &ldquo;Determining the meaning of instructional messages&rdquo; <a href="#ref-krathwohl-2002">(Krathwohl, 2002, p. 215)</a>, a lower level than KUD&rsquo;s Understand, which is reasoning about why. The interface always labels which one it means.</p>
+    <p><strong>Bloom does not grade independence.</strong> Apply is &ldquo;Carrying out or using a procedure in a given situation&rdquo; (p. 215) whether or not the student needs direction. So a Do target needs a condition phrase or the instructor&rsquo;s choice (Background <a href="./background.html#kud">&sect;5</a>). An Apply or Create objective with no condition is marked &ldquo;condition missing&rdquo; until a level is chosen.</p>
+    </div>
+  </aside>
+  <p>The verb alone cannot settle the Bloom level either. Stanny compared 30 published verb lists: of 433 distinct verbs, &ldquo;197 verbs (45.5%) appeared in two to six categories&rdquo;, and &ldquo;No verb was assigned consistently to the same category by all 30 lists in the sample&rdquo; <a href="#ref-stanny-2016">(Stanny, 2016, p. 4)</a>. Her conclusion is the rule this design follows: &ldquo;reviewers must consider both the verb and the remaining content of an SLO when they make judgments about the level of expertise an SLO describes&rdquo; (p. 10). The Bloom cell is proposed from the whole objective, verb and object together, and the instructor confirms it.</p>
+  <p>Faculty can agree well on Bloom levels. In a study of computing programs, two blind faculty raters assigned Bloom levels to a sample of competency statements and agreed at &ldquo;Bloom level &kappa; = 0.86&rdquo; <a href="#ref-turaev-2026">(Turaev et al., 2026, p. 1)</a>. Their few large disagreements came on multi-verb outcomes, where leveling by the leading verb &ldquo;parts company with leveling by the highest-order verb&rdquo; (p. 10). That was one field, and a Bloom level, not a KUD level. This design gives each verb its own cell, as in Krathwohl&rsquo;s two-cell example, which avoids choosing between the two conventions; that is this design&rsquo;s choice, not a tested result. Software proposals are useful but not reliable enough to stand alone. In one study of 600 labeled sentences from exam questions and learning outcomes, a trained classifier reached &ldquo;94% accuracy, recall, and F1-scores&rdquo;, while language models asked without examples reached &ldquo;0.72&ndash;0.73 accuracy&rdquo; at best <a href="#ref-kumar-2025">(Kumar, Gulwani &amp; Singh, 2025, PDF p. 1)</a>. That study used the original Bloom categories and a single dataset, which the authors name as a limit (&ldquo;we work on a small-size and a single dataset&rdquo;, PDF p. 6).</p>
+  <h3>One link table, read both ways</h3>
+  <p>There is one table of objective-to-skill links, read from either side. Read from the objective, it answers <em>what in this course carries out this goal, and has a capture shown it?</em> Read from the skill, it answers <em>which goal does this work serve?</em> Four results come out of it:</p>
+  <ul>
+    <li><strong>Goal reached.</strong> A captured skill linked to the objective reaches the goal&rsquo;s target level.</li>
+    <li><strong>Goal not yet reached.</strong> Linked captured skills exist, but below the target. This is the &ldquo;objective misalignment&rdquo; a capture&rsquo;s audit notes already record, now tied to a specific skill.</li>
+    <li><strong>Goal with no outcome.</strong> No captured skill is linked: the goal is still only a goal.</li>
+    <li><strong>Outcome with no objective.</strong> Work the course does that its objectives do not state. The tool can draft a Bloom objective for it from the skill&rsquo;s wording, using the fixed phrase table the syllabus requirement lines already use. A drafted objective is a goal written to match existing evidence; it is marked as drafted from an outcome and is never counted as an independent check of that outcome.</li>
+  </ul>
+  <p>This is constructive alignment at the course level. Biggs asks that teaching and assessment line up with the intended &ldquo;performances of understanding&rdquo; <a href="#ref-biggs-1996">(Biggs, 1996, p. 347)</a>, and backward design asks first &ldquo;What should students know, understand, and be able to do?&rdquo; <a href="#ref-wiggins-2005">(Wiggins &amp; McTighe, 2005, p. 17)</a>. This replaces the objective proposal in Background <a href="./background.html#objective-link">&sect;11</a> and keeps its gate: before the proposals are trusted, measure on the department&rsquo;s own objectives how often they are right.</p>
+</section>
+
+<section id="drafts">
+  <div><span class="sec-num">07</span><h2 class="sec-title">Drafting while mapping</h2></div>
+  <p>While mapping, a faculty member can add to any course in the plan:</p>
+  <ul>
+    <li>a <strong>draft objective</strong>, with its Bloom wording and KUD goals;</li>
+    <li>a <strong>draft KUD goal</strong> on its own: a new skill with a target level, or a higher target for an existing skill;</li>
+    <li>a <strong>draft required skill</strong> for a course that needs something on arrival.</li>
+  </ul>
+  <p>Drafts can check off requirements in the map, so a committee can see whether a planned change would close a gap. They are never mistaken for evidence:</p>
+  <ul>
+    <li><strong>In the map,</strong> a draft is set in <span class="draft">italic with an asterisk*</span>. A requirement met only through a draft shows <span class="badge b-draft">met*</span>, never plain met. A draft level beside a captured one shows both: <span class="kud" style="display:inline"><b class="dd">D2</b> captured &middot; <span class="draft"><b class="dd">D3*</b></span> goal</span>.</li>
+    <li><strong>On the course,</strong> a list headed <em>To confirm through capture</em> holds every draft added to it, with who added it and when. The list empties only through the course&rsquo;s next capture: the capture either shows the draft happened, so it becomes a captured outcome, or shows it did not, so it stays a goal.</li>
+    <li><strong>In competencies and targets,</strong> evidenced levels and draft levels are kept apart. An act target reads &ldquo;met&rdquo; on evidence or &ldquo;met*&rdquo; with drafts, never a blend of the two.</li>
+  </ul>
+  <p>A capture never takes a draft as given. The capture interview is told what the instructor drafted, so it can ask about it, but the evidence rule decides the scores.</p>
+</section>
+
+<section id="status">
+  <div><span class="sec-num">08</span><h2 class="sec-title">Requirement statuses</h2></div>
+  <p>Every required skill of every course shows one status, taken from the first row of this table that applies. Statuses are computed for the plan or what-if being viewed.</p>
+  <div class="table-box">
+  <table class="grid">
+    <thead><tr><th>Status</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-met">Met</span></td><td>A confirmed string rated <em>fully</em>, from a captured skill, reaches the required level on every dimension named.</td></tr>
+      <tr><td><span class="badge b-draft">Met*</span></td><td>As above, but only by counting a draft goal (&sect;7), whether a draft level, a draft skill or a draft string.</td></tr>
+      <tr><td><span class="badge b-prop">Proposed</span></td><td>A string that would meet it exists but nobody has confirmed it. Drawn soft until someone confirms it.</td></tr>
+      <tr><td><span class="badge b-part">Partly met</span></td><td>Strings exist, but none rated <em>fully</em> reaches the level. Shows what arrives and what is short.</td></tr>
+      <tr><td><span class="badge b-comp">Via competency</span></td><td>No string, but the requirement&rsquo;s competency, read through the gap engine, reaches the level by that term. Shown as weaker: the bucket may hold different skills.</td></tr>
+      <tr><td><span class="badge b-nodata">No data</span></td><td>An earlier course on the prerequisite edge for this requirement is in the plan but not captured, and nothing else meets it.</td></tr>
+      <tr><td><span class="badge b-not">Not met</span></td><td>None of the above.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><strong>Fade is shown separately.</strong> A met requirement whose source is several terms back with no reinforcement in between also shows <span class="badge b-fade">may fade</span>, using the builder&rsquo;s per-term rule. It does not change the status. The prerequisite-gap method treats durability as outside the gap calculation (Background <a href="./background.html#prereq-gap-method">&sect;12</a>), and this keeps to that.</p>
+  <p>A string&rsquo;s fully or partly rating decides whether it can meet a requirement; it never changes a level. Levels come only from skills.</p>
+</section>
+
+<section id="review">
+  <div><span class="sec-num">09</span><h2 class="sec-title">Reviewing by exception</h2></div>
+  <p>With about 470 captured skills and a similar number of requirements to come, confirming every proposed string would ask each instructor for dozens of decisions. Review works by exception instead:</p>
+  <ul>
+    <li><strong>Who reviews.</strong> The instructor of the later course owns its strings, since the requirement is theirs. The earlier course&rsquo;s instructor sees every string that depends on their skills and can comment. Each decision is recorded with the person&rsquo;s own login.</li>
+    <li><strong>What is asked.</strong> Only what is uncertain or matters: proposed strings near the judge&rsquo;s cut-off, partly-rated strings, requirements that are not met or met only via competency, and anything changed by a new capture. Confident proposals stay <em>proposed</em>; they are visible and never shown as met.</li>
+    <li><strong>A budget.</strong> Each round asks an instructor for a fixed, small number of decisions, starting with the requirements that block the most.</li>
+  </ul>
+  <p>Faculty decisions also tune the judge: they set its cut-offs (<a href="./superpowers/2026-11-15-skill-matching-probe-results.md">results note</a>). Lê et al. show the shape of a tagger built for review, using &ldquo;a large language model (LLM) as a constrained, evidence-producing tagger&rdquo; <a href="#ref-le-2026">(L&ecirc; et al., 2026, p. 1)</a>.</p>
+  <h3>Decisions must survive a new capture</h3>
+  <p>Today a skill is identified by its capture and a fingerprint of its wording. When a course is captured again, its skills get new identities, and links made on the old ones no longer apply. Strings join two courses, so a new capture of either one would lose them. Locked strings solve this: each linked skill is matched to the skill that continues it in the course&rsquo;s latest capture, so faculty decisions carry over, and a reworded skill is shown for faculty to confirm. This also protects the skill-to-competency links already live.</p>
+</section>
+
+<section id="whatif">
+  <div><span class="sec-num">10</span><h2 class="sec-title">From drafts to a what-if</h2></div>
+  <p>Drafts live in a what-if, never on the course record. The what-if feature specified on 2026-11-13 already holds a changed version of one course and shows what follows across the program. Drafting adds the skill level to it. A faculty member opens a what-if from their course, adds draft goals or objectives, and watches later courses&rsquo; requirements change to met* or stay short.</p>
+  <h3>The needed shape</h3>
+  <p>Strings give each course a <strong>needed shape</strong>: a list, not one merged number. Each entry is a requirement in a later course that relies on this course, the level it needs, and whether another earlier course already meets it. Only entries that no other course meets are marked as this course&rsquo;s to close. Competency targets per act are shown in a separate list, since they are a different kind of need.</p>
+  <div class="demo" style="max-width:680px">
+    <div class="dt" style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);margin-bottom:6px">Course B&rsquo;s needed shape (from the &sect;3 demo)</div>
+    <div id="shape"></div>
+  </div>
+  <p>Rows that Course B supplies and are not met are Course B&rsquo;s to close; a row another course already meets is shown but not counted. Later courses&rsquo; requirements are themselves claims that can be wrong. The needed shape shows who asked for each entry, so a gap can be settled by changing either course.</p>
+  <p>When the changed course is next captured, its <em>To confirm through capture</em> list is checked against the new capture. Comparing a what-if&rsquo;s plan with the capture that follows is already planned for later what-if work.</p>
+</section>
+
+<section id="first">
+  <div><span class="sec-num">11</span><h2 class="sec-title">A smaller first step</h2></div>
+  <p>Most of the value can be tested before strings are stored:</p>
+  <ol>
+    <li>Link each required skill to a competency (the fourth link type), proposed and confirmed like the others.</li>
+    <li>For each required skill, run the existing gap engine at competency level, and <em>list</em> the earlier skills under that competency as candidates, without storing strings.</li>
+    <li>Let instructors pin a string only where the list is wrong or a requirement is short.</li>
+    <li>Walk one real three-course chain on paper with its instructors before any build.</li>
+  </ol>
+  <p>Drafting (&sect;7) and the needed shape (&sect;10) can follow on that base. Stored strings, review by exception and skill identity across captures come next, if the paper chain shows they are worth it.</p>
+</section>
+
+<section id="build">
+  <div><span class="sec-num">12</span><h2 class="sec-title">What exists, what is new</h2></div>
+  <div class="table-box">
+  <table class="grid">
+    <thead><tr><th>Piece</th><th>Today</th><th>New</th></tr></thead>
+    <tbody>
+      <tr><td>Developed skills</td><td>Captured, with K/U/D and evidence</td><td>Draft goals beside them, marked; never changed by a draft</td></tr>
+      <tr><td>Required skills</td><td>Captured as incoming expectations (up to 10 per course), with expected K/U/D; no competency</td><td>A competency link; split into &ldquo;all of&rdquo; parts; drafts; status per skill</td></tr>
+      <tr><td>Skill &rarr; competency</td><td>Live: links, roll-ups, faculty confirm/reject</td><td>Used as the buckets; identity kept across captures</td></tr>
+      <tr><td>Course &rarr; course</td><td>Prerequisite edges per competency, gap engine, basis stamp</td><td>Strings inside edges (required &larr; developed skill; fully / partly; proposed / confirmed)</td></tr>
+      <tr><td>Objectives</td><td>A list of strings per course; misalignments in audit notes</td><td>One record per objective: Bloom cell(s), KUD goals, wording; drafts marked</td></tr>
+      <tr><td>Objective &harr; skill</td><td>&mdash;</td><td>One link table, read both ways</td></tr>
+      <tr><td>What-if</td><td>Changed course version, program consequences</td><td>Draft goals and objectives; the needed shape</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The capture keeps at most 10 required skills per course today. Splitting requirements into parts may need that limit raised.</p>
+</section>
+
+<section id="open">
+  <div><span class="sec-num">13</span><h2 class="sec-title">Decisions still open</h2></div>
+  <ol>
+    <li><strong>Review budget.</strong> How many decisions per instructor per round is acceptable?</li>
+    <li><strong>Required skills for courses not yet captured.</strong> Draft them from catalog prerequisites and the syllabus as claimed, or leave them empty until captured?</li>
+    <li><strong>Foundational objectives.</strong> Objectives about agency, attention to detail or resilience fit Bloom poorly. Should they carry Do goals only, matching how foundational competencies are scored?</li>
+    <li><strong>Metacognitive objectives.</strong> The revised taxonomy&rsquo;s fourth knowledge type, &ldquo;Knowledge of cognition in general as well as awareness and knowledge of one&rsquo;s own cognition&rdquo; <a href="#ref-krathwohl-2002">(Krathwohl, 2002, p. 214)</a>, may fit the problem-solving conditions (structured post-mortem, revision cycles) better than any one skill. Should these objectives link to conditions instead?</li>
+  </ol>
+</section>
+
+  <a class="xlink" href="curriculum-map.html">
+    <span><span class="label">Explore the data · Tool</span><span class="t">GC Curriculum Map</span><span class="d">Work back from a career to the competencies it relies on and the courses that build them, year by year.</span></span>
+    <span class="link-arrow">Open the tool →</span>
+  </a>
+
+<section id="refs">
+  <h2 class="sec-title">References</h2>
+  <ol class="refs">
+    <li id="ref-biggs-1996">Biggs, J. (1996). Enhancing teaching through constructive alignment. <em>Higher Education</em>, 32(3), 347&ndash;364.</li>
+    <li id="ref-jayalath-2026">Jayalath, V., Barthakur, A., Baker, R. S., Dawson, S., &amp; Kovanovic, V. (2026). Capturing professional skill development: A curriculum analytics approach. <em>LAK26</em>, 589&ndash;597.</li>
+    <li id="ref-krathwohl-2002">Krathwohl, D. R. (2002). A revision of Bloom&rsquo;s taxonomy: An overview. <em>Theory Into Practice</em>, 41(4), 212&ndash;218.</li>
+    <li id="ref-kumar-2025">Kumar, R., Gulwani, D., &amp; Singh, S. (2025). Automated analysis of learning outcomes and exam questions based on Bloom&rsquo;s taxonomy. Preprint, arXiv:2511.10903.</li>
+    <li id="ref-le-2026">L&ecirc;, N. L., Abel, M.-H., &amp; Laforge, B. (2026). From learning resources to competencies: LLM-based tagging with evidence and graph constraints. Preprint, arXiv:2605.28483.</li>
+    <li id="ref-mislevy-2004">Mislevy, R. J., Almond, R. G., &amp; Lukas, J. F. (2004). <em>A brief introduction to evidence-centered design</em> (CSE Report 632). CRESST, University of California, Los Angeles.</li>
+    <li id="ref-stanny-2016">Stanny, C. J. (2016). Reevaluating Bloom&rsquo;s taxonomy: What measurable verbs can and cannot say about student learning. <em>Education Sciences</em>, 6(4), 37.</li>
+    <li id="ref-turaev-2026">Turaev, S., Aldabet, S., John, M., Musthafa, N., Awad, M., Zaki, N., &amp; Shuaib, K. (2026). Measuring curriculum&ndash;labor market alignment at the scale of a program portfolio. Preprint, arXiv:2608.12356.</li>
+    <li id="ref-wiggins-2005">Wiggins, G., &amp; McTighe, J. (2005). <em>Understanding by Design</em> (expanded 2nd ed.). ASCD.</li>
+  </ol>
+</section>
+
+
+  <p class="doc-foot">GC Curriculum Tool &middot; design concept &middot; 2026-11-16 &middot; proposal for faculty review, not built</p>
+  </article>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
+</footer>
+
+<script>
+/* Marks the contents link of the section in view. Without JS the contents column still works as plain links. */
+(() => {
+  const toc = document.querySelector('.toc');
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const secs = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  const inView = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+    const cur = secs.find((s) => inView.has(s.id));
+    if (!cur) return;
+    const a = byId.get(cur.id);
+    links.forEach((l) => l.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'true');
+    // When the sticky column is taller than the screen, keep the marked link visible inside it.
+    if (toc.scrollHeight > toc.clientHeight && (a.offsetTop < toc.scrollTop || a.offsetTop + a.offsetHeight > toc.scrollTop + toc.clientHeight)) {
+      toc.scrollTop = a.offsetTop - toc.clientHeight / 2;
+    }
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  secs.forEach((s) => io.observe(s));
+})();
+</script>
+<script>
+(function () {
+  // Invented example data: three courses in three terms. Not real course data.
+  // A skill's captured levels (k,u,d) are evidence; goal holds draft targets, which never overwrite them.
+  var BASE = {
+    courses: [
+      { id: 'A', name: 'Course A', term: 1,
+        objectives: [
+          { id: 'oA1', bloom: 'Remember', text: 'Identify the parts of a print production workflow.', goals: [{ skill: 'a1', dim: 'k', level: 3 }] },
+          { id: 'oA2', bloom: 'Apply', text: 'Prepare a layout file with correct bleed and margins, using a checklist.', goals: [{ skill: 'a2', dim: 'd', level: 2 }] }
+        ],
+        developed: [
+          { id: 'a1', text: 'Names the stages of a print workflow', k: 3, u: 1, d: 0, comp: 'Print production' },
+          { id: 'a2', text: 'Sets up bleed, trim and margins in a layout file', k: 2, u: 1, d: 2, comp: 'Prepress and file preparation' },
+          { id: 'a3', text: 'Explains RGB vs CMYK color', k: 3, u: 2, d: 0, comp: 'Color management' }
+        ], required: [] },
+      { id: 'B', name: 'Course B', term: 3,
+        objectives: [
+          { id: 'oB1', bloom: 'Analyze', text: 'Analyze why a file fails preflight and predict the press result.', goals: [{ skill: 'b1', dim: 'u', level: 3 }] },
+          { id: 'oB2', bloom: 'Apply', text: 'Convert images to a press color profile independently.', goals: [{ skill: 'b2', dim: 'd', level: 3 }] },
+          { id: 'oB3', bloom: 'Evaluate', text: 'Judge proof quality against a client standard.', goals: [] }
+        ],
+        developed: [
+          { id: 'b1', text: 'Diagnoses preflight errors and their press consequences', k: 3, u: 3, d: 2, comp: 'Prepress and file preparation' },
+          { id: 'b2', text: 'Converts images to a press ICC profile', k: 3, u: 2, d: 3, comp: 'Color management' },
+          { id: 'b3', text: 'Keeps a revision log for each job', k: null, u: null, d: 2, comp: 'Attention to detail' }
+        ],
+        required: [
+          { id: 'rb1', text: 'Set up bleed and margins with a reference', need: { d: 2 }, comp: 'Prepress and file preparation', threads: [{ from: 'a2', fit: 'fully', ok: true }] },
+          { id: 'rb2', text: 'Explain RGB vs CMYK', need: { u: 2 }, comp: 'Color management', threads: [{ from: 'a3', fit: 'fully', ok: false }] }
+        ] },
+      { id: 'C', name: 'Course C', term: 7,
+        objectives: [
+          { id: 'oC1', bloom: 'Create', text: 'Produce a press-ready package for an unfamiliar substrate.', goals: [{ skill: 'c1', dim: 'd', level: 4 }] }
+        ],
+        developed: [
+          { id: 'c1', text: 'Produces a press-ready package for a new substrate', k: 4, u: 4, d: 4, comp: 'Prepress and file preparation' }
+        ],
+        required: [
+          { id: 'rc1', text: 'Prepare a press-ready file independently', need: { d: 3 }, comp: 'Prepress and file preparation', threads: [{ from: 'b1', fit: 'fully', ok: true }, { from: 'a2', fit: 'partly', ok: true }] },
+          { id: 'rc2', text: 'Convert to a press color profile', need: { k: 3, d: 3 }, comp: 'Color management', threads: [{ from: 'b2', fit: 'fully', ok: true }] },
+          { id: 'rc3', text: 'Predict how a substrate changes color', need: { u: 3 }, comp: 'Color management', threads: [{ from: 'b2', fit: 'partly', ok: true }] },
+          { id: 'rc4', text: 'Estimate job cost from specifications', need: { k: 2, u: 2 }, comp: 'Estimating', threads: [] }
+        ] }
+    ]
+  };
+  var FADE_TERMS = 5; // illustrative: a source this many terms back, unreinforced, "may fade"
+  var DRAFT_SKILL = { id: 'bx', text: 'Estimates job cost from a specification sheet', k: null, u: null, d: null, comp: 'Estimating', draft: true, goal: { k: 2, u: 2 } };
+
+  var state, view = 'skills', selected = null;
+  function reset() { state = JSON.parse(JSON.stringify(BASE)); selected = null; }
+  reset();
+
+  function allDev() { var m = {}; state.courses.forEach(function (c) { c.developed.forEach(function (s) { m[s.id] = { s: s, c: c }; }); }); return m; }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; }); }
+  function lv(v) { return v === null || v === undefined ? '–' : v; }
+  // Captured level, and the level counting a draft goal (if any).
+  function captured(s, d) { return s.draft ? 0 : (s[d] || 0); }
+  function withGoal(s, d) { return Math.max(captured(s, d), (s.goal && s.goal[d]) || 0); }
+  function kud(s) {
+    return '<span class="kud">' + ['k', 'u', 'd'].map(function (d) {
+      var cls = { k: 'kk', u: 'uu', d: 'dd' }[d], L = d.toUpperCase();
+      var cap = (s.draft || s[d] === null) ? '' : '<b class="' + cls + '">' + L + lv(s[d]) + '</b>';
+      var g = s.goal && s.goal[d] ? ' <span class="draft"><b class="' + cls + '">' + L + s.goal[d] + '*</b></span>' : '';
+      return (cap + g).trim();
+    }).filter(Boolean).join(' · ') + '</span>';
+  }
+  function needTxt(n) { return Object.keys(n).map(function (k) { return k.toUpperCase() + n[k]; }).join(' '); }
+
+  // Status rules from §8, first match wins (via competency and no data need uncaptured courses: not in this demo).
+  function statusOf(req, course) {
+    var dev = allDev(), dims = Object.keys(req.need);
+    var res = { st: 'not', fade: false, best: {} };
+    dims.forEach(function (d) { res.best[d] = 0; });
+    var met = false, metDraft = false, prop = false, any = false, fadeSrc = true;
+    req.threads.forEach(function (t) {
+      var x = dev[t.from]; if (!x) return; any = true;
+      dims.forEach(function (d) { res.best[d] = Math.max(res.best[d], withGoal(x.s, d)); });
+      if (t.fit !== 'fully') return;
+      var capOk = !x.s.draft && dims.every(function (d) { return captured(x.s, d) >= req.need[d]; });
+      var goalOk = dims.every(function (d) { return withGoal(x.s, d) >= req.need[d]; });
+      if (capOk && t.ok && !t.draft) { met = true; if (course.term - x.c.term < FADE_TERMS) fadeSrc = false; }
+      else if (goalOk && (t.ok || t.draft) && (x.s.draft || t.draft || !capOk)) metDraft = true;
+      else if (capOk && !t.ok) prop = true;
+    });
+    if (met) { res.st = 'met'; res.fade = fadeSrc; }
+    else if (metDraft) res.st = 'draft';
+    else if (prop) res.st = 'prop';
+    else if (any) res.st = 'part';
+    return res;
+  }
+  var LABEL = { met: 'Met', draft: 'Met*', prop: 'Proposed', part: 'Partly met', not: 'Not met' };
+  var BADGE = { met: 'b-met', draft: 'b-draft', prop: 'b-prop', part: 'b-part', not: 'b-not' };
+
+  function render() {
+    var dev = allDev();
+    document.getElementById('terms').innerHTML = state.courses.map(function (c) {
+      var h = '<div class="term-col"><h4>Term ' + c.term + '</h4><div class="course"><div class="course-name">' + c.name + '</div>';
+      if (view === 'objectives') {
+        h += '<div class="grp">Objectives and goals</div>';
+        c.objectives.forEach(function (o) {
+          var g = o.goals.map(function (x) { return x.dim.toUpperCase() + x.level; }).join(' ');
+          h += '<div class="obj' + (o.goals.length ? '' : ' warn') + (o.draft ? ' draft' : '') + '" data-obj="' + o.id + '" tabindex="0"><span class="bl">' + o.bloom + '</span>' + esc(o.text) + (o.draft ? '*' : '') + (g ? ' <span class="kud" style="display:inline">goal ' + g + '</span>' : ' <span class="badge b-part">no goal</span>') + '</div>';
+        });
+      }
+      if (c.required.length) {
+        h += '<div class="grp">Required on arrival</div>';
+        c.required.forEach(function (r) {
+          var s = statusOf(r, c);
+          var hl = selected && selected.kind === 'dev' && r.threads.some(function (t) { return t.from === selected.id; });
+          h += '<div class="skill req st-' + s.st + (hl ? ' hl' : '') + '" data-req="' + r.id + '" tabindex="0">' + esc(r.text) + ' <span class="badge ' + BADGE[s.st] + '">' + LABEL[s.st] + '</span>' + (s.fade ? '<span class="badge b-fade">may fade</span>' : '') + '<span class="kud">needs ' + needTxt(r.need) + (view === 'buckets' ? ' · ' + esc(r.comp) : '') + '</span></div>';
+        });
+      }
+      h += '<div class="grp">Develops</div>';
+      c.developed.forEach(function (s) {
+        var hl = (selected && selected.kind === 'req' && selected.threads.some(function (t) { return t.from === s.id; })) || (selected && selected.kind === 'obj' && selected.skills.indexOf(s.id) >= 0);
+        var noObj = view === 'objectives' && !s.draft && !c.objectives.some(function (o) { return o.goals.some(function (g) { return g.skill === s.id; }); });
+        h += '<div class="skill' + (s.draft ? ' draft' : '') + (hl ? ' hl' : '') + '" data-dev="' + s.id + '" tabindex="0">' + esc(s.text) + (s.draft ? '*' : '') + (noObj ? ' <span class="badge b-part">no objective</span>' : '') + kud(s) + (view === 'buckets' ? '<span class="kud">→ ' + esc(s.comp) + '</span>' : '') + '</div>';
+      });
+      var todo = c.developed.filter(function (s) { return s.draft || s.goal; });
+      if (c.id === 'B' && !c.developed.some(function (s) { return s.id === 'bx'; })) h += '<button type="button" class="addgoal" data-add="B">+ Add a draft goal</button>';
+      if (todo.length) h += '<div class="todo"><div class="grp" style="margin-top:0">To confirm through capture</div>' + todo.map(function (s) { return '<div class="draft">' + esc(s.text) + '*</div>'; }).join('') + '</div>';
+      return h + '</div></div>';
+    }).join('');
+
+    var bk = document.getElementById('buckets');
+    if (view === 'buckets') {
+      var comps = {};
+      Object.keys(dev).forEach(function (id) {
+        var s = dev[id].s; var c = comps[s.comp] || (comps[s.comp] = { n: 0, k: null, u: null, d: null, drafts: 0 });
+        if (s.draft) { c.drafts++; return; }
+        c.n++; ['k', 'u', 'd'].forEach(function (d) { if (s[d] !== null) c[d] = Math.max(c[d] || 0, s[d]); });
+        if (s.goal) c.drafts++;
+      });
+      bk.innerHTML = Object.keys(comps).map(function (k) { var c = comps[k]; return '<span class="bucket">' + esc(k) + '<b>' + c.n + ' captured skill' + (c.n === 1 ? '' : 's') + (c.n ? ' · ' + ['k', 'u', 'd'].filter(function (d) { return c[d] !== null; }).map(function (d) { return d.toUpperCase() + c[d]; }).join(' ') : '') + '</b>' + (c.drafts ? ' <span class="draft">+' + c.drafts + ' draft*</span>' : '') + '</span>'; }).join('') +
+        (comps['Estimating'] ? '' : '<span class="bucket" style="border-style:solid">Estimating<b>0 captured skills</b></span>');
+    } else bk.innerHTML = '';
+    renderShape();
+  }
+
+  function detail(html) { document.getElementById('detail').innerHTML = html; }
+
+  function showDev(id) {
+    var x = allDev()[id]; var s = x.s;
+    selected = { kind: 'dev', id: id };
+    var users = [];
+    state.courses.forEach(function (c) { c.required.forEach(function (r) { r.threads.forEach(function (t) { if (t.from === id) users.push(c.name + ': ' + r.text + ' (' + t.fit + (t.ok ? ', confirmed' : ', proposed') + ')'); }); }); });
+    var objs = x.c.objectives.filter(function (o) { return o.goals.some(function (g) { return g.skill === id; }); }).map(function (o) { return o.bloom + ': ' + o.text; });
+    var sel = function (dim) {
+      if (s[dim] === null && !s.draft) return '';
+      var cur = (s.goal && s.goal[dim]) || 0, o = '<label><span class="' + { k: 'kk', u: 'uu', d: 'dd' }[dim] + '">' + dim.toUpperCase() + ' goal</span><select data-dim="' + dim + '" data-id="' + id + '"><option value="0">none</option>';
+      for (var i = 1; i <= 5; i++) o += '<option value="' + i + '"' + (i === cur ? ' selected' : '') + '>' + i + '*</option>';
+      return o + '</select></label>';
+    };
+    render();
+    detail('<div class="dt">' + (s.draft ? 'Draft goal' : 'Developed skill') + ' · ' + x.c.name + '</div><strong class="' + (s.draft ? 'draft' : '') + '">' + esc(s.text) + (s.draft ? '*' : '') + '</strong>' +
+      '<div style="margin-top:4px">' + (s.draft ? 'No captured level: this is a goal only.' : 'Captured: K' + lv(s.k) + ' U' + lv(s.u) + ' D' + lv(s.d) + ' (evidence; drafts never change it).') + '</div>' +
+      '<div class="editor">' + sel('k') + sel('u') + sel('d') + '<span style="color:var(--muted)">counts toward ' + esc(s.comp) + '</span></div>' +
+      '<div style="margin-top:8px">Serves objectives:</div><ul>' + (objs.length ? objs.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') : '<li>none. The tool can draft one for the instructor to edit.</li>') + '</ul>' +
+      '<div>Later requirements that rely on it:</div><ul>' + (users.length ? users.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') : '<li>none yet</li>') + '</ul>');
+  }
+  function showReq(id) {
+    var c, r; state.courses.forEach(function (cc) { cc.required.forEach(function (rr) { if (rr.id === id) { c = cc; r = rr; } }); });
+    selected = { kind: 'req', id: id, threads: r.threads };
+    var s = statusOf(r, c), dev = allDev();
+    render();
+    var th = r.threads.map(function (t) { var x = dev[t.from]; return '<li' + (x.s.draft ? ' class="draft"' : '') + '>' + esc(x.c.name) + ': ' + esc(x.s.text) + (x.s.draft ? '*' : '') + ' (' + t.fit + ', ' + (t.ok ? 'confirmed' : t.draft ? 'draft' : 'proposed') + ')</li>'; }).join('');
+    var held = Object.keys(r.need).map(function (d) { return d.toUpperCase() + ' needs ' + r.need[d] + ', best source ' + s.best[d]; }).join('; ');
+    detail('<div class="dt">Required skill · ' + c.name + '</div><strong>' + esc(r.text) + '</strong> <span class="badge ' + BADGE[s.st] + '">' + LABEL[s.st] + '</span>' + (s.fade ? '<span class="badge b-fade">may fade</span>' : '') +
+      '<div style="margin-top:6px">' + held + '. Belongs to ' + esc(r.comp) + '.</div>' +
+      '<div style="margin-top:6px">Strings from earlier courses:</div><ul>' + (th || '<li>none. No earlier course develops it.</li>') + '</ul>');
+  }
+  function showObj(id) {
+    var c, o; state.courses.forEach(function (cc) { cc.objectives.forEach(function (oo) { if (oo.id === id) { c = cc; o = oo; } }); });
+    selected = { kind: 'obj', id: id, skills: o.goals.map(function (g) { return g.skill; }) };
+    render();
+    var dev = allDev();
+    var rows = o.goals.map(function (g) { var s = dev[g.skill].s; var got = captured(s, g.dim); return '<li>' + esc(s.text) + ': goal ' + g.dim.toUpperCase() + g.level + ', captured ' + g.dim.toUpperCase() + got + (got >= g.level ? ' (goal reached)' : ' (not yet reached)') + '</li>'; }).join('');
+    var hint = { Remember: 'Know', Understand: 'Understand (lower levels) or Know', Apply: 'Do; the level comes from the condition phrase', Analyze: 'Understand', Evaluate: 'Understand, or Do when judging one\'s own production', Create: 'Do with Understand; the level comes from the condition or the instructor' }[o.bloom];
+    detail('<div class="dt">Objective · ' + c.name + ' · Bloom: ' + o.bloom + '</div><strong>' + esc(o.text) + '</strong>' +
+      '<div style="margin-top:6px">Proposed dimension: ' + hint + '.</div><div style="margin-top:6px">KUD goals, and what the capture shows:</div><ul>' + (rows || '<li>no goal set yet.</li>') + '</ul>');
+  }
+
+  function renderShape() {
+    var box = document.getElementById('shape'); if (!box) return;
+    var dev = allDev(), B = state.courses[1], rows = [];
+    state.courses.forEach(function (c) {
+      c.required.forEach(function (r) {
+        var fromB = r.threads.filter(function (t) { return dev[t.from] && dev[t.from].c.id === 'B'; });
+        if (!fromB.length && !(c.id === 'C' && r.id === 'rc4')) return;
+        var others = r.threads.some(function (t) { var x = dev[t.from]; return x && x.c.id !== 'B' && t.fit === 'fully' && !x.s.draft && Object.keys(r.need).every(function (d) { return captured(x.s, d) >= r.need[d]; }); });
+        var st = statusOf(r, c).st;
+        rows.push('<tr><td>' + esc(c.name) + ': ' + esc(r.text) + '</td><td>' + needTxt(r.need) + '</td><td>' + (others ? 'another course' : 'Course B') + '</td><td><span class="badge ' + BADGE[st] + '">' + LABEL[st] + '</span></td></tr>');
+      });
+    });
+    box.innerHTML = '<div class="table-box" style="margin:0"><table class="grid" style="font-size:13.5px"><thead><tr><th>Later requirement</th><th>Needs</th><th>Supplied by</th><th>Now</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+  }
+
+  var root = document.getElementById('demo-box');
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-view]');
+    if (b) { view = b.dataset.view; root.querySelectorAll('button[data-view]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); selected = null; render(); detail('<div class="dt">Details</div>Click a skill or an objective.'); return; }
+    if (e.target.id === 'demo-reset') { reset(); render(); detail('<div class="dt">Details</div>Drafts cleared.'); return; }
+    if (e.target.closest('[data-add]')) {
+      var B = state.courses[1]; B.developed.push(JSON.parse(JSON.stringify(DRAFT_SKILL)));
+      state.courses[2].required[3].threads.push({ from: 'bx', fit: 'fully', ok: false, draft: true });
+      showDev('bx'); return;
+    }
+    if (e.target.closest('select')) return;
+    var d = e.target.closest('[data-dev]'), r = e.target.closest('[data-req]'), o = e.target.closest('[data-obj]');
+    if (d) showDev(d.dataset.dev); else if (r) showReq(r.dataset.req); else if (o) showObj(o.dataset.obj);
+  });
+  root.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.matches('[data-dev],[data-req],[data-obj]')) e.target.click(); });
+  root.addEventListener('change', function (e) {
+    var s = e.target.closest('select[data-dim]'); if (!s) return;
+    var x = allDev()[s.dataset.id]; x.s.goal = x.s.goal || {};
+    var v = +s.value; if (v) x.s.goal[s.dataset.dim] = v; else delete x.s.goal[s.dataset.dim];
+    if (!Object.keys(x.s.goal).length && !x.s.draft) delete x.s.goal;
+    showDev(s.dataset.id);
+  });
+  render();
+})();
+</script>
+</body>
+</html>

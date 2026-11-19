@@ -1,34 +1,196 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Graduate Outcome Study — Reading Version (text only)</title>
+<title>Graduate Outcome Study — Reading Version (text only) — Graphic Communications, Clemson</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
 <style>
-  body { font-family: Georgia, 'Times New Roman', serif; max-width: 720px; margin: 0 auto; padding: 28px 20px 60px; line-height: 1.6; font-size: 18px; color: #1a1a1a; background: #fff; }
-  h1 { font-size: 1.55em; line-height: 1.25; margin: 0.4em 0 0.5em; }
-  h2 { font-size: 1.28em; margin: 1.5em 0 0.4em; }
-  h3 { font-size: 1.08em; margin: 1.1em 0 0.3em; }
-  p, li { margin: 0.6em 0; }
-  ul { margin: 0.4em 0 0.8em 1.2em; }
-  a { color: #1a1a1a; }
-  .reader-note { font-size: 0.82em; color: #666; border-bottom: 1px solid #ddd; padding-bottom: 14px; margin-bottom: 10px; }
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
+
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
+
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
+
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
+
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
+
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
+
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
+
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
+
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
+
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+.reader-note{order:5;font-size:14px;color:var(--muted);max-width:760px}
+.reader-note code{font:400 13px var(--mono)}
+.article.flat{gap:16px}
+.article.flat h2{font-size:32px;line-height:1.15;margin-top:32px}
+.article.flat h2.kicker{font:500 13px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin-top:40px;margin-bottom:-8px}
+.article.flat h3{font-size:24px;line-height:1.25;margin-top:12px}
+.article ul{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
 </style>
 </head>
 <body>
-<p class="reader-note">Plain-text reading version &mdash; data tables, the stats bar, and the document-map navigation are omitted so screen-reader / listen-aloud runs straight through without stopping. Generated from <a href="./graduate-outcome-validation.html">the full study page</a> by <code>scripts/docs/make-readable.py</code>.</p>
-<h1>Graduate Outcome Criterion-Relevance Study</h1>
-<p>An external-alignment check in two phases. The pilot (268 records, 2022–2025) is complete. Phase 2 data collection is complete: 1,337 validated Clemson GC graduates, with 672 coded first career jobs in the study’s 2016–2026 window. The alignment analysis waits on a signed pre-registration and a second-coder check.</p>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow">Paper · Reading version</span>
+    <p class="reader-note">Plain-text reading version &mdash; data tables, the stats bar, and the document-map navigation are omitted so screen-reader / listen-aloud runs straight through without stopping. Generated from <a href="./graduate-outcome-validation.html">the full study page</a> by <code>scripts/docs/make-readable.py</code>.</p>
+    <h1 class="title-paper">Graduate Outcome Criterion-Relevance Study</h1>
+    <p class="lede">An external-alignment check in two phases. The pilot (268 records, 2022–2025) is complete. Phase 2 data collection is complete: 1,337 validated Clemson GC graduates, with 672 coded first career jobs in the study’s 2016–2026 window. The alignment analysis waits on a signed pre-registration and a second-coder check.</p>
+  </div>
+</section>
+
+<div class="wrap paper">
+  <article class="article flat">
 <p>This is the external-data validation layer in the framework&#x27;s three-layer validation approach (internal flag-and-dispute, external graduate-outcome comparison, faculty/advisory-board review). The full framing is in Background §12 — Validation: how we&#x27;d know if this works. The pilot established the core finding — the official CIP→SOC crosswalk badly mismatches where graduates actually land — and proved the method. Phase 2 extends the dataset, adds a demand-side skills map, and runs the criterion-relevance alignment. Collection is complete. The alignment analysis runs once the design is pre-registered and the occupation coding has passed an independent second-coder check.</p>
-<h2>Section 1 — Background</h2>
+<h2 class="kicker">Section 1 — Background</h2>
 <h2>Classification data and documented graduate outcomes</h2>
-<p>The CIP–SOC crosswalk for graphic communications programs (CIP 10.03) — a crosswalk being a mapping table that connects academic programs (CIP: Classification of Instructional Programs) to the occupations their graduates are expected to enter (SOC: Standard Occupational Classification) — was established in the late 1990s and has not been substantively updated. Career advising databases, state workforce systems, and federal reporting tools draw from this crosswalk. For CIP 10.03, it points primarily to prepress technicians and printing press operators: occupations in projected decline.</p>
+<p>The CIP–SOC crosswalk for graphic communications programs (CIP 10.03) — a crosswalk being a mapping table that connects academic programs (CIP: Classification of Instructional Programs) to the occupations their graduates are expected to enter (SOC: Standard Occupational Classification) — is published by the National Center for Education Statistics; the current edition links CIP 2020 to SOC 2018 (NCES). For the nine CIP 10.03 codes it lists six occupations: prepress technicians and workers (under eight of the nine codes), printing press operators (under four), desktop publishers, special effects artists and animators, data entry keyers, and etchers and engravers. Most are production occupations that federal projections expect to decline (BLS†).</p>
 <p>The employment dataset documented in the pilot tells a different story. Clemson GC graduates in the 2022–2025 pilot coded set entered 43 distinct occupational categories across 58 industries, including design, marketing, technology, sales, and management roles at a wide range of employers. The distribution differs substantially from what the current crosswalk would predict. Phase 2 confirms this at scale: in the 2016–2026 window, 672 first career jobs span 103 distinct occupations across 21 industry sectors, and the federal crosswalk for CIP 10.03 describes 9.2% of them.</p>
 <p>The gap between the crosswalk and the employment record indicates that Clemson GC graduates have entered outcomes not well described by the current crosswalk. The pilot data presented here is not aspirational — it documents observed graduate placements. The question this study addresses is whether the curriculum&#x27;s stated learning outcomes can be compared systematically against the competency profiles of the occupations graduates actually enter, course by course.</p>
 <p>The graduate records, from both the pilot and Phase 2, precede the curriculum analysis tool described in this study. They provide an independent reference set against which AI-generated course learning outcomes can be compared — a comparison that is possible precisely because the two datasets were developed separately. Important scope note: strong alignment between AI-generated KUDs and the competency profiles of occupations graduates entered would provide evidence of external relevance. It would not, by itself, establish student attainment, instructional effectiveness, or causal impact of the curriculum on career outcomes. The study is therefore better described as an external-alignment / criterion-relevance check than as validation in the stronger sense.</p>
 <ul>
   <li>Source of records. Clemson Graphic Communications department alumni tracking, supplemented by the ACCGC Graduate Employment Dataset (603 records across 9 GC programs, 2018–2026). The 268 Clemson records are the program-specific subset used for the pilot. Phase 2 draws on the department’s own alumni study (snapshot of 2026-10-05, coding scheme v1-2026).</li>
-  <li>Collection window. The pilot covered 2022–2025 (268 records). Phase 2 validated 1,337 Clemson graduates across graduation years 1990–2026. The study’s window is 2016–2026: 801 of the 950 rostered graduates in it are validated, and 672 have a coded first career job. Collection closed in October 2026 after a manual search; the remaining graduates in the window could not be located. The window is pre-registered before analysis begins — the same discipline as the study&#x27;s pre-committed failure criteria — so collection runs against a fixed design, not ad-hoc extension. Window decision resolved 2026-09-09 — extend to ~10 years, conditioned on reporting granularity. The extension was tested rather than assumed, because older cohorts assign occupation differently: the share of validated first jobs whose SOC came from employer industry rather than job title falls monotonically across cohorts (2010–14 55.2% · 2015–19 48.2% · 2020–22 36.1% · 2023–26 26.9%; n = 172, 301, 205 and 212 first jobs with an occupation code and graduation year, snapshot of 2026-10-05. A September version of this figure was labelled n=381; its own fractions summed to 887.). Three checks decided it. First, that field is a disambiguation pass, not a substitute for a title — every industry-assigned first job has a title (385/385); the title fixes the occupational family and the employer’s industry selects the detailed code within it (“Graphic Designer” resolves to 27-1024 under all three methods; “Account Manager” is where industry does the work, choosing wholesale vs services). Second, the two methods were compared where both apply: 87.6% exact six-digit agreement, 96.8% at two-digit major group (35 title strings, 1,441 comparisons, October 2026; September’s figures on 43 strings were 77.3% and 91.4%). Counting the AI-assisted coding methods, which now code 408 of 1,184 first jobs, as title-derived gives 73.8% and 90.4%. All are upper bounds, since only titles common enough to appear under both methods can enter, and none is inter-rater agreement. Third, the obvious way that ceiling could be softer for older cohorts was tested and did not materialise: the share of titles appearing exactly once was flat across cohorts in September (56–62%, non-monotonic), so rare and ambiguous titles are not concentrated in the older window. Conclusion: extending buys more of the same ceiling, not a worse one. The confound is material at detailed-SOC granularity (12–26% disagreement, depending on which coding methods are compared) and modest at category granularity, which is the level this study reports at — so the extension is affordable for the alignment test and any detailed-SOC analysis must handle the disagreement separately. Pre-registered as a known limitation. A standing data caution: validation is closed for the 2016–2026 window but counts outside it can still move, so every figure drawn from that database must carry the date it was read.</li>
+  <li>Collection window. The pilot covered 2022–2025 (268 records). Phase 2 validated 1,337 Clemson graduates across graduation years 1990–2026. The study’s window is 2016–2026: 801 of the 950 rostered graduates in it are validated, and 672 have a coded first career job. Collection closed in October 2026 after a manual search; the remaining graduates in the window could not be located. The window is pre-registered before analysis begins — the same discipline as the study&#x27;s pre-committed failure criteria — so collection runs against a fixed design, not ad-hoc extension. Window decision resolved 2026-09-09 — extend to ~10 years, conditioned on reporting granularity. The extension was tested rather than assumed, because older cohorts assign occupation differently: the share of validated first jobs whose SOC came from employer industry rather than job title falls monotonically across cohorts (2010–14 55.2% · 2015–19 48.2% · 2020–22 36.1% · 2023–26 26.9%; n = 172, 301, 205 and 212 first jobs with an occupation code and graduation year, snapshot of 2026-10-05.). Three checks decided it. First, that field is a disambiguation pass, not a substitute for a title — every industry-assigned first job has a title (385/385); the title fixes the occupational family and the employer’s industry selects the detailed code within it (“Graphic Designer” resolves to 27-1024 under all three methods; “Account Manager” is where industry does the work, choosing wholesale vs services). Second, the two methods were compared where both apply: 87.6% exact six-digit agreement, 96.8% at two-digit major group (35 title strings, 1,441 comparisons, October 2026). Counting the AI-assisted coding methods, which now code 408 of 1,184 first jobs, as title-derived gives 73.8% and 90.4%. All are upper bounds, since only titles common enough to appear under both methods can enter, and none is inter-rater agreement. Third, the obvious way that ceiling could be softer for older cohorts was tested and did not materialise: the share of titles appearing exactly once was flat across cohorts in September (56–62%, non-monotonic), so rare and ambiguous titles are not concentrated in the older window. Conclusion: extending buys more of the same ceiling, not a worse one. The confound is material at detailed-SOC granularity (12–26% disagreement, depending on which coding methods are compared) and modest at category granularity, which is the level this study reports at — so the extension is affordable for the alignment test and any detailed-SOC analysis must handle the disagreement separately. Pre-registered as a known limitation. A standing data caution: validation is closed for the 2016–2026 window but counts outside it can still move, so every figure drawn from that database must carry the date it was read.</li>
   <li>Job mapping. Every job each graduate has held is captured, with the first career-relevant job specifically labeled. All positions are coded to SOC (job title) and NAICS (employer industry).</li>
   <li>Analytic anchor rule. The criterion-relevance alignment is anchored on the first (or first 1–2) career-relevant destination. Later jobs are retained as career-trajectory context in a separate analytic lane, not folded into the &quot;where graduates land&quot; alignment test — because later roles reflect post-graduation learning and market moves the curriculum cannot be credited or debited for. A consequence of this rule, stated up front rather than discovered at analysis (2026-09-09): evidence from the alumni corpus finds that emerging AI-native / workflow roles are overwhelmingly not first destinations — only 4 of 42 such positions were first jobs (October 2026 recount, 1,337 validated graduates). Anchoring on first destination therefore makes that cluster largely invisible to the primary alignment by construction, at any window length. That is accepted rather than corrected: first destination is what a curriculum can honestly be credited or debited for. But it means the trajectory lane is the only place this cluster can be observed, and an absence of AI-native roles in the primary results must not be read as evidence that graduates are not reaching them.</li>
   <li>Definition of &quot;first.&quot; First career-relevant full-time role; a summer or retail stopgap is not coded as a GC career destination.</li>
@@ -36,7 +198,7 @@
   <li>Definition of &quot;verified.&quot; Currently used as shorthand for records confirmed against at least one external source (LinkedIn, employer directory, or alumni-office confirmation); to be tightened before analysis.</li>
   <li>Privacy / FERPA / IRB status. To be confirmed before full collection completes.</li>
 </ul>
-<h2>Section 2 — Study Design</h2>
+<h2 class="kicker">Section 2 — Study Design</h2>
 <h2>Two-phase design: pilot complete, Phase 2 data collected</h2>
 <p>The study runs in two phases. The phases differ in scope, analytic depth, and the rigor of pre-registration — the pilot established that the method works and that the gap is real; Phase 2 is designed to produce a result that can stand independent scrutiny.</p>
 <h3>Phase 1 — Pilot (complete)</h3>
@@ -45,12 +207,12 @@
 <p>The pilot proved the method and surfaced the gap. It was deliberately time-bounded, not designed for full coverage.</p>
 <h3>Phase 2 — Expansion (data collected; analysis pending)</h3>
 <p>Extends the dataset to a full ~10 years of Clemson graduates, capturing every job each graduate has held with the first career-relevant destination labeled. Two analytic layers the pilot did not include:</p>
-<p>(a) Demand-side skills map. For the top destination occupations, seed each one&#x27;s competency demand from its O*NET work-activity profile, then enrich and validate against real job postings.</p>
+<p>(a) Demand-side skills map. For the top destination occupations, seed each one&#x27;s competency demand from its O*NET profile, then enrich and validate against real job postings.</p>
 <p>(b) Criterion-relevance alignment. Compare that destination demand against the curriculum&#x27;s captured KUD+ coverage, course by course.</p>
 <p>The collection window, the first-vs-all-jobs rule, and the coding method are pre-registered before analysis. Phase 2 is run with a student researcher (see Section 3).</p>
 <p>Collected (October 2026): 1,337 validated graduates; 672 first career jobs coded in 2016–2026. Before the alignment runs, the pre-registration must be signed and the coding must pass the second-coder check (κ ≥ 0.70).</p>
 <p>The collection window, inclusion/exclusion rules, the definition of &quot;first career-relevant job,&quot; and the job-title→SOC coding scheme are committed in writing before analysis begins. Any methodology change after that point requires a new pre-registered run reported alongside the original. This is the same discipline as the study&#x27;s pre-committed failure criteria (Section 9) — it prevents the most common form of invisible bias in retrospective career-outcome studies: adjusting the collection window or coding rules until the numbers look clean.</p>
-<h2>Section 3 — The Student-Researcher Role</h2>
+<h2 class="kicker">Section 3 — The Student-Researcher Role</h2>
 <h2>A 2-credit research course: partner, not assistant</h2>
 <p>Phase 2 is run with a student researcher enrolled in a 2-credit-hour research course (~6 hours/week). The role is structured as a genuine research partnership — the student contributes intellectual work (authoring the coding scheme, making judgment calls on edge cases, designing the visualization) — not data entry. Deliverables are divided into Core (required for the course) and Extension (pursued if the timeline allows).</p>
 <p>1. Data collection &amp; coding. Compile the ~10-year graduate employment record from LinkedIn and alumni sources — every position per graduate, first career-relevant destination flagged — coding each job title to its SOC occupation and each employer to its industry, against a documented coding scheme she maintains and versions.</p>
@@ -61,7 +223,7 @@
 <p>6. Reliability check. Have a second coder independently re-code a sample of the job→SOC mappings and compute inter-rater agreement (Cohen&#x27;s κ). This is the measurement-quality evidence the broader project needs before the criterion-relevance alignment result can be taken seriously.</p>
 <h3>Guardrails</h3>
 <p>Three principles govern the student researcher&#x27;s analytic work. First, seed-then-refine: O*NET profiles are the starting point, not the truth — real job postings and judgment calls on GC-specific skills are used to refine them. Second, &quot;no clean match&quot; is a finding: if a GC competency has no natural O*NET descriptor, that gap is reported and documented, not silently mapped to the nearest bucket. Third, pre-register before looking at results: the coding rules and collection window are committed before the data is analyzed, so the conclusions cannot be shaped by knowing what they will show.</p>
-<h2>Section 4 — Pre-Registration &amp; Validation Plan</h2>
+<h2 class="kicker">Section 4 — Pre-Registration &amp; Validation Plan</h2>
 <h2>Design fixed before the data is analyzed</h2>
 <p>Phase 2&#x27;s credibility rests on a single discipline: the study design is committed before analysis begins. The collection window, the unit and job rules, the coding method, the indicators, the analysis plan, and the failure criteria are all pre-registered here. Any later deviation will be reported as a deviation — not folded in silently as though it were always the plan.</p>
 <h3>What the study tests — and what it does not</h3>
@@ -71,7 +233,7 @@
 <p>The alignment test has two sides, and their independence is methodologically essential.</p>
 <ul>
   <li>Predictor (curriculum). KUD+ coverage per competency at depth, drawn from confirmed CourseCapture snapshots for the courses that build toward a given career target.</li>
-  <li>Criterion (destinations). The occupational competency demand of each graduate&#x27;s first career-relevant destination — job title coded to SOC, the SOC profiled from O*NET work activities, then refined by faculty and employer input through Position Capture.</li>
+  <li>Criterion (destinations). The occupational competency demand of each graduate&#x27;s first career-relevant destination — job title coded to SOC, the SOC profiled from O*NET, then refined by faculty and employer input through Position Capture.</li>
   <li>Independence guardrail. The criterion (where graduates actually landed, plus its occupational profile) is kept methodologically separate from the curriculum&#x27;s career-target definitions. The test must not reduce to &quot;O*NET vs. O*NET.&quot; O*NET data is used as a seed for the demand profile, then refined — it is never treated as the final truth, and it is never allowed to circularly define the curriculum&#x27;s own targets.</li>
 </ul>
 <h3>Pre-registered specifications</h3>
@@ -81,14 +243,14 @@
   <li>Job rule. Every position per graduate is captured. The first career-relevant full-time role is labeled the primary destination and is the unit of the alignment test. Later positions are retained as trajectory context in a separate analytic lane and are not folded into the alignment measure.</li>
   <li>&quot;First career-relevant&quot; defined. The first full-time role plausibly drawing on GC preparation. This definition explicitly excludes summer employment, stopgap retail or service roles, and other clearly unrelated first paychecks. Edge-case decisions are recorded in the coding scheme before analysis.</li>
   <li>Coding scheme. Job title → SOC and employer → NAICS, against a documented, versioned coding scheme. &quot;Verified&quot; means confirmed against at least one external source: LinkedIn, an employer directory, or an alumni-office record.</li>
-  <li>Inter-rater reliability. A second coder independently codes a random sample. Inter-rater agreement is computed as Cohen&#x27;s κ and reported alongside the primary results. The pre-registered threshold follows the conventional standard for substantial agreement: κ ≥ 0.70. A result below threshold is reported as a finding, not adjusted away.</li>
+  <li>Inter-rater reliability. A second coder independently codes a random sample. Inter-rater agreement is computed as Cohen&#x27;s κ and reported alongside the primary results. The pre-registered threshold is κ ≥ 0.70. A result below threshold is reported as a finding, not adjusted away.</li>
   <li>Inclusion / exclusion. Requires a verifiable employer and job title. Graduate-school enrollees, non-completers, and no-response or unfindable cases are tracked and reported in a separate accounting; they are not silently dropped from the denominator.</li>
 </ul>
 <h3>Analysis plan — committed before looking at results</h3>
 <ul>
   <li>Primary analysis. Per-target alignment between the curriculum&#x27;s emphasized competencies and first-destination occupational demand, compared against a chance baseline. This is the headline criterion-relevance test.</li>
   <li>Descriptive analysis. The full destination distribution compared against the official CIP→SOC crosswalk — scaling the pilot finding to the complete dataset.</li>
-  <li>&quot;No-clean-match&quot; findings, pre-specified as first-class outputs. Two asymmetric absence findings are defined in advance: (a) a GC competency that has no O*NET match signals a blind spot in the occupational framework — the federal database has not caught up with what GC practitioners actually do; (b) a high-demand destination work-activity with no corresponding curriculum coverage signals a candidate gap in the program. Both are findings, not defects to paper over.</li>
+  <li>&quot;No-clean-match&quot; findings, pre-specified as first-class outputs. Two asymmetric absence findings are defined in advance: (a) a GC competency that has no O*NET match signals a blind spot in the occupational framework — the federal database has not caught up with what GC practitioners actually do; (b) a high-demand destination O*NET element with no corresponding curriculum coverage signals a candidate gap in the program. Both are findings, not defects to paper over.</li>
 </ul>
 <h3>Pre-committed failure criteria</h3>
 <p>The pre-committed failure criteria C1–C3 stated in Section 9 are the formal gates for this study. The following integrates with those criteria and adds the pre-registration condition that makes any result count:</p>
@@ -97,27 +259,33 @@
   <li>If graduates whose curricular history matches the framework&#x27;s &quot;well-scaffolded&quot; pattern do not land in better-aligned destinations than those whose history does not, the scaffolding claim is unsupported.</li>
   <li>A result counts only if the collection window and rules above were fixed and recorded before the analysis was run. Post-hoc adjustment of the window or coding rules requires a new pre-registered run, reported alongside the original.</li>
 </ul>
-<h2>Section 5 — Pilot: Graduate Employment Distribution</h2>
+<h2 class="kicker">Section 5 — Pilot: Graduate Employment Distribution</h2>
 <h2>Documented graduate employment, 2022–2025 pilot dataset</h2>
 <p>The following occupations represent where the 268 Clemson GC graduates in the pilot coded set (2022–2025) were employed. Records are drawn from the alumni-tracking dataset described in the Data Methods callout above; each carries a job title, employer, and SOC code coded from those values. Phase 2 results follow this table.</p>
 <h3>Phase 2: first career jobs, 2016–2026</h3>
 <p>The twelve most common first career jobs among the 672 coded in the study’s window (snapshot of 2026-10-05; internships and side jobs excluded, per the pre-registration’s definition). The pilot’s shape changes at scale: graphic designers fall from nearly a quarter of the pilot to 13.1%, roughly tied with marketing specialists, and prepress, a federal-crosswalk occupation, rises to third. The remaining first jobs spread across 91 further occupations. The occupation coding behind these figures has not yet been checked by an independent second coder, which the pre-registration requires before any confirmatory claim; they are published as descriptive results.</p>
 <h3>Representative employment records</h3>
-<h2>Section 6 — Classification Coverage Analysis</h2>
+<h2 class="kicker">Section 6 — Classification Coverage Analysis</h2>
 <h2>Crosswalk coverage relative to documented outcomes</h2>
-<p>The federal CIP–SOC crosswalk for graphic communications programs (CIP 10.03) was established in the late 1990s and has not been substantively updated. Career databases used by students, counselors, and administrators draw from this crosswalk — and return occupational projections that are largely inconsistent with the documented graduate employment distribution.</p>
+<p>The federal CIP–SOC crosswalk for graphic communications programs (CIP 10.03; the current edition links CIP 2020 to SOC 2018) lists six occupations (NCES). Measured against the documented graduate employment distribution, it describes few of the jobs graduates take.</p>
 <p>Any curriculum analysis tool that draws from standard federal career data for CIP 10.03 would be working from a reference set that describes fewer than one in ten Clemson GC first career jobs (9.2% in 2016–2026; 3.4% in the pilot). The proposed reference set, built from the pilot and the ACCGC dataset of 603 graduate records across 9 programs, describes 67.9% of first jobs in the full window, down from 88.4% in the pilot. A reference set drawn from one pilot does not cover the wider decade; 36% of first jobs across all cohorts fall outside it, spread over 119 occupations. The clearest candidates to add are Sales Representatives, Wholesale &amp; Manufacturing, except Technical (41-4012) and Advertising &amp; Promotions Managers (11-2011). Two catch-all codes, Business Operations Specialists, All Other and Managers, All Other, are also frequent; they signal coding that could be more specific rather than occupations to add. The ACCGC source lists a 21st code, Etchers and Engravers (51-9194). It is a federal-crosswalk occupation the proposal drops, and no Clemson GC graduate in any cohort holds it.</p>
 <p>The primary purpose of presenting this coverage gap is not to advocate for federal reclassification, though the data does support that case. The purpose is to establish that the current classification framework does not describe what this program produces, and that a more accurate reference set exists and is being used as the basis for this study.</p>
-<h2>Section 7 — Research Motivation</h2>
+<h2 class="kicker">Section 7 — Research Motivation</h2>
 <h2>Connecting curriculum outcomes to documented graduate destinations</h2>
 <p>What the program currently lacks is a systematic framework for describing, at the course level, how specific learning outcomes connect to the career destinations graduates enter. The employment distribution is documented; the curriculum exists; the connection between them has not been formally analyzed.</p>
 <p>The KUD framework — Know, Understand, Do — provides structured learning outcome statements derived directly from course materials. The proposed analysis module would map those statements to O*NET competency profiles for each SOC code in the reference set (20 codes, describing 88.4% of pilot placements and 67.9% of 2016–2026 first jobs). The central analytical question is whether the curriculum&#x27;s stated outcomes correspond to the competencies those occupations require.</p>
 <p>This analysis is grounded in outcomes the program has already produced, not outcomes it is working toward. The graduate data provides the empirical reference point; the curriculum analysis provides the explanatory framework. The goal is to understand the relationship between the two — and to identify where that relationship is strong, where it is weak, and where outcomes are being produced without explicit curricular claim.</p>
-<h2>Section 8 — The Proposed Analysis Functions</h2>
+<h2 class="kicker">Section 8 — The Proposed Analysis Functions</h2>
 <h2>Two proposed analytical functions</h2>
 <p>The Graduate Outcome Criterion-Relevance module would link AI-generated course learning outcomes (KUDs) to graduate career destinations via O*NET — the federal occupational competency database — as an intermediary. The result would be a comparison of curriculum-stated outcomes against the competency requirements of the occupations graduates actually enter.</p>
-<p>O*NET (Occupational Information Network), maintained by the Department of Labor, provides a public competency profile for each SOC code: knowledge areas, skills, abilities, and work activities. O*NET categories do not map one-to-one onto KUD — O*NET &quot;Skills&quot; often describe performed capabilities closer to Do than Understand; &quot;Abilities&quot; do not map cleanly to any KUD dimension; &quot;Tasks&quot; may be more directly Do-like than the generalized work activities; &quot;Knowledge&quot; may involve both Know and Understand. The proposed crosswalk below is a starting heuristic that the analysis module would refine with a transparent mapping rubric tested on sampled occupations before treating it as the benchmark:</p>
-<p>For each SOC code in the reference set, the module would construct a KUD-structured career profile — not invented, but derived directly from the federal occupational database. Those profiles become the benchmark. Each course&#x27;s AI-generated KUDs are then compared against the competency requirements of the career destinations graduates actually enter.</p>
+<p>O*NET (Occupational Information Network) is run for the U.S. Department of Labor’s Employment and Training Administration (NRC, 2010, p. 6). It describes each occupation with “hundreds of descriptors of work and workers organized into domains, such as skills, knowledge, and work activities” (p. 1), and the Skills, Knowledge, Work Activities and Abilities descriptors each carry two ratings: Importance, and the Level of the descriptor needed to perform the job (p. 76).</p>
+<p>How those elements enter the comparison is designed but not built. The current position:</p>
+<ul>
+  <li>No category crosswalk. O*NET categories are not mapped one-to-one onto KUD (Knowledge to Know, Skills to Understand, Work Activities to Do). Each O*NET Knowledge, Skills or Work Activities element is treated as a competency in its own right, with all three KUD axes.</li>
+  <li>Broad elements are program-level qualities. Broad elements such as Critical Thinking are not scored per course; they are read at program level from the domain competencies that carry them across the course sequence.</li>
+  <li>Importance weights; Level is a reference. Importance weights what a career target asks for. Level describes how much of an element a job demands: a demand-side reference shown beside attainment, not an attainment score. Level is on O*NET’s own scale, and no validated conversion to the framework’s 0–5 depth scale exists; at most, Level seeds a draft required depth that faculty or employers confirm.</li>
+</ul>
+<p>The same design appears as “career readiness as a weighted question” in §3 of the Measurement Hypotheses companion. Once built, the module would assemble a career profile for each SOC code in the reference set from its O*NET elements, used as a seed and refined by faculty and employer input (see the independence guardrail in Section 4), and compare each course’s evidenced KUD coverage against the profiles of the destinations graduates actually enter.</p>
 <h3>Illustrative outputs</h3>
 <p>The program-level finding is particularly notable: outcomes the curriculum produces without explicitly claiming to. Identifying where graduates succeed in roles that don&#x27;t appear in any course&#x27;s stated KUDs is one of the more analytically useful things this comparison would surface.</p>
 <h3>The role of individual records</h3>
@@ -127,7 +295,7 @@
 <p>A graduate who enters as a Graphic Designer and advances to Creative Director at a national agency, or who starts in print production and moves into brand management at a consumer goods company — those trajectories provide external context about where graduates move over time. Trajectories are influenced by labor markets, employer training, individual aptitude, networks, internships, geography, and post-graduation experience; on their own they can suggest whether curricular competencies remain relevant to later roles, but they do not establish curriculum impact without additional study design.</p>
 <p>What it would produce: Trajectory pattern map — which starting roles lead where across the graduate population. Curriculum-to-trajectory alignment: does the KUD profile explain career advancement patterns, not just entry placement?</p>
 <p>Analysis planned LinkedIn source 2010–present</p>
-<h2>Section 9 — Methodological Significance</h2>
+<h2 class="kicker">Section 9 — Methodological Significance</h2>
 <h2>External-alignment check for the KUD framework</h2>
 <p>Curriculum frameworks are typically evaluated theoretically — by alignment with established taxonomies or expert judgment about what constitutes good outcome language. This study would enable a less common form of evidence: comparison against an empirical record of graduate placements that preceded the tool&#x27;s development by a decade. The check is best characterized as external-alignment validation or criterion-relevance: it tests whether AI-generated course profiles correspond to the occupational competency profiles for the roles graduates actually enter. It does not, by itself, establish student attainment, instructional effectiveness, or causal impact on career outcomes.</p>
 <p>The historical graduate data is fixed and independent. It was not generated by this methodology and was not shaped by it. The records document placements that materialized before this analysis framework existed. That independence is what makes the comparison non-circular — but non-circular is not the same as causal. The data is a useful external reference; the tool is what we test against it.</p>
@@ -136,7 +304,7 @@
 <p>Course materials → AI-generated KUDs → O*NET competency mapping → Graduate career destinations</p>
 <p>Each link is independently inspectable. The graduate data is fixed — it preceded the tool — which makes this comparison non-circular. Non-circular is not the same as causal: this chain establishes external alignment, not curriculum impact.</p>
 <h3>The tuning opportunity</h3>
-<p>Where the KUDs and career data don&#x27;t align, the methodology can be adjusted. If the AI consistently over-weights certain Bloom&#x27;s levels relative to what the jobs actually require, that is a calibration signal.</p>
+<p>Where the KUDs and career data don&#x27;t align, the methodology can be adjusted. If the AI consistently over-weights certain competencies or depth levels relative to what the jobs actually require, that is a calibration signal.</p>
 <p>The historical data is the benchmark. The tool is what we tune against it.</p>
 <p>The analytical chain — course materials → AI-generated KUDs → O*NET competency mapping → independent graduate career records — would be an unusually concrete curriculum-to-career alignment analysis for this program, because it joins course-level evidence with documented graduate destinations rather than relying on crosswalk-based mapping or expert judgment alone. Whether comparable empirical work has been done in graphic-communications education elsewhere is a literature-review question that has not been completed for this study.</p>
 <p>If the analysis yields strong alignment, the results would be evidence that AI-assisted curriculum materials analysis produces outcome descriptions corresponding to documented placements for this program. Replication in other programs would be needed before generalizing.</p>
@@ -147,10 +315,10 @@
 <h3>C2 — Discrimination criterion (the real test)</h3>
 <p>Mean alignment for the 21 destination SOC codes must exceed alignment for a matched control set of 21 non-destination SOC codes (similar education level, drawn from outside graphic communications) by at least Cohen&#x27;s d ≥ 0.5. If the program&#x27;s KUDs align with graduates&#x27; actual occupations no better than with arbitrary occupations, the analysis has no criterion validity — the KUDs describe work generically, not GC destinations specifically. This is the headline falsification test.</p>
 <h3>C3 — Coverage criterion</h3>
-<p>At least 60% of the program&#x27;s central (high-emphasis) competencies must map at Direct or Partial match strength to at least one O*NET descriptor within the destination reference set. (Stated as the “21-code” set when this criterion was written. The 21st code, Etchers and Engravers, holds no Clemson GC graduates, so the criterion is unchanged in effect.) Below that, either the curriculum-to-destination claim fails for the mapped framework, or the career-target taxonomy itself is the wrong unit of analysis — both reportable findings.</p>
+<p>At least 60% of the program&#x27;s central (high-emphasis) competencies must map at Direct or Partial match strength to at least one O*NET descriptor within the destination reference set. (The ACCGC source lists a 21-code set; its 21st code, Etchers and Engravers, holds no Clemson GC graduates, so the 20- and 21-code sets give the same result.) Below that, either the curriculum-to-destination claim fails for the mapped framework, or the career-target taxonomy itself is the wrong unit of analysis — both reportable findings.</p>
 <h3>What failure does NOT license</h3>
 <p>A failed criterion does not license re-running with adjusted prompts until the number clears, narrowing the destination set post hoc, or reclassifying control occupations. Any methodology change after a failure requires a new pre-registered run, reported alongside the failed one. The &quot;tuning opportunity&quot; described above applies to calibration of the tool, and only on the timeline these criteria make explicit.</p>
-<h2>Section 10 — Data Collection</h2>
+<h2 class="kicker">Section 10 — Data Collection</h2>
 <h2>Extending the dataset for trajectory analysis</h2>
 <p>The 268 Clemson records in the pilot capture point-in-time employment. The trajectory analysis would require longitudinal data — multiple positions per graduate in chronological sequence — collected via LinkedIn. Phase 2 extended collection to 1,337 validated graduates, with the 2016–2026 window as the study’s anchor; the pilot’s 268-record set reflects the initial coding pass, not the full population over that window.</p>
 <h3>What we would collect</h3>
@@ -159,5 +327,16 @@
 <h3>What it enables</h3>
 <p>Graduates 8–16 years out have mature career trajectories — the most informative for understanding what the program enables over time, not just at graduation.</p>
 <p>Combined with the first-job alignment analysis, this creates a complete picture: entry alignment and trajectory alignment.</p>
+<h2>References</h2>
+<p>A dagger (†) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
+  <li>National Center for Education Statistics. CIP 2020 to SOC 2018 Crosswalk (CIP2020_SOC2018_Crosswalk.xlsx). U.S. Department of Education. Rows for CIP 10.03xx. (Sections 1, 6.)</li>
+  <li>National Research Council. (2010). A Database for a Changing Economy: Review of the Occupational Information Network (O*NET). National Academies Press. (Section 8.)</li>
+  <li>† U.S. Bureau of Labor Statistics. Employment Projections, occupational projections table. Source of the growth and decline labels in Sections 5 and 6. (Not held: bls.gov refused automated download; figures not re-checked.)</li>
+  </article>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
+</footer>
 </body>
 </html>

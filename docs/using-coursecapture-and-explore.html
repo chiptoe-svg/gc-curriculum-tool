@@ -1,213 +1,268 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Using CourseCapture &amp; What-ifs — Detailed Guide</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Using CourseCapture &amp; What-ifs — Graphic Communications, Clemson</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
 <style>
-  :root {
-    --rail: #141412;
-    --rail-text: #8a8780;
-    --rail-active: #E8A44A;
-    --rail-hover: #2a2925;
-    --bg: #F7F5F0;
-    --bg-card: #FFFFFF;
-    --bg-alt: #F0EDE6;
-    --text: #1C1C18;
-    --text-muted: #6B6860;
-    --text-faint: #9E9B94;
-    --accent: #C8682A;
-    --accent-light: #F5E6D8;
-    --border: #E2DDD4;
-    --border-strong: #C8C4BA;
-    --mono: 'DM Mono', monospace;
-    --serif: 'Source Serif 4', Georgia, serif;
-    --display: 'Playfair Display', Georgia, serif;
-    --t1: #2A5C8C;
-    --status-covered: #2e7d3a;
-    --status-partial: #b8801f;
-    --status-under: #c46a1b;
-    --status-missing: #b03030;
-  }
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
 
-  body {
-    font-family: var(--serif);
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-    min-height: 100vh;
-    font-size: 16px;
-    line-height: 1.7;
-  }
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
 
-  #rail {
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    width: 240px;
-    background: var(--rail);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    z-index: 100;
-  }
-  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
-  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
-  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
-  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
-  .rail-nav { padding: 20px 0; flex: 1; }
-  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
-  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
-  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
-  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
-  .rail-footer a { color: var(--rail-text); text-decoration: none; }
-  .rail-footer a:hover { color: var(--rail-active); }
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
 
-  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; }
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
-  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
-  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
-  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
-  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
-  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
-  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
 
-  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
 
-  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
-  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
-  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
-  h4 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin: 24px 0 10px; font-weight: 500; }
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
 
-  p { margin-bottom: 14px; max-width: 760px; }
-  strong { color: var(--text); font-weight: 600; }
-  em { color: var(--text); font-style: italic; }
-  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
-  a:hover { color: #a85020; }
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
 
-  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
-  li { margin-bottom: 8px; }
-  li strong { color: var(--text); }
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
 
-  code, kbd { font-family: var(--mono); font-size: 0.88em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; color: var(--text); }
-
-  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
-  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-  .callout p:last-child { margin-bottom: 0; }
-  .callout.note { border-left-color: var(--t1); }
-  .callout.note .callout-title { color: var(--t1); }
-  .callout.tip { border-left-color: var(--status-covered); }
-  .callout.tip .callout-title { color: var(--status-covered); }
-  .callout.warn { border-left-color: var(--status-missing); }
-  .callout.warn .callout-title { color: var(--status-missing); }
-
-  .step { display: grid; grid-template-columns: 36px 1fr; gap: 16px; margin: 16px 0; align-items: start; max-width: 820px; }
-  .step-num { font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: 0.05em; color: var(--accent); background: var(--accent-light); padding: 6px 0; text-align: center; border-radius: 3px; line-height: 1; height: fit-content; }
-  .step-body { padding-top: 2px; }
-  .step-body p:first-child { margin-top: 0; }
-
-  table.compact { border-collapse: collapse; margin: 18px 0 22px; max-width: 820px; font-size: 14px; }
-  table.compact th, table.compact td { padding: 10px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
-  table.compact thead th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-strong); }
-
-  .status-chip { display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 3px; font-weight: 500; }
-  .status-covered { background: #d4edd9; color: var(--status-covered); }
-  .status-partial { background: #f9ecd0; color: var(--status-partial); }
-  .status-under   { background: #fbdec0; color: var(--status-under); }
-  .status-missing { background: #f4d0cc; color: var(--status-missing); }
-
-  .panel-pic {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 14px 18px;
-    margin: 18px 0;
-    font-family: var(--mono);
-    font-size: 12.5px;
-    line-height: 1.6;
-    max-width: 820px;
-    color: var(--text-muted);
-    white-space: pre;
-    overflow-x: auto;
-  }
-
-  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
-
-  @media (max-width: 900px) {
-    #rail { position: static; width: 100%; height: auto; }
-    main { margin-left: 0; padding: 32px 24px 64px; }
-  }
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* ---------- Page (guide tokens only) ---------- */
+/* The hero sits inside .paper after the contents column in the DOM, so the old rail's
+   words keep their reading order; order:-1 puts it first on screen. */
+.paper > .hero{order:-1;flex:1 1 100%;margin-inline:calc(-1 * var(--pad))}
+.toc .label{display:block;margin:14px 0 2px}
+.toc a.out{padding-left:26px}
+.article section{scroll-margin-top:24px}
+.article h3{font-size:24px;line-height:1.25;margin-top:12px}
+.article ul,.article ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.part{display:flex;flex-direction:column;gap:16px;border-top:1px solid var(--rule);padding-top:24px}
+.part-title{font-size:26px;line-height:1.2;color:var(--muted)}
+.note > div{display:flex;flex-direction:column;gap:6px}
+.note ul{margin:0}
+sup.nv{font:500 .72em var(--mono);color:var(--muted);margin-left:1px;cursor:help}
+.dagger-legend{font-size:14px;color:var(--muted)}
+ol.refs{font-size:15px;overflow-wrap:anywhere}
+.doc-foot{font-size:14px;color:var(--muted)}
+.doc-foot a{color:var(--purple)}
+code,kbd{font:500 .86em var(--mono);background:var(--inset);padding:1px 6px;border-radius:5px;overflow-wrap:anywhere}
+td code{white-space:nowrap}
+.cue{vertical-align:middle;margin-left:6px;font-family:var(--sans)}
+.attribution{font-size:14px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
+/* Flow diagram (competency catalog) */
+.flow{display:grid;grid-template-columns:1fr .9fr 1fr;gap:16px}
+.lane{display:flex;flex-direction:column}
+.lane.mid{justify-content:center}
+.lane-label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:8px}
+.box{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.45}
+.box b{display:block;font-weight:600;font-size:15px;margin-bottom:2px}
+.box small{display:block;margin-top:2px;font:400 13px var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.box.hub{background:var(--inset);border:2px solid var(--ink)}
+.box.planned{border:1.5px dashed var(--muted)}
+.arrow{text-align:center;color:var(--muted);font-size:16px;line-height:1;padding:5px 0}
+.side-arrow{font:400 13px var(--mono);color:var(--muted);text-align:center;padding:8px 0}
+.flow-legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;color:var(--muted)}
+.swatch{display:inline-block;width:16px;height:11px;vertical-align:middle;margin-right:6px;border-radius:3px}
+.swatch.solid{border:1px solid var(--rule);background:var(--panel)}
+.swatch.hub{border:2px solid var(--ink);background:var(--inset)}
+.swatch.dash{border:1.5px dashed var(--muted)}
+/* Two-stage scoring strip */
+.stages{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;counter-reset:stage}
+.stage{background:var(--panel);border:1px solid var(--rule-soft);border-radius:16px;padding:16px;font-size:15px;line-height:1.5}
+.stage::before{counter-increment:stage;content:"Step " counter(stage);display:block;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin-bottom:6px}
+.stage b{display:block;margin-bottom:4px}
+@media (max-width:640px){.flow{grid-template-columns:1fr}.stages{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.stages{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-
-<aside id="rail">
-  <div class="rail-header">
-    <div class="rail-dept">Clemson · Graphic Communications</div>
-    <div class="rail-title">GC Curriculum Tool</div>
-    <div class="rail-doc-type">Detailed Guide</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
   </div>
-  <nav class="rail-nav">
-    <div class="nav-group-label">Start here</div>
-    <a class="nav-link" href="https://gcworkflow.clemson.edu:8443/curriculum/howto">Step-by-step how-to ↗</a>
-    <a class="nav-link" href="#overview">Overview</a>
-    <a class="nav-link" href="#access">How you reach the tool</a>
-    <a class="nav-link" href="#before">Before you start</a>
-    <div class="nav-group-label" style="margin-top: 10px;">CourseCapture</div>
-    <a class="nav-link" href="#cc-materials">1 · Check your materials</a>
-    <a class="nav-link" href="#cc-triage">2 · How closely to read each file</a>
-    <a class="nav-link" href="#cc-interview">3 · The interview</a>
-    <a class="nav-link" href="#cc-generate">4 · Generate, review, approve</a>
-    <a class="nav-link" href="#cc-snapshots">Snapshots &amp; re-capturing</a>
-    <div class="nav-group-label" style="margin-top: 10px;">Beyond the capture</div>
-    <a class="nav-link" href="#explore">What-ifs</a>
-    <a class="nav-link" href="#roster">Course list &amp; prerequisites</a>
-    <a class="nav-link" href="#readonly">The public profile</a>
-    <div class="nav-group-label" style="margin-top: 10px;">Reference</div>
-    <a class="nav-link" href="#tips">Tips</a>
-    <a class="nav-link" href="#scope">What these tools don't do</a>
-    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
-    <a class="nav-link" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>
-    <a class="nav-link" href="./background.html">KUD+ Background</a>
+</header>
+
+<div class="wrap paper paper--long">
+  <nav class="toc" id="rail" aria-label="Contents">
+    <span class="label">Start here</span>
+    <a class="out" href="https://gcworkflow.clemson.edu:8443/curriculum/howto">Step-by-step how-to ↗</a>
+    <a href="#overview"><span>Overview</span></a>
+    <a href="#access"><span>How you reach the tool</span></a>
+    <a href="#before"><span>Before you start</span></a>
+    <span class="label">CourseCapture</span>
+    <a href="#cc-materials"><span>1 · Check your materials</span></a>
+    <a href="#cc-triage"><span>2 · How closely to read each file</span></a>
+    <a href="#cc-interview"><span>3 · The interview</span></a>
+    <a href="#cc-generate"><span>4 · Generate, review, approve</span></a>
+    <a href="#cc-snapshots"><span>Snapshots &amp; re-capturing</span></a>
+    <span class="label">Beyond the capture</span>
+    <a href="#explore"><span>What-ifs</span></a>
+    <a href="#roster"><span>Course list &amp; prerequisites</span></a>
+    <a href="#readonly"><span>The public profile</span></a>
+    <span class="label">Reference</span>
+    <a href="#tips"><span>Tips</span></a>
+    <a href="#scope"><span>What these tools don't do</span></a>
+    <span class="label">See also</span>
+    <a class="out" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>
+    <a class="out" href="./background.html">KUD+ Background</a>
+    <a class="out" href="./index.html">← Docs hub</a>
   </nav>
-  <div class="rail-footer">
-    <a href="./index.html">← Docs hub</a>
-  </div>
-</aside>
 
-<main>
-
-<header class="doc-head">
-  <div class="doc-eyebrow">Detailed Guide</div>
-  <h1 class="doc-title">Using CourseCapture &amp; What-ifs</h1>
-  <p class="doc-subtitle">What each step of capturing a course does and why, and how what-ifs, the course list and the public profile fit around it. For the screen-by-screen steps, use the <a href="https://gcworkflow.clemson.edu:8443/curriculum/howto">how-to</a>.</p>
-  <div class="doc-meta">
+  <section class="hero">
+    <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="eyebrow">Detailed Guide</span>
+      <h1 class="title-paper">Using CourseCapture &amp; What-ifs</h1>
+      <p class="lede">What each step of capturing a course does and why, and how what-ifs, the course list and the public profile fit around it. For the screen-by-screen steps, use the <a href="https://gcworkflow.clemson.edu:8443/curriculum/howto">how-to</a>.</p>
+      <div class="meta-row">
     <span><strong>Audience</strong> faculty capturing their own courses</span>
     <span><strong>Time per course</strong> 20–45 minutes for a first capture</span>
     <span><strong>Updated</strong> 2026-11-14</span>
   </div>
-</header>
+    </div>
+  </section>
 
+  <article class="article">
 <section id="overview">
-  <h2><span class="num">§ 1</span>Overview</h2>
+  <div><span class="sec-num">01</span><h2 class="sec-title">Overview</h2></div>
 
   <p><strong>CourseCapture</strong> builds an evidence-backed record of what a course actually develops in students. You check the course materials, an AI interviewer asks you about the course, and the tool drafts a <strong>Course Outcome Profile</strong>: the course's competencies, each scored for <em>Knowing</em>, <em>Reasoning</em> and <em>Doing</em> at a depth backed by student evidence, plus the six foundational habits (Agency, Attention to Detail, Resilience, Curiosity, Written Communication, Spoken Communication), scored for Doing only. You review the draft, adjust what is wrong, and approve it. Approval records a permanent, dated snapshot.</p>
 
   <p><strong>What-ifs</strong> are for trying out a change to a course once it has an approved version, without changing the course. See §9.</p>
 
-  <div class="callout tip">
-    <div class="callout-title">Just want the steps?</div>
+  <aside class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg><div><strong>Just want the steps?</strong>
     <p>The <a href="https://gcworkflow.clemson.edu:8443/curriculum/howto">step-by-step how-to</a> walks through a capture screen by screen, with screenshots. This guide explains what each step does and why.</p>
-  </div>
+  </div></aside>
 </section>
 
 <section id="access">
-  <h2><span class="num">§ 2</span>How you reach the tool</h2>
+  <div><span class="sec-num">02</span><h2 class="sec-title">How you reach the tool</h2></div>
 
   <p>The tool runs on the Clemson network. There is no off-campus access; use the campus VPN when you are away.</p>
 
@@ -219,7 +274,7 @@
 </section>
 
 <section id="before">
-  <h2><span class="num">§ 3</span>Before you start</h2>
+  <div><span class="sec-num">03</span><h2 class="sec-title">Before you start</h2></div>
 
   <ul>
     <li><strong>The course must be on the course list.</strong> If it is missing, use <em>+ Add a course</em> on the course list, or ask the administrator. A lecture/lab pair (e.g. GC 3460 + GC 3461) is captured as one bundled course.</li>
@@ -230,7 +285,7 @@
 </section>
 
 <section id="cc-materials">
-  <h2><span class="num">§ 4</span>Step 1 · Check your materials</h2>
+  <div><span class="sec-num">04</span><h2 class="sec-title">Step 1 · Check your materials</h2></div>
 
   <p>The first screen shows everything the interviewer will read, in three boxes. Open each one to see what is inside and add what is missing.</p>
 
@@ -244,25 +299,24 @@
 
   <p>If the course has almost nothing to work from (a syllabus alone, or files that were never read), the interview opens with a warning: <em>This capture has very little to work from.</em> You can add materials first or click <strong>Continue anyway</strong>; the profile will be thin, and approving it later asks you to confirm that.</p>
 
-  <div class="callout note">
-    <div class="callout-title">Privacy</div>
+  <aside class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg><div><strong>Privacy</strong>
     <p>Before anything is stored, the tool removes email addresses, Social Security numbers and CU ID numbers from the text it reads (instructor contact details in a syllabus are kept). The original files are not changed. The AI service is covered by Clemson's education contract.</p>
-  </div>
+  </div></aside>
 </section>
 
 <section id="cc-triage">
-  <h2><span class="num">§ 5</span>Step 2 · Choose how closely to read each file</h2>
+  <div><span class="sec-num">05</span><h2 class="sec-title">Step 2 · Choose how closely to read each file</h2></div>
 
   <p>Reading every file in full is slow and not always useful, so each file gets a level. The tool makes a first guess; your job is to check it.</p>
 
-  <table class="compact">
+  <div class="table-box"><table class="compact">
     <thead><tr><th>Level</th><th>What the tool does</th><th>Use it for</th></tr></thead>
     <tbody>
       <tr><td><strong>High: read in full</strong></td><td>Every passage is stored and can be quoted as evidence; pictures are described.</td><td>The syllabus and anything graded: assignments, rubrics, quizzes, exams.</td></tr>
       <tr><td><strong>Middle: summarized slide by slide</strong></td><td>Each slide or section becomes a short note of what it teaches; title-only and image-only slides are dropped.</td><td>Lecture slides, class pages.</td></tr>
       <tr><td><strong>Background: one summary</strong></td><td>The whole file becomes one paragraph. The tool knows what it covers but can't quote it.</td><td>Readings, references.</td></tr>
     </tbody>
-  </table>
+  </table></div>
 
   <p><strong>Why it matters:</strong> a score above the basics needs evidence that students actually did the work, so anything graded must be High or it can't count as evidence. Use ▲ ▼ to move a file, <em>ignore</em> to leave it out, <em>delete</em> to remove it. Moving a file that was already read re-reads it at the new level.</p>
 
@@ -272,7 +326,7 @@
 </section>
 
 <section id="cc-interview">
-  <h2><span class="num">§ 6</span>Step 3 · The interview</h2>
+  <div><span class="sec-num">06</span><h2 class="sec-title">Step 3 · The interview</h2></div>
 
   <p>For a first capture, pick your name and click <strong>Start the interview</strong>. If the course already has an approved version, you are first asked <strong>What's changed in this course since it was approved?</strong> See <a href="#cc-snapshots">§8</a> for the three answers.</p>
 
@@ -299,7 +353,7 @@
 </section>
 
 <section id="cc-generate">
-  <h2><span class="num">§ 7</span>Step 4 · Generate, check outcomes, review and approve</h2>
+  <div><span class="sec-num">07</span><h2 class="sec-title">Step 4 · Generate, check outcomes, review and approve</h2></div>
 
   <h3>Generating</h3>
   <p>Generating takes about two minutes. One pass reads the whole interview and your materials, identifies the course's competencies (typically 5–15) and scores each one. Any score above the basics must carry an evidence excerpt that traces back to a real passage in your materials or a turn in the interview; results that don't check out are rejected and redone. The result is a draft. Nothing is recorded yet.</p>
@@ -328,7 +382,7 @@
 </section>
 
 <section id="cc-snapshots">
-  <h2><span class="num">§ 8</span>Snapshots and re-capturing</h2>
+  <div><span class="sec-num">08</span><h2 class="sec-title">Snapshots and re-capturing</h2></div>
   <p>Every approval adds a dated snapshot; nothing is overwritten. The working draft stays editable after approval, and later changes are recorded with <strong>Approve update</strong> as a new snapshot.</p>
 
   <p>The <strong>Snapshots</strong> panel (under <em>Setup &amp; history</em> on the interview step, or the <em>N versions</em> link on the course list) lists them. For each one:</p>
@@ -349,14 +403,13 @@
 </section>
 
 <section id="explore">
-  <h2><span class="num">§ 9</span>What-ifs · trying out a change</h2>
+  <div><span class="sec-num">09</span><h2 class="sec-title">What-ifs · trying out a change</h2></div>
 
   <p>A <strong>what-if</strong> lets you sketch a change to a course and see what it would mean before anyone commits to it: "what if GC 3400 added a packaging project and dropped the second poster?" You describe the change in a conversation, and the tool writes a page that reads like the course's wiki page, with the change in place and its likely effect on neighboring courses and career targets. It is meant as a starting point for a conversation with the people who teach the courses before and after.</p>
 
-  <div class="callout tip">
-    <div class="callout-title">Nothing in the course changes</div>
+  <aside class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg><div><strong>Nothing in the course changes</strong>
     <p>A what-if is kept apart from the real course. Its conversation, files and page are stored on their own and never reach the course's draft, its approved versions, its materials, the program views or the public wiki. Someone revising the course for real at the same time sees no difference.</p>
-  </div>
+  </div></aside>
 
   <h3>Starting one</h3>
   <p>A what-if starts from the course's current approved version, so the course needs one. There are two ways in:</p>
@@ -394,7 +447,7 @@
 </section>
 
 <section id="roster">
-  <h2><span class="num">§ 10</span>The course list and prerequisites</h2>
+  <div><span class="sec-num">10</span><h2 class="sec-title">The course list and prerequisites</h2></div>
 
   <h3>The course list (<code>/courses</code>)</h3>
   <p>Courses are grouped by level, with counts by status at the top. Each row shows:</p>
@@ -409,14 +462,13 @@
   <h3>Prerequisites</h3>
   <p>The tool takes prerequisites from the <strong>Clemson catalog</strong>, falling back to the GC course sheet only for a course the catalog doesn't list. The interviewer, the profile and the wiki all use this.</p>
   <p>The <strong>Prereqs</strong> page for a course (<code>/courses/&lt;code&gt;</code>) lets you record skill-level prerequisite links: which competency, at what Knowing / Reasoning / Doing depth, a course needs from each prerequisite. <em>Seed from syllabus prerequisites</em> drafts them with AI; you confirm, edit or delete each one. The gap view below compares what each prerequisite delivers (from its captured profile) with what this course needs, using confirmed links only: <em>Met</em>, <em>Gap</em> or <em>No data</em>.</p>
-  <div class="callout note">
-    <div class="callout-title">Note</div>
+  <aside class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg><div><strong>Note</strong>
     <p>The text headed "Catalog prerequisites" on that page is still the GC course sheet's wording, not the Clemson catalog list used everywhere else.</p>
-  </div>
+  </div></aside>
 </section>
 
 <section id="readonly">
-  <h2><span class="num">§ 11</span>The public profile</h2>
+  <div><span class="sec-num">11</span><h2 class="sec-title">The public profile</h2></div>
 
   <p>Every captured course has a public page at <code>/view/&lt;course-code&gt;</code> (<em>View Course</em> on the course list). Anyone on the Clemson network can open it without logging in, which makes it the link to share with a chair, a colleague or an accreditation reviewer. It shows the latest snapshot's outcomes and what the course develops, with a Markdown download and a print button. Courses not yet captured show their catalog description instead.</p>
   <p>It does not show the interview transcript, the review notes or individual scoring evidence. Those stay on the faculty pages. Student emails and ID numbers never appear: they are removed before anything is stored.</p>
@@ -424,7 +476,7 @@
 </section>
 
 <section id="tips">
-  <h2><span class="num">§ 12</span>Tips</h2>
+  <div><span class="sec-num">12</span><h2 class="sec-title">Tips</h2></div>
   <ul>
     <li><strong>Put graded work in High.</strong> It is the evidence the scores rest on.</li>
     <li><strong>Be concrete.</strong> "Students preflight their own files against a checklist and fix every error before submission" beats "students learn preflight."</li>
@@ -437,7 +489,7 @@
 </section>
 
 <section id="scope">
-  <h2><span class="num">§ 13</span>What these tools don't do</h2>
+  <div><span class="sec-num">13</span><h2 class="sec-title">What these tools don't do</h2></div>
   <ul>
     <li><strong>Not an evaluation</strong> of any instructor or student. Scores describe what the course's work requires and evidences.</li>
     <li><strong>Not automatic redesign.</strong> A what-if predicts and suggests; faculty decide, and a re-capture records the change once it is taught.</li>
@@ -447,12 +499,45 @@
 
   <p>For what Knowing, Reasoning and Doing depth mean and what counts as evidence, see the <a href="./background.html">KUD+ Background document</a>. For where the program is heading, see the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>.</p>
 </section>
+  <a class="xlink" href="curriculum-map.html">
+    <span><span class="label">Explore the data · Tool</span><span class="t">GC Curriculum Map</span><span class="d">Work back from a career to the competencies it relies on and the courses that build them, year by year.</span></span>
+    <span class="link-arrow">Open the tool →</span>
+  </a>
+
 
 <div class="doc-foot">
   Detailed guide · updated 2026-10-07 · GC Curriculum Tool · <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">source</a>
 </div>
+  </article>
+</div>
 
-</main>
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
+</footer>
 
+<script>
+/* Marks the contents link of the section in view. Without JS the contents column still works as plain links. */
+(() => {
+  const toc = document.querySelector('.toc');
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const secs = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  const inView = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+    const cur = secs.find((s) => inView.has(s.id));
+    if (!cur) return;
+    const a = byId.get(cur.id);
+    links.forEach((l) => l.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'true');
+    // When the sticky column is taller than the screen, keep the marked link visible inside it.
+    if (toc.scrollHeight > toc.clientHeight && (a.offsetTop < toc.scrollTop || a.offsetTop + a.offsetHeight > toc.scrollTop + toc.clientHeight)) {
+      toc.scrollTop = a.offsetTop - toc.clientHeight / 2;
+    }
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  secs.forEach((s) => io.observe(s));
+})();
+</script>
 </body>
 </html>

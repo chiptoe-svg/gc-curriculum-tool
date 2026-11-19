@@ -1,268 +1,296 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GC Curriculum Tool — Executive Brief</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The GC Curriculum Tool Executive Brief — Graphic Communications, Clemson</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
 <style>
-  :root {
-    --bg: #F7F5F0;
-    --bg-card: #FFFFFF;
-    --text: #1C1C18;
-    --text-muted: #6B6860;
-    --text-faint: #9E9B94;
-    --accent: #C8682A;
-    --accent-light: #F5E6D8;
-    --border: #E2DDD4;
-    --border-strong: #C8C4BA;
-    --mono: 'DM Mono', monospace;
-    --serif: 'Source Serif 4', Georgia, serif;
-    --display: 'Playfair Display', Georgia, serif;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: var(--serif);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 64px 32px;
-    font-size: 16.5px;
-    line-height: 1.7;
-  }
-  main { max-width: 720px; margin: 0 auto; }
-  .eyebrow {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 14px;
-  }
-  h1 {
-    font-family: var(--display);
-    font-size: 42px;
-    font-weight: 700;
-    line-height: 1.1;
-    color: var(--text);
-    margin-bottom: 16px;
-    letter-spacing: -0.01em;
-  }
-  .lede {
-    font-size: 19px;
-    color: var(--text-muted);
-    font-style: italic;
-    font-weight: 300;
-    margin-bottom: 28px;
-    max-width: 620px;
-  }
-  .meta {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    color: var(--text-faint);
-    margin-bottom: 56px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  h2 {
-    font-family: var(--display);
-    font-size: 26px;
-    font-weight: 600;
-    margin: 52px 0 16px;
-    color: var(--text);
-    letter-spacing: -0.005em;
-  }
-  h3 {
-    font-family: var(--display);
-    font-size: 19px;
-    font-weight: 600;
-    margin: 28px 0 8px;
-    color: var(--text);
-  }
-  p { margin-bottom: 16px; color: var(--text); }
-  p + p { margin-top: -2px; }
-  strong { font-weight: 600; color: var(--text); }
-  em { color: var(--text); }
-  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 120ms; }
-  a:hover { border-bottom-color: var(--accent); }
-  blockquote {
-    border-left: 3px solid var(--accent);
-    padding: 6px 0 6px 22px;
-    margin: 18px 0;
-    font-style: italic;
-    color: var(--text);
-    font-size: 17.5px;
-  }
-  blockquote p { margin-bottom: 8px; }
-  blockquote p:last-child { margin-bottom: 0; }
-  blockquote .q-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    font-style: normal;
-    color: var(--accent);
-    display: block;
-    margin-bottom: 4px;
-  }
-  ul { padding-left: 22px; margin: 12px 0 18px; }
-  li { margin-bottom: 8px; }
-  li strong { color: var(--text); }
-  .surfaces {
-    margin: 18px 0 12px;
-  }
-  .surface {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 18px 22px;
-    margin-bottom: 10px;
-  }
-  .surface-title {
-    font-family: var(--mono);
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--accent);
-    margin-bottom: 4px;
-  }
-  .surface-desc {
-    font-size: 15.5px;
-    color: var(--text-muted);
-    line-height: 1.55;
-  }
-  .deeper {
-    margin-top: 56px;
-    padding: 28px 30px;
-    background: var(--accent-light);
-    border-radius: 6px;
-  }
-  .deeper h2 {
-    margin-top: 0;
-    margin-bottom: 14px;
-    font-size: 21px;
-  }
-  .deeper ul { margin-bottom: 0; }
-  .deeper li { font-size: 15.5px; color: var(--text); }
-  footer {
-    margin-top: 64px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border-strong);
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text-faint);
-    letter-spacing: 0.05em;
-  }
-  footer a { color: var(--text-muted); border-bottom: none; }
-  footer a:hover { color: var(--accent); }
-  sup.nv { font-family: var(--mono); font-size: 0.72em; color: var(--text-faint, #9E9B94); margin-left: 1px; cursor: help; }
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
+
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
+
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
+
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
+
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
+
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
+
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
+
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
+
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
+
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+.hero .meta-row{margin-top:4px}
+.toc .row{padding:6px 0;line-height:1.4;color:var(--muted)}
+.toc .row a{display:inline;padding:0;color:var(--purple);text-decoration:underline}
+.toc .row strong{color:var(--ink);font-weight:600}
+.toc .here{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-left:4px}
+.toc .label{display:block;margin-bottom:6px}
+.article section{scroll-margin-top:24px}
+.article ul,.article ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.pull blockquote .label{display:block;margin-bottom:8px}
+.pull blockquote{font-size:26px}
+.deeper{background:var(--purple-soft);border-radius:16px;padding:28px 28px 32px}
+.deeper .sec-title{font-size:30px}
+.deeper ul{font-size:16px}
+sup.nv{font:500 .72em var(--mono);color:var(--muted);margin-left:1px;cursor:help}
+.doc-foot{font-size:14px;color:var(--muted)}
+.doc-foot a{color:var(--purple)}
+.article a{overflow-wrap:anywhere}
+@media (max-width:640px){.pull blockquote{font-size:24px}.deeper{padding:22px}}
 </style>
 </head>
 <body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
+  </div>
+</header>
 
-<main>
+<section class="hero">
+  <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow">Clemson · Graphic Communications · Executive Brief</span>
+    <h1 class="title-paper">The GC Curriculum Tool</h1>
+    <p class="lede">A versioned, evidence-backed view of how GC courses build toward the careers the program prepares students for — course by course today, the whole program as faculty-confirmed snapshots accumulate.</p>
+    <div class="meta-row"><span>Overview · Living document · First drafted 2026-05-26 · Last updated 2026-10-09</span></div>
+  </div>
+</section>
 
-<div class="eyebrow">Clemson · Graphic Communications · Executive Brief</div>
-<h1>The GC Curriculum Tool</h1>
-<p class="lede">A versioned, evidence-backed view of how GC courses build toward the careers the program prepares students for — course by course today, the whole program as faculty-confirmed snapshots accumulate.</p>
-<div class="meta">Overview · Living document · First drafted 2026-05-26 · Last updated 2026-10-09</div>
+<div class="wrap paper">
+  <nav class="toc" id="series" aria-label="In this series">
+    <span class="label">In this series</span>
+    <p class="row now"><strong>Executive Brief</strong> <span class="here">you are here</span> — what/why/status in brief</p>
+    <p class="row"><a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> — the product picture, surfaces, governance, and roadmap</p>
+    <p class="row"><a href="./background.html">Background</a> — the academic case: KUD+, why-not-Bloom, evidence rule</p>
+    <p class="row"><a href="./problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a> — research on how problem-solving competence develops</p>
+    <p class="row"><a href="./three-act-deep-dive.html">3-Act Companion</a> — the program-structure research</p>
+    <p class="row"><a href="./measurement-hypotheses-deep-dive.html">Measurement Hypotheses</a> — the open hypotheses and research agenda behind the measurement</p>
+    <p class="row"><a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a> — the detailed faculty guide</p>
+  </nav>
 
-<nav style="margin-bottom: 40px; padding: 18px 22px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; font-size: 14px; line-height: 1.6;">
-  <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 10px;">In this series</div>
-  <ul style="list-style: none; padding: 0; margin: 0;">
-    <li style="margin-bottom: 6px;"><strong>Executive Brief</strong> <span style="color: var(--text-faint); font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-left: 6px;">you are here</span> — what/why/status in brief</li>
-    <li style="margin-bottom: 6px;"><a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> — the product picture, surfaces, governance, and roadmap</li>
-    <li style="margin-bottom: 6px;"><a href="./background.html">Background</a> — the academic case: KUD+, why-not-Bloom, evidence rule</li>
-    <li style="margin-bottom: 6px;"><a href="./problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a> — research on how problem-solving competence develops</li>
-    <li style="margin-bottom: 6px;"><a href="./three-act-deep-dive.html">3-Act Companion</a> — the program-structure research</li>
-    <li style="margin-bottom: 6px;"><a href="./measurement-hypotheses-deep-dive.html">Measurement Hypotheses</a> — the open hypotheses and research agenda behind the measurement</li>
-    <li style="margin-bottom: 0;"><a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a> — the detailed faculty guide</li>
-  </ul>
-</nav>
+  <article class="article">
+    <section id="s1">
+      <div><span class="sec-num">01</span><h2 class="sec-title">What the tool is</h2></div>
+      <p>The GC Curriculum Tool is a working record of the Graphic Communications curriculum: what each course develops, how deeply, and how the courses connect to each other and to the careers graduates enter. It is built to help answer two questions the department has so far settled mainly through committee discussion and individual knowledge of courses:</p>
+      
+      <figure class="pull"><blockquote><span class="label">Q1</span>How well does the curriculum build students toward the careers we claim to prepare them for?</blockquote></figure>
+      
+      <figure class="pull"><blockquote><span class="label">Q2</span>For any individual course, do the prerequisites students walk in with actually support what the course expects?</blockquote></figure>
+      
+      <p>Each instructor knows their own course well. What is harder to see is the program as a whole: where a skill is introduced, where it is practiced again, and whether a later course assumes something no earlier course builds. The tool records each course in a common format so those patterns can be read across the program.</p>
+    </section>
 
-<h2>What the tool is</h2>
+    <section id="s2">
+      <div><span class="sec-num">02</span><h2 class="sec-title">How a course is described</h2></div>
+      <p>Each competency a course develops is scored on three 0&ndash;5 scales: <strong>Know</strong> (recall and correct use of terms), <strong>Understand</strong> (reasoning about why), and <strong>Do</strong> (what a student can actually produce or perform). The approach, called KUD+, draws on Carol Ann Tomlinson&rsquo;s work on differentiated instruction and is compatible with Wiggins &amp; McTighe&rsquo;s <em>Understanding by Design</em>.</p>
+      
+      <p>The main rule is that scores rest on evidence of what students do, not on what a syllabus says the course aims for. A topic that is only listed in the syllabus scores zero; Know at 1 needs evidence the topic was actually taught. Know above 1, and any Understand or Do score, requires assessment evidence: a test item for Know, student-written reasoning for Understand, a graded piece of work for Do. Five foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Communication) are scored on Do only. Gaps between the three scales are treated as information &mdash; for example, a student who can use the terms but not explain the reasoning.</p>
+      
+      <p>We use this rather than Bloom&rsquo;s taxonomy for a practical reason. Bloom&rsquo;s authors intend it for aligning objectives, activities, and assessments across a unit, course, or curriculum (Krathwohl, 2002, p. 212), but its levels describe kinds of thinking and it has no separate performance dimension. Jobs are usually described by the knowledge they require and the work they involve, which maps more directly onto Know and Do. The U.S. Department of Labor&rsquo;s <strong>O*NET</strong> describes occupations by required knowledge, skills, and work activities, and its Level scale rates the level &ldquo;needed to perform&rdquo; a job &mdash; a demand rating, not a measure of what a learner has attained. Today O*NET serves as a reference point: three of the five career targets are tied to an O*NET occupation code, and the graduate-outcome study uses the same codes to classify where graduates work. The competencies themselves are written by hand for GC, not taken from O*NET. The next step will likely use O*NET&rsquo;s Importance ratings to weight what each career target asks for (see below). The full academic case is in the <a href="./background.html">Background document</a>.</p>
+      
+      <p>Problem-solving is handled differently from other competencies: the framework treats it as something that develops across the sequence of courses, through depth in the subject, attempts that fail and are revised, and reflection, rather than as a trait of any one course. Whether that actually happens across four years is one of the things still to be checked. The research behind this position is in <a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a>.</p>
+    </section>
 
-<p>The GC Curriculum Tool is a working record of the Graphic Communications curriculum: what each course develops, how deeply, and how the courses connect to each other and to the careers graduates enter. It is built to help answer two questions the department has so far settled mainly through committee discussion and individual knowledge of courses:</p>
+    <section id="s3">
+      <div><span class="sec-num">03</span><h2 class="sec-title">What it does today</h2></div>
+      <ul>
+        <li><strong>CourseCapture.</strong> An instructor reviews the course materials the tool has gathered (syllabus, Canvas content, uploads), then works through an AI-guided interview. The result is a dated, unchangeable profile of the course. 19 of the 59 courses in the catalog have been captured so far.</li>
+        <li><strong>Explore.</strong> A chat tied to one course that helps an instructor think through a proposed change and estimate its effect on the course and its neighbors.</li>
+        <li><strong>Program views.</strong> A matrix of captured courses against the competencies each career target needs, a prerequisite check for each course, and a first version of a scaffolding view that flags a course expecting a skill no earlier course introduces.</li>
+        <li><strong>Objective assessment guide.</strong> On each captured course&rsquo;s public wiki page: for every learning objective in the syllabus, which graded Canvas assignment or rubric row measures it, and which class-level numbers to collect at the end of the semester to show whether it was met.</li>
+        <li><strong>Curriculum wiki.</strong> Pages generated from the captured courses, with a question-answering assistant that cites them.</li>
+        <li><strong>Employer input.</strong> A guided form for industry partners to describe a role&rsquo;s requirements. It is built; no employer has completed one yet, so the comparison of program coverage against employer demand (Q1) has not been run.</li>
+      </ul>
+      
+      <p>Faculty sign in with personal links. Invitations are going out now, and the shared department password will be retired once they are done. A detailed walkthrough is in <a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a>.</p>
+    </section>
 
-<blockquote>
-  <span class="q-label">Q1</span>
-  How well does the curriculum build students toward the careers we claim to prepare them for?
-</blockquote>
+    <section id="s4">
+      <div><span class="sec-num">04</span><h2 class="sec-title">How faculty stay in control</h2></div>
+      <ul>
+        <li><strong>The AI drafts; faculty decide.</strong> Every score can be edited before a course profile is confirmed. Any score can be flagged with a named note, and the flag stays visible until someone resolves it.</li>
+        <li><strong>Profiles belong to the instructor who confirmed them.</strong> They are visible to the program coordinator and the curriculum committee, and they can be retired but not deleted.</li>
+        <li><strong>The curriculum committee keeps its authority.</strong> The tool provides information for its discussions; it does not make or approve changes.</li>
+      </ul>
+    </section>
 
-<blockquote>
-  <span class="q-label">Q2</span>
-  For any individual course, do the prerequisites students walk in with actually support what the course expects?
-</blockquote>
+    <section id="s5">
+      <div><span class="sec-num">05</span><h2 class="sec-title">Limits</h2></div>
+      <ul>
+        <li><strong>Course scores describe opportunity, not attainment.</strong> They say what a course&rsquo;s assessed work gives students the chance to show, not what any particular student learned. The assessment guide is a first step toward collecting evidence that objectives were met; that evidence is not yet fed back into the scores.</li>
+        <li><strong>The AI&rsquo;s readings can share blind spots.</strong> Published studies of AI-assisted curriculum mapping find agreement with experts that varies a good deal by skill (Zamecnik et al., 2024; Jayalath et al., 2025; see <a href="./background.html#anchors">Background &sect;7</a>). This is why faculty confirmation is required and why an outside check is needed (below).</li>
+        <li><strong>Coverage is partial.</strong> With 19 courses captured, program-level views are incomplete, and nothing yet tracks how the curriculum changes over time.</li>
+      </ul>
+    </section>
 
-<p>Each instructor knows their own course well. What is harder to see is the program as a whole: where a skill is introduced, where it is practiced again, and whether a later course assumes something no earlier course builds. The tool records each course in a common format so those patterns can be read across the program.</p>
+    <section id="s6">
+      <div><span class="sec-num">06</span><h2 class="sec-title">What comes next</h2></div>
+      <p>The next design step is the career comparison (Q1). The proposal is to weight each career&rsquo;s requirements by how important O*NET rates them for the occupation, to show a shortfall in an important skill on its own rather than averaging it away, and to flag skills that appear in one course and are never reinforced later. A later stage would account for skills fading when they are not used, once there is data to estimate that. This is designed, not built; details are in the <a href="./measurement-hypotheses-deep-dive.html">Measurement Hypotheses</a> document. The student advising view is specified but not yet built.</p>
+    </section>
 
-<h2>How a course is described</h2>
+    <section id="s7">
+      <div><span class="sec-num">07</span><h2 class="sec-title">How we will check it</h2></div>
+      <p>The tool cannot confirm on its own that its readings match how graduates actually fare. A <strong>Graduate Outcome Criterion-Relevance Study</strong> compares the competencies the tool emphasizes with where GC graduates from the past ten years actually work, using failure criteria set in advance so that the results can count against the framework as well as for it. Until it reports, the framework&rsquo;s larger claims should be read as working hypotheses. Full design: <a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a>.</p>
+    </section>
 
-<p>Each competency a course develops is scored on three 0&ndash;5 scales: <strong>Know</strong> (recall and correct use of terms), <strong>Understand</strong> (reasoning about why), and <strong>Do</strong> (what a student can actually produce or perform). The approach, called KUD+, draws on Carol Ann Tomlinson&rsquo;s work on differentiated instruction and is compatible with Wiggins &amp; McTighe&rsquo;s <em>Understanding by Design</em>.</p>
+    <section id="s8" class="deeper">
+      <div><span class="sec-num">08</span><h2 class="sec-title">Deeper reading</h2></div>
+      <ul>
+        <li><a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> — the full product picture, surfaces, governance, and roadmap.</li>
+        <li><a href="./background.html">KUD+ Background</a> — academic justification for the framework: Backward Design, Constructive Alignment, the relationship to Bloom's, the depth-scale extension.</li>
+        <li><a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a> — the research synthesis behind the tool's position on how problem-solving competence actually develops.</li>
+        <li><a href="./three-act-deep-dive.html">The 3-Act Program Structure</a> — an honest accounting of what the proposed 3-Act organizing model is consistent with, what it is not grounded in, and how it engages the strongest critiques.</li>
+        <li><a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> — the planned external check: do the competencies the tool measures actually relate to where GC graduates land? With failure criteria committed in advance.</li>
+        <li><a href="./measurement-hypotheses-deep-dive.html">Curriculum Measurement — Open Hypotheses &amp; Research Agenda</a> — what the measurement assumes, which assumptions are still open, and how each will be tested.</li>
+        <li><a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a> — the detailed faculty guide to capturing a course: what each step does and why. (Step-by-step how-to with screenshots: <a href="https://gcworkflow.clemson.edu:8443/curriculum/howto">gcworkflow.clemson.edu:8443/curriculum/howto</a>, Clemson network.)</li>
+      </ul>
+    </section>
 
-<p>The main rule is that scores rest on evidence of what students do, not on what a syllabus says the course aims for. A topic that is only listed in the syllabus scores zero; Know at 1 needs evidence the topic was actually taught. Know above 1, and any Understand or Do score, requires assessment evidence: a test item for Know, student-written reasoning for Understand, a graded piece of work for Do. Five foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Communication) are scored on Do only. Gaps between the three scales are treated as information &mdash; for example, a student who can use the terms but not explain the reasoning.</p>
+    <a class="xlink" href="curriculum-map.html">
+      <span><span class="label">Explore the data · Tool</span><span class="t">GC Curriculum Map</span><span class="d">Work back from a career to the competencies it relies on and the courses that build them, year by year.</span></span>
+      <span class="link-arrow">Open the tool →</span>
+    </a>
 
-<p>We use this rather than Bloom&rsquo;s taxonomy for a practical reason. Bloom&rsquo;s authors intend it for aligning objectives, activities, and assessments across a unit, course, or curriculum (Krathwohl, 2002, p. 212), but its levels describe kinds of thinking and it has no separate performance dimension. Jobs are usually described by the knowledge they require and the work they involve, which maps more directly onto Know and Do. The U.S. Department of Labor&rsquo;s <strong>O*NET</strong> describes occupations by required knowledge, skills, and work activities, and its Level scale rates the level &ldquo;needed to perform&rdquo; a job &mdash; a demand rating, not a measure of what a learner has attained. Today O*NET serves as a reference point: three of the five career targets are tied to an O*NET occupation code, and the graduate-outcome study uses the same codes to classify where graduates work. The competencies themselves are written by hand for GC, not taken from O*NET. The next step will likely use O*NET&rsquo;s Importance ratings to weight what each career target asks for (see below). The full academic case is in the <a href="./background.html">Background document</a>.</p>
-
-<p>Problem-solving is handled differently from other competencies: the framework treats it as something that develops across the sequence of courses, through depth in the subject, attempts that fail and are revised, and reflection, rather than as a trait of any one course. Whether that actually happens across four years is one of the things still to be checked. The research behind this position is in <a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a>.</p>
-
-<h2>What it does today</h2>
-
-<ul>
-  <li><strong>CourseCapture.</strong> An instructor reviews the course materials the tool has gathered (syllabus, Canvas content, uploads), then works through an AI-guided interview. The result is a dated, unchangeable profile of the course. 19 of the 59 courses in the catalog have been captured so far.</li>
-  <li><strong>Explore.</strong> A chat tied to one course that helps an instructor think through a proposed change and estimate its effect on the course and its neighbors.</li>
-  <li><strong>Program views.</strong> A matrix of captured courses against the competencies each career target needs, a prerequisite check for each course, and a first version of a scaffolding view that flags a course expecting a skill no earlier course introduces.</li>
-  <li><strong>Objective assessment guide.</strong> On each captured course&rsquo;s public wiki page: for every learning objective in the syllabus, which graded Canvas assignment or rubric row measures it, and which class-level numbers to collect at the end of the semester to show whether it was met.</li>
-  <li><strong>Curriculum wiki.</strong> Pages generated from the captured courses, with a question-answering assistant that cites them.</li>
-  <li><strong>Employer input.</strong> A guided form for industry partners to describe a role&rsquo;s requirements. It is built; no employer has completed one yet, so the comparison of program coverage against employer demand (Q1) has not been run.</li>
-</ul>
-
-<p>Faculty sign in with personal links. Invitations are going out now, and the shared department password will be retired once they are done. A detailed walkthrough is in <a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a>.</p>
-
-<h2>How faculty stay in control</h2>
-
-<ul>
-  <li><strong>The AI drafts; faculty decide.</strong> Every score can be edited before a course profile is confirmed. Any score can be flagged with a named note, and the flag stays visible until someone resolves it.</li>
-  <li><strong>Profiles belong to the instructor who confirmed them.</strong> They are visible to the program coordinator and the curriculum committee, and they can be retired but not deleted.</li>
-  <li><strong>The curriculum committee keeps its authority.</strong> The tool provides information for its discussions; it does not make or approve changes.</li>
-</ul>
-
-<h2>Limits</h2>
-
-<ul>
-  <li><strong>Course scores describe opportunity, not attainment.</strong> They say what a course&rsquo;s assessed work gives students the chance to show, not what any particular student learned. The assessment guide is a first step toward collecting evidence that objectives were met; that evidence is not yet fed back into the scores.</li>
-  <li><strong>The AI&rsquo;s readings can share blind spots.</strong> Published studies of AI-assisted curriculum mapping find agreement with experts that varies a good deal by skill (Zamecnik et al., 2024; Jayalath et al., 2025; see <a href="./background.html#anchors">Background &sect;7</a>). This is why faculty confirmation is required and why an outside check is needed (below).</li>
-  <li><strong>Coverage is partial.</strong> With 19 courses captured, program-level views are incomplete, and nothing yet tracks how the curriculum changes over time.</li>
-</ul>
-
-<h2>What comes next</h2>
-
-<p>The next design step is the career comparison (Q1). The proposal is to weight each career&rsquo;s requirements by how important O*NET rates them for the occupation, to show a shortfall in an important skill on its own rather than averaging it away, and to flag skills that appear in one course and are never reinforced later. A later stage would account for skills fading when they are not used, once there is data to estimate that. This is designed, not built; details are in the <a href="./measurement-hypotheses-deep-dive.html">Measurement Hypotheses</a> document. The student advising view is specified but not yet built.</p>
-
-<h2>How we will check it</h2>
-
-<p>The tool cannot confirm on its own that its readings match how graduates actually fare. A <strong>Graduate Outcome Criterion-Relevance Study</strong> compares the competencies the tool emphasizes with where GC graduates from the past ten years actually work, using failure criteria set in advance so that the results can count against the framework as well as for it. Until it reports, the framework&rsquo;s larger claims should be read as working hypotheses. Full design: <a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a>.</p>
-
-<div class="deeper">
-<h2>Deeper reading</h2>
-<ul>
-  <li><a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> — the full product picture, surfaces, governance, and roadmap.</li>
-  <li><a href="./background.html">KUD+ Background</a> — academic justification for the framework: Backward Design, Constructive Alignment, the relationship to Bloom's, the depth-scale extension.</li>
-  <li><a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a> — the research synthesis behind the tool's position on how problem-solving competence actually develops.</li>
-  <li><a href="./three-act-deep-dive.html">The 3-Act Program Structure</a> — an honest accounting of what the proposed 3-Act organizing model is consistent with, what it is not grounded in, and how it engages the strongest critiques.</li>
-  <li><a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> — the planned external check: do the competencies the tool measures actually relate to where GC graduates land? With failure criteria committed in advance.</li>
-  <li><a href="./measurement-hypotheses-deep-dive.html">Curriculum Measurement — Open Hypotheses &amp; Research Agenda</a> — what the measurement assumes, which assumptions are still open, and how each will be tested.</li>
-  <li><a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a> — the detailed faculty guide to capturing a course: what each step does and why. (Step-by-step how-to with screenshots: <a href="https://gcworkflow.clemson.edu:8443/curriculum/howto">gcworkflow.clemson.edu:8443/curriculum/howto</a>, Clemson network.)</li>
-</ul>
+    <p class="doc-foot">Source: <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">github.com/chiptoe-svg/gc-curriculum-tool</a></p>
+  </article>
 </div>
 
-<footer>
-  Source: <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">github.com/chiptoe-svg/gc-curriculum-tool</a>
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
 </footer>
-
-</main>
-
 </body>
 </html>
