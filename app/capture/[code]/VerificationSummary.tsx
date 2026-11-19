@@ -19,16 +19,16 @@ interface Props {
   approvedDate?: string | null;
 }
 
-const HEADING = 'text-sm font-semibold text-foreground';
+const HEADING = 'text-base font-semibold text-foreground';
 
 function BulletList({ items, label }: { items: string[]; label: string }) {
   if (items.length === 0) return null;
   return (
     <div>
       <h4 className={HEADING}>{label}</h4>
-      <ul className="mt-1.5 space-y-1.5">
+      <ul className="cap-list mt-1.5 space-y-1.5">
         {items.map((it, i) => (
-          <li key={i} className="text-sm leading-snug border-l-2 border-amber-200 pl-3">{plainDepth(it)}</li>
+          <li key={i} className="text-sm leading-snug">{plainDepth(it)}</li>
         ))}
       </ul>
     </div>
@@ -47,11 +47,11 @@ function BulletList({ items, label }: { items: string[]; label: string }) {
  */
 export function VerificationSummary({ summary, isLegacy, onCitationClick, approveLabel = 'Approve the profile', isUpdate = false, approvedDate = null }: Props) {
   return (
-    <section className="rounded-md border bg-amber-50/50 px-4 py-4 shadow-sm space-y-4">
+    <section className="cap-card space-y-5 px-6 py-6">
       {isLegacy && <LegacyBanner />}
       <header>
         <div className="flex items-center gap-2">
-          <h3 className="font-display text-lg font-semibold tracking-tight text-foreground">
+          <h3 className="cap-title text-2xl">
             Does this capture your course?
           </h3>
           {/* An "inferred" chip only repeated what the copy below says; keep the
@@ -61,7 +61,7 @@ export function VerificationSummary({ summary, isLegacy, onCitationClick, approv
           )}
         </div>
         {approvedDate ? (
-          <p role="note" aria-label="Approved" className="mt-3 rounded-md border-l-4 border-teal-500 bg-background px-4 py-3 text-base leading-relaxed text-foreground shadow-sm">
+          <p role="note" aria-label="Approved" className="cap-note mt-3 border-l-4 border-[#2F6B3A] px-5 py-4 text-base leading-relaxed">
             <span className="font-semibold">Approved on {approvedDate}.</span> This is the record as it stands; nothing here needs your attention.
             To change it, adjust a score below and use &ldquo;{approveLabel}&rdquo;.
           </p>
@@ -69,7 +69,7 @@ export function VerificationSummary({ summary, isLegacy, onCitationClick, approv
         <div
           role="note"
           aria-label="How to review"
-          className="mt-3 rounded-md border-l-4 border-amber-500 bg-background px-4 py-3 text-base leading-relaxed text-foreground shadow-sm"
+          className="cap-note mt-3 px-5 py-4 text-base leading-relaxed"
         >
           <p className="font-semibold">How to review</p>
           <ol className="mt-1.5 list-decimal space-y-1 pl-5">

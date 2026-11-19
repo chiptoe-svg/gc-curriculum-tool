@@ -135,9 +135,8 @@ export function CompetencyPortrait({
         .join('; ')
     : null;
 
-  const primary =
-    'rounded-md border border-foreground bg-foreground px-4 py-1.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/85 disabled:cursor-not-allowed disabled:opacity-40';
-  const secondary = 'rounded-md border border-input bg-background px-4 py-1.5 text-sm font-medium hover:bg-muted';
+  const primary = 'cap-btn cap-btn-primary';
+  const secondary = 'cap-btn';
 
   return (
     <div className="space-y-3">
@@ -165,7 +164,7 @@ export function CompetencyPortrait({
         if (parts.length === 0) return null;
         return (
           <p data-testid="intended-target" className="text-sm text-muted-foreground">
-            <span className="font-medium text-amber-700">The course aims for more</span>
+            <span className="font-medium text-[#8A5A00]">The course aims for more</span>
             {` — ${parts.join('; ')}.`}
           </p>
         );
@@ -194,11 +193,8 @@ export function CompetencyPortrait({
               <button
                 type="button"
                 onClick={onConfirm}
-                className={
-                  confirmed
-                    ? 'w-full rounded-md border border-success/30 bg-success/10 px-3 py-1.5 text-sm font-semibold text-success'
-                    : 'w-full rounded-md border border-success bg-success px-3 py-1.5 text-sm font-semibold text-success-foreground shadow-sm hover:bg-success/90'
-                }
+                aria-pressed={confirmed}
+                className={confirmed ? 'cap-cue cap-cue-done h-10 w-full justify-center text-sm' : 'cap-btn cap-btn-primary w-full'}
               >
                 {confirmed ? '✓ Confirmed' : '✓ Looks right'}
               </button>
@@ -207,7 +203,7 @@ export function CompetencyPortrait({
               type="button"
               aria-expanded={false}
               onClick={() => setAdjusting(true)}
-              className="w-full rounded-md border border-amber-600 bg-amber-500 px-3 py-1.5 text-sm font-semibold text-amber-950 shadow-sm hover:bg-amber-600"
+              className="cap-btn w-full"
             >
               Needs adjusting
             </button>
@@ -216,7 +212,7 @@ export function CompetencyPortrait({
       )}
 
       {adjusting && (
-        <div className="space-y-3 rounded-md border-2 border-amber-400 bg-background p-3">
+        <div className="space-y-3 rounded-2xl border border-[#B57600] bg-white p-4">
           <p className="text-sm font-semibold text-foreground">
             Change any score that&apos;s wrong — pick the description that fits best, then save.
           </p>

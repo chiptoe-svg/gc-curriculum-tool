@@ -467,11 +467,9 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
           returns to Step 1 (import); tier edits are PATCHed as they're made, so
           nothing is lost on the round trip. */}
       <div className="mb-1 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
-          <span>Step 2 of 3 · Choose how closely to read each file</span>
-          <span aria-hidden className="text-foreground">●</span>
-          <span aria-hidden>──</span>
-          <span aria-hidden>○</span>
+        <div className="flex items-center gap-3">
+          <span className="cap-eyebrow">Step 2 of 3 · Choose how closely to read each file</span>
+          <span aria-hidden className="cap-steps"><i className="on" /><b /><i /></span>
         </div>
         <button
           type="button"

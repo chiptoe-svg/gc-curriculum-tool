@@ -14,8 +14,10 @@ import { TERMS_PER_ACT, type Act, type Placement, type Slot } from './types';
 /** Every card is the same size, in map pixels (set on the card, so it does not follow the root font size). */
 export const CARD_W = 184;
 export const CARD_H = 56;
+/** Plan-map cards are taller so a course name wraps to three lines instead of being cut off (design system: never cut off names). */
+export const MAP_CARD_H = 92;
 export const COL_W = 198;    // card plus gap, for the automatic layout
-export const ROW_H = 74;     // the least height of one term row
+export const ROW_H = 110;     // the least height of one term row (fits MAP_CARD_H)
 
 export interface Pos { slot: Slot; x: number }
 

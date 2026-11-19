@@ -19,3 +19,10 @@
 .st-table th, .st-table td { text-align: left; padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--cb-rule); vertical-align: top; }
 .st-controls { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; }
 .st-controls select { border: 1px solid var(--cb-rule); border-radius: 3px; padding: 0.15rem 0.3rem; }
+.st-orphans > summary { cursor: pointer; list-style: revert; }
+.st-orphans > summary h3 { display: inline; font-size: 1.05rem; }
+.st-orphans ul { list-style: none; margin: 0.25rem 0 0.75rem; padding: 0; }
+.st-orphans li { padding: 0.45rem 0; border-top: 1px solid var(--cb-rule); line-height: 1.5; }
+.st-orphans li:last-child { border-bottom: 1px solid var(--cb-rule); }
+.st-orphans p.cb-muted { margin-top: 0.75rem; font-family: var(--font-mono-plex), ui-monospace, monospace; font-size: 0.8125rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.st-panel { border-radius: 16px; border-color: #E6E3EC; padding: 1.25rem 1.5rem; }

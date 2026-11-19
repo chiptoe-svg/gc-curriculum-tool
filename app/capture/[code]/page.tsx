@@ -27,6 +27,7 @@ import { FeedbackLink } from '@/app/FeedbackLink';
 import { CourseStrings } from '@/components/strings/CourseStrings';
 import '@/components/strings/strings.css';
 import '@/app/build/build.css';
+import './capture.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -179,13 +180,13 @@ export default async function CapturePage({ params, searchParams }: Props) {
   }));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="capture-type min-h-screen bg-background">
       <CreditsBanner />
-      <header className="border-b">
-        <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
+      <header className="border-b border-[#E4E2E8] bg-white">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-end justify-between gap-4 px-6 py-5">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">CourseCapture</p>
-            <h1 className="mt-0.5 text-xl font-semibold">
+            <p className="cap-eyebrow">CourseCapture</p>
+            <h1 className="cap-title mt-1 text-[28px] leading-tight">
               {formatCourseLabel(course.code, pairedCodeRows)} <span className="text-muted-foreground">— {course.title}</span>
             </h1>
           </div>

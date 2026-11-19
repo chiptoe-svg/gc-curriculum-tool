@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { Fraunces, DM_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { Newsreader, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import { FeedbackWidget } from './FeedbackWidget';
 import './globals.css';
 
-const serif = Fraunces({
+// GC design system v1.1 (docs/GC-DESIGN-SYSTEM.md): Newsreader titles,
+// IBM Plex Sans reading and controls, IBM Plex Mono labels and codes.
+const serif = Newsreader({
   subsets: ['latin'],
   variable: '--font-display',
   weight: ['400', '500', '600', '700'],
@@ -12,7 +14,7 @@ const serif = Fraunces({
   display: 'swap',
 });
 
-const sans = DM_Sans({
+const sans = IBM_Plex_Sans({
   subsets: ['latin'],
   variable: '--font-body',
   weight: ['400', '500', '600', '700'],
