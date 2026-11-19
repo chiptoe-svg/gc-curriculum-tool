@@ -9,7 +9,7 @@
  */
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ObjectiveResult, PlacedCourse, PlanResult } from '@/lib/builder/compute';
-import { CARD_H, CARD_W, COL_W, ROW_H, slotAt, type Pos } from '@/lib/builder/layout';
+import { MAP_CARD_H as CARD_H, CARD_W, COL_W, ROW_H, slotAt, type Pos } from '@/lib/builder/layout';
 import { CONDITIONS, type ProblemSolvingResult } from '@/lib/builder/problem-solving';
 import { ACTS, TERMS_PER_ACT, termOf, type Act, type Branch, type Library, type PlanState, type Slot } from '@/lib/builder/types';
 import type { ReqStatus, requiredByCourse } from '@/lib/builder/threads';
