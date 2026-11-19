@@ -470,9 +470,9 @@ export function CaptureClient({
               to materials" flips landingStep back to 'materials'; the conversation
               in state is preserved, so Continue returns to it intact. */}
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              <span>Step 2 of 2 · Interview</span>
-              <span aria-hidden>○</span><span aria-hidden>──</span><span aria-hidden className="text-foreground">●</span>
+            <div className="flex items-center gap-3">
+              <span className="cap-eyebrow">Step 2 of 2 · Interview</span>
+              <span aria-hidden className="cap-steps"><i /><b /><i className="on" /></span>
             </div>
             <button
               type="button"
@@ -712,7 +712,7 @@ export function CaptureClient({
             <button
               type="button"
               onClick={() => setStage('reconcile')}
-              className="rounded border border-stone-300 px-3 py-1 text-xs text-stone-700 hover:bg-stone-50"
+              className="cap-btn min-h-9 text-sm"
             >
               Reconcile with the interviewer
             </button>

@@ -43,11 +43,11 @@ export function CaptureHero({
 }) {
   const ready = materialsCount > 0;
   return (
-    <section className="rounded-lg border bg-card px-6 py-7 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+    <section className="cap-step px-6 py-7">
+      <p className="cap-eyebrow">
         {courseCode} · Course capture
       </p>
-      <h2 className="mt-1 text-xl font-semibold leading-snug">
+      <h2 className="cap-title mt-2 text-2xl leading-snug">
         Capture what students should actually walk away knowing, understanding, and being able to do in{' '}
         {courseTitle}.
       </h2>
@@ -58,8 +58,7 @@ export function CaptureHero({
       </p>
       <p
         className={
-          'mt-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ' +
-          (ready ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800')
+          'cap-cue mt-4 ' + (ready ? 'cap-cue-done' : 'cap-cue-input')
         }
       >
         {ready

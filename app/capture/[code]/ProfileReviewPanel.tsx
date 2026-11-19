@@ -78,19 +78,13 @@ export function SourceBadge({
 }) {
   if (!source) return null;
   const count = citations?.length ?? 0;
-  const palette =
-    source === 'instructor'
-      ? 'bg-teal-100 text-teal-900 border-teal-300'
-      : source === 'materials'
-        ? 'bg-amber-100 text-amber-900 border-amber-300'
-        : source === 'both'
-          ? 'bg-green-100 text-green-900 border-green-300'
-          : 'bg-stone-100 text-stone-700 border-stone-300';
+  // Where a statement came from is provenance, not status: one neutral chip.
+  const palette = 'rounded-full border-[#D9D6DF] bg-white text-[#46424F]';
   const label = sourceLabel(source);
 
   const interactive = onCitationClick && citations && citations.length > 0;
   const className =
-    `inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${palette}` +
+    `inline-flex items-center border px-2.5 py-0.5 text-xs font-medium ${palette}` +
     (interactive ? ' hover:opacity-80 cursor-pointer' : '');
 
   if (interactive) {
@@ -347,11 +341,11 @@ function CompetencyRow({
       type="button"
       onClick={onExpand}
       aria-label={`Edit "${competency.statement}" — ${humanizeSource(competency.source)}`}
-      className="flex w-full flex-wrap items-baseline gap-x-2 gap-y-1 rounded border bg-background px-3 py-2 text-left text-sm hover:bg-muted focus:outline-none focus:ring-1 focus:ring-ring"
+      className="flex w-full flex-wrap items-baseline gap-x-2 gap-y-1 rounded-xl border border-[#E4E2E8] bg-white px-3 py-2 text-left text-sm hover:border-[#B9B4C4] focus:outline-none focus:ring-1 focus:ring-ring"
     >
       <span aria-hidden className="text-muted-foreground">▸</span>
       <span className="min-w-0 flex-1 basis-80 font-medium">{competency.statement}</span>
-      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+      <span className="shrink-0 rounded-full border border-[#D9D6DF] px-2 py-0.5 text-xs text-[#46424F]">
         {humanizeSource(competency.source)}
       </span>
       {/* Compact plain levels; the statement wraps rather than being cut off
@@ -359,7 +353,7 @@ function CompetencyRow({
       <span
         data-testid="row-depth"
         title={plainScores(levels)}
-        className="shrink-0 text-xs text-muted-foreground"
+        className="min-w-0 text-xs text-muted-foreground"
       >
         {plainScoresShort(levels)}
       </span>
@@ -503,38 +497,38 @@ export function statusTagFor(
     return {
       label: 'Needs evidence',
       title: 'A high score resting on your interview answers alone — no assignment or rubric is cited yet. If one exists, mention it under Needs adjusting.',
-      tone: 'border-amber-400 bg-amber-50 text-amber-900',
+      tone: 'cap-cue-input',
     };
   }
   const band = deriveEvidenceBand({ source: c.source, citations: c.citations });
   if (band === 'artifact_verified') {
-    return { label: 'From student work', title: 'Backed by student-produced work.', tone: 'border-teal-300 bg-teal-50 text-teal-900' };
+    return { label: 'From student work', title: 'Backed by student-produced work.', tone: 'cap-cue-done' };
   }
   if (band === 'materials_supported' && c.source === 'both') {
     return {
       label: 'From your interview and course materials',
       title: 'Based on what you said in the interview and backed by a course document.',
-      tone: 'border-green-300 bg-green-50 text-green-900',
+      tone: 'cap-cue-done',
     };
   }
   if (band === 'materials_supported') {
     return {
       label: 'From course materials',
       title: 'Backed by a course document (assignment, rubric, or syllabus).',
-      tone: 'border-green-300 bg-green-50 text-green-900',
+      tone: 'cap-cue-done',
     };
   }
   if (c.source === 'instructor') {
     return {
       label: 'From your interview',
       title: 'Based on what you said in the interview; no course document is cited.',
-      tone: 'border-stone-300 bg-stone-50 text-stone-800',
+      tone: 'cap-cue-draft',
     };
   }
   return {
     label: "AI's inference",
     title: 'The AI inferred this — no assignment, rubric, or interview answer points to it directly. Check it carefully.',
-    tone: 'border-stone-300 bg-stone-50 text-stone-800',
+    tone: 'cap-cue-draft',
   };
 }
 
@@ -550,7 +544,7 @@ function StatusTag({
   const tag = statusTagFor(competency, unverifiedHighScore);
   if (!tag) return null;
   const cites = competency.citations ?? [];
-  const className = `inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${tag.tone}`;
+  const className = `cap-cue ${tag.tone}`;
   if (onCitationClick && cites.length > 0) {
     return (
       <button
@@ -1323,14 +1317,14 @@ export function ProfileReviewPanel({
     <section className="space-y-6 pb-24">
 
       {/* ── STEP HEADER — Step 2 of 2 (mirrors Step 1's design language) ── */}
-      <div className="rounded-lg border bg-card p-6">
-        <div className="mb-1 flex items-center gap-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
-          <span>Step 2 of 2 · Review &amp; Approve</span>
-          <span aria-hidden className="text-foreground">○</span><span aria-hidden>──</span><span aria-hidden className="text-foreground">●</span>
+      <div className="cap-step p-6">
+        <div className="mb-2 flex items-center gap-3">
+          <span className="cap-eyebrow">Step 2 of 2 · Review &amp; Approve</span>
+          <span aria-hidden className="cap-steps"><i /><b /><i className="on" /></span>
         </div>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="font-display text-xl font-semibold tracking-tight">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="cap-title text-2xl">
               {settled ? 'This is the approved version.' : <>Here&apos;s what the interviewer concluded.</>}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -1339,22 +1333,20 @@ export function ProfileReviewPanel({
                 : `Check it, adjust it, approve it — nothing is recorded until you use ${approveQuoted}.`}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Status chip — absorbs the standalone DRAFT/CAPTURED banner */}
             {isCaptured ? (
-              <span className="rounded border border-teal-300 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-900">
-                CAPTURED ✓
-                {dirty && <span className="ml-1 font-normal text-amber-700">(unsaved edits)</span>}
+              <span className="cap-cue cap-cue-done">
+                Captured
+                {dirty && <span className="font-normal">(unsaved edits)</span>}
               </span>
             ) : (
-              <span className="rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-900">
-                DRAFT
-              </span>
+              <span className="cap-cue cap-cue-draft">Draft</span>
             )}
             <button
               type="button"
               onClick={onResumeChat}
-              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+              className="cap-btn"
             >
               ← Back to the interview
             </button>
@@ -1363,7 +1355,7 @@ export function ProfileReviewPanel({
                 <a
                   href={okfHref}
                   download
-                  className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                  className="cap-btn"
                   title="Download this course's saved profile as portable Markdown (OKF)"
                 >
                   ↓ Markdown
@@ -1371,7 +1363,7 @@ export function ProfileReviewPanel({
                 <a
                   href={bundleHref}
                   download
-                  className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                  className="cap-btn"
                   title="Download the full course as a self-contained OKF bundle (.zip): profile, transcript, and all materials"
                 >
                   ↓ Bundle (.zip)
@@ -1431,16 +1423,16 @@ export function ProfileReviewPanel({
               are highlighted + expanded; confident rows are rolled up. Editing
               a score never reorders the list or moves a row between zones. ── */}
       <div className="space-y-3">
-        <section className="space-y-2 rounded-md border bg-card p-3">
-          <div className="flex items-baseline justify-between gap-2">
-            <h3 className="text-sm font-semibold">Competencies ({working.competencies.length})</h3>
+        <section className="cap-card space-y-3 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="cap-title text-xl">Competencies ({working.competencies.length})</h3>
             <div className="flex items-center gap-2">
               {needsReview.size > 0 && (
                 <span
                   className={
                     unreviewedCount === 0
-                      ? 'rounded-full bg-green-100 px-3 py-1 text-sm font-bold text-green-800'
-                      : 'rounded-full bg-amber-200 px-3 py-1 text-sm font-bold text-amber-900'
+                      ? 'cap-cue cap-cue-done'
+                      : 'cap-cue cap-cue-input'
                   }
                 >
                   {settled ? 'approved ✓' : unreviewedCount === 0 ? 'all confirmed ✓' : `${unreviewedCount} still to confirm`}
@@ -1482,11 +1474,11 @@ export function ProfileReviewPanel({
                 <div
                   key={i}
                   className={
-                    'space-y-1 rounded-md border border-amber-300 bg-amber-50/40 p-2'
-                    + (reviewed.has(i) || settled ? ' opacity-60' : '')
+                    'cap-flag space-y-2 p-3'
+                    + (reviewed.has(i) || settled ? ' is-done' : '')
                   }
                 >
-                  {reason && <p className="text-xs font-medium text-amber-800">⚑ {reason}</p>}
+                  {reason && <p className="text-xs font-medium text-[#8A5A00]">⚑ {reason}</p>}
                   <CompetencyCard
                     competency={c}
                     index={i}
@@ -1818,10 +1810,10 @@ export function ProfileReviewPanel({
       {/* ── 7. STICKY ACTION BAR ── hidden once this session's approval succeeded and
           nothing new was edited: the faculty member is done (owner, 2026-10-07). */}
       {!(snapshotMessage?.kind === 'ok' && !dirty) && !settled && (
-      <div data-testid="action-bar" className="sticky bottom-0 z-10 border-t bg-card px-4 py-3 shadow-[0_-1px_4px_rgba(0,0,0,0.06)]">
+      <div data-testid="action-bar" className="sticky bottom-0 z-10 rounded-t-2xl border border-b-0 border-[#E4E2E8] bg-white px-5 py-3 shadow-[0_-2px_10px_rgba(29,27,34,0.06)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Summary chip */}
-          <span className="rounded border border-muted bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
+          <span className="cap-cue cap-cue-read">
             {needsReview.size} worth a look · {confidentIndices.length} rolled up
           </span>
 
@@ -1833,7 +1825,7 @@ export function ProfileReviewPanel({
               onClick={() => persist('edited')}
               disabled={!dirty || saving || validationError !== null}
               title={validationError ? `Fix validation issue first: ${validationError}` : `Save your changes to the draft. Nothing is recorded until you use ${approveQuoted}.`}
-              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cap-btn"
             >
               {saving ? 'Saving…' : 'Save draft'}
             </button>
@@ -1860,7 +1852,7 @@ export function ProfileReviewPanel({
                   ? approveLockTitle
                   : undefined
               }
-              className="min-h-11 rounded-full bg-primary px-5 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-[#3A1F5C] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cap-btn cap-btn-primary min-h-11 font-semibold"
             >
               {approveLabel}
             </button>

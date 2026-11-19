@@ -1,0 +1,74 @@
+/* CourseCapture in the GC design system (docs/GC-DESIGN-SYSTEM.md v1.1).
+   Purple acts, orange marks, the five cue colors mean status and keep their shape. */
+
+.cap-eyebrow {
+  font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #C24F00;
+}
+.cap-title {
+  font-family: var(--font-heading, Georgia, serif);
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: #1D1B22;
+  text-wrap: balance;
+}
+
+/* Cards: white on the page, hairline, 16 radius; step panels 20. */
+.cap-card { background: #fff; border: 1px solid #E4E2E8; border-radius: 16px; }
+.cap-step { background: #fff; border: 1px solid #E4E2E8; border-radius: 20px; }
+.cap-note { background: #ECE6F4; border-radius: 16px; color: #1D1B22; }
+
+/* Step progress: numbered dots. */
+.cap-steps { display: inline-flex; align-items: center; gap: 6px; }
+.cap-steps i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #522D80; display: inline-block; }
+.cap-steps i.on { background: #522D80; }
+.cap-steps b { width: 14px; height: 1.5px; background: #CFC9DA; display: inline-block; }
+
+/* Buttons: pill shape. Primary purple; secondary white with hairline. */
+.cap-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 40px; padding: 0 18px; border-radius: 999px;
+  font: 500 15px var(--font-sans, system-ui, sans-serif);
+  border: 1px solid #D9D6DF; background: #fff; color: #1D1B22; cursor: pointer;
+  white-space: nowrap; text-decoration: none;
+}
+.cap-btn:hover { border-color: #B9B4C4; }
+.cap-btn-primary { background: #522D80; border-color: #522D80; color: #fff; }
+.cap-btn-primary:hover { background: #3A1F5C; border-color: #3A1F5C; }
+.cap-btn:disabled, .cap-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.cap-btn[aria-pressed="true"] { background: #522D80; border-color: #522D80; color: #fff; }
+
+/* Status cues — same as the docs pages. */
+.cap-cue {
+  display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px;
+  border-radius: 999px; font: 500 13px var(--font-sans, system-ui, sans-serif); white-space: nowrap;
+}
+.cap-cue::before { content: ""; width: 8px; height: 8px; flex: none; }
+.cap-cue-input { background: #FFF4DB; color: #8A5A00; }
+.cap-cue-input::before { background: #B57600; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.cap-cue-read { background: #ECE6F4; color: #522D80; }
+.cap-cue-read::before { border: 1.5px solid #522D80; border-radius: 50%; width: 6px; height: 6px; }
+.cap-cue-draft { background: #EFEEF2; color: #5D5966; }
+.cap-cue-draft::before { border: 1.5px dashed #5D5966; border-radius: 50%; width: 6px; height: 6px; }
+.cap-cue-done { background: #E4F0E6; color: #2F6B3A; }
+.cap-cue-done::before { background: #2F6B3A; border-radius: 50%; }
+.cap-cue-issue { background: #F9E3E3; color: #9B2C2C; }
+.cap-cue-issue::before { background: #9B2C2C; transform: rotate(45deg); width: 7px; height: 7px; }
+
+/* A review card that needs the reader: hairline card with an input-colored left rule. */
+.cap-flag { background: #fff; border: 1px solid #E4E2E8; border-left: 4px solid #B57600; border-radius: 16px; }
+.cap-flag.is-done { border-left-color: #2F6B3A; }
+
+/* Bulleted findings in the overview. */
+.cap-list li { border-left: 2px solid #CFC9DA; padding-left: 12px; }
+
+/* Sweep: the page's many older buttons follow the same two roles without
+   editing each one. Outlined buttons become hairline pills; black ones become
+   the purple primary. Inputs and selects keep their 10px corners. */
+.capture-type :is(button, a).border-input { border-radius: 999px; border-color: #D9D6DF; background: #fff; }
+.capture-type :is(button, a).border-input:hover:not(:disabled) { border-color: #B9B4C4; background: #fff; }
+.capture-type :is(button, a).bg-foreground { background: #522D80; color: #fff; border-color: #522D80; border-radius: 999px; }
+.capture-type :is(button, a).bg-foreground:hover:not(:disabled) { background: #3A1F5C; opacity: 1; }
+.capture-type :is(input, select, textarea).border-input { border-radius: 10px; }
