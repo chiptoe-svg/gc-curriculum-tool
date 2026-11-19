@@ -5,15 +5,22 @@
 // (the new header, footer and cross-link cards add words).
 // Also checks that every element id and every "needs confirmation" marker survives.
 //
-// Usage: node scripts/docs/check-restyle-text.mjs [--ref dev] docs/a.html [docs/b.html ...]
+// Usage: node scripts/docs/check-restyle-text.mjs [--ref dev] [--allow-removed <regex>]... docs/a.html ...
+//
+// Owner-approved removals (2026-11-18): section-number signs ("§ 4" -> "04") are
+// always allowed; the old dark rail's header label (e.g. "Clemson · Graphic
+// Communications GC Curriculum Tool Research Deep Dive") is allowed only when
+// passed explicitly with --allow-removed, so each page's removal is visible.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
 let ref = 'dev';
 const files = [];
+const allowRemoved = [/^§ ?\d+$/, /^§$/];
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--ref') ref = args[++i];
+  else if (args[i] === '--allow-removed') allowRemoved.push(new RegExp(args[++i]));
   else files.push(args[i]);
 }
 
@@ -67,12 +74,16 @@ let failed = false;
 for (const f of files) {
   const before = execFileSync('git', ['show', `${ref}:${f}`], { encoding: 'utf8', maxBuffer: 64e6 });
   const after = readFileSync(f, 'utf8');
-  const { removed, added, tooBig } = diff(words(before), words(after));
+  const d = diff(words(before), words(after));
+  const { added, tooBig } = d;
+  const allowed = d.removed.filter((r) => allowRemoved.some((re) => re.test(r)));
+  const removed = d.removed.filter((r) => !allowRemoved.some((re) => re.test(r)));
   const lostIds = [...ids(before)].filter((x) => !ids(after).has(x));
   const nvB = nv(before), nvA = nv(after);
   const ok = !removed.length && !lostIds.length && nvA >= nvB;
   if (!ok) failed = true;
   console.log(`\n${ok ? 'PASS' : 'FAIL'} ${f}${tooBig ? ' (diff too large to align)' : ''}`);
+  if (allowed.length) console.log('  removed (allowed):\n' + allowed.map((r) => '    ~ ' + r.slice(0, 200)).join('\n'));
   if (removed.length) console.log('  removed/changed:\n' + removed.map((r) => '    - ' + r.slice(0, 200)).join('\n'));
   if (lostIds.length) console.log('  lost ids: ' + lostIds.join(', '));
   if (nvA < nvB) console.log(`  needs-confirmation markers: ${nvB} -> ${nvA}`);
