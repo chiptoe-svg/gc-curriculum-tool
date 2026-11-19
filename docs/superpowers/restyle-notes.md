@@ -11,8 +11,9 @@ Read `docs/GC-DESIGN-SYSTEM.md` first; this file covers only what the guide leav
 2. Transform the old body **by script, not by retyping** (regex over `git show dev:<page>`), so the
    prose bytes never pass through your hands. Hand-write only the frame, hero, toc and cards.
 3. Run `node scripts/docs/check-restyle-text.mjs docs/<page>.html` after every build.
-4. Check at 1440 and 390 wide (Playwright cannot open `file:`; serve `docs/` on a free loopback port
-   from `~/.dev-ports.yaml`, kill it when done). Screenshots must be saved under the repo, then moved.
+4. Check at 1440 and 390 wide with the standalone script (no server, no shared browser):
+   `PW_EXE=$(ls -d ~/Library/Caches/ms-playwright/chromium_headless_shell-1243/*/chrome-headless-shell) node <scratchpad>/docshot.mjs <abs page path> <out.png> <width> [scrollFraction 0..1] [full]`
+   It prints horizontal overflow (must be 0) and console errors (must be none).
 
 ## The guard is order-sensitive (the big pitfall)
 The guard diffs visible words **in document order**. Moving a block of words to another place in
@@ -21,10 +22,14 @@ the DOM counts as removed + added and FAILS. Consequences:
   the hero in the new DOM. Put the hero *inside* `.paper`, after the toc, and lift it visually:
   `.paper > .hero{order:-1;flex:1 1 100%;margin-inline:calc(-1 * var(--pad))}`.
   Reading order (nav, then hero, then article) stays sensible; the hero has no focusable items.
-- **Every rail word survives**, including group labels ("Part I — Consistent with"), the rail header
-  ("Clemson · Graphic Communications / GC Curriculum Tool / Research Deep Dive" → `.toc-kicker`),
-  "See also" links (`a.out`, no number) and the rail footer link.
-- Old section numbers stay as written (`§ 1` in `.sec-num`), not `01`.
+- **Every rail word survives**, including group labels ("Part I — Consistent with"),
+  "See also" links (`a.out`, no number) and the rail footer link — EXCEPT the rail's header label
+  (e.g. "Clemson · Graphic Communications / GC Curriculum Tool / Research Deep Dive"): the owner
+  approved DROPPING it (2026-11-18), since the site header now says the same. Run the guard with
+  `--allow-removed '^(…the dropped fragments…)$'` and report the exact regex you used.
+- Section numbers use the guide's style, zero-padded with no sign: `<span class="sec-num">01</span>`
+  (owner, 2026-11-18). The guard always allows the removed `§ N`. Keep "§" where it appears inside
+  prose or link text (e.g. "Discussed in §5") — only the section-number labels change.
 - New step headings must not replace old headings. Tool: the old `h2` becomes an `h3.sub-h` under
   a new verb-first step `h2` ("Trace the competencies" above "Courses → competencies → career").
 - Words inside `<script>`, `<style>`, `<svg>` and `<title>` are not checked, so JS-rendered text is
@@ -37,7 +42,7 @@ the DOM counts as removed + added and FAILS. Consequences:
 |---|---|
 | `#rail` aside, `.nav-link`, `.nav-group-label` | `nav.toc#rail` (keep the id), links `<a><span class="n">N</span><span>…</span></a>`, group labels `span.label` |
 | `.doc-head` / `.doc-eyebrow` / `.doc-title` / `.doc-subtitle` / `.doc-meta` | `section.hero` / `.eyebrow` / `h1.title-paper` / `p.lede` / `.meta-row` (`<span><strong>Date</strong> …</span>`) |
-| `h2 > span.num` + text | `<div><span class="sec-num">§ 1</span><h2 class="sec-title">…</h2></div>` |
+| `h2 > span.num` + text | `<div><span class="sec-num">01</span><h2 class="sec-title">…</h2></div>` |
 | unnumbered "Part I — …" `h2` with inline style | `<div class="part"><h2 class="part-title">…</h2>(intro p)</div>` |
 | `.callout`, `.callout.note`, `.callout-title` | `aside.note` + guide book SVG + `<div><strong>Title</strong><p>…</p></div>` |
 | `.doc-foot` footer | `p.doc-foot` (last block of the article); site footer is the §4 frame |
