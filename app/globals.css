@@ -15,9 +15,10 @@
   --text-sm--line-height: calc(1.375 / 0.9375);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-body), "Segoe UI", system-ui, sans-serif;
+  --font-mono: var(--font-mono-plex), ui-monospace, Menlo, monospace;
+  --font-serif: var(--font-display), Georgia, serif;
+  --font-heading: var(--font-display), Georgia, serif;
   --font-display: var(--font-display);
   --font-body-serif: var(--font-display);
   --font-body-sans: var(--font-body);
@@ -63,40 +64,42 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --success: oklch(0.527 0.154 150.069);
-  --success-foreground: oklch(1 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* GC design system v1.1 (docs/GC-DESIGN-SYSTEM.md §2). Purple means you can
+     act; status colors are the five cues; amounts use the D0–D5 ramp. */
+  --background: #FBFBFA;          /* --page */
+  --foreground: #1D1B22;          /* --ink */
+  --card: #FFFFFF;                /* --panel */
+  --card-foreground: #1D1B22;
+  --popover: #FFFFFF;
+  --popover-foreground: #1D1B22;
+  --primary: #522D80;             /* --purple */
+  --primary-foreground: #FFFFFF;
+  --secondary: #F3F2F6;           /* --inset */
+  --secondary-foreground: #1D1B22;
+  --muted: #F3F2F6;
+  --muted-foreground: #5D5966;    /* --muted */
+  --accent: #ECE6F4;              /* --purple-soft */
+  --accent-foreground: #3A1F5C;   /* --purple-dark */
+  --destructive: #9B2C2C;         /* cue-issue */
+  --success: #2F6B3A;             /* cue-done */
+  --success-foreground: #FFFFFF;
+  --border: #E6E3EC;              /* --rule-soft */
+  --input: #DCD9E2;               /* --rule */
+  --ring: #522D80;
+  --chart-1: #E0D6EE;             /* D1–D5 ramp */
+  --chart-2: #C7B5E0;
+  --chart-3: #7A5BAE;
+  --chart-4: #5E3F94;
+  --chart-5: #3F2470;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1D1B22;
+  --sidebar-primary: #522D80;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #ECE6F4;
+  --sidebar-accent-foreground: #3A1F5C;
+  --sidebar-border: #E6E3EC;
+  --sidebar-ring: #522D80;
 }
 
 .dark {
@@ -156,7 +159,7 @@
 /* ---------------------------------------------------------------------------
  * Wiki prose — editorial typography for /wiki/* pages.
  * No @tailwindcss/typography dependency; hand-rolled to match the app's
- * design language (Fraunces display + DM Sans body + IBM Plex Mono).
+ * design language (Newsreader display + IBM Plex Sans body + IBM Plex Mono).
  * --------------------------------------------------------------------------- */
 .wiki-prose {
   color: var(--foreground);
@@ -188,11 +191,11 @@
 .wiki-prose ol { list-style-type: decimal; }
 .wiki-prose li { margin-bottom: 0.25rem; }
 .wiki-prose a {
-  color: oklch(0.42 0.12 250);
+  color: #522D80;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.wiki-prose a:hover { color: oklch(0.28 0.12 250); }
+.wiki-prose a:hover { color: #3A1F5C; }
 .wiki-prose code {
   font-family: var(--font-mono-plex);
   font-size: 0.875em;
@@ -249,11 +252,11 @@
 .ask-prose ol { list-style-type: decimal; }
 .ask-prose li { margin-bottom: 0.125rem; }
 .ask-prose a {
-  color: oklch(0.42 0.12 250);
+  color: #522D80;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.ask-prose a:hover { color: oklch(0.28 0.12 250); }
+.ask-prose a:hover { color: #3A1F5C; }
 .ask-prose code {
   font-family: var(--font-mono-plex);
   font-size: 0.85em;
@@ -328,7 +331,7 @@
    encodes materials-supported vs claimed. No cards, no eyebrows.
    --------------------------------------------------------------------------- */
 .wiki-index {
-  --wiki-accent: #f56600;
+  --wiki-accent: #C24F00; /* burnt orange: marks only (design system §1) */
   --wiki-rule: var(--border);
   --wiki-muted: var(--muted-foreground);
   max-width: 68rem;
