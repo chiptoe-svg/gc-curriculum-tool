@@ -1,193 +1,282 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Curriculum Measurement — Open Hypotheses &amp; Research Agenda</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curriculum Measurement: Open Hypotheses &amp; Research Agenda — Graphic Communications, Clemson</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
 <style>
-  :root {
-    --rail: #141412;
-    --rail-text: #8a8780;
-    --rail-active: #E8A44A;
-    --rail-hover: #2a2925;
-    --bg: #F7F5F0;
-    --bg-card: #FFFFFF;
-    --bg-alt: #F0EDE6;
-    --text: #1C1C18;
-    --text-muted: #6B6860;
-    --text-faint: #9E9B94;
-    --accent: #C8682A;
-    --accent-light: #F5E6D8;
-    --border: #E2DDD4;
-    --border-strong: #C8C4BA;
-    --mono: 'DM Mono', monospace;
-    --serif: 'Source Serif 4', Georgia, serif;
-    --display: 'Playfair Display', Georgia, serif;
-    --t1: #2A5C8C;
-  }
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
 
-  body {
-    font-family: var(--serif);
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-    min-height: 100vh;
-    font-size: 16px;
-    line-height: 1.7;
-  }
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
 
-  #rail {
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    width: 240px;
-    background: var(--rail);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    z-index: 100;
-  }
-  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
-  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
-  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
-  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
-  .rail-nav { padding: 20px 0; flex: 1; }
-  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
-  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
-  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
-  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
-  .rail-footer a { color: var(--rail-text); text-decoration: none; }
-  .rail-footer a:hover { color: var(--rail-active); }
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
 
-  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; }
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
-  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
-  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
-  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
-  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
-  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
-  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
 
-  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
 
-  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
-  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
-  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
 
-  p { margin-bottom: 14px; max-width: 760px; }
-  strong { color: var(--text); font-weight: 600; }
-  em { color: var(--text); font-style: italic; }
-  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
-  a:hover { color: #a85020; }
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
 
-  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
-  li { margin-bottom: 8px; }
-  li strong { color: var(--text); }
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
 
-  code { font-family: var(--mono); font-size: 0.88em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; color: var(--text); }
-
-  blockquote {
-    border-left: 3px solid var(--border-strong);
-    padding: 4px 0 4px 18px;
-    margin: 18px 0;
-    color: var(--text-muted);
-    font-style: italic;
-    max-width: 740px;
-  }
-
-  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
-  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-  .callout p:last-child { margin-bottom: 0; }
-  .callout.note { border-left-color: var(--t1); }
-  .callout.note .callout-title { color: var(--t1); }
-
-  table.compact { border-collapse: collapse; margin: 18px 0 22px; max-width: 820px; font-size: 14px; }
-  table.compact th, table.compact td { padding: 8px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
-  table.compact thead th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-strong); }
-
-  sup.nv { font-family: var(--mono); font-size: 0.72em; color: var(--text-faint); margin-left: 1px; cursor: help; }
-
-  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
-
-  @media (max-width: 900px) {
-    #rail { position: static; width: 100%; height: auto; }
-    main { margin-left: 0; padding: 32px 24px 64px; }
-  }
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* ---------- Page: deep dive (guide tokens only) ---------- */
+/* The hero sits inside .paper after the contents column in the DOM, so the old rail's
+   words keep their reading order; order:-1 puts it first on screen. */
+.paper > .hero{order:-1;flex:1 1 100%;margin-inline:calc(-1 * var(--pad))}
+.toc-kicker{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:13px;line-height:1.4;color:var(--muted)}
+.toc .label{display:block;margin:14px 0 2px}
+.toc a.out{padding-left:26px}
+.article section{scroll-margin-top:24px}
+.article h3{font-size:24px;line-height:1.25;margin-top:12px}
+.article ul,.article ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.part{display:flex;flex-direction:column;gap:16px;border-top:1px solid var(--rule);padding-top:24px}
+.part-title{font-size:26px;line-height:1.2;color:var(--muted)}
+.note > div{display:flex;flex-direction:column;gap:6px}
+sup.nv{font:500 .72em var(--mono);color:var(--muted);margin-left:1px;cursor:help}
+.dagger-legend{font-size:14px;color:var(--muted)}
+ol.refs{font-size:15px;overflow-wrap:anywhere}
+.doc-foot{font-size:14px;color:var(--muted)}
+.article table{min-width:0}
+.formula{text-align:center;font-family:var(--mono);line-height:1.5;margin:4px 0}
+.muted{color:var(--muted)}
+code{font:500 .88em var(--mono);background:var(--inset);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+.article .table-box table.wide{min-width:720px}
+#references ul,#references ol{font-size:15px;overflow-wrap:anywhere}
+/* figures */
+figure.fig{margin:8px 0;display:flex;flex-direction:column;gap:12px}
+figure.fig figcaption{font-size:14px;line-height:1.5;color:var(--muted)}
+figure.fig figcaption b{color:var(--ink);font-weight:600}
+.fig-scroll{overflow-x:auto}
+.quad{display:grid;grid-template-columns:120px 1fr 1fr;min-width:580px;border:1px solid var(--rule);border-radius:16px;overflow:hidden;background:var(--panel)}
+.quad > div{border-right:1px solid var(--rule-soft);border-bottom:1px solid var(--rule-soft);padding:14px 16px}
+.quad .qh{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--inset);display:flex;align-items:center}
+.quad .qcorner{background:var(--inset)}
+.quad .qcell{font-size:14px;line-height:1.5}
+.quad .qcell .qn{font-weight:600;display:block;margin-bottom:4px;color:var(--ink)}
+.quad .qcell .qg{color:var(--muted);font-size:13.5px}
+.quad .qcell.target{background:var(--purple-soft)}
+.quad .qcell.target .qn{color:var(--purple-dark)}
+.barwrap{max-width:460px}
+.bars{display:flex;align-items:flex-end;gap:38px;height:184px;padding:0 10px;border-bottom:2px solid var(--rule)}
+.bars .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.bars .col{width:100%;border-radius:5px 5px 0 0;background:#E0D6EE}
+.bars .bar.hi .col{background:#3F2470}
+.bars .pct{font:500 14px var(--mono);color:var(--ink);margin-bottom:5px}
+.barlabels{display:flex;gap:38px;padding:8px 10px 0}
+.barlabels span{flex:1;text-align:center;font-size:13px;color:var(--muted);line-height:1.4}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
+.flow .fbox{flex:1 1 0;min-width:116px;background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.4;display:flex;align-items:center}
+.flow .fbox.accent{background:var(--purple-soft);border-color:var(--purple);color:var(--purple-dark);font-weight:600}
+.flow .farr{display:flex;align-items:center;color:var(--purple);font-size:18px;flex:0 0 auto}
+.flow-neg{margin-top:10px;border:1px dashed var(--rule);border-radius:10px;padding:10px 14px;font-size:14px;color:var(--muted);background:var(--inset)}
+.flow-neg .x{color:#9B2C2C;font-weight:700;margin-right:7px}
+@media (max-width:640px){.bars{gap:20px}.barlabels{gap:20px}}
 </style>
 </head>
 <body>
-
-<aside id="rail">
-  <div class="rail-header">
-    <div class="rail-dept">Clemson &middot; Graphic Communications</div>
-    <div class="rail-title">GC Curriculum Tool</div>
-    <div class="rail-doc-type">Research Deep Dive</div>
-  </div>
-  <nav class="rail-nav">
-    <div class="nav-group-label">Sections</div>
-    <a class="nav-link" href="#what-to-read">What to read</a>
-    <a class="nav-link" href="#keystone">The keystone — KUD as the unit</a>
-    <a class="nav-link" href="#durability">B: Durability &amp; bleed-off</a>
-    <a class="nav-link" href="#crosswalk">A: Competency&rarr;career cross-walk</a>
-    <a class="nav-link" href="#uncertainty">C: Uncertainty &amp; convergence</a>
-    <a class="nav-link" href="#embeddings">Skill relatedness &amp; embeddings</a>
-    <a class="nav-link" href="#scale">Scale representation</a>
-    <a class="nav-link" href="#open-questions">Open questions</a>
-    <a class="nav-link" href="#references">References</a>
-    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
-    <a class="nav-link" href="./background.html">KUD+ Background (full)</a>
-    <a class="nav-link" href="./problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a>
-    <a class="nav-link" href="./three-act-deep-dive.html">3-Act Companion</a>
-    <a class="nav-link" href="./graduate-outcome-validation.html">Graduate-Outcome Study</a>
-  </nav>
-  <div class="rail-footer">
-    <a href="./background.html">&larr; KUD+ Background</a>
-  </div>
-</aside>
-
-<main>
-
-<header class="doc-head">
-  <div class="doc-eyebrow">Research synthesis &amp; open hypotheses</div>
-  <h1 class="doc-title">Curriculum Measurement &mdash; Open Hypotheses &amp; Research Agenda</h1>
-  <p class="doc-subtitle">Three interrelated hypotheses about what the KUD+depth framework measures and how: a durable-depth model, a competency-to-career cross-walk, and a convergence discipline for measurement uncertainty. Companion to the <a href="./background.html" style="color: var(--accent);">KUD+ Background</a>; these hypotheses are forward and unvalidated &mdash; most are gated on the graduate-outcome study.</p>
-  <div class="doc-meta">
-    <span><strong>Date</strong> June 2026</span>
-    <span><strong>Updated</strong> 7 October 2026</span>
-    <span><strong>Status</strong> Hypotheses only &mdash; not validated, not built</span>
-    <span><strong>Audience</strong> Faculty, curriculum committee, advisory partners</span>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
   </div>
 </header>
 
+<div class="wrap paper paper--long">
+  <nav class="toc" id="rail" aria-label="Contents">
+    <span class="label">Sections</span>
+    <a href="#what-to-read"><span class="n"></span><span>What to read</span></a>
+    <a href="#keystone"><span class="n">1</span><span>The keystone — KUD as the unit</span></a>
+    <a href="#durability"><span class="n">2</span><span>B: Durability &amp; bleed-off</span></a>
+    <a href="#crosswalk"><span class="n">3</span><span>A: Competency&rarr;career cross-walk</span></a>
+    <a href="#uncertainty"><span class="n">4</span><span>C: Uncertainty &amp; convergence</span></a>
+    <a href="#embeddings"><span class="n">5</span><span>Skill relatedness &amp; embeddings</span></a>
+    <a href="#scale"><span class="n">6</span><span>Scale representation</span></a>
+    <a href="#open-questions"><span class="n">7</span><span>Open questions</span></a>
+    <a href="#references"><span class="n">8</span><span>References</span></a>
+    <span class="label">See also</span>
+    <a class="out" href="./background.html">KUD+ Background (full)</a>
+    <a class="out" href="./problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a>
+    <a class="out" href="./three-act-deep-dive.html">3-Act Companion</a>
+    <a class="out" href="./graduate-outcome-validation.html">Graduate-Outcome Study</a>
+    <a class="out" href="./background.html">&larr; KUD+ Background</a>
+  </nav>
+
+  <section class="hero">
+    <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="eyebrow">Research synthesis &amp; open hypotheses</span>
+      <h1 class="title-paper">Curriculum Measurement &mdash; Open Hypotheses &amp; Research Agenda</h1>
+      <p class="lede">Three interrelated hypotheses about what the KUD+depth framework measures and how: a durable-depth model, a competency-to-career cross-walk, and a convergence discipline for measurement uncertainty. Companion to the <a href="./background.html" style="color: var(--accent);">KUD+ Background</a>; these hypotheses are forward and unvalidated &mdash; most are gated on the graduate-outcome study.</p>
+      <div class="meta-row">
+        <span><strong>Date</strong> June 2026</span>
+        <span><strong>Updated</strong> 7 October 2026</span>
+        <span><strong>Status</strong> Hypotheses only &mdash; not validated, not built</span>
+        <span><strong>Audience</strong> Faculty, curriculum committee, advisory partners</span>
+      </div>
+    </div>
+  </section>
+
+  <article class="article">
 <section id="what-to-read">
 
-  <div class="callout note" style="margin-bottom: 22px;">
-    <div class="callout-title">What to read</div>
-    <p style="margin-bottom: 10px; font-style: normal;">
+  <aside class="note">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+      <div><strong>What to read</strong>
+    
+    <p>
       <a href="./executive-brief.html">Executive Brief</a> &mdash; 3-min what / why / status<br>
       <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> &mdash; the product picture, surfaces, and roadmap<br>
       <a href="./background.html">Background</a> &mdash; the academic case (KUD+, why-not-Bloom, evidence rule)<br>
       <a href="./problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a> &mdash; research on how problem-solving develops<br>
       <a href="./three-act-deep-dive.html">3-Act Companion</a> &mdash; the program-structure research<br>
-      <strong style="color: var(--text);">Measurement Hypotheses</strong> (you are here) &mdash; open questions and research agenda
-    </p>
-  </div>
+      <strong>Measurement Hypotheses</strong> (you are here) &mdash; open questions and research agenda
+    </p></div>
+    </aside>
 
-  <div class="callout note">
-    <div class="callout-title">Register of this document</div>
-    <p><strong>This document is explicitly forward and unvalidated.</strong> The Background and Problem-Solving Deep-Dive present settled (or defensibly bounded) commitments the framework rests on today. This companion presents what would need to be true &mdash; and how it would need to be tested &mdash; for the framework to do the things it aspires to: trace competencies across a curriculum, compare program output to career demand, and report uncertainty honestly. Most of the quantitative hypotheses here are gated on the <a href="./graduate-outcome-validation.html">graduate-outcome study</a>. Nothing in this document constitutes a validated finding or a claimed result.</p>
-  </div>
-
+  <aside class="note">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+      <div><strong>Register of this document</strong>
+    
+    <p><strong>This document is explicitly forward and unvalidated.</strong> The Background and Problem-Solving Deep-Dive present settled (or defensibly bounded) commitments the framework rests on today. This companion presents what would need to be true &mdash; and how it would need to be tested &mdash; for the framework to do the things it aspires to: trace competencies across a curriculum, compare program output to career demand, and report uncertainty honestly. Most of the quantitative hypotheses here are gated on the <a href="./graduate-outcome-validation.html">graduate-outcome study</a>. Nothing in this document constitutes a validated finding or a claimed result.</p></div>
+    </aside>
 
 </section>
 
 <section id="keystone">
-  <h2><span class="num">&sect; 1</span>The keystone &mdash; KUD+depth as the unit of account</h2>
+  <div><span class="sec-num">01</span><h2 class="sec-title">The keystone &mdash; KUD+depth as the unit of account</h2></div>
 
   <p>The three hypotheses below are not independent ideas. They are three uses of one underlying move: <strong>KUD+depth is the unit of account the whole framework is denominated in</strong> &mdash; a shared currency on which a course&rsquo;s output, a downstream course&rsquo;s prerequisite expectation, the program&rsquo;s aggregate coverage, and a career&rsquo;s measured demand are all expressible. Because all of these entities are expressed on the same Know/Understand/Do &times; depth-0&ndash;5 axes, boundary-crossing questions become arithmetic on a shared axis rather than translation between mismatched vocabularies.</p>
 
@@ -208,7 +297,7 @@
 </section>
 
 <section id="durability">
-  <h2><span class="num">&sect; 2</span>Hypothesis B &mdash; Durability &amp; bleed-off</h2>
+  <div><span class="sec-num">02</span><h2 class="sec-title">Hypothesis B &mdash; Durability &amp; bleed-off</h2></div>
 
   <p><strong>This is where &ldquo;common threads through the curriculum&rdquo; live.</strong> The animating goal of the framework is to find the threads that run between courses, through the curriculum, and into career paths. A thread is not a single similarity score &mdash; it is a typed, depth-conditioned progression: a competency that appears in one course, deepens across several, and (via hypothesis A) feeds a career destination. Durability is the model of which threads actually hold. A thread reached once decays; a thread reinforced across courses and modalities sticks. Because the through-line <em>within</em> the curriculum is the prerequisite for any honest claim <em>into</em> careers, durability is arguably the more foundational hypothesis of the two.</p>
 
@@ -256,7 +345,7 @@
 </section>
 
 <section id="crosswalk">
-  <h2><span class="num">&sect; 3</span>Hypothesis A &mdash; Competency&rarr;career cross-walk</h2>
+  <div><span class="sec-num">03</span><h2 class="sec-title">Hypothesis A &mdash; Competency&rarr;career cross-walk</h2></div>
 
   <p>The framework&rsquo;s central question &mdash; how well does the GC curriculum build students toward the careers we claim to prepare them for? &mdash; requires comparing program output to career demand on a common axis. Hypothesis A is about whether and how that comparison can be made honestly.</p>
 
@@ -293,7 +382,7 @@
 </section>
 
 <section id="uncertainty">
-  <h2><span class="num">&sect; 4</span>Hypothesis C &mdash; Uncertainty &amp; convergence discipline</h2>
+  <div><span class="sec-num">04</span><h2 class="sec-title">Hypothesis C &mdash; Uncertainty &amp; convergence discipline</h2></div>
 
   <p>This hypothesis governs how every claim produced by the framework should be stated and treated, which makes it in a sense the most foundational of the three. Its core &mdash; that neither models nor humans are a clean oracle, and that LLM errors are correlated &mdash; is well supported. How much of the remaining error is irreducible is not settled (see below).</p>
 
@@ -332,7 +421,7 @@
 </section>
 
 <section id="embeddings">
-  <h2><span class="num">&sect; 5</span>Skill relatedness &amp; embeddings</h2>
+  <div><span class="sec-num">05</span><h2 class="sec-title">Skill relatedness &amp; embeddings</h2></div>
 
   <p>A recurring question in applying the framework is how it relates to the modern machinery of text embeddings and attention mechanisms, which seem to do something similar. The answer is that the distinction is informational rather than mechanistic.</p>
 
@@ -354,10 +443,12 @@
 
   <p>We found no off-the-shelf print, graphics, or packaging embedder; searches in that space surfaced degree programs, not models. Adjacent options include materials-science models (MatSciBERT, MatBERT, MELT &mdash; substrates, inks, polymers, adhesives), chemistry models (ChEmbed &mdash; inks, coatings, colorants), and emerging perceptual color&ndash;text work relevant to color management. Building a GC-domain model from scratch would require large-scale continued pretraining (voyage-law-2 is reported to have used &ldquo;an additional 1T&rdquo; legal tokens), which is not available here. The realistic range is adapter-based or contrastive fine-tuning on in-domain pairs over a small labeled set and the existing course corpus &mdash; which would buy recall gains, not a commercial-embedder-grade model.</p>
 
-    <div class="callout">
-    <div class="callout-title">What would need to be tested</div>
-    <p>Before any domain fine-tuning, an empirical embedder bake-off on the curriculum retrieval task itself would establish whether the generic embedder is actually the bottleneck and whether the failure is in recall (a domain embedder would help) or in depth adjudication (it would not). The leaderboard trap means this cannot be inferred from general benchmarks.</p>
-  </div>
+    <aside class="note">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+      <div><strong>What would need to be tested</strong>
+    
+    <p>Before any domain fine-tuning, an empirical embedder bake-off on the curriculum retrieval task itself would establish whether the generic embedder is actually the bottleneck and whether the failure is in recall (a domain embedder would help) or in depth adjudication (it would not). The leaderboard trap means this cannot be inferred from general benchmarks.</p></div>
+    </aside>
 
   <h3>From resolved question to concrete proposal: the competency-graph substrate</h3>
 
@@ -369,15 +460,17 @@
 
   <p> <em>Stage 2 adds a faculty-confirm loop</em> on the resulting matches, so trust derives from human adjudication rather than model accuracy. <em>Stage 3 adds the relation edges</em> &mdash; similarity from topic embeddings, complementarity from co-occurrence, as in Skill2vec (which treats &ldquo;every skills in the same job description&rdquo; as related) and Liu et al. (2024). The Course-Skill Atlas cannot supply this on the curriculum side: it provides no co-occurrence or complementarity measures, and its released data are aggregated &ldquo;at the institution-year-FOS level&rdquo; because the authors&rsquo; research contract &ldquo;requires that we do not release information at the individual syllabus level&rdquo; (p. 14). Curriculum-side co-occurrence would have to come from our own captured courses, or from coarser co-occurrence across the Atlas&rsquo;s aggregated profiles. The stages are sequenced Stage-1-first not because enrichment is strictly <em>required</em> downstream &mdash; a faculty-confirm loop can run on today's thin nodes, and edges can be derived from bare node text &mdash; but because enriched nodes would <em>strengthen</em> both, and Stage 1 both attacks the measured failure directly and is the cheapest to pilot. (One caveat the audit itself raised: the single <em>biggest</em> measured lever was not enrichment but a one-line model upgrade &mdash; producing alignments with a newer model cut error more than the prompt fix did &mdash; so that upgrade is pursued in parallel and enrichment is additive, not the primary remedy.)</p>
 
-  <div class="callout">
-    <div class="callout-title">Why this is a proposal, not a result &mdash; and how it is gated</div>
-    <p>The load-bearing assumption &mdash; that richer node <em>definitions</em> make an LLM better at identity rather than merely longer-winded &mdash; is <strong>unproven</strong>, and two data cut against it. In our own audit, the single intervention that measurably helped was a terse <em>rule</em> (&ldquo;a disposition is not technical-skill supply&rdquo;), not verbose prose. And Xu et al. (2026) found that adding human-defined competency descriptions to LLM prompts &ldquo;does not improve LLM performance&rdquo; (p. 21); what helped their human annotators was a clarified coding rule. There is no comfortable ceiling to borrow: the closest comparable, Xu et al. (2025), reached 82% only on a coarser metric &mdash; of the top-ten skills its best retrieve-then-reason pipeline extracted, 82% were rated &ge;4 on a 1&ndash;5 alignment rubric, over a pool of 2,070 O*NET skill descriptions &mdash; an easier, different quantity than our single same-vs-different identity judgment over five to seven candidates, so our own achievable ceiling is unknown and must be set empirically from the pilot, not imported. What the literature does establish is that no model reaches human-level precision on fine-grained pedagogical reasoning (Xu et al., 2026), and that humans themselves agree only moderately (Cohen's &kappa; &asymp; 0.45, &ldquo;moderate agreement,&rdquo; on 300 doubly annotated course-sentence/skill pairs, most of them high-similarity &ldquo;hard&rdquo; pairs; Musazade et al., 2026) &mdash; so the target is &ldquo;defensibly better than today, human-adjudicated,&rdquo; not a fixed accuracy number. The proposal is therefore <strong>pilot-gated</strong>. Enrich two or three high-collision nodes and measure on a genuinely <em>held-out</em> split, with three separations to avoid the contamination the first review caught: (i) author node examples from snapshots <em>disjoint</em> from the validation fixture &mdash; the audit fixture is ~97% not-correct and so cannot supply positive examples, which must be faculty-authored; (ii) label that authoring set with the <em>cross-family</em> model, not the same model that also grades the gate; (iii) have the should-match <em>recall</em> set authored by faculty <em>other than</em> the node-boundary authors, so the metric is not &ldquo;the definition-author grading their own exam.&rdquo; Report <em>both</em> precision and recall, because default-to-&ldquo;not served&rdquo; trivially improves precision by matching less; use a graded rubric with an explicit &ldquo;insufficient evidence&rdquo; code (distinct from &ldquo;out of scope&rdquo;); and judge with a cross-family panel plus a mandatory faculty spot-check, never a single same-family judge. Only a judge-robust improvement on held-out data greenlights the full build. Design detail lives in the node-enrichment spec (2026-07-25); the empirical backing is the alignment-quality measurement of the same date.</p>
-  </div>
+  <aside class="note">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+      <div><strong>Why this is a proposal, not a result &mdash; and how it is gated</strong>
+    
+    <p>The load-bearing assumption &mdash; that richer node <em>definitions</em> make an LLM better at identity rather than merely longer-winded &mdash; is <strong>unproven</strong>, and two data cut against it. In our own audit, the single intervention that measurably helped was a terse <em>rule</em> (&ldquo;a disposition is not technical-skill supply&rdquo;), not verbose prose. And Xu et al. (2026) found that adding human-defined competency descriptions to LLM prompts &ldquo;does not improve LLM performance&rdquo; (p. 21); what helped their human annotators was a clarified coding rule. There is no comfortable ceiling to borrow: the closest comparable, Xu et al. (2025), reached 82% only on a coarser metric &mdash; of the top-ten skills its best retrieve-then-reason pipeline extracted, 82% were rated &ge;4 on a 1&ndash;5 alignment rubric, over a pool of 2,070 O*NET skill descriptions &mdash; an easier, different quantity than our single same-vs-different identity judgment over five to seven candidates, so our own achievable ceiling is unknown and must be set empirically from the pilot, not imported. What the literature does establish is that no model reaches human-level precision on fine-grained pedagogical reasoning (Xu et al., 2026), and that humans themselves agree only moderately (Cohen's &kappa; &asymp; 0.45, &ldquo;moderate agreement,&rdquo; on 300 doubly annotated course-sentence/skill pairs, most of them high-similarity &ldquo;hard&rdquo; pairs; Musazade et al., 2026) &mdash; so the target is &ldquo;defensibly better than today, human-adjudicated,&rdquo; not a fixed accuracy number. The proposal is therefore <strong>pilot-gated</strong>. Enrich two or three high-collision nodes and measure on a genuinely <em>held-out</em> split, with three separations to avoid the contamination the first review caught: (i) author node examples from snapshots <em>disjoint</em> from the validation fixture &mdash; the audit fixture is ~97% not-correct and so cannot supply positive examples, which must be faculty-authored; (ii) label that authoring set with the <em>cross-family</em> model, not the same model that also grades the gate; (iii) have the should-match <em>recall</em> set authored by faculty <em>other than</em> the node-boundary authors, so the metric is not &ldquo;the definition-author grading their own exam.&rdquo; Report <em>both</em> precision and recall, because default-to-&ldquo;not served&rdquo; trivially improves precision by matching less; use a graded rubric with an explicit &ldquo;insufficient evidence&rdquo; code (distinct from &ldquo;out of scope&rdquo;); and judge with a cross-family panel plus a mandatory faculty spot-check, never a single same-family judge. Only a judge-robust improvement on held-out data greenlights the full build. Design detail lives in the node-enrichment spec (2026-07-25); the empirical backing is the alignment-quality measurement of the same date.</p></div>
+    </aside>
 
 </section>
 
 <section id="scale">
-  <h2><span class="num">&sect; 6</span>Scale representation &mdash; integer judgments, continuous derivations</h2>
+  <div><span class="sec-num">06</span><h2 class="sec-title">Scale representation &mdash; integer judgments, continuous derivations</h2></div>
 
   <p>Hypotheses B and C both depend on a representation decision that can be stated once and applied throughout: <strong>integer at the boundary, float in the model.</strong></p>
 
@@ -398,7 +491,7 @@
 </section>
 
 <section id="open-questions">
-  <h2><span class="num">&sect; 7</span>Open questions</h2>
+  <div><span class="sec-num">07</span><h2 class="sec-title">Open questions</h2></div>
 
   <p>These are the questions that would need answers before the quantitative hypotheses above could move from plausible design directions to validated components.</p>
 
@@ -424,10 +517,15 @@
 
 </section>
 
-<section id="references">
-  <h2><span class="num">&sect; 8</span>References</h2>
+<a class="xlink" href="curriculum-map.html">
+    <span><span class="label">Explore the data · Tool</span><span class="t">GC Curriculum Map</span><span class="d">Work back from a career to the competencies it relies on and the courses that build them, year by year.</span></span>
+    <span class="link-arrow">Open the tool →</span>
+  </a>
 
-  <p class="dagger-legend" style="font-size: 14px; color: var(--text-muted);">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
+  <section id="references">
+    <div><span class="sec-num">08</span><h2 class="sec-title">References</h2></div>
+
+  <p class="dagger-legend">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
 
   <h3>Curriculum analytics and skill matching</h3>
 
@@ -491,10 +589,37 @@
 
 </section>
 
-<div class="doc-foot">
-  Clemson Department of Graphic Communications &mdash; GC Curriculum Tool &mdash; Research companion. Forward / hypothesis register; not validated findings.
+<p class="doc-foot">Clemson Department of Graphic Communications &mdash; GC Curriculum Tool &mdash; Research companion. Forward / hypothesis register; not validated findings.</p>
+  </article>
 </div>
 
-</main>
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
+</footer>
+
+<script>
+/* Marks the contents link of the section in view. Without JS the contents column still works as plain links. */
+(() => {
+  const toc = document.querySelector('.toc');
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const secs = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  const inView = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+    const cur = secs.find((s) => inView.has(s.id));
+    if (!cur) return;
+    const a = byId.get(cur.id);
+    links.forEach((l) => l.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'true');
+    // When the sticky column is taller than the screen, keep the marked link visible inside it.
+    if (toc.scrollHeight > toc.clientHeight && (a.offsetTop < toc.scrollTop || a.offsetTop + a.offsetHeight > toc.scrollTop + toc.clientHeight)) {
+      toc.scrollTop = a.offsetTop - toc.clientHeight / 2;
+    }
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  secs.forEach((s) => io.observe(s));
+})();
+</script>
 </body>
 </html>

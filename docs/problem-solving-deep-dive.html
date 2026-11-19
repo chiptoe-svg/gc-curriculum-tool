@@ -1,228 +1,289 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Problem-Solving as a Program-Level Emergent Property — Deep Dive</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Problem-Solving as a Program-Level Emergent Property — Graphic Communications, Clemson</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
 <style>
-  :root {
-    --rail: #141412;
-    --rail-text: #8a8780;
-    --rail-active: #E8A44A;
-    --rail-hover: #2a2925;
-    --bg: #F7F5F0;
-    --bg-card: #FFFFFF;
-    --bg-alt: #F0EDE6;
-    --text: #1C1C18;
-    --text-muted: #6B6860;
-    --text-faint: #9E9B94;
-    --accent: #C8682A;
-    --accent-light: #F5E6D8;
-    --border: #E2DDD4;
-    --border-strong: #C8C4BA;
-    --mono: 'DM Mono', monospace;
-    --serif: 'Source Serif 4', Georgia, serif;
-    --display: 'Playfair Display', Georgia, serif;
-    --t1: #2A5C8C;
-  }
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
 
-  body {
-    font-family: var(--serif);
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-    min-height: 100vh;
-    font-size: 16px;
-    line-height: 1.7;
-  }
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
 
-  #rail {
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    width: 240px;
-    background: var(--rail);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    z-index: 100;
-  }
-  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
-  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
-  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
-  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
-  .rail-nav { padding: 20px 0; flex: 1; }
-  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
-  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
-  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
-  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
-  .rail-footer a { color: var(--rail-text); text-decoration: none; }
-  .rail-footer a:hover { color: var(--rail-active); }
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
 
-  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; }
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
-  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
-  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
-  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
-  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
-  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
-  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
 
-  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
 
-  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
-  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
-  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
 
-  p { margin-bottom: 14px; max-width: 760px; }
-  strong { color: var(--text); font-weight: 600; }
-  em { color: var(--text); font-style: italic; }
-  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
-  a:hover { color: #a85020; }
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
 
-  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
-  li { margin-bottom: 8px; }
-  li strong { color: var(--text); }
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
 
-  code { font-family: var(--mono); font-size: 0.88em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; color: var(--text); }
-
-  blockquote {
-    border-left: 3px solid var(--border-strong);
-    padding: 4px 0 4px 18px;
-    margin: 18px 0;
-    color: var(--text-muted);
-    font-style: italic;
-    max-width: 740px;
-  }
-
-  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
-  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-  .callout p:last-child { margin-bottom: 0; }
-  .callout.note { border-left-color: var(--t1); }
-  .callout.note .callout-title { color: var(--t1); }
-
-  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
-
-  @media (max-width: 900px) {
-    #rail { position: static; width: 100%; height: auto; }
-    main { margin-left: 0; padding: 32px 24px 64px; }
-  }
-
-  /* compact table (mirrors background.html) */
-  table.compact { border-collapse: collapse; margin: 18px 0 22px; max-width: 820px; font-size: 14px; }
-  table.compact th, table.compact td { padding: 8px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
-  table.compact thead th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-strong); }
-
-  /* ── Figures (added 2026-06-20; mirrors background.html) ─────────── */
-  figure.fig { margin: 28px 0; max-width: 820px; }
-  figure.fig figcaption { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; line-height: 1.6; color: var(--text-muted); margin-top: 12px; }
-  figure.fig figcaption b { color: var(--text); font-weight: 500; }
-  .quad { display: grid; grid-template-columns: 98px 1fr 1fr; border: 1px solid var(--border-strong); border-radius: 5px; overflow: hidden; background: var(--bg-card); }
-  .quad > div { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 12px 14px; }
-  .quad .qh { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); background: var(--bg-alt); display: flex; align-items: center; line-height: 1.4; }
-  .quad .qcorner { background: var(--bg-alt); }
-  .quad .qcell { font-size: 13px; line-height: 1.5; }
-  .quad .qcell .qn { font-weight: 600; display: block; margin-bottom: 4px; color: var(--text); }
-  .quad .qcell .qg { color: var(--text-muted); font-size: 12.5px; }
-  .quad .qcell.target { background: var(--accent-light); }
-  .quad .qcell.target .qn { color: var(--accent); }
-  .barwrap { max-width: 460px; }
-  .bars { display: flex; align-items: flex-end; gap: 38px; height: 184px; padding: 0 10px; border-bottom: 2px solid var(--border-strong); }
-  .bars .bar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
-  .bars .col { width: 100%; border-radius: 3px 3px 0 0; background: var(--accent-light); border: 1px solid var(--accent); border-bottom: 0; }
-  .bars .bar.hi .col { background: var(--accent); }
-  .bars .pct { font-family: var(--mono); font-size: 13.5px; color: var(--text); margin-bottom: 5px; }
-  .barlabels { display: flex; gap: 38px; padding: 8px 10px 0; }
-  .barlabels span { flex: 1; text-align: center; font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
-  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
-  .flow .fbox { flex: 1 1 0; min-width: 116px; background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: 5px; padding: 10px 12px; font-size: 12.5px; line-height: 1.4; display: flex; align-items: center; }
-  .flow .fbox.accent { background: var(--accent-light); border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  .flow .farr { display: flex; align-items: center; color: var(--accent); font-size: 18px; flex: 0 0 auto; }
-  .flow-neg { margin-top: 10px; border: 1px dashed var(--border-strong); border-radius: 5px; padding: 9px 13px; font-size: 12.5px; color: var(--text-muted); background: var(--bg-alt); }
-  .flow-neg .x { color: #B23A2E; font-weight: 700; margin-right: 7px; }
-  sup.nv { font-family: var(--mono); font-size: 0.72em; color: var(--text-faint); margin-left: 1px; cursor: help; }
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* ---------- Page: deep dive (guide tokens only) ---------- */
+/* The hero sits inside .paper after the contents column in the DOM, so the old rail's
+   words keep their reading order; order:-1 puts it first on screen. */
+.paper > .hero{order:-1;flex:1 1 100%;margin-inline:calc(-1 * var(--pad))}
+.toc-kicker{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:13px;line-height:1.4;color:var(--muted)}
+.toc .label{display:block;margin:14px 0 2px}
+.toc a.out{padding-left:26px}
+.article section{scroll-margin-top:24px}
+.article h3{font-size:24px;line-height:1.25;margin-top:12px}
+.article ul,.article ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.part{display:flex;flex-direction:column;gap:16px;border-top:1px solid var(--rule);padding-top:24px}
+.part-title{font-size:26px;line-height:1.2;color:var(--muted)}
+.note > div{display:flex;flex-direction:column;gap:6px}
+sup.nv{font:500 .72em var(--mono);color:var(--muted);margin-left:1px;cursor:help}
+.dagger-legend{font-size:14px;color:var(--muted)}
+ol.refs{font-size:15px;overflow-wrap:anywhere}
+.doc-foot{font-size:14px;color:var(--muted)}
+.article table{min-width:0}
+.formula{text-align:center;font-family:var(--mono);line-height:1.5;margin:4px 0}
+.muted{color:var(--muted)}
+code{font:500 .88em var(--mono);background:var(--inset);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+.article .table-box table.wide{min-width:720px}
+.references ul,.references ol{font-size:15px;overflow-wrap:anywhere}
+/* figures */
+figure.fig{margin:8px 0;display:flex;flex-direction:column;gap:12px}
+figure.fig figcaption{font-size:14px;line-height:1.5;color:var(--muted)}
+figure.fig figcaption b{color:var(--ink);font-weight:600}
+.fig-scroll{overflow-x:auto}
+.quad{display:grid;grid-template-columns:120px 1fr 1fr;min-width:580px;border:1px solid var(--rule);border-radius:16px;overflow:hidden;background:var(--panel)}
+.quad > div{border-right:1px solid var(--rule-soft);border-bottom:1px solid var(--rule-soft);padding:14px 16px}
+.quad .qh{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--inset);display:flex;align-items:center}
+.quad .qcorner{background:var(--inset)}
+.quad .qcell{font-size:14px;line-height:1.5}
+.quad .qcell .qn{font-weight:600;display:block;margin-bottom:4px;color:var(--ink)}
+.quad .qcell .qg{color:var(--muted);font-size:13.5px}
+.quad .qcell.target{background:var(--purple-soft)}
+.quad .qcell.target .qn{color:var(--purple-dark)}
+.barwrap{max-width:460px}
+.bars{display:flex;align-items:flex-end;gap:38px;height:184px;padding:0 10px;border-bottom:2px solid var(--rule)}
+.bars .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.bars .col{width:100%;border-radius:5px 5px 0 0;background:#E0D6EE}
+.bars .bar.hi .col{background:#3F2470}
+.bars .pct{font:500 14px var(--mono);color:var(--ink);margin-bottom:5px}
+.barlabels{display:flex;gap:38px;padding:8px 10px 0}
+.barlabels span{flex:1;text-align:center;font-size:13px;color:var(--muted);line-height:1.4}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
+.flow .fbox{flex:1 1 0;min-width:116px;background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.4;display:flex;align-items:center}
+.flow .fbox.accent{background:var(--purple-soft);border-color:var(--purple);color:var(--purple-dark);font-weight:600}
+.flow .farr{display:flex;align-items:center;color:var(--purple);font-size:18px;flex:0 0 auto}
+.flow-neg{margin-top:10px;border:1px dashed var(--rule);border-radius:10px;padding:10px 14px;font-size:14px;color:var(--muted);background:var(--inset)}
+.flow-neg .x{color:#9B2C2C;font-weight:700;margin-right:7px}
+@media (max-width:640px){.bars{gap:20px}.barlabels{gap:20px}}
 </style>
 </head>
 <body>
-
-<aside id="rail">
-  <div class="rail-header">
-    <div class="rail-dept">Clemson · Graphic Communications</div>
-    <div class="rail-title">GC Curriculum Tool</div>
-    <div class="rail-doc-type">Research Deep Dive</div>
-  </div>
-  <nav class="rail-nav">
-    <div class="nav-group-label">Sections</div>
-    <a class="nav-link" href="#why">Why this document exists</a>
-    <div class="nav-group-label">Part I — Research</div>
-    <a class="nav-link" href="#domain-specificity">Domain-specificity</a>
-    <a class="nav-link" href="#productive-failure">Productive failure</a>
-    <a class="nav-link" href="#reflection">Reflection</a>
-    <a class="nav-link" href="#transfer">Transfer</a>
-    <a class="nav-link" href="#expertise">Expertise findings</a>
-    <a class="nav-link" href="#limits">Honest limits</a>
-    <div class="nav-group-label">Part II — Framework</div>
-    <a class="nav-link" href="#claim-1">Claim 1 — Depth encodes facets</a>
-    <a class="nav-link" href="#claim-2">Claim 2 — Audit surfaces conditions</a>
-    <a class="nav-link" href="#claim-3">Claim 3 — Program-level read</a>
-    <div class="nav-group-label">Part III — Implementation</div>
-    <a class="nav-link" href="#implementation">End-to-end chain</a>
-    <div class="nav-group-label">Part IV — Limits</div>
-    <a class="nav-link" href="#not-doing">What the framework doesn&rsquo;t do</a>
-    <a class="nav-link" href="#watch">What to watch for</a>
-    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
-    <a class="nav-link" href="./background.html#problem-solving">Background §4</a>
-    <a class="nav-link" href="./background.html">KUD+ Background (full)</a>
-    <a class="nav-link" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>
-  </nav>
-  <div class="rail-footer">
-    <a href="./background.html#problem-solving">← Background §4</a>
-  </div>
-</aside>
-
-<main>
-
-<header class="doc-head">
-  <div class="doc-eyebrow">Research synthesis &amp; framework design</div>
-  <h1 class="doc-title">Problem-Solving as a Program-Level Emergent Property</h1>
-  <p class="doc-subtitle">A research-tool position on how problem-solving competence actually develops in undergraduate education, and how the KUD+ curriculum-mapping framework operationalizes that view into per-course audit probes and program-level diagnostics. Companion to the <a href="./background.html" style="color: var(--accent);">KUD+ Background</a>; extends its §4.</p>
-  <div class="doc-meta">
-    <span><strong>Date</strong> 2026-05-25</span>
-    <span><strong>Revised</strong> 2026-10-07</span>
-    <span><strong>Status</strong> Research-tool framing — defensible commitments, not settled science</span>
-    <span><strong>Audience</strong> Faculty, curriculum committee, advisory partners</span>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
   </div>
 </header>
 
+<div class="wrap paper paper--long">
+  <nav class="toc" id="rail" aria-label="Contents">
+    <span class="label">Sections</span>
+    <a href="#why"><span class="n">1</span><span>Why this document exists</span></a>
+    <span class="label">Part I — Research</span>
+    <a href="#domain-specificity"><span class="n">2</span><span>Domain-specificity</span></a>
+    <a href="#productive-failure"><span class="n">3</span><span>Productive failure</span></a>
+    <a href="#reflection"><span class="n">4</span><span>Reflection</span></a>
+    <a href="#transfer"><span class="n">5</span><span>Transfer</span></a>
+    <a href="#expertise"><span class="n">6</span><span>Expertise findings</span></a>
+    <a href="#limits"><span class="n">7</span><span>Honest limits</span></a>
+    <span class="label">Part II — Framework</span>
+    <a href="#claim-1"><span class="n">8</span><span>Claim 1 — Depth encodes facets</span></a>
+    <a href="#claim-2"><span class="n">9</span><span>Claim 2 — Audit surfaces conditions</span></a>
+    <a href="#claim-3"><span class="n">10</span><span>Claim 3 — Program-level read</span></a>
+    <span class="label">Part III — Implementation</span>
+    <a href="#implementation"><span class="n">11</span><span>End-to-end chain</span></a>
+    <span class="label">Part IV — Limits</span>
+    <a href="#not-doing"><span class="n">12</span><span>What the framework doesn&rsquo;t do</span></a>
+    <a href="#watch"><span class="n">13</span><span>What to watch for</span></a>
+    <span class="label">See also</span>
+    <a class="out" href="./background.html#problem-solving">Background §4</a>
+    <a class="out" href="./background.html">KUD+ Background (full)</a>
+    <a class="out" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>
+    <a class="out" href="./background.html#problem-solving">← Background §4</a>
+  </nav>
+
+  <section class="hero">
+    <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="eyebrow">Research synthesis &amp; framework design</span>
+      <h1 class="title-paper">Problem-Solving as a Program-Level Emergent Property</h1>
+      <p class="lede">A research-tool position on how problem-solving competence actually develops in undergraduate education, and how the KUD+ curriculum-mapping framework operationalizes that view into per-course audit probes and program-level diagnostics. Companion to the <a href="./background.html" style="color: var(--accent);">KUD+ Background</a>; extends its §4.</p>
+      <div class="meta-row">
+        <span><strong>Date</strong> 2026-05-25</span>
+        <span><strong>Revised</strong> 2026-10-07</span>
+        <span><strong>Status</strong> Research-tool framing — defensible commitments, not settled science</span>
+        <span><strong>Audience</strong> Faculty, curriculum committee, advisory partners</span>
+      </div>
+    </div>
+  </section>
+
+  <article class="article">
 <section id="what-this-is">
 
-
-  <div class="callout note" style="margin-bottom: 22px;">
-    <div class="callout-title">What to read</div>
-    <p style="margin-bottom: 10px; font-style: normal;">
+  <aside class="note">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+      <div><strong>What to read</strong>
+    
+    <p>
       <a href="./executive-brief.html">Executive Brief</a> — 3-min what / why / status<br>
       <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> — the product picture, surfaces, and roadmap<br>
       <a href="./background.html">Background</a> — the academic case (KUD+, why-not-Bloom, evidence rule)<br>
-      <strong style="color: var(--text);">Problem-Solving Deep-Dive</strong> (you are here) — research on how problem-solving develops<br>
+      <strong>Problem-Solving Deep-Dive</strong> (you are here) — research on how problem-solving develops<br>
       <a href="./three-act-deep-dive.html">3-Act Companion</a> — the program-structure research
-    </p>
-  </div>
+    </p></div>
+    </aside>
 
-  <div class="callout note">
-    <div class="callout-title">How to read this</div>
-    <p><strong>This is a curriculum-conversation engine — not yet a measurement instrument.</strong> It turns scattered course evidence into a structured, shared picture that a committee can argue over productively. Its outputs are <em>legible maps</em>, not validated measurements. The evidence ladder, falsification conditions, and claim-strength stratification below specify exactly how strong each commitment is and what would refute it. The body sections (§2–§13) own the argument; this preamble is the frame, not the case.</p>
-  </div>
+  <aside class="note">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+      <div><strong>How to read this</strong>
+    
+    <p><strong>This is a curriculum-conversation engine — not yet a measurement instrument.</strong> It turns scattered course evidence into a structured, shared picture that a committee can argue over productively. Its outputs are <em>legible maps</em>, not validated measurements. The evidence ladder, falsification conditions, and claim-strength stratification below specify exactly how strong each commitment is and what would refute it. The body sections (§2–§13) own the argument; this preamble is the frame, not the case.</p></div>
+    </aside>
 
   <h3>One-page version (for the curriculum committee)</h3>
 
-  <p style="text-align:center; font-family:var(--mono,monospace); line-height:1.5; margin: 4px 0 12px;"><strong>Problem-solving opportunity = upper-depth domain work (U5 / D4+) + productive failure + structured reflection + abstraction/bridging across varied cases — read at the program level, not the course level.</strong></p>
+  <p class="formula"><strong>Problem-solving opportunity = upper-depth domain work (U5 / D4+) + productive failure + structured reflection + abstraction/bridging across varied cases — read at the program level, not the course level.</strong></p>
 
-  <p style="margin-top:0;"><em>The tool does not remove problem-solving from the curriculum map; it relocates it.</em> Instead of treating it as a generic trait every course can claim, the framework looks for the conditions under which students become better problem-solvers, and reads them across the sequence rather than in a single course label. (That equation is &ldquo;what the framework looks for,&rdquo; not a computed score — see the evidence ladder below. The long critique of generic problem-solving in §2 lands <em>after</em> this replacement is on the table, not before it.)</p>
+  <p><em>The tool does not remove problem-solving from the curriculum map; it relocates it.</em> Instead of treating it as a generic trait every course can claim, the framework looks for the conditions under which students become better problem-solvers, and reads them across the sequence rather than in a single course label. (That equation is &ldquo;what the framework looks for,&rdquo; not a computed score — see the evidence ladder below. The long critique of generic problem-solving in §2 lands <em>after</em> this replacement is on the table, not before it.)</p>
 
   <ul>
     <li><strong>Claim.</strong> Problem-solving develops when students repeatedly apply domain knowledge to novel problems, experience informative failure, and reflect/revise with feedback. What eventually transfers is the <em>habit</em> of running that cycle — but the habit forms only after enough domain-specific repetitions, which is why it can't be front-loaded into a standalone course. It is a program-level emergent property, not a course you can add.</li>
@@ -236,36 +297,36 @@
 
   <p>Every claim the tool records sits on a credibility ladder. The tool's job is to <strong>make the level visible</strong>, not to adjudicate the score:</p>
 
-  <table style="width:100%; border-collapse: collapse; margin: 12px 0 12px;">
+  <div class="table-box"><table>
     <thead>
       <tr>
-        <th style="text-align:left; border-bottom:1px solid var(--border); padding:6px 10px;">Level</th>
-        <th style="text-align:left; border-bottom:1px solid var(--border); padding:6px 10px;">Meaning</th>
+        <th>Level</th>
+        <th>Meaning</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td style="border-bottom:1px solid var(--border); padding:6px 10px;">0</td>
-        <td style="border-bottom:1px solid var(--border); padding:6px 10px;">Instructor claim only</td>
+        <td>0</td>
+        <td>Instructor claim only</td>
       </tr>
       <tr>
-        <td style="border-bottom:1px solid var(--border); padding:6px 10px;">1</td>
-        <td style="border-bottom:1px solid var(--border); padding:6px 10px;">An assignment prompt supports the claim</td>
+        <td>1</td>
+        <td>An assignment prompt supports the claim</td>
       </tr>
       <tr>
-        <td style="border-bottom:1px solid var(--border); padding:6px 10px;">2</td>
-        <td style="border-bottom:1px solid var(--border); padding:6px 10px;">A rubric explicitly assesses the condition</td>
+        <td>2</td>
+        <td>A rubric explicitly assesses the condition</td>
       </tr>
       <tr>
-        <td style="border-bottom:1px solid var(--border); padding:6px 10px;">3</td>
-        <td style="border-bottom:1px solid var(--border); padding:6px 10px;">Student-work artifacts show the condition occurred</td>
+        <td>3</td>
+        <td>Student-work artifacts show the condition occurred</td>
       </tr>
       <tr>
-        <td style="border-bottom:1px solid var(--border); padding:6px 10px;">4</td>
-        <td style="border-bottom:1px solid var(--border); padding:6px 10px;">Pre/post, revision history, or external review confirms a learning effect</td>
+        <td>4</td>
+        <td>Pre/post, revision history, or external review confirms a learning effect</td>
       </tr>
     </tbody>
-  </table>
+  </table></div>
 
   <p>A program diagnostic should distinguish <strong>claimed</strong> scaffolding from <strong>artifact-verified</strong> scaffolding. Today most inputs sit at Level 0–2; the recently-added discipline that a <em>credited</em> structured post-mortem must cite a graded artifact pushes that one signal toward Level 2–3. Surfacing the level per claim — not gating the score — is the design direction. This answers the sharpest critique of the framework: that a tool like this can produce <em>beautifully structured maps from weak input evidence</em>. The defense is not to pretend the evidence is strong; it is to make its strength visible.</p>
 
@@ -283,7 +344,7 @@
 </section>
 
 <section id="why">
-  <h2><span class="num">§ 1</span>Why this document exists</h2>
+  <div><span class="sec-num">01</span><h2 class="sec-title">Why this document exists</h2></div>
 
   <p>Employers consistently rate problem-solving among the most desirable graduate competencies. The National Association of Colleges and Employers' annual Job Outlook surveys repeatedly rank problem-solving near the top of the attributes employers look for on graduates' resumes (NACE, 2023)<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>. Yet faculty conversations about how to develop problem-solving regularly stall: the natural moves — add a "Problem-Solving" course, list it as a generic outcome, ask each instructor to teach it — are exactly the moves the cognitive-science literature below predicts will underperform. Employer surveys establish the <em>demand</em> for problem-solving; they do not themselves measure whether these curricular moves succeed, so the claim that generic instruction underperforms rests on the transfer and domain-specificity research that follows, not on a measured employer signal.</p>
 
@@ -293,16 +354,20 @@
 
   <p><strong>One distinction up front, because it dissolves most of the apparent contradictions below.</strong> &ldquo;Problem-solving,&rdquo; as employers use the word, blends at least three things: <strong>technical-diagnostic troubleshooting</strong> (&ldquo;why is this plate scumming?&rdquo;), <strong>adaptive transfer</strong> to unfamiliar constraints, and <strong>professional problem-framing</strong> (clarifying goals, stakeholders, and tradeoffs). The transfer literature is pessimistic about the second as a <em>trained generic skill</em>, but not about the first in-domain or the third as a disposition — so keeping the three apart is what reconciles &ldquo;far transfer is rare&rdquo; with &ldquo;deep domains build problem-solvers.&rdquo; The framework is strongest on the first two and keeps the third visible through the foundational dispositions; the full treatment of how it handles each is in <a href="#limits">§12</a>.</p>
 
-  <div class="callout note">
-    <div class="callout-title">A framing note</div>
-    <p>This tool does not need to be perfect or 100% grounded in proven science. It is a research instrument in its own right — a way to make defensible commitments visible, generate data that tests those commitments over time, and revise as evidence accumulates. The document below makes commitments rather than hedges them, while naming the genuine limits where they matter.</p>
-  </div>
+  <aside class="note">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+      <div><strong>A framing note</strong>
+    
+    <p>This tool does not need to be perfect or 100% grounded in proven science. It is a research instrument in its own right — a way to make defensible commitments visible, generate data that tests those commitments over time, and revise as evidence accumulates. The document below makes commitments rather than hedges them, while naming the genuine limits where they matter.</p></div>
+    </aside>
 </section>
 
-<h2 style="font-family: var(--display); font-size: 22px; font-weight: 600; margin: 24px 0 8px; color: var(--text-muted); border: none; padding: 0;">Part I — The research</h2>
+<div class="part">
+    <h2 class="part-title">Part I — The research</h2>
+  </div>
 
 <section id="domain-specificity">
-  <h2><span class="num">§ 2</span>The domain-specificity finding</h2>
+  <div><span class="sec-num">02</span><h2 class="sec-title">The domain-specificity finding</h2></div>
 
   <p>The most consequential body of work for this question is the cognitive-science research on problem-solving and critical thinking that began in the late 1970s and has remained remarkably stable in its core claim since. The claim is that thinking is not a portable skill that can be cultivated independently of subject matter; it is constitutively entangled with what is being thought about.</p>
 
@@ -320,7 +385,7 @@
 </section>
 
 <section id="productive-failure">
-  <h2><span class="num">§ 3</span>The productive-failure finding</h2>
+  <div><span class="sec-num">03</span><h2 class="sec-title">The productive-failure finding</h2></div>
 
   <p>If domain knowledge is the substrate, what produces the <em>capacity to deploy it under novelty</em>? The research converges on a specific developmental mechanism: repeated cycles of attempted solutions in conditions where failure is informative, followed by structured sense-making that converts the failure into transferable understanding.</p>
 
@@ -342,7 +407,7 @@
   <p>The two unproductive quadrants are the operationally important ones for curriculum design. <em>Unproductive failure</em> is what struggle without guidance or consolidation risks; Kapur treats it as the &ldquo;obvious low-hanging fruit,&rdquo; the point of broad agreement that unguided discovery &ldquo;often leads to dismal learning outcomes.&rdquo; <em>Unproductive success</em> is the consequence the framework's depth-only lens cannot detect: a course that reaches D-5 through repetitive practice on familiar problems produces high performance and brittle understanding. A graduate of such a course can perform on known problems and freezes on novelty. This quadrant is exactly what the productive-failure audit area is designed to flag — a course with high depth but absent productive-failure conditions is the unproductive-success scenario, and the framework reads it as exactly that.</p>
 
   <figure class="fig">
-    <div class="quad">
+    <div class="fig-scroll"><div class="quad">
       <div class="qcorner"></div>
       <div class="qh">Productive<br>(learning gain)</div>
       <div class="qh">Unproductive<br>(no gain)</div>
@@ -352,7 +417,7 @@
       <div class="qh">Success<br>(instruction first)</div>
       <div class="qcell"><span class="qn">Productive success</span><span class="qg">A plate-exposure problem worked through with step-by-step guidance, so the student succeeds and learns the method in doing it. Guided problem-solving that succeeds.</span></div>
       <div class="qcell"><span class="qn">Unproductive success</span><span class="qg">D-5 fluency from drilling one press — then a freeze on an unfamiliar substrate. Smooth performance, brittle depth; invisible to a depth-only view.</span></div>
-    </div>
+    </div></div>
     <figcaption><b>Figure 1 — Kapur's four design possibilities: productive/unproductive × failure/success</b> (Kapur, 2016), one GC example per cell (the examples and the grid are ours). The highlighted cell — failure <em>followed by</em> consolidation — is the design the audit probes for. It is not the only route to transferable depth: Kapur treats productive success as a second route and says &ldquo;it is not clear if one is better than the other.&rdquo; Nor does he equate productive success with direct instruction: his examples are problem-based learning and guided inquiry, and he asks whether direct instruction could be &ldquo;a form of unproductive success,&rdquo; finding it &ldquo;wanting against productive failure and productive success&rdquo; while calling that label &ldquo;rather harsh.&rdquo; <em>Unproductive success</em> (bottom-right) is the quadrant the framework's depth-only lens cannot detect and the audit exists to flag: high performance with what Kapur calls &ldquo;an illusion of learning.&rdquo;</figcaption>
   </figure>
 
@@ -365,14 +430,14 @@
   <p>The framework treats this as informative rather than disqualifying. The productive-failure evidence base is concentrated in mathematics and physics: nearly 75% of the comparisons in the review, whose authors say more studies are needed in other STEM and non-STEM domains &ldquo;before we can generalize the effectiveness of PS-I&rdquo; (Sinha &amp; Kapur, 2021). The GC curriculum's core (press operations, ink, plates, prepress, color management, finishing) is the part of the program closest to that evidence — canonical solutions and concrete failure modes. Productive failure in the Kapur sense is a plausible analog for these canonical technical modules — strongest where assignments target conceptual troubleshooting rather than procedural fluency, since the PS-I evidence is for conceptual knowledge and transfer, not procedural skill (Sinha &amp; Kapur, 2021). A smaller portion of the program reaches design-judgment territory where multiple defensible solutions coexist (typography, layout, brand identity); for those modules <em>productive struggle</em> — critique, iteration, revision, reflective practice in the Schön tradition — is the more defensible framing.</p>
 
   <figure class="fig">
-    <table class="compact">
+    <div class="table-box"><table class="wide">
       <thead><tr><th>GC module type</th><th>Pedagogical mechanism</th><th>Fit to the PF / PS-I evidence</th></tr></thead>
       <tbody>
-        <tr><td><strong>Technical-diagnostic core</strong><br><span style="color:var(--text-muted)">"why is this plate scumming?"</span></td><td>Productive failure &rarr; consolidation</td><td><strong style="color:var(--accent)">Closest</strong> &mdash; conceptual knowledge &amp; transfer (evidence mostly from math and physics)</td></tr>
-        <tr><td><strong>Routine procedural operation</strong><br><span style="color:var(--text-muted)">running the press correctly</span></td><td>Worked examples &rarr; direct instruction</td><td><strong>Not indicated</strong> &mdash; procedural skill shows no PS-I advantage</td></tr>
-        <tr><td><strong>Design judgment</strong><br><span style="color:var(--text-muted)">typography, layout, brand</span></td><td>Productive struggle &mdash; critique, iteration, reflective practice</td><td>Weaker, <strong>analogical</strong> &mdash; multiple defensible solutions coexist</td></tr>
+        <tr><td><strong>Technical-diagnostic core</strong><br><span class="muted">"why is this plate scumming?"</span></td><td>Productive failure &rarr; consolidation</td><td><strong>Closest</strong> &mdash; conceptual knowledge &amp; transfer (evidence mostly from math and physics)</td></tr>
+        <tr><td><strong>Routine procedural operation</strong><br><span class="muted">running the press correctly</span></td><td>Worked examples &rarr; direct instruction</td><td><strong>Not indicated</strong> &mdash; procedural skill shows no PS-I advantage</td></tr>
+        <tr><td><strong>Design judgment</strong><br><span class="muted">typography, layout, brand</span></td><td>Productive struggle &mdash; critique, iteration, reflective practice</td><td>Weaker, <strong>analogical</strong> &mdash; multiple defensible solutions coexist</td></tr>
       </tbody>
-    </table>
+    </table></div>
     <figcaption><b>Figure 4 — The GC core is not one pedagogy.</b> Productive failure fits the <em>diagnostic</em> (conceptual) layer, not the <em>procedural</em> layer — the distinction Sinha &amp; Kapur (2021) draw between conceptual/transfer gains and the null procedural result. Reading the curriculum as uniformly "PF-fit" would over-claim for the procedural modules.</figcaption>
   </figure>
 
@@ -390,7 +455,7 @@
 </section>
 
 <section id="reflection">
-  <h2><span class="num">§ 4</span>The reflection finding</h2>
+  <div><span class="sec-num">04</span><h2 class="sec-title">The reflection finding</h2></div>
 
   <p>Failure that resolves into understanding requires more than the struggle itself. Donald Schön's <em>The Reflective Practitioner</em> (1983)<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> established the theoretical case that professional expertise develops through cycles of reflection-in-action (adjusting during practice) and reflection-on-action (retrospective analysis). David Kolb's <em>Experiential Learning</em> (1984)<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> made the developmental cycle explicit and pedagogically operable: concrete experience leads to reflective observation, which leads to abstract conceptualization, which leads to active experimentation, which produces the next concrete experience. The cycle is the unit, not any single stage; experience without reflection does not produce abstraction, and abstraction without experimentation does not produce capability.</p>
 
@@ -402,7 +467,7 @@
 </section>
 
 <section id="transfer">
-  <h2><span class="num">§ 5</span>The transfer finding</h2>
+  <div><span class="sec-num">05</span><h2 class="sec-title">The transfer finding</h2></div>
 
   <p>The cumulative point of the literature above — domain-specificity plus productive failure plus reflection — is the development of capacity to transfer learning to novel situations. The transfer literature is the place where this becomes most directly visible.</p>
 
@@ -448,7 +513,7 @@
 </section>
 
 <section id="expertise">
-  <h2><span class="num">§ 6</span>The expertise findings — and their qualifications</h2>
+  <div><span class="sec-num">06</span><h2 class="sec-title">The expertise findings — and their qualifications</h2></div>
 
   <p>The deliberate-practice literature, beginning with Ericsson, Krampe, and Tesch-Römer's 1993 paper in <em>Psychological Review</em>, sits adjacent to the productive-failure literature and is sometimes conflated with it. Ericsson's framework identifies the conditions that distinguish ordinary practice from the kind of practice that produces expertise: focused effort at the edge of current capability, immediate feedback, repeated cycles of attempt-fail-adjust, and accumulated practice on the scale the paper summarizes as &ldquo;over 10,000 h of deliberate practice extended over more than a decade.&rdquo; The mechanism overlaps with productive failure — failure at the edge, feedback, adjustment — but the time horizons and the framing differ.</p>
 
@@ -458,7 +523,7 @@
 </section>
 
 <section id="limits">
-  <h2><span class="num">§ 7</span>Honest limits of the research case</h2>
+  <div><span class="sec-num">07</span><h2 class="sec-title">Honest limits of the research case</h2></div>
 
   <p>Six honest limits on the research case as it applies to the undergraduate curriculum question.</p>
 
@@ -477,14 +542,15 @@
   <p>Sixth, the framework's founding intuition is itself partly grounded in <em>personal experience</em> of transfer — a faculty member who became a deep problem-solver in one area and found the capability useful elsewhere — and personal experience is a trustworthy guide to the <em>phenomenon</em> but an unreliable guide to the <em>mechanism</em>. Three well-established effects push the same way. Introspective reports of one's own cognitive processes are reconstructed after the fact, not read off directly (Nisbett &amp; Wilson, 1977), so "I used a general problem-solving skill" can be the <em>feeling</em> of deploying domain knowledge one cannot observe oneself using. A related bias is documented between people: better-informed agents predicting what less-informed others will judge are &ldquo;unable to ignore the additional information they possess,&rdquo; and this curse of knowledge &ldquo;makes personal expertise seem more widely shared than it is&rdquo; (Camerer, Loewenstein &amp; Weber, 1989). That is, experts misjudge what others know. That the same blind spot extends to how an expert perceives their own skill, so that domain knowledge comes to feel like general ability, is this page's conjecture, not their finding. Selection may also confound the inference: people who go deep in one domain <em>and</em> succeed in others plausibly differ in general ability, conscientiousness, and need for cognition, traits that could independently predict success in a new domain. We cite no study of that selection effect; what is established is that deliberate practice explains only a minority of performance variance (Macnamara, Hambrick &amp; Oswald, 2014). And survivorship hides the disconfirming cases — those who went deep and <em>did not</em> transfer do not write frameworks. None of this makes the intuition wrong; it means a curriculum cannot rest on the phenomenological claim alone. The design must specify the conditions that reproduce the effect in a median student — which is exactly why this document locates the transferable element in cultivated disposition + readiness + abstraction-and-bridging, rather than in depth as such.</p>
 </section>
 
-<h2 style="font-family: var(--display); font-size: 22px; font-weight: 600; margin: 24px 0 8px; color: var(--text-muted); border: none; padding: 0;">Part II — The framework's response</h2>
-
-<p>The cumulative position the framework takes is that problem-solving is real, valued, and — through its components — surfaceable from evidence, but not as a single transferable skill measured at the program level (that is the validation question). It is a program-level emergent property that arises from the interaction of three things, each of which can be measured at the appropriate scale, and the cumulative pattern of which can be aggregated to a program-level opportunity/risk read.</p>
-
-<p>This section operationalizes that position into the curriculum-mapping tool's data shape. Three operational claims structure the framework's response.</p>
+<div class="part">
+    <h2 class="part-title">Part II — The framework's response</h2>
+    <p>The cumulative position the framework takes is that problem-solving is real, valued, and — through its components — surfaceable from evidence, but not as a single transferable skill measured at the program level (that is the validation question). It is a program-level emergent property that arises from the interaction of three things, each of which can be measured at the appropriate scale, and the cumulative pattern of which can be aggregated to a program-level opportunity/risk read.</p>
+    
+    <p>This section operationalizes that position into the curriculum-mapping tool's data shape. Three operational claims structure the framework's response.</p>
+  </div>
 
 <section id="claim-1">
-  <h2><span class="num">§ 8</span>Claim 1 — The KUD+ depth scale encodes problem-solving facets within domains</h2>
+  <div><span class="sec-num">08</span><h2 class="sec-title">Claim 1 — The KUD+ depth scale encodes problem-solving facets within domains</h2></div>
 
   <p>The Do dimension's upper-range anchors are not abstract scale-tops. They are explicit definitions of what problem-solving competence looks like within a domain:</p>
 
@@ -508,7 +574,7 @@
 </section>
 
 <section id="claim-2">
-  <h2><span class="num">§ 9</span>Claim 2 — The CourseCapture audit surfaces productive-failure and reflection conditions per course</h2>
+  <div><span class="sec-num">09</span><h2 class="sec-title">Claim 2 — The CourseCapture audit surfaces productive-failure and reflection conditions per course</h2></div>
 
   <p>Depth alone is not sufficient. A course can reach D-5 through repetitive practice on familiar problems and never develop transferable problem-solving capacity in students; graduates of such a course can perform on known problems but freeze when novelty arrives. This is exactly Kapur's "unproductive success" quadrant from §3 — high performance, brittle learning — and the framework's depth-only view would not detect it. The literature on transfer is broadly consistent on this point: depth-without-pedagogy produces in-domain competence without the conditions that make it transferable.</p>
 
@@ -528,7 +594,7 @@
 </section>
 
 <section id="claim-3">
-  <h2><span class="num">§ 10</span>Claim 3 — The conditions for problem-solving are read at the program level</h2>
+  <div><span class="sec-num">10</span><h2 class="sec-title">Claim 3 — The conditions for problem-solving are read at the program level</h2></div>
 
   <p>No single course produces a problem-solver. The temptation to ask "does GC 3460 develop problem-solving?" is structural confusion: problem-solving is not a course-level property. It is a property of what the program collectively does across the four-year curriculum.</p>
 
@@ -545,10 +611,12 @@
   <p><strong>A durability caveat on the upper-depth map.</strong> The map records the depth a course <em>reaches at the moment it is taught</em>, not the durable depth a student carries to graduation. Skill decays without practice: a meta-analysis summarizes the loss in its abstract as ranging from d = &minus;0.01 immediately after training to d = &minus;1.4 after more than a year of non-use, across all task types, with cognitive tasks decaying more than physical ones (&delta; = &minus;1.15 vs. &minus;0.75 across all retention intervals) (Arthur et al., 1998). In a 50-year study of school Spanish, retention fell for the first 3&ndash;6 years and then held steady for up to 30 years; how much reached this stable &ldquo;permastore&rdquo; depended on the level of training and the grades earned, through what the author calls &ldquo;a discrete transition&rdquo; during training (Bahrick, 1984, pp. 1, 23&ndash;25). Learners with the least training and lowest grades kept almost none of their recall vocabulary in permastore (0% for one-level, C-grade learners), while more training and higher grades put a growing share there (p. 23). A D-5 reached in the freshman year and never revisited is not a D-5 at graduation, and Figure 1's <em>unproductive success</em> quadrant is doubly cautionary: depth from massed, single-context drilling is both brittle to novelty and, if Bahrick's threshold holds, the fastest-decaying kind. The upper-depth map should therefore be read as opportunity <em>at the moment of the course</em>, reinforced or not by the rest of the sequence. The repeated-snapshot design is, in principle, exactly what could eventually estimate that decay and report durable graduation-time depth — turning the caveat into a measurable durability model rather than a standing asterisk.</p>
 </section>
 
-<h2 style="font-family: var(--display); font-size: 22px; font-weight: 600; margin: 24px 0 8px; color: var(--text-muted); border: none; padding: 0;">Part III — The implementation</h2>
+<div class="part">
+    <h2 class="part-title">Part III — The implementation</h2>
+  </div>
 
 <section id="implementation">
-  <h2><span class="num">§ 11</span>The end-to-end chain</h2>
+  <div><span class="sec-num">11</span><h2 class="sec-title">The end-to-end chain</h2></div>
 
   <p>The operational chain that produces the program-level problem-solving opportunity/risk read — a diagnostic of <em>conditions</em>, not yet a validated diagnostic of <em>formation</em> — in implementation order:</p>
 
@@ -563,10 +631,12 @@
   <p>Each step is independently shippable and useful. The CourseCapture audit-area addition is the first to produce data; the matrix lens is immediately readable from existing data. Phase 1B will become useful as the snapshot corpus accumulates the productive-failure findings.</p>
 </section>
 
-<h2 style="font-family: var(--display); font-size: 22px; font-weight: 600; margin: 24px 0 8px; color: var(--text-muted); border: none; padding: 0;">Part IV — Limits and what to watch for</h2>
+<div class="part">
+    <h2 class="part-title">Part IV — Limits and what to watch for</h2>
+  </div>
 
 <section id="not-doing">
-  <h2><span class="num">§ 12</span>What the framework does not do</h2>
+  <div><span class="sec-num">12</span><h2 class="sec-title">What the framework does not do</h2></div>
 
   <p>Several positions to make explicit, both to constrain over-claiming and to surface what should remain on faculty agendas rather than be delegated to the tool.</p>
 
@@ -582,7 +652,7 @@
 </section>
 
 <section id="watch">
-  <h2><span class="num">§ 13</span>What to watch for as data accumulates</h2>
+  <div><span class="sec-num">13</span><h2 class="sec-title">What to watch for as data accumulates</h2></div>
 
   <p>Two empirical questions that will become answerable as the snapshot corpus grows.</p>
 
@@ -592,15 +662,22 @@
 
   <p>The framework's claim is that both must be present, sequenced correctly, and cumulating across the curriculum for graduates to develop transferable problem-solving capability. The data will tell us, over time, where each program actually stands.</p>
 
-  <div class="callout">
-    <div class="callout-title">The tool as research instrument</div>
-    <p>This framework's central commitment is one that current research cannot fully verify: that cumulative productive-failure exposure plus depth plus reflection produces transferable problem-solving capability four years out. That commitment is the framework's <em>hypothesis</em>, expressed as design. The tool is built to test it. As snapshot data accumulates, as graduates are tracked into the workforce, as employer signals are correlated back to program patterns, the framework either accumulates evidence for itself or surfaces the divergence that will require revision. In the meantime, the commitments are defensible — well-grounded in mechanism, consistent with the established research, and structured to fail informatively if they're wrong.</p>
-  </div>
+  <aside class="note">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg>
+      <div><strong>The tool as research instrument</strong>
+    
+    <p>This framework's central commitment is one that current research cannot fully verify: that cumulative productive-failure exposure plus depth plus reflection produces transferable problem-solving capability four years out. That commitment is the framework's <em>hypothesis</em>, expressed as design. The tool is built to test it. As snapshot data accumulates, as graduates are tracked into the workforce, as employer signals are correlated back to program patterns, the framework either accumulates evidence for itself or surfaces the divergence that will require revision. In the meantime, the commitments are defensible — well-grounded in mechanism, consistent with the established research, and structured to fail informatively if they're wrong.</p></div>
+    </aside>
 </section>
 
-<section style="margin-top: 56px;">
-  <h2 style="font-size: 18px;">References</h2>
-  <p class="dagger-legend" style="font-size: 14px; color: var(--text-muted);">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
+<a class="xlink" href="curriculum-map.html">
+    <span><span class="label">Explore the data · Tool</span><span class="t">GC Curriculum Map</span><span class="d">Work back from a career to the competencies it relies on and the courses that build them, year by year.</span></span>
+    <span class="link-arrow">Open the tool →</span>
+  </a>
+
+  <section class="references">
+    <div><h2 class="sec-title">References</h2></div>
+  <p class="dagger-legend">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
   <p>The substantive bibliographic anchor for this document is the references section of <a href="./background.html#references">background.html</a>, which contains the full entries for the works cited here. The pivotal works for problem-solving specifically: Willingham (2007); McPeck (1981)<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>; McPeck (1990); Abrami et al. (2015); Chi, Feltovich &amp; Glaser (1981); Larkin, McDermott, Simon &amp; Simon (1980); Sweller (1988); Kapur (2008, 2016); Sinha &amp; Kapur (2021); the 2023 <em>npj Science of Learning</em> paper on prior knowledge and inventive production; Bjork (1994); Schön (1983)<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>; Kolb (1984)<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>; Tannenbaum &amp; Cerasoli (2013); Perkins &amp; Salomon (1992) and Salomon &amp; Perkins (1989); Bransford &amp; Schwartz (1999) and Schwartz &amp; Martin (2004) on preparation for future learning; Gick &amp; Holyoak (1980, 1983) and Gentner, Loewenstein &amp; Thompson (2003) on analogical transfer (see also Loewenstein, Thompson &amp; Gentner, 1999); Barnett &amp; Ceci (2002) on the far-transfer taxonomy; Hatano &amp; Inagaki (1986) on routine vs. adaptive expertise; Belenky &amp; Nokes-Malach (2012); Donker et al. (2014), Veenman et al. (2006) and Schoenfeld (1992) on metacognitive-strategy transfer; Detterman (1993) and Sala &amp; Gobet (2017) / Sala et al. (2019) on the limits of far transfer; Bilalić, McLeod &amp; Gobet (2009) on the specialization effect; Ericsson, Krampe &amp; Tesch-Römer (1993); Macnamara, Hambrick &amp; Oswald (2014); Nisbett &amp; Wilson (1977) on the limits of introspective access; Camerer, Loewenstein &amp; Weber (1989) on the curse of knowledge; Arthur et al. (1998) and Bahrick (1984) on skill decay and durable-vs-instantaneous depth; Xu et al. (2026) on LLM keyword-inference inflation; Kim et al. (2025) and Kohli (2026) on correlated LLM-judge error; Hüllermeier &amp; Waegeman (2021) on aleatoric uncertainty; NACE Job Outlook (2023)<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>.</p>
 
   <p>For the engineering of the framework's response to this research, the operational artifacts:</p>
@@ -614,14 +691,40 @@
   </ul>
 </section>
 
-<footer class="doc-foot">
-  GC Curriculum Tool · Problem-Solving Deep Dive · Companion to the
+<p class="doc-foot">GC Curriculum Tool · Problem-Solving Deep Dive · Companion to the
   <a href="./background.html" style="color: var(--accent);">KUD+ Background</a> document
   and the
-  <a href="./superpowers/vision/gc-curriculum-tool-vision.html" style="color: var(--accent);">Vision</a>.
+  <a href="./superpowers/vision/gc-curriculum-tool-vision.html" style="color: var(--accent);">Vision</a>.</p>
+  </article>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
 </footer>
 
-</main>
-
+<script>
+/* Marks the contents link of the section in view. Without JS the contents column still works as plain links. */
+(() => {
+  const toc = document.querySelector('.toc');
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const secs = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  const inView = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+    const cur = secs.find((s) => inView.has(s.id));
+    if (!cur) return;
+    const a = byId.get(cur.id);
+    links.forEach((l) => l.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'true');
+    // When the sticky column is taller than the screen, keep the marked link visible inside it.
+    if (toc.scrollHeight > toc.clientHeight && (a.offsetTop < toc.scrollTop || a.offsetTop + a.offsetHeight > toc.scrollTop + toc.clientHeight)) {
+      toc.scrollTop = a.offsetTop - toc.clientHeight / 2;
+    }
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  secs.forEach((s) => io.observe(s));
+})();
+</script>
 </body>
 </html>
