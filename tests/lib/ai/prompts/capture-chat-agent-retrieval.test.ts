@@ -31,7 +31,7 @@ describe('capture-chat-agent prompt: chunk citation field', () => {
     const fields = (shape?.[1] ?? "").split(',').map((s) => s.trim()).filter(Boolean);
     const hit: Record<keyof import('@/lib/capture/vector-store').SearchHit, true> = {
       id: true, materialId: true, courseCode: true, fileName: true, sectionTitle: true, sectionIndex: true, text: true,
-      parentSectionId: true, parentSectionText: true, contextBlurb: true, score: true, uploadedAt: true, snapshotId: true,
+      parentSectionId: true, parentSectionText: true, contextBlurb: true, score: true, rerankScore: true, uploadedAt: true, snapshotId: true,
     };
     for (const f of fields) expect(Object.keys(hit)).toContain(f);
   });

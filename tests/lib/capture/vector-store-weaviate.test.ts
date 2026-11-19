@@ -282,7 +282,17 @@ describe('WeaviateVectorStore', () => {
   });
 
   describe('hybridSearch', () => {
+    it('fetches 50 candidates when reranking is on (the default), to rerank down to k', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const store = createWeaviateVectorStore();
+      await store.hybridSearch('tenant-a', { queryText: 'hello', queryVector: [1, 0, 0], k: 5 });
+      const [, opts] = mockHybridQuery.mock.calls[0] as [string, Record<string, unknown>];
+      expect(opts['limit']).toBe(50);
+      warn.mockRestore();
+    });
+
     it('calls query.hybrid with queryText, vector, limit, and no filter when materialId is absent', async () => {
+      vi.stubEnv('RERANK', 'off');
       const store = createWeaviateVectorStore();
       await store.hybridSearch('tenant-a', {
         queryText: 'hello',
@@ -296,6 +306,7 @@ describe('WeaviateVectorStore', () => {
       expect(opts['vector']).toEqual([1, 0, 0]);
       expect(opts['limit']).toBe(5);
       expect(opts['filters']).toBeUndefined();
+      vi.unstubAllEnvs();
     });
 
     it('passes a materialId filter when materialId is provided', async () => {

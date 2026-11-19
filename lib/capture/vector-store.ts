@@ -58,6 +58,8 @@ export interface SearchHit {
   parentSectionText: string | null;
   contextBlurb: string;
   score: number;
+  /** Reranker relevance (0-1) when the hit was reranked; null/absent otherwise. Order follows it. */
+  rerankScore?: number | null;
   uploadedAt: string | null;
   snapshotId: string | null;
 }

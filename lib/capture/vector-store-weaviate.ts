@@ -14,6 +14,8 @@
 
 import { Filters } from 'weaviate-client';
 import { getWeaviateClient } from './weaviate-client';
+import { rerankEnabled } from '@/lib/ai/rerank';
+import { candidateLimit, rerankTopK } from './rerank-hits';
 import {
   ensureSchema,
   ensureTenant,
@@ -199,9 +201,12 @@ export function createWeaviateVectorStore(): VectorStore {
             ? filterParts[0]
             : Filters.and(...filterParts);
 
+      // Rerank (2026-11-19): fetch 50 candidates, rerank on the passage text, keep the top k.
+      // RERANK=off returns the plain hybrid top k. A reranker failure falls back to hybrid order.
+      const reranking = rerankEnabled();
       const result = await chunks.query.hybrid(input.queryText, {
         vector: input.queryVector,
-        limit: input.k,
+        limit: candidateLimit(input.k, reranking),
         filters: combinedFilter,
         returnMetadata: ['score'],
         returnProperties: [
@@ -218,11 +223,18 @@ export function createWeaviateVectorStore(): VectorStore {
         ],
       });
 
-      // Collect unique parentSectionIds from the chunk hits
+      // The reranker reads the passage text alone: adding "file > section" in front lowered hit@1
+      // from 59% to 53% on the 17-question set (2026-11-19).
+      const scored = result.objects.map((o) => ({ o, text: String(o.properties['text']), score: Number(o.metadata?.score ?? 0) }));
+      const kept = reranking
+        ? await rerankTopK(input.queryText, scored, input.k)
+        : scored.slice(0, input.k).map((x) => ({ ...x, rerankScore: null as number | null }));
+
+      // Collect unique parentSectionIds from the kept hits
       const parentIds = Array.from(
         new Set(
-          result.objects
-            .map((o) => String(o.properties['parentSectionId'] ?? ''))
+          kept
+            .map(({ o }) => String(o.properties['parentSectionId'] ?? ''))
             .filter(Boolean),
         ),
       );
@@ -248,7 +260,7 @@ export function createWeaviateVectorStore(): VectorStore {
         }
       }
 
-      return result.objects.map((o) => {
+      return kept.map(({ o, rerankScore }) => {
         const parentSectionId = String(o.properties['parentSectionId'] ?? '');
         return {
           id: String(o.uuid),
@@ -262,6 +274,7 @@ export function createWeaviateVectorStore(): VectorStore {
           parentSectionText: parentTextById.get(parentSectionId) ?? null,
           contextBlurb: String(o.properties['contextBlurb']),
           score: Number(o.metadata?.score ?? 0),
+          rerankScore,
           uploadedAt: toISOStringOrNull(o.properties['uploadedAt']),
           snapshotId: toISOStringOrNull(o.properties['snapshotId']),
         };
