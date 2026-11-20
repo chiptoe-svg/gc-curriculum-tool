@@ -1,5 +1,4 @@
 import type { Depth } from '@/lib/builder/types';
-import { textHash } from '@/lib/catalog/bundles';
 import type { HandDepth, NodeReading, Tree, TreeLeaf, TreeNode, VersionSkills } from './types';
 
 /** Confirmed, or proposed with a source other than a bare embedding match. */
@@ -36,6 +35,13 @@ function subtreeIds(tree: Tree, id: string): Set<string> {
   return out;
 }
 
+/** FNV-1a 32-bit as hex: pure JS so this file can run in the browser (no node:crypto). */
+function fnv1a(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
 /** Sorted counting skillRefs of this course under the node's subtree, hashed. */
 export function leavesSignature(tree: Tree, nodeId: string, courseCode: string): string {
   const ids = subtreeIds(tree, nodeId);
@@ -43,7 +49,7 @@ export function leavesSignature(tree: Tree, nodeId: string, courseCode: string):
   for (const l of tree.leaves) {
     if (l.courseCode === courseCode && counts(l) && ids.has(resolveNode(tree, l.nodeId))) refs.add(l.skillRef);
   }
-  return textHash([...refs].sort().join('\n'));
+  return fnv1a([...refs].sort().join('\n'));
 }
 
 type DirectItem = NodeReading['direct'][number];
