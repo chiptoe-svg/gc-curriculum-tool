@@ -1,6 +1,6 @@
 /** Interview checks (search trigger, citation check): pure functions, no model calls. */
 import { describe, it, expect } from 'vitest';
-import { checkCitations, chunkIdsInToolResult, citableFromHistory, needsMaterialSearch, previousQuestion } from '@/lib/ai/agent/interview-controls';
+import { fileAddedMarker, checkCitations, chunkIdsInToolResult, citableFromHistory, needsMaterialSearch, previousQuestion } from '@/lib/ai/agent/interview-controls';
 
 describe('needsMaterialSearch', () => {
   it('fires on the previous question when the answer alone names nothing (2070-104)', () => {
@@ -106,5 +106,19 @@ describe('repairCitations (Part 2 Task 5)', () => {
     const raw = { finding: 'f', question: 'q', citations: [{ type: 'instructor', messageId: 'invented', chunkId: null, excerpt: 'Students present to the project client as well as the class. ' + 'more '.repeat(50) }], readiness: { score: 40, covered: [], remaining: [], good_enough_to_generate: false } };
     const parsed = parseInterviewReply(raw, messages);
     expect(parsed.citations[0]!.excerpt.length).toBeLessThanOrEqual(200);
+  });
+});
+
+describe('fileAddedMarker', () => {
+  it('builds the exact readable and unreadable lines', () => {
+    expect(fileAddedMarker('Zine.pdf', 'm1', true)).toBe('[Instructor added a file: Zine.pdf (id=m1) — search it before answering.]');
+    expect(fileAddedMarker('Zine.pdf', 'm1', false)).toBe('[Instructor added a file: Zine.pdf (id=m1) — it could not be read; ask for the key part pasted instead.]');
+  });
+  it('marker forces a search', () => {
+    expect(needsMaterialSearch('here is it\n' + fileAddedMarker('Zine.pdf', 'm1', true), [])).toEqual({ required: true, reason: 'the instructor added a file' });
+    expect(needsMaterialSearch('here is it\n' + fileAddedMarker('Zine.pdf', 'm1', true) + ' (still being read)', [])).toEqual({ required: true, reason: 'the instructor added a file' });
+  });
+  it('the unreadable marker does not force a search', () => {
+    expect(needsMaterialSearch('here is it\n' + fileAddedMarker('Zine.pdf', 'm1', false), []).required).toBe(false);
   });
 });
