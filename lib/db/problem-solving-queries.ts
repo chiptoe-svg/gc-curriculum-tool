@@ -45,7 +45,7 @@ export async function loadProblemSolvingInputs(
   const idList = sql.join(ids.map(i => sql`${i}::uuid`), sql`, `);
   const d = await executor.execute(sql`
     SELECT cov.competency_id, sc.name AS competency_name, s.course_code, cov.d_depth
-    FROM snapshot_competency_coverage cov
+    FROM competency_levels cov
     JOIN sub_competencies sc ON sc.id = cov.competency_id
     JOIN course_capture_snapshots s ON s.id = cov.snapshot_id
     WHERE cov.snapshot_id IN (${idList})

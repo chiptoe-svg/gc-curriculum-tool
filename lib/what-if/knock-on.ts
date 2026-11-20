@@ -10,7 +10,7 @@
  */
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { snapshotCompetencyCoverage, subCompetencies } from '@/lib/db/schema';
+import { competencyLevels, subCompetencies } from '@/lib/db/schema';
 import { listConfirmedEdgePairs } from '@/lib/db/prerequisite-edge-queries';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { getMatrixData, type MatrixData } from '@/lib/db/program-coverage-queries';
@@ -44,14 +44,14 @@ export async function resolveWhatIfDepths(
   type Cov = { id: string; k: number | null; u: number | null; d: number | null };
   const rows = await db
     .select({
-      subCompetencyId: snapshotCompetencyCoverage.competencyId,
-      matchedCompetency: snapshotCompetencyCoverage.matchedCompetency,
-      kDepth: snapshotCompetencyCoverage.kDepth,
-      uDepth: snapshotCompetencyCoverage.uDepth,
-      dDepth: snapshotCompetencyCoverage.dDepth,
+      subCompetencyId: competencyLevels.competencyId,
+      matchedCompetency: competencyLevels.matchedCompetency,
+      kDepth: competencyLevels.kDepth,
+      uDepth: competencyLevels.uDepth,
+      dDepth: competencyLevels.dDepth,
     })
-    .from(snapshotCompetencyCoverage)
-    .where(eq(snapshotCompetencyCoverage.snapshotId, baseSnapshotId));
+    .from(competencyLevels)
+    .where(eq(competencyLevels.snapshotId, baseSnapshotId));
   const covByStatement = new Map<string, Cov[]>();
   for (const row of rows) {
     if (!row.matchedCompetency) continue;

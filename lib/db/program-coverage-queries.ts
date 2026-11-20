@@ -1,7 +1,7 @@
 import { ensureScoringLink } from '@/lib/program/scoring-links';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies, subCompetencies } from '@/lib/db/schema';
+import { snapshotCompetencyCoverage, competencyLevels, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies, subCompetencies } from '@/lib/db/schema';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 import { PROGRAM_VISIBLE_SQL } from '@/lib/courses/program-visibility';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
@@ -561,7 +561,7 @@ async function readBelowCutoff(
   }));
   const ids = [...new Set(below.map(r => r.competencyId))];
   if (ids.length === 0) return { subCompetencies: subs, cells: [] };
-  const rows = (await ex.select().from(snapshotCompetencyCoverage).where(inArray(snapshotCompetencyCoverage.competencyId, ids)))
+  const rows = (await ex.select().from(competencyLevels).where(inArray(competencyLevels.competencyId, ids)))
     .filter(r => programVisibleSnapshotIds.has(r.snapshotId));
   const cells: MatrixCoverageCell[] = [];
   for (const s of subs) {

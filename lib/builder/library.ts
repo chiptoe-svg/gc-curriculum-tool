@@ -14,7 +14,7 @@ import { and, asc, eq, ilike, notInArray, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   careerTargetMembership, careerTargets, courseCatalogEntries, courseIntendedCoverage, courses,
-  competencyRollups, skillCompetencyLinks, snapshotCompetencyCoverage, subCompetencies,
+  competencyRollups, skillCompetencyLinks, competencyLevels, subCompetencies,
 } from '@/lib/db/schema';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 import { loadPrereqMap } from '@/lib/curriculum/prereq-map';
@@ -55,10 +55,10 @@ export async function loadLibrary(): Promise<Library> {
   // One approved capture per (course, instructor), chosen as the required-skill judge chooses (liveCaptures).
   const snapRows = await liveCaptures();
   const coverage = await db.select({
-    snapshotId: snapshotCompetencyCoverage.snapshotId, competencyId: snapshotCompetencyCoverage.competencyId,
-    k: snapshotCompetencyCoverage.kDepth, u: snapshotCompetencyCoverage.uDepth, d: snapshotCompetencyCoverage.dDepth,
-    source: snapshotCompetencyCoverage.matchedCompetency,
-  }).from(snapshotCompetencyCoverage);
+    snapshotId: competencyLevels.snapshotId, competencyId: competencyLevels.competencyId,
+    k: competencyLevels.kDepth, u: competencyLevels.uDepth, d: competencyLevels.dDepth,
+    source: competencyLevels.matchedCompetency,
+  }).from(competencyLevels);
   const depthsBySnap = new Map<string, CompetencyDepth[]>();
   for (const r of coverage) {
     if (!live.has(r.competencyId)) continue;

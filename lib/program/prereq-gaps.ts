@@ -36,7 +36,7 @@ import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   courseCaptureSnapshots,
-  snapshotCompetencyCoverage,
+  competencyLevels,
   subCompetencies,
 } from '@/lib/db/schema';
 import { listEdgesForFocal } from '@/lib/db/prerequisite-edge-queries';
@@ -51,7 +51,7 @@ export type GapStatus = 'met' | 'gap' | 'no_data';
 
 /**
  * Measured (or intended) attainment of a specific sub-competency by a
- * specific prereq course, as sourced from `snapshotCompetencyCoverage`.
+ * specific prereq course, as sourced from `competencyLevels`.
  */
 export interface DeliveredAttainment {
   prereqCourseCode: string;
@@ -251,7 +251,7 @@ export interface PrereqGapResult {
  *     a. Confirm the competency exists in the catalog (`sub_competencies`).
  *     b. Find the prereq course's latest non-retired `courseCaptureSnapshots`
  *        row (ordered by createdAt DESC).
- *     c. Look up the matching `snapshotCompetencyCoverage` row for
+ *     c. Look up the matching `competencyLevels` row for
  *        (snapshotId, subCompetencyId) — keyed per competency since P0a,
  *        not per (snapshot, target, competency).
  *     d. If found → DeliveredAttainment{ basis: 'measured', k/u/d from depths }.
@@ -331,15 +331,15 @@ export async function loadDelivered(
     // (c) Coverage row for (snapshotId, competency)
     const [coverage] = await db
       .select({
-        kDepth: snapshotCompetencyCoverage.kDepth,
-        uDepth: snapshotCompetencyCoverage.uDepth,
-        dDepth: snapshotCompetencyCoverage.dDepth,
+        kDepth: competencyLevels.kDepth,
+        uDepth: competencyLevels.uDepth,
+        dDepth: competencyLevels.dDepth,
       })
-      .from(snapshotCompetencyCoverage)
+      .from(competencyLevels)
       .where(
         and(
-          eq(snapshotCompetencyCoverage.snapshotId, snapshot.id),
-          eq(snapshotCompetencyCoverage.competencyId, subCompetencyId),
+          eq(competencyLevels.snapshotId, snapshot.id),
+          eq(competencyLevels.competencyId, subCompetencyId),
         ),
       )
       .limit(1);

@@ -17,7 +17,7 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
-import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
@@ -26,7 +26,7 @@ import { BAND_LABELS, PINNED_LABEL } from '@/lib/catalog/membership';
 import {
   courseCaptureSnapshots,
   captureMessages,
-  snapshotCompetencyCoverage,
+  competencyLevels,
   targetCoverage,
   careerTargets,
   subCompetencies,
@@ -372,19 +372,19 @@ export async function loadCompetencySubstrate(subCompetencyId: string): Promise<
   const rows = await db
     .select({
       courseCode: courseCaptureSnapshots.courseCode,
-      snapshotId: snapshotCompetencyCoverage.snapshotId,
-      kDepth: snapshotCompetencyCoverage.kDepth,
-      uDepth: snapshotCompetencyCoverage.uDepth,
-      dDepth: snapshotCompetencyCoverage.dDepth,
-      matchedCompetency: snapshotCompetencyCoverage.matchedCompetency,
-      evidenceExcerpt: snapshotCompetencyCoverage.evidenceExcerpt,
+      snapshotId: competencyLevels.snapshotId,
+      kDepth: competencyLevels.kDepth,
+      uDepth: competencyLevels.uDepth,
+      dDepth: competencyLevels.dDepth,
+      matchedCompetency: competencyLevels.matchedCompetency,
+      evidenceExcerpt: competencyLevels.evidenceExcerpt,
       profile: courseCaptureSnapshots.profile,
     })
-    .from(snapshotCompetencyCoverage)
+    .from(competencyLevels)
     .innerJoin(
       courseCaptureSnapshots,
       and(
-        eq(snapshotCompetencyCoverage.snapshotId, courseCaptureSnapshots.id),
+        eq(competencyLevels.snapshotId, courseCaptureSnapshots.id),
         isNull(courseCaptureSnapshots.retiredAt),
       ),
     )
@@ -397,12 +397,12 @@ export async function loadCompetencySubstrate(subCompetencyId: string): Promise<
       ),
     )
     .where(and(
-      eq(snapshotCompetencyCoverage.competencyId, subCompetencyId),
+      eq(competencyLevels.competencyId, subCompetencyId),
       // Only courses that build it: the scorer matched a course statement and
       // some depth is above 0. Every course is scored on every competency, so
       // the rest are K0/U0/D0 non-matches the page should not list.
-      isNotNull(snapshotCompetencyCoverage.matchedCompetency),
-      sql`(COALESCE(${snapshotCompetencyCoverage.kDepth}, 0) > 0 OR COALESCE(${snapshotCompetencyCoverage.uDepth}, 0) > 0 OR ${snapshotCompetencyCoverage.dDepth} > 0)`,
+      isNotNull(competencyLevels.matchedCompetency),
+      sql`(COALESCE(${competencyLevels.kDepth}, 0) > 0 OR COALESCE(${competencyLevels.uDepth}, 0) > 0 OR ${competencyLevels.dDepth} > 0)`,
       // One row per course: its latest non-retired snapshot.
       sql`${courseCaptureSnapshots.id} = (SELECT s2.id FROM course_capture_snapshots s2
             WHERE s2.course_code = ${courseCaptureSnapshots.courseCode} AND s2.retired_at IS NULL
@@ -530,19 +530,19 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
   // into every target that uses its competency.
   const cellRows = await executor
     .select({
-      subCompetencyId: snapshotCompetencyCoverage.competencyId,
+      subCompetencyId: competencyLevels.competencyId,
       courseCode: courseCaptureSnapshots.courseCode,
-      snapshotId: snapshotCompetencyCoverage.snapshotId,
-      kDepth: snapshotCompetencyCoverage.kDepth,
-      uDepth: snapshotCompetencyCoverage.uDepth,
-      dDepth: snapshotCompetencyCoverage.dDepth,
-      evidenceExcerpt: snapshotCompetencyCoverage.evidenceExcerpt,
+      snapshotId: competencyLevels.snapshotId,
+      kDepth: competencyLevels.kDepth,
+      uDepth: competencyLevels.uDepth,
+      dDepth: competencyLevels.dDepth,
+      evidenceExcerpt: competencyLevels.evidenceExcerpt,
     })
-    .from(snapshotCompetencyCoverage)
+    .from(competencyLevels)
     .innerJoin(
       courseCaptureSnapshots,
       and(
-        eq(snapshotCompetencyCoverage.snapshotId, courseCaptureSnapshots.id),
+        eq(competencyLevels.snapshotId, courseCaptureSnapshots.id),
         isNull(courseCaptureSnapshots.retiredAt),
       ),
     )
@@ -557,9 +557,9 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
     .where(
       // Cells are per competency: below-cutoff competencies are not in
       // target_coverage for this target, so read the base table.
-      inArray(snapshotCompetencyCoverage.competencyId, subIds),
+      inArray(competencyLevels.competencyId, subIds),
     )
-    .orderBy(desc(snapshotCompetencyCoverage.dDepth), desc(snapshotCompetencyCoverage.generatedAt), asc(courseCaptureSnapshots.courseCode), asc(snapshotCompetencyCoverage.snapshotId));
+    .orderBy(desc(competencyLevels.dDepth), desc(competencyLevels.generatedAt), asc(courseCaptureSnapshots.courseCode), asc(competencyLevels.snapshotId));
 
   // Build rollup: best dDepth per sub-competency. With the ORDER BY above, the first row
   // encountered for a given sub-competency already carries its max dDepth and the deterministic
@@ -745,11 +745,12 @@ export async function loadCompetencyLinksForSnapshot(
 ): Promise<Array<{ statement: string; slug: string }>> {
   const rows = await db
     .select({
-      matchedCompetency: snapshotCompetencyCoverage.matchedCompetency,
-      subCompetencyId: snapshotCompetencyCoverage.competencyId,
+      matchedCompetency: competencyLevels.matchedCompetency,
+      subCompetencyId: competencyLevels.competencyId,
     })
-    .from(snapshotCompetencyCoverage)
-    .where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
+    .from(competencyLevels)
+    // A competency faculty rejected for this course is no longer linked from its page (spec 2026-11-20).
+    .where(and(eq(competencyLevels.snapshotId, snapshotId), ne(competencyLevels.method, 'rejected')));
 
   const seen = new Set<string>();
   const out: Array<{ statement: string; slug: string }> = [];

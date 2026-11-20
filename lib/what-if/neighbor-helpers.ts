@@ -5,7 +5,7 @@
  */
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { snapshotCompetencyCoverage } from '@/lib/db/schema';
+import { competencyLevels } from '@/lib/db/schema';
 import { getIntendedCoverageForCourses } from '@/lib/db/courses-queries';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 import type { DeliveredAttainment } from '@/lib/program/prereq-gaps';
@@ -45,14 +45,14 @@ export function normalizeCompetencyKey(s: string): string {
 
 /**
  * Resolve a predicted delta's competency statement to sub-competency depths,
- * using the snapshotCompetencyCoverage rows for the focal course's latest
+ * using the competencyLevels rows for the focal course's latest
  * snapshot. The coverage table stores `matchedCompetency` (the profile
  * competency statement the AI matched to each sub-competency) alongside
  * `subCompetencyId` and the scored depths. This is the same linkage the
  * program coverage matrix and the scaffolding analysis use.
  *
  * Resolution logic:
- *   1. Look up all snapshotCompetencyCoverage rows for the focal snapshot.
+ *   1. Look up all competencyLevels rows for the focal snapshot.
  *   2. For each predicted delta, find rows where matchedCompetency === competency
  *      (exact string match; the same statement the AI wrote into both the profile
  *      and the coverage table). If matched, emit PredictedSubCompDepth with the
@@ -62,7 +62,7 @@ export function normalizeCompetencyKey(s: string): string {
  *      in Scenario.predictedDeltas for display, just not in the ripple engine.
  *      NEVER fabricate a sub-competency id.
  *
- * CONCERN NOTE: matchedCompetency in snapshotCompetencyCoverage is populated by
+ * CONCERN NOTE: matchedCompetency in competencyLevels is populated by
  * the program-score-coverage AI function, which may paraphrase rather than
  * copy verbatim the profile's competency statement. If the scoring AI wrote a
  * paraphrase, exact-string match will miss it; the competency will be omitted
@@ -78,11 +78,11 @@ export async function resolveSubCompetencyDepths(
 
   const coverageRows = await db
     .select({
-      subCompetencyId: snapshotCompetencyCoverage.competencyId,
-      matchedCompetency: snapshotCompetencyCoverage.matchedCompetency,
+      subCompetencyId: competencyLevels.competencyId,
+      matchedCompetency: competencyLevels.matchedCompetency,
     })
-    .from(snapshotCompetencyCoverage)
-    .where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
+    .from(competencyLevels)
+    .where(eq(competencyLevels.snapshotId, snapshotId));
 
   // Build a map: competency statement → [subCompetencyId, ...] (one competency
   // can score against multiple sub-comps; emit one PredictedSubCompDepth per
@@ -126,7 +126,7 @@ export async function resolveSubCompetencyDepths(
 /**
  * Build DeliveredAttainment rows for the focal course acting as a prereq —
  * mirrors the logic in computePrereqGaps but for a single focal snapshot.
- * We read snapshotCompetencyCoverage directly (measured basis) and layer in
+ * We read competencyLevels directly (measured basis) and layer in
  * intended coverage rows the same way the gap engine does.
  */
 export async function buildBaselineDelivered(
@@ -135,13 +135,13 @@ export async function buildBaselineDelivered(
 ): Promise<DeliveredAttainment[]> {
   const measuredRows = await db
     .select({
-      subCompetencyId: snapshotCompetencyCoverage.competencyId,
-      kDepth: snapshotCompetencyCoverage.kDepth,
-      uDepth: snapshotCompetencyCoverage.uDepth,
-      dDepth: snapshotCompetencyCoverage.dDepth,
+      subCompetencyId: competencyLevels.competencyId,
+      kDepth: competencyLevels.kDepth,
+      uDepth: competencyLevels.uDepth,
+      dDepth: competencyLevels.dDepth,
     })
-    .from(snapshotCompetencyCoverage)
-    .where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
+    .from(competencyLevels)
+    .where(eq(competencyLevels.snapshotId, snapshotId));
 
   // snapshot_target_coverage has a 3-col PK incl. careerTargetId; a course scored
   // against multiple targets yields duplicate rows per subComp with identical depths
