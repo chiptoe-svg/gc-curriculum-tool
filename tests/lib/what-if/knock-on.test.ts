@@ -3,7 +3,7 @@ import type { DeliveredAttainment, RelyEdge } from '@/lib/program/prereq-gaps';
 import type { MatrixData } from '@/lib/db/program-coverage-queries';
 import type { WhatIfProfile, WhatIfRating } from '@/lib/what-if/types';
 
-type CoverageRow = { subCompetencyId: string; matchedCompetency: string | null; kDepth: number | null; uDepth: number | null; dDepth: number | null };
+type CoverageRow = { subCompetencyId: string; matchedCompetency: string | null; kDepth: number | null; uDepth: number | null; dDepth: number | null; method?: string };
 let coverageRows: CoverageRow[] = [];
 vi.mock('@/lib/db/client', () => ({
   db: { select: () => ({ from: () => Object.assign(Promise.resolve([]), { where: async () => coverageRows }) }) },
@@ -23,6 +23,7 @@ vi.mock('@/lib/program/prereq-gaps', async (importOriginal) => ({
   loadPrereqGapInputs: async () => ({ edges: [], delivered: [] }),
 }));
 
+import { resolveSubCompetencyDepths } from '@/lib/what-if/neighbor-helpers';
 import {
   resolveWhatIfDepths, laterCourseLines, earlierCourseLines, careerLines, computeKnockOn,
 } from '@/lib/what-if/knock-on';
@@ -164,6 +165,13 @@ describe('resolveWhatIfDepths', () => {
     coverageRows = [cov('color-management', '  manage   COLOR ', 2, 2, 3)];
     const r = await resolveWhatIfDepths('snap-1', profile([rating({})]));
     expect(r).toEqual({ resolved: [{ subCompetencyId: 'color-management', k: 2, u: 2, d: 4 }], notComputed: [] });
+  });
+  it('review I-4: a competency faculty rejected for this course takes no prediction', async () => {
+    coverageRows = [{ ...cov('color-management', 'Manage color', 0, 0, 0), method: 'rejected' }, { ...cov('prepress', 'Manage color', 2, 2, 3), method: 'scoring' }];
+    const r = await resolveWhatIfDepths('snap-1', profile([rating({})]));
+    expect(r.resolved.map(x => x.subCompetencyId)).toEqual(['prepress']);
+    const n = await resolveSubCompetencyDepths('snap-1', [{ competency: 'Manage color', to: { k: 2, u: 2, d: 4 } }]);
+    expect(n.map(x => x.subCompetencyId)).toEqual(['prepress']);
   });
   it('resolves a new linked rating through its sub-competency id', async () => {
     const r = await resolveWhatIfDepths('snap-1', profile([rating({ status: 'new', before: null, statement: 'Brand new', subCompetencyId: 'x-sub', linked: true })]));

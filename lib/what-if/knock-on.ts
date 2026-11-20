@@ -49,12 +49,14 @@ export async function resolveWhatIfDepths(
       kDepth: competencyLevels.kDepth,
       uDepth: competencyLevels.uDepth,
       dDepth: competencyLevels.dDepth,
+      method: competencyLevels.method,
     })
     .from(competencyLevels)
     .where(eq(competencyLevels.snapshotId, baseSnapshotId));
   const covByStatement = new Map<string, Cov[]>();
   for (const row of rows) {
-    if (!row.matchedCompetency) continue;
+    // A competency faculty rejected for this course takes no prediction (spec 2026-11-20, review I-4).
+    if (!row.matchedCompetency || row.method === 'rejected') continue;
     const key = normalizeCompetencyKey(row.matchedCompetency);
     const list = covByStatement.get(key) ?? [];
     list.push({ id: row.subCompetencyId, k: row.kDepth, u: row.uDepth, d: row.dDepth });

@@ -103,6 +103,22 @@ describe.skipIf(!isLinksScratchDb())('migration 0072 on the links scratch clone'
     await c.query(`UPDATE course_capture_snapshots SET retired_at = now() WHERE id = $1`, [S]);
     expect(await level(c, F)).toEqual([]);
   }));
+  it('review I-1: stale proposed scoring link, scorer cell now 0 → a real 0 (scoring), not needs_level', () => inTx(async c => {
+    await cell(c, A, 0, 0, 0); await link(c, A, 'r1', 'scoring', 'proposed');
+    expect(await level(c, A)).toEqual([{ k: 0, u: 0, d: 0, method: 'scoring' }]);
+  }));
+  it('review I-1: stale proposed scoring link, scorer cell deleted → no row', () => inTx(async c => {
+    await link(c, A, 'r1', 'scoring', 'proposed');
+    expect(await level(c, A)).toEqual([]);
+  }));
+  it('review I-2: faculty rejected the pair; a re-score proposes a scoring link on another skill → still rejected', () => inTx(async c => {
+    await cell(c, A, 1, 0, 1); await link(c, A, 'r1', 'scoring', 'rejected'); await link(c, A, 'r2', 'scoring', 'proposed');
+    expect(await level(c, A)).toEqual([{ k: 0, u: 0, d: 0, method: 'rejected' }]);
+  }));
+  it('a faculty-confirmed link still counts on a rejected pair (faculty decided both)', () => inTx(async c => {
+    await cell(c, A, 1, 0, 1); await link(c, A, 'r1', 'scoring', 'rejected'); await link(c, A, 'r2', 'faculty', 'confirmed');
+    expect(await level(c, A)).toEqual([{ k: 1, u: 0, d: 1, method: 'scoring' }]);
+  }));
   it('target_coverage over live data: identical before and after 0072', () => inTx(async c => {
     await c.query(`CREATE TEMP TABLE before_tc AS SELECT * FROM target_coverage`);
     await c.query(strip(readFileSync(MIGRATION_PATH, 'utf8')));

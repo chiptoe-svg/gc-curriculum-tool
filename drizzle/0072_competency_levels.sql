@@ -1,6 +1,8 @@
 -- 0072: competency_levels — one rule for a course version's level on a competency (spec 2026-11-20-links-drive-coverage-design.md).
--- Order: a faculty level, else an AI level, else the scorer's cell unless faculty rejected every link
--- ('rejected', 0), else 'needs_level' (links count but no level, 0). Foundational competencies: K/U null.
+-- Order: a faculty level, else an AI level, else the scorer's cell unless faculty rejected a link here and confirmed
+-- none ('rejected', 0), else 'needs_level' (a faculty/AI-backed link but no level, 0). Foundational: K/U null.
+-- The scorer's own proposed link counts only while its cell is above 0 and never outweighs a faculty rejection
+-- (whole-branch review I-1, I-2).
 -- Scorer rows pass through unfiltered, exactly as target_coverage read them before (day one is identical);
 -- rows that exist only through links or roll-ups need a live snapshot and an active competency.
 -- target_coverage keeps its columns and now reads competency_levels. Views only; no table or row changes.
@@ -9,7 +11,10 @@ BEGIN;
 CREATE OR REPLACE VIEW competency_levels AS
 WITH lk AS (
   SELECT snapshot_id, competency_id,
-         bool_or(status = 'confirmed' OR (status = 'proposed' AND source <> 'embedding')) AS counting,
+         -- a judgment that stands on its own: confirmed, or proposed by an AI judge or by faculty
+         bool_or(status = 'confirmed' OR (status = 'proposed' AND source IN ('ai', 'faculty'))) AS judged,
+         -- the scorer's own proposal: counts only while the scorer's cell is above 0 and faculty rejected nothing here
+         bool_or(status = 'proposed' AND source = 'scoring') AS scorer_proposed,
          bool_or(status = 'rejected') AS any_rejected,
          max(coalesce(decided_at, created_at)) AS last_at
   FROM skill_competency_links
@@ -25,7 +30,7 @@ pairs AS (
   SELECT l.snapshot_id, l.competency_id FROM lk l
     JOIN course_capture_snapshots s ON s.id = l.snapshot_id AND s.retired_at IS NULL
     JOIN sub_competencies sc ON sc.id = l.competency_id AND NOT sc.retired
-  WHERE l.counting
+  WHERE l.judged
 ),
 j AS (
   SELECT p.snapshot_id, p.competency_id, sc.foundational, c.snapshot_id IS NOT NULL AS scored,
@@ -33,7 +38,10 @@ j AS (
          c.confidence AS cconf, c.rationale AS crat, c.model AS cmodel, c.generated_at AS cat,
          r.method AS rmethod, r.k AS rk, r.u AS ru, r.d AS rd, r.rationale AS rrat, r.model AS rmodel,
          r.decided_by AS rby, r.created_at AS rat,
-         coalesce(l.counting, false) AS counting, coalesce(l.any_rejected, false) AS any_rejected, l.last_at
+         coalesce(l.judged, false)
+           OR (coalesce(l.scorer_proposed, false) AND NOT coalesce(l.any_rejected, false)
+               AND c.snapshot_id IS NOT NULL AND greatest(coalesce(c.k_depth, 0), coalesce(c.u_depth, 0), c.d_depth) > 0) AS counting,
+         coalesce(l.any_rejected, false) AS any_rejected, l.last_at
   FROM pairs p
   JOIN sub_competencies sc ON sc.id = p.competency_id
   LEFT JOIN snapshot_competency_coverage c ON c.snapshot_id = p.snapshot_id AND c.competency_id = p.competency_id

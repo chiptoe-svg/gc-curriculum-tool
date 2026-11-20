@@ -80,6 +80,7 @@ export async function resolveSubCompetencyDepths(
     .select({
       subCompetencyId: competencyLevels.competencyId,
       matchedCompetency: competencyLevels.matchedCompetency,
+      method: competencyLevels.method,
     })
     .from(competencyLevels)
     .where(eq(competencyLevels.snapshotId, snapshotId));
@@ -93,7 +94,8 @@ export async function resolveSubCompetencyDepths(
   // since P0a; kept as a guard)
   const byStatement = new Map<string, string[]>();
   for (const row of coverageRows) {
-    if (!row.matchedCompetency) continue;
+    // A competency faculty rejected for this course takes no prediction (spec 2026-11-20, review I-4).
+    if (!row.matchedCompetency || row.method === 'rejected') continue;
     const key = normalizeCompetencyKey(row.matchedCompetency);
     const existing = byStatement.get(key) ?? [];
     existing.push(row.subCompetencyId);

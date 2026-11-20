@@ -13,6 +13,7 @@ import { DepthInputs, Drawer, LevelInput } from './controls';
 
 /** How a level was decided (competency_levels.method; spec 2026-11-20-links-drive-coverage-design.md). */
 const METHOD_LABEL: Record<string, string> = { faculty: 'set by hand', ai: 'AI judgment', scoring: 'scorer', needs_level: 'needs a level', rejected: 'rejected by faculty' };
+import { developedIds } from '@/lib/builder/developed';
 import { BASIS_WORD, STRATA, fmtDepth, stratumRank } from './ui';
 
 export function CourseDrawer(props: {
@@ -205,7 +206,7 @@ function TrackedCourse(props: {
   const above0 = (x?: { k: number | null; u: number | null; d: number | null }) => !!x && (['k', 'u', 'd'] as const).some(dim => (x[dim] ?? 0) > 0);
   // The reading the map uses: the what-if when one is chosen, otherwise discovered or stated as the course's reading says.
   const inUseMap = whatIf ? whatIfDepths : inUse === 'stated' ? stated : discovered;
-  const works = ids.filter(id => above0(inUseMap.get(id)));
+  const works = developedIds(ids, inUseMap, linkedView);
   const compareRows = ids.filter(id => above0(stated.get(id)) || above0(discovered.get(id)));
   // What students bring: the deepest level reached by courses in earlier terms, on the shared trunk or this course's branch.
   const earlier = props.allCourses.filter(c => c.term < placed.term && !c.requirement && (c.branch === null || c.branch === placed.branch));
@@ -307,7 +308,7 @@ function TrackedCourse(props: {
         <summary>Developed skills &amp; competencies ({linkedView ? `${version!.skills.length} skills, ${works.length} competencies` : works.length})</summary>
         <p className="cb-muted">
           {linkedView
-            ? 'Every skill the course capture recorded, as captured, grouped under the competency it counts toward. A competency\'s level is its highest grouped skill unless someone set it; "after it" is where students stand once this course is added to what they bring. A skill can sit in more than one group; ✓ confirms a grouping, ✗ removes it. The skills themselves never change.'
+            ? 'Every skill the course capture recorded, as captured, grouped under the competency it counts toward. A competency\'s level is the one faculty set, else the scorer\'s level; "needs a level" means skills are grouped there but no level is set yet; "after it" is where students stand once this course is added to what they bring. A skill can sit in more than one group; ✓ confirms a grouping, ✗ removes it. The skills themselves never change.'
             : inUse ? `This course's levels from its ${BASIS_WORD[inUse].toLowerCase()} reading${placed.reading.filled ? ' (it has none under the chosen input)' : ''}, and where students stand after it.` : 'It has no reading under the chosen input, so it adds nothing to the map.'}
         </p>
         {works.length === 0 && !linkedView && <p className="cb-muted">No competency levels above 0 have been read for this course.</p>}
