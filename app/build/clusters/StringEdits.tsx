@@ -9,6 +9,7 @@ import { checkBranch, checkMerge } from '@/lib/builder/strings/rules';
 import type { StringGraph, StringRow } from '@/lib/builder/strings/types';
 import { sendStringWrite } from '@/components/strings/sendStringWrite';
 import { NodePicker, pathLabel } from '@/app/build/shared/skillTreeParts';
+import { isFoundational } from '@/lib/skill-tree/read';
 import type { Tree } from '@/lib/skill-tree/types';
 import { sameSkill, type LockPoint } from './stringsOnCluster';
 
@@ -157,14 +158,15 @@ function TreeCheckForm(props: Common & { tree: Tree; pointId: string }) {
     } finally { setBusy(false); }
   }
   const num = (v: string) => (v === '' ? null : Number(v));
-  const none = need.k === '' && need.u === '' && need.d === '';
+  const foundational = nodeId !== null && isFoundational(tree, nodeId);
+  const none = (foundational ? '' : need.k + need.u) === '' && need.d === '';
   return (
     <Form open={point.nodeId ? 'Change the tree skill checked…' : 'Check against a tree skill…'} submit="Save check" disabled={busy || !name || !nodeId || none} error={error}
-      onSubmit={() => send({ nodeId, k: num(need.k), u: num(need.u), d: num(need.d) })}>
+      onSubmit={() => send({ nodeId, k: foundational ? null : num(need.k), u: foundational ? null : num(need.u), d: num(need.d) })}>
       {nodeId
         ? <p className="cb-small">{pathLabel(tree, nodeId)} <button type="button" className="cb-linkbtn" onClick={() => setNodeId(null)}>Pick another</button></p>
         : <NodePicker tree={tree} label="Search the skill tree" onPick={setNodeId} />}
-      {(['k', 'u', 'd'] as const).map(dim => (
+      {(['k', 'u', 'd'] as const).filter(dim => !(foundational && dim !== 'd')).map(dim => (
         <label key={dim}>Needs {dim.toUpperCase()}
           <select aria-label={`Needs ${dim.toUpperCase()}`} value={need[dim]} onChange={e => setNeed({ ...need, [dim]: e.target.value })}>
             <option value="">Not needed</option>
