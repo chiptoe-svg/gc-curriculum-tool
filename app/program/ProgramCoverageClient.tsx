@@ -16,7 +16,6 @@ import { reliabilityForModel } from '@/lib/program/reliability-summary';
 import { countScoredPairsForRows, staleSnapshotButtonLabel } from '@/lib/program/stale-pairs';
 import { BAND_FLOORS, BAND_LABELS, MEMBERSHIP_CUTOFF, PINNED_LABEL, bandOf } from '@/lib/catalog/membership';
 import { filterByImportance } from './importance-filter';
-import './program.css';
 
 interface MatrixData {
   courses: MatrixCourse[];
