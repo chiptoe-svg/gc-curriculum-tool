@@ -8,6 +8,8 @@ import { canReadWhatIf, canManageWhatIf } from '@/lib/what-if/ownership';
 import { SkillsOnlyPage } from './SkillsOnlyPage';
 import { WhatIfPageLayout, type WhatIfBase } from './WhatIfPageLayout';
 
+import '../../../explore.css';
+
 export const dynamic = 'force-dynamic';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -26,9 +28,9 @@ export default async function WhatIfPage({ params, searchParams }: Props) {
 
   if (!isValidSlug(slug)) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Access link required</h1>
-        <p className="mt-3 text-muted-foreground">
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="ex-title">Access link required</h1>
+        <p className="ex-meta mt-3">
           Open this page through the access link your administrator shared.
         </p>
       </div>

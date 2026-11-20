@@ -10,6 +10,8 @@ import { ownerOf } from '@/lib/what-if/ownership';
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { WhatIfList } from './WhatIfList';
 
+import '../explore.css';
+
 export const dynamic = 'force-dynamic';
 
 interface Props {
@@ -24,9 +26,9 @@ export default async function ExplorePage({ params, searchParams }: Props) {
 
   if (!isValidSlug(slug)) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Access link required</h1>
-        <p className="mt-3 text-muted-foreground">
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="ex-title">Access link required</h1>
+        <p className="ex-meta mt-3">
           Open this page through the access link your administrator shared.
         </p>
       </div>
@@ -55,27 +57,27 @@ export default async function ExplorePage({ params, searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
+      <header className="ex-header">
+        <div className="ex-header-inner">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Explore · What-ifs</p>
-            <h1 className="mt-0.5 text-xl font-semibold">
-              {course.code} <span className="text-muted-foreground">— {course.title}</span>
+            <p className="ex-eyebrow">Explore · What-ifs</p>
+            <h1 className="ex-title">
+              {course.code} <span className="ex-title-sub">— {course.title}</span>
             </h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="ex-nav">
             <a
               href="https://tonkin.people.clemson.edu/pages/gc-curriculum/using-coursecapture-and-explore.html#explore"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="ex-btn"
               title="How-to guide — jumps to the Explore section (opens in new tab)"
             >
               Guide ↗
             </a>
             <Link
               href={`/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="ex-btn"
             >
               ← CourseCapture
             </Link>
@@ -84,7 +86,7 @@ export default async function ExplorePage({ params, searchParams }: Props) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-10 px-6 py-6">
+      <main className="ex-main">
         <WhatIfList
           courseCode={course.code}
           slug={slug}

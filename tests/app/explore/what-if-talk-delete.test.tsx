@@ -5,6 +5,7 @@ import type { Grant } from '@/lib/auth/authorize';
 import { WHAT_IF_COPY } from '@/lib/what-if/copy';
 
 const push = vi.fn();
+vi.mock('@/app/explore/explore.css', () => ({}));
 vi.mock('next/navigation', () => ({
   notFound: () => { throw new Error('notFound'); },
   useRouter: () => ({ push, refresh: vi.fn() }),

@@ -11,6 +11,8 @@ import { FeedbackLink } from '@/app/FeedbackLink';
 import { WhatIfChatPanel } from './WhatIfChatPanel';
 import { DeleteWhatIf } from '../DeleteWhatIf';
 
+import '../../../../explore.css';
+
 export const dynamic = 'force-dynamic';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -28,9 +30,9 @@ export default async function WhatIfTalkPage({ params, searchParams }: Props) {
 
   if (!isValidSlug(slug)) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Access link required</h1>
-        <p className="mt-3 text-muted-foreground">
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="ex-title">Access link required</h1>
+        <p className="ex-meta mt-3">
           Open this page through the access link your administrator shared.
         </p>
       </div>
@@ -53,27 +55,27 @@ export default async function WhatIfTalkPage({ params, searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="mx-auto flex max-w-3xl items-baseline justify-between gap-4 px-6 py-4">
+      <header className="ex-header">
+        <div className="ex-header-inner is-narrow">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">What-if · {course.code}</p>
-            <h1 className="mt-0.5 text-xl font-semibold">{whatIf.title ?? WHAT_IF_COPY.untitled}</h1>
-            <p className="mt-1 text-sm font-medium">{WHAT_IF_COPY.banner}</p>
+            <p className="ex-eyebrow">What-if · {course.code}</p>
+            <h1 className="ex-title">{whatIf.title ?? WHAT_IF_COPY.untitled}</h1>
+            <p className="ex-meta mt-1"><strong>{WHAT_IF_COPY.banner}</strong></p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="ex-nav">
             {whatIf.pageCreatedAt && (
-              <Link href={`/explore/${encodeURIComponent(code)}/what-ifs/${id}${q}`} className="text-sm text-muted-foreground hover:text-foreground">
+              <Link href={`/explore/${encodeURIComponent(code)}/what-ifs/${id}${q}`} className="ex-btn">
                 View the page
               </Link>
             )}
-            <Link href={`/explore/${encodeURIComponent(code)}${q}`} className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href={`/explore/${encodeURIComponent(code)}${q}`} className="ex-btn">
               {WHAT_IF_COPY.listLink}
             </Link>
             <FeedbackLink />
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-6 py-6">
+      <main className="ex-main is-narrow">
         <WhatIfChatPanel
           courseCode={code}
           whatIfId={id}
@@ -81,7 +83,7 @@ export default async function WhatIfTalkPage({ params, searchParams }: Props) {
           hasPage={whatIf.pageCreatedAt !== null}
           initialAttachments={attachments}
         />
-        <div className="mt-6 border-t pt-4">
+        <div className="mt-6">
           <DeleteWhatIf courseCode={code} whatIfId={id} slug={slug} />
         </div>
       </main>
