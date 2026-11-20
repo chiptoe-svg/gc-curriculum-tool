@@ -14,6 +14,7 @@ vi.mock('@/app/capture/[code]/MajorProjectsSection', () => ({ MajorProjectsSecti
 vi.mock('@/app/capture/[code]/CitationDrawer', () => ({ CitationDrawer: () => null }));
 vi.mock('@/app/capture/[code]/LegacyBanner', () => ({ LegacyBanner: () => null }));
 vi.mock('@/components/FlagDialog', () => ({ FlagDialog: () => null }));
+vi.mock('@/components/strings/CourseStrings', () => ({ CourseStrings: () => null }));
 
 import { ProfileReviewPanel } from '@/app/capture/[code]/ProfileReviewPanel';
 

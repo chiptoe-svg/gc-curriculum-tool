@@ -19,6 +19,8 @@ vi.mock('@/components/FlagDialog', () => ({ FlagDialog: () => null }));
 
 vi.mock('@/app/build/shared/SkillTreePanel', () => ({ SkillTreePanel: (p: unknown) => <div data-testid="skill-tree-panel" data-props={JSON.stringify(p)} /> }));
 
+vi.mock('@/components/strings/CourseStrings', () => ({ CourseStrings: (p: unknown) => <div data-testid="course-strings" data-props={JSON.stringify(p)} /> }));
+
 import { ProfileReviewPanel } from '@/app/capture/[code]/ProfileReviewPanel';
 
 function comp(over: Partial<CaptureCompetency>): CaptureCompetency {
@@ -67,8 +69,15 @@ describe('profile review — skill tree placement', () => {
     expect(props).toMatchObject({ courseCode: 'GC 3800', mode: 'capture' });
   });
 
+  it('renders the course strings in the review step with the slug query', () => {
+    renderWith([comp({})]);
+    const props = JSON.parse(screen.getByTestId('course-strings').getAttribute('data-props')!);
+    expect(props).toMatchObject({ courseCode: 'GC 3800', mode: 'capture', query: '?slug=s' });
+  });
+
   it('is not shown when the profile has no competencies', () => {
     renderWith([]);
+    expect(screen.queryByTestId('course-strings')).toBeNull();
     expect(screen.queryByTestId('skill-tree-panel')).toBeNull();
   });
 });

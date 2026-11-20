@@ -23,12 +23,14 @@ export const orphanCountOf = (o: { developed: OrphanSkill[]; unsupplied: OrphanS
  * "Skills on no string" for one course: the skills it develops and the ones it needs on entry that no active string
  * runs through, each with its note or an "Add a note" form. Saving posts to /api/strings/orphan-notes and calls `onSaved`.
  */
-export function OrphanSkills({ courseCode, orphans, authorName, onSaved }: {
+export function OrphanSkills({ courseCode, orphans, authorName, onSaved, compact = false }: {
   courseCode: string;
   orphans: { developed: OrphanSkill[]; unsupplied: OrphanSkill[] } | null | undefined;
   /** The signed-in name; when absent a refusal for want of a name shows a field to type one. */
   authorName?: string | null;
   onSaved: () => void | Promise<void>;
+  /** One muted line instead of a heading (capture review, where it sits among other sections). */
+  compact?: boolean;
 }) {
   const [typed, setTyped] = useState('');
   const [askName, setAskName] = useState(false);
@@ -60,7 +62,7 @@ export function OrphanSkills({ courseCode, orphans, authorName, onSaved }: {
   return (
     <details className="st-orphans">
       {/* Collapsed by default: on course capture it sat above the review as a long list (owner, 2026-11-18). */}
-      <summary><h3><span>Skills on no string</span> <span className="cb-muted">({orphanCountOf(orphans)})</span></h3></summary>
+      <summary>{compact ? <span className="cb-muted text-sm">{orphanCountOf(orphans)} {orphanCountOf(orphans) === 1 ? "skill here isn't" : "skills here aren't"} on any string yet</span> : <h3><span>Skills on no string</span> <span className="cb-muted">({orphanCountOf(orphans)})</span></h3>}</summary>
       {orphans.developed.length > 0 && <><p className="cb-muted">Developed here</p><ul>{list('develops', orphans.developed)}</ul></>}
       {orphans.unsupplied.length > 0 && <><p className="cb-muted">Needed on entry</p><ul>{list('requires', orphans.unsupplied)}</ul></>}
       {askName && !authorName && <label className="st-name">Your name <input value={typed} onChange={(e) => setTyped(e.target.value)} /></label>}
