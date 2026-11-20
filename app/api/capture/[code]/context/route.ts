@@ -86,6 +86,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       rawCleared: m.rawCleared,
       retiredAt: m.retiredAt ? m.retiredAt.toISOString() : null,
       isSyllabus: m.isSyllabus,
+      addedInSession: m.addedInSession ?? null,
     })),
     existingCaptureProfile: existingCaptureProfile
       ? {

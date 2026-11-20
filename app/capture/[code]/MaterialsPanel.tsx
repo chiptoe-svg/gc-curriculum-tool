@@ -74,6 +74,8 @@ export interface CaptureMaterial {
   retiredAt: string | null;
   /** True when this material is the course syllabus (course_materials.is_syllabus). */
   isSyllabus?: boolean;
+  /** Interview session that added this file (course_materials.added_in_session); null otherwise. */
+  addedInSession?: string | null;
 }
 
 export interface CourseCatalogView {
@@ -416,6 +418,11 @@ function MaterialRow({
                 }
               >
                 {usingDigest ? `AI summary (~${formatTokens(digestTokenEstimate)})` : 'AI summary off'}
+              </span>
+            )}
+            {material.addedInSession && (
+              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-800 border border-emerald-200">
+                Added during the interview
               </span>
             )}
             {material.ignored && (

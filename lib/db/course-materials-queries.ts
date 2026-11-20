@@ -48,6 +48,7 @@ function mapMaterialRow(row: Record<string, unknown>): CourseMaterialRow {
     retiredAt: row['retired_at'] as Date | null,
     ingestProvider: row['ingest_provider'] as string | null,
     isSyllabus: (row['is_syllabus'] as boolean | null | undefined) ?? false,
+    addedInSession: (row['added_in_session'] as string | null | undefined) ?? null,
   };
 }
 export type ExtractionStatus = 'pending' | 'ok' | 'low_text' | 'failed';
@@ -63,6 +64,8 @@ export interface InsertMaterialInput {
   sourceCode?: string | null;
   /** Explicit syllabus flag (Syllabus-box uploads). Omitted ⇒ derived by isSyllabusInsert. */
   isSyllabus?: boolean;
+  /** Interview session that added this file (migration 0075); omitted/null otherwise. */
+  addedInSession?: string | null;
 }
 
 /** The syllabus flag a new row gets: an explicit flag wins; otherwise only the

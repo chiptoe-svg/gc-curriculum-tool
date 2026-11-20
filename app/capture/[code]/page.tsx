@@ -177,6 +177,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     rawCleared: m.rawCleared ?? false,
     retiredAt: m.retiredAt ? m.retiredAt.toISOString() : null,
     isSyllabus: m.isSyllabus,
+    addedInSession: m.addedInSession ?? null,
   }));
 
   return (

@@ -627,6 +627,8 @@ export const courseMaterials = pgTable('course_materials', {
   analysisCostUsdCents: bigint('analysis_cost_usd_cents', { mode: 'number' }),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   ipHash: text('ip_hash').notNull(),
+  // Interview session that added this file (migration 0075); null = added on the Materials step.
+  addedInSession: uuid('added_in_session').references((): AnyPgColumn => captureSessions.sessionId, { onDelete: 'set null' }),
   digest: text('digest'),
   digestModel: text('digest_model'),
   digestGeneratedAt: timestamp('digest_generated_at', { withTimezone: true }),
