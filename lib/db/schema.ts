@@ -1586,9 +1586,18 @@ export const stringPoints = pgTable('string_points', {
   u: smallint('u'),
   d: smallint('d'),
   term: smallint('term'),
+  /** 0074: a requires point may name the tree node it needs, with the K/U/D depth it expects. */
+  nodeId: text('node_id').references((): AnyPgColumn => skillNodes.id, { onDelete: 'restrict' }),
+  needK: smallint('need_k'),
+  needU: smallint('need_u'),
+  needD: smallint('need_d'),
   createdBy: text('created_by').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => ({
+  nodeRequiresCheck: check('string_points_node_requires_check', sql`${t.nodeId} IS NULL OR ${t.role} = 'requires'`),
+  needKCheck: check('string_points_need_k_check', sql`${t.needK} IS NULL OR ${t.needK} BETWEEN 0 AND 5`),
+  needUCheck: check('string_points_need_u_check', sql`${t.needU} IS NULL OR ${t.needU} BETWEEN 0 AND 5`),
+  needDCheck: check('string_points_need_d_check', sql`${t.needD} IS NULL OR ${t.needD} BETWEEN 0 AND 5`),
   unq: unique('string_points_unique').on(t.courseCode, t.role, t.statementHash),
   roleCheck: check('string_points_role_check', sql`${t.role} IN ('develops', 'requires')`),
   termCheck: check('string_points_term_check', sql`${t.term} BETWEEN 1 AND 9`),
@@ -1686,3 +1695,85 @@ export const stringPointResolutions = pgTable('string_point_resolutions', {
   pk: primaryKey({ columns: [t.pointId, t.snapshotId, t.model, t.promptVersion] }),
   statusCheck: check('string_point_resolutions_status_check', sql`${t.status} IN ('changed', 'unanchored')`),
 }));
+
+// ---- Skill tree (migration 0074) ----
+
+/** A node of the department skill tree. A master (competencyId set, no parent) is a catalog competency; every other live node has a parent. */
+export const skillNodes = pgTable('skill_nodes', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  parentId: text('parent_id').references((): AnyPgColumn => skillNodes.id, { onDelete: 'restrict' }),
+  competencyId: text('competency_id').unique().references(() => subCompetencies.id, { onDelete: 'restrict' }),
+  foundational: boolean('foundational').notNull().default(false),
+  weight: real('weight').notNull().default(1),
+  weightSource: text('weight_source').$type<'default' | 'faculty' | 'onet' | 'employer'>().notNull().default('default'),
+  mergedInto: text('merged_into').references((): AnyPgColumn => skillNodes.id, { onDelete: 'restrict' }),
+  retired: boolean('retired').notNull().default(false),
+  createdBy: text('created_by').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  check('skill_nodes_weight_check', sql`${t.weight} > 0`),
+  check('skill_nodes_weight_source_check', sql`${t.weightSource} IN ('default', 'faculty', 'onet', 'employer')`),
+  check('skill_nodes_master_parent_check', sql`(${t.competencyId} IS NULL) = (${t.parentId} IS NOT NULL) OR ${t.retired}`),
+  check('skill_nodes_merged_into_retired_check', sql`${t.mergedInto} IS NULL OR ${t.retired}`),
+]);
+
+/** A course skill placed under a node. share null = equal split among the leaf's counting parents. */
+export const skillLeaves = pgTable('skill_leaves', {
+  courseCode: text('course_code').notNull(),
+  skillRef: text('skill_ref').notNull(),
+  nodeId: text('node_id').notNull().references(() => skillNodes.id, { onDelete: 'restrict' }),
+  statement: text('statement').notNull(),
+  share: real('share'),
+  source: text('source').$type<'embedding' | 'ai' | 'scoring' | 'faculty'>().notNull(),
+  status: text('status').$type<'proposed' | 'confirmed' | 'rejected'>().notNull().default('proposed'),
+  decidedBy: text('decided_by'),
+  decidedAt: timestamp('decided_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'skill_leaves_pkey', columns: [t.courseCode, t.skillRef, t.nodeId] }),
+  index('idx_skill_leaves_node').on(t.nodeId),
+  check('skill_leaves_share_check', sql`${t.share} IS NULL OR ${t.share} > 0`),
+  check('skill_leaves_source_check', sql`${t.source} IN ('embedding', 'ai', 'scoring', 'faculty')`),
+  check('skill_leaves_status_check', sql`${t.status} IN ('proposed', 'confirmed', 'rejected')`),
+]);
+
+/** A course's (and instructor's) set depth on a node. leaves_signature says which leaves the depth was judged over. */
+export const nodeDepths = pgTable('node_depths', {
+  nodeId: text('node_id').notNull().references(() => skillNodes.id, { onDelete: 'restrict' }),
+  courseCode: text('course_code').notNull(),
+  instructor: text('instructor').notNull().default(''),
+  k: smallint('k'),
+  u: smallint('u'),
+  d: smallint('d'),
+  method: text('method').$type<'faculty' | 'ai'>().notNull(),
+  leavesSignature: text('leaves_signature').notNull(),
+  setBy: text('set_by').notNull(),
+  setAt: timestamp('set_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'node_depths_pkey', columns: [t.nodeId, t.courseCode, t.instructor] }),
+  check('node_depths_k_check', sql`${t.k} IS NULL OR ${t.k} BETWEEN 0 AND 5`),
+  check('node_depths_u_check', sql`${t.u} IS NULL OR ${t.u} BETWEEN 0 AND 5`),
+  check('node_depths_d_check', sql`${t.d} IS NULL OR ${t.d} BETWEEN 0 AND 5`),
+  check('node_depths_method_check', sql`${t.method} IN ('faculty', 'ai')`),
+]);
+
+export type SkillTreeEventKind = 'migrated' | 'created' | 'renamed' | 'described' | 'reparented' | 'merged' | 'split' | 'weight' | 'leaf_placed' | 'leaf_confirmed' | 'leaf_rejected' | 'leaf_moved' | 'leaf_share' | 'leaf_retargeted' | 'depth_set' | 'depth_cleared';
+
+/** Audit trail of every skill-tree change. */
+export const skillTreeEvents = pgTable('skill_tree_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  nodeId: text('node_id'),
+  courseCode: text('course_code'),
+  skillRef: text('skill_ref'),
+  kind: text('kind').$type<SkillTreeEventKind>().notNull(),
+  by: text('by').notNull(),
+  at: timestamp('at', { withTimezone: true }).defaultNow().notNull(),
+  before: jsonb('before'),
+  after: jsonb('after'),
+}, (t) => [
+  index('idx_skill_tree_events_node_at').on(t.nodeId, sql`${t.at} DESC`),
+  check('skill_tree_events_kind_check', sql`${t.kind} IN ('migrated', 'created', 'renamed', 'described', 'reparented', 'merged', 'split', 'weight', 'leaf_placed', 'leaf_confirmed', 'leaf_rejected', 'leaf_moved', 'leaf_share', 'leaf_retargeted', 'depth_set', 'depth_cleared')`),
+]);
