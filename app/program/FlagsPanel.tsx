@@ -71,43 +71,43 @@ export function FlagsPanel({ flags, slug, isAdmin, onChanged }: {
   }
 
   if (flags.length === 0) {
-    return <p className="px-4 py-6 text-center text-xs text-muted-foreground">No flags. Faculty can flag any matrix cell or profile competency they dispute.</p>;
+    return <p className="pg-meta pg-center" style={{ padding: 24 }}>No flags. Faculty can flag any matrix cell or profile competency they dispute.</p>;
   }
 
   return (
-    <ul className="divide-y">
+    <ul>
       {flags.map(f => (
-        <li key={f.id} className="space-y-1.5 px-4 py-3 text-xs">
-          <div className="flex items-baseline gap-2">
-            <span aria-hidden>⚑</span>
-            <span className="font-mono text-xs">{f.courseCode}</span>
-            <span className="text-muted-foreground">
+        <li key={f.id} className="pg-flag">
+          <div className="pg-row">
+            <span aria-hidden className="pg-flagmark">⚑</span>
+            <span className="pg-code">{f.courseCode}</span>
+            <span className="pg-meta">
               {f.targetKind === 'coverage_cell'
                 ? `${f.careerTargetId} · ${f.subCompetencyId}`
                 : `"${f.competencyStatement}"`}
             </span>
-            {f.status === 'resolved' && <span className="rounded bg-muted px-1.5 py-0.5 text-xs">resolved</span>}
+            {f.status === 'resolved' && <span className="pg-cue pg-cue-done">resolved</span>}
             {f.stillInMatrix === false && (
-              <span className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-xs text-amber-800">no longer in matrix</span>
+              <span className="pg-cue pg-cue-input">no longer in matrix</span>
             )}
           </div>
           <p>{f.note}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="pg-meta">
             {f.flaggedBy} · {new Date(f.createdAt).toLocaleDateString()}
             {f.flaggedContext && ` · flagged at K${f.flaggedContext.k ?? '—'}/U${f.flaggedContext.u ?? '—'}/D${f.flaggedContext.d ?? '—'}`}
           </p>
           {f.drift && (
-            <p className="text-xs font-medium text-amber-800">
+            <p className="pg-cue pg-cue-input" style={{ height: 'auto', padding: '4px 10px', whiteSpace: 'normal' }}>
               Score changed since flagged: {f.drift.map(driftLabel).join(', ')}
             </p>
           )}
           {f.status === 'resolved' ? (
-            <p className="text-xs text-muted-foreground">↳ {f.resolutionNote} — {f.resolvedBy}, {f.resolvedAt ? new Date(f.resolvedAt).toLocaleDateString() : ''}</p>
+            <p className="pg-meta">↳ {f.resolutionNote} — {f.resolvedBy}, {f.resolvedAt ? new Date(f.resolvedAt).toLocaleDateString() : ''}</p>
           ) : !isAdmin ? null : resolving === f.id ? (
-            <div className="space-y-1.5 rounded border bg-muted/30 p-2">
-              <label htmlFor={`resolve-name-${f.id}`} className="block text-xs text-muted-foreground">
+            <div className="pg-inset pg-stack" style={{ gap: 8 }}>
+              <label htmlFor={`resolve-name-${f.id}`} className="block pg-meta">
                 Resolving as
-                <select id={`resolve-name-${f.id}`} value={name} onChange={e => setName(e.target.value)} className="mt-0.5 block w-full rounded border border-input bg-background px-2 py-1 text-xs">
+                <select id={`resolve-name-${f.id}`} value={name} onChange={e => setName(e.target.value)} className="pg-select mt-0.5 block w-full">
                   <option value="" disabled>Select your name…</option>
                   {FACULTY_ROSTER.filter(n => n !== DEPARTMENT_CANONICAL).map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
@@ -117,19 +117,19 @@ export function FlagsPanel({ flags, slug, isAdmin, onChanged }: {
                 rows={2}
                 value={note}
                 onChange={e => setNote(e.target.value)}
-                className="block w-full rounded border border-input bg-background px-2 py-1 text-xs"
+                className="pg-textarea"
               />
-              {error && <p className="text-xs text-amber-700">{error}</p>}
-              <div className="flex gap-2">
+              {error && <p className="pg-err">{error}</p>}
+              <div className="pg-row">
                 <button type="button" onClick={() => void confirmResolve(f.id)} disabled={busy || !name || note.trim().length === 0}
-                  className="rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50">
+                  className="pg-btn pg-btn-sm pg-btn-primary">
                   {busy ? 'Saving…' : 'Confirm resolve'}
                 </button>
-                <button type="button" onClick={() => setResolving(null)} className="text-xs text-muted-foreground hover:text-foreground">cancel</button>
+                <button type="button" onClick={() => setResolving(null)} className="pg-link">cancel</button>
               </div>
             </div>
           ) : (
-            <button type="button" onClick={() => { setResolving(f.id); setError(null); setNote(''); }} className="text-xs underline-offset-2 hover:underline">
+            <button type="button" onClick={() => { setResolving(f.id); setError(null); setNote(''); }} className="pg-link">
               Resolve…
             </button>
           )}
