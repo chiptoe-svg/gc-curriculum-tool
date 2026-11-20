@@ -6,6 +6,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
+import { isUndefinedTable } from '@/lib/db/pg-errors';
 import {
   careerTargetRequirements, careerTargets, courseCaptureSnapshots, nodeDepths, skillCompetencyLinks, skillLeaves, skillNodes, skillTreeEvents, stringPoints,
   type SkillTreeEventKind,
@@ -31,7 +32,19 @@ class Refuse extends Error {
 
 // ---------------------------------------------------------------- reads
 
+const EMPTY_TREE: Tree = { nodes: [], leaves: [], depths: [] };
+
+/** The tree, or an empty one while migration 0074 is not applied on this database (the tree is then simply empty). */
 export async function loadTree(exec: Exec = db): Promise<Tree> {
+  try {
+    return await loadTreeRows(exec);
+  } catch (err) {
+    if (isUndefinedTable(err)) return EMPTY_TREE;
+    throw err;
+  }
+}
+
+async function loadTreeRows(exec: Exec): Promise<Tree> {
   const nodes = await exec.select().from(skillNodes).orderBy(asc(skillNodes.name), asc(skillNodes.id));
   const leaves = await exec.select().from(skillLeaves).orderBy(asc(skillLeaves.courseCode), asc(skillLeaves.skillRef), asc(skillLeaves.nodeId));
   const depths = await exec.select().from(nodeDepths).orderBy(asc(nodeDepths.nodeId), asc(nodeDepths.courseCode), asc(nodeDepths.instructor));
