@@ -195,4 +195,40 @@ describe('CaptureClient triage wiring', () => {
       expect(screen.getByTestId('chat-panel')).toBeTruthy();
     });
   });
+
+  // 2026-11-20 (GC 4060): mid-interview, faculty went back to materials, re-imported from Canvas and pressed
+  // Continue. The ingest step was skipped (it only showed before the first message), so the new files were never
+  // read and the interview warned it had very little to work from.
+  const resumed = {
+    ...baseProps,
+    initialMessages: [{ role: 'assistant' as const, content: 'Tell me about the course.' }],
+    savedConversationAt: new Date('2026-11-20T14:00:00Z'),
+  };
+
+  it('flag ON, conversation under way: Back to materials then Continue shows the ingest step, then returns to the chat', async () => {
+    render(<CaptureClient {...resumed} triageEnabled={true} />);
+    expect(screen.getByTestId('chat-panel')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /back to materials/i }));
+    expect(screen.getByTestId('materials-step')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+    expect(screen.getByTestId('triage-step')).toBeTruthy();
+    expect(screen.queryByTestId('chat-panel')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /ingested/i }));
+    await waitFor(() => expect(screen.getByTestId('chat-panel')).toBeTruthy());
+  });
+
+  it('Start over clears the conversation and returns to step 1 (materials)', async () => {
+    render(<CaptureClient {...resumed} triageEnabled={true} />);
+    fireEvent.click(screen.getByRole('button', { name: /back to materials/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ingested/i }));
+    await waitFor(() => expect(screen.getByTestId('chat-panel')).toBeTruthy());
+
+    fireEvent.click(screen.getByRole('button', { name: /start over/i }));
+    await waitFor(() => expect(screen.getByTestId('materials-step')).toBeTruthy());
+    expect(screen.queryByTestId('triage-step')).toBeNull();
+  });
 });

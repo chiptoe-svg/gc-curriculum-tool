@@ -267,6 +267,8 @@ export function CaptureClient({
     setSessionId(null);
     // A new session chooses its mode again.
     setChooserMode(null);
+    // Start over means step 1: confirm materials again.
+    setLandingStep('materials');
   }, [courseCode, slug]);
 
   const [resetState, setResetState] = useState<'idle' | 'resetting' | 'error'>('idle');
@@ -380,6 +382,9 @@ export function CaptureClient({
   // First-run landing = the audit chat with no conversation yet. There the
   // goal-first hero + the chooser/Start (inside CaptureChatPanel) lead, and the
   // setup trays collapse below. Every other state keeps the trays up top.
+  // The ingest step (gate, then triage) shows whenever Continue leads there, including mid-interview after
+  // "Back to materials": newly imported files must be read before the chat resumes (2026-11-20, GC 4060: a
+  // re-import mid-interview skipped ingest and the chat warned it had very little to work from).
   const isLanding = stage === 'chat' && messages.length === 0;
   const showMaterialsStep = shouldShowMaterialsStep({ stage, landingStep });
   const trays = (
@@ -420,7 +425,7 @@ export function CaptureClient({
           triageEnabled={triageEnabled}
           showImscc={isExternalTester}
         />
-      ) : isLanding && landingStep === 'ingest' && flagMaterials(materials).length > 0 && !gatePassed ? (
+      ) : stage === 'chat' && landingStep === 'ingest' && flagMaterials(materials).length > 0 && !gatePassed ? (
         <MaterialGate
           flags={flagMaterials(materials)}
           error={gateError}
@@ -454,7 +459,7 @@ export function CaptureClient({
             }
           }}
         />
-      ) : isLanding && landingStep === 'ingest' ? (
+      ) : stage === 'chat' && landingStep === 'ingest' ? (
         <TriageStep
           courseCode={courseCode}
           slug={slug}
