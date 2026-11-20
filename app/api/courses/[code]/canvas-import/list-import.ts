@@ -21,6 +21,7 @@ import {
   updateMaterialMetadata,
   updateExtractionResult,
   updateMaterialTier,
+  updateIndexingStatus,
 } from '@/lib/db/course-materials-queries';
 import { supersedeOlderSyllabi } from '@/lib/capture/syllabus-replace';
 import { classifyManifestItem } from '@/lib/capture/material-tier';
@@ -143,12 +144,17 @@ export async function runListImport(
         mimeType,
         sizeBytes: text.length,
       });
-      await updateExtractionResult({
+      const stored = await updateExtractionResult({
         id: existing.id,
         extractionStatus: 'pending',
         extractionMethod: 'text',
         extractedText: text,
       });
+      // New text must be re-indexed: the Ingest step skips 'ready' rows, so without this a re-import kept serving
+      // the previous semester's passages (GC 4060, 2026-11-20: Spring 2026 assignments after a Fall 2026 import).
+      if ((stored?.extractedText ?? text) !== existing.extractedText) {
+        await updateIndexingStatus({ id: existing.id, status: 'pending' });
+      }
       matId = existing.id;
       await supersedeOlderSyllabi(existing);
     } else {
