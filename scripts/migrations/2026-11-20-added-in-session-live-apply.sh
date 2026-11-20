@@ -26,7 +26,8 @@ DB="$(q "select current_database()")" || fail "cannot connect to the live databa
 [ "$DB" = "$EXPECT" ] || fail "connected to '$DB', expected $EXPECT"
 HAS_COL="$(q "$COLQ")" || fail "could not check for the column"
 ROWS="$(q "select count(*) from course_materials")" || fail "could not count course_materials"
-DROPS="$(grep -ciE '\b(UPDATE|DELETE|DROP|TRUNCATE)\b' "$SQL")"
+# Comments and the FK clause "ON DELETE SET NULL" are not destructive statements.
+DROPS="$(grep -v '^[[:space:]]*--' "$SQL" | sed -E 's/ON DELETE SET NULL//gI' | grep -ciE '\b(UPDATE|DELETE|DROP|TRUNCATE)\b')"
 
 echo "live database:                 $DB"
 echo "added_in_session present:      $HAS_COL"
