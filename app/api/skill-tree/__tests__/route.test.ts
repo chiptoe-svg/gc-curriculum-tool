@@ -67,7 +67,7 @@ describe('/api/skill-tree', () => {
     m.suggestParents.mockResolvedValue({ b: [], c: [] });
     m.suggestNewWordings.mockResolvedValue({ gone1: { skillRef: 'b', statement: 'b', similarity: 0.9 } });
     const body = await (await get('?course=GC%201')).json();
-    expect(m.suggestParents).toHaveBeenCalledWith(m.tree, [sk('b'), sk('c')]);
+    expect(m.suggestParents).toHaveBeenCalledWith(m.tree, [{ skillRef: 'b', statement: 'b' }, { skillRef: 'c', statement: 'c' }]);
     expect(body.suggestions).toEqual({ b: [], c: [] });
     expect(body.versions).toHaveLength(1);
     expect(body.versions[0].instructor).toBe('Ann');
