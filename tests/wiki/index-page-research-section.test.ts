@@ -8,6 +8,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
+vi.mock('@/app/wiki/wiki.css', () => ({}));
 vi.mock('@/lib/wiki/index-data', async () => {
   const actual = await vi.importActual<typeof import('@/lib/wiki/index-data')>('@/lib/wiki/index-data');
   return {
