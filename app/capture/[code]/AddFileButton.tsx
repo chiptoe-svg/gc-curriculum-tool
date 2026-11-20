@@ -21,10 +21,12 @@ const LABEL: Record<AttachedFile['state'], string> = {
   duplicate: 'Already in your materials',
 };
 
-/** Marker lines for the files that have an id (an upload still in flight has none yet). */
+const isTemp = (f: AttachedFile) => f.id.startsWith('tmp-');
+
+/** Marker lines for the files that have an id (an upload in flight, or one that failed, has none). */
 export function fileMarkers(files: AttachedFile[]): string[] {
   return files
-    .filter(f => f.state !== 'uploading')
+    .filter(f => !isTemp(f))
     .map(f => {
       if (f.state === 'failed') return fileAddedMarker(f.name, f.id, false);
       const m = fileAddedMarker(f.name, f.id, true);
@@ -48,7 +50,14 @@ export function AddFileButton(props: {
   const base = `/api/courses/${encodeURIComponent(courseCode)}/materials`;
 
   function update(match: (f: AttachedFile) => boolean, patch: Partial<AttachedFile>) {
-    onChange(filesRef.current.map(f => (match(f) ? { ...f, ...patch } : f)));
+    filesRef.current = filesRef.current.map(f => (match(f) ? { ...f, ...patch } : f));
+    onChange(filesRef.current);
+  }
+
+  async function deleteMaterial(id: string) {
+    try {
+      await fetch(`${base}/${encodeURIComponent(id)}?slug=${encodeURIComponent(slug)}`, { method: 'DELETE' });
+    } catch { /* nothing more to do */ }
   }
 
   async function upload(file: File) {
@@ -63,6 +72,11 @@ export function AddFileButton(props: {
       const res = await fetch(base, { method: 'POST', body: form });
       const data = (await res.json().catch(() => ({}))) as { id?: string; duplicateOf?: string | null };
       if (!res.ok || !data.id) throw new Error('upload failed');
+      if (!filesRef.current.some(f => f.id === tmp)) {
+        // The instructor removed the chip while the upload was running.
+        if (!data.duplicateOf) await deleteMaterial(data.id);
+        return;
+      }
       if (data.duplicateOf) {
         update(f => f.id === tmp, { id: data.duplicateOf, state: 'duplicate' });
       } else {
@@ -97,12 +111,9 @@ export function AddFileButton(props: {
   }, [reading, courseCode, slug]);
 
   async function remove(f: AttachedFile) {
-    if (f.state !== 'duplicate' && f.state !== 'uploading') {
-      try {
-        await fetch(`${base}/${encodeURIComponent(f.id)}?slug=${encodeURIComponent(slug)}`, { method: 'DELETE' });
-      } catch { /* the chip still goes */ }
-    }
-    onChange(filesRef.current.filter(x => x.id !== f.id));
+    filesRef.current = filesRef.current.filter(x => x.id !== f.id);
+    onChange(filesRef.current);
+    if (f.state !== 'duplicate' && !isTemp(f)) await deleteMaterial(f.id);
   }
 
   return (

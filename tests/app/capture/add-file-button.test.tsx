@@ -60,6 +60,36 @@ describe('AddFileButton', () => {
     expect(String(del[0])).toContain('/api/courses/GC%201010/materials/m1');
   });
 
+  it('removing a chip while it uploads deletes the material once the upload lands', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>(r => { release = r; });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+      if (init?.method === 'POST') { await gate; return json({ id: 'm9', fileName: 'Zine.pdf', indexingStatus: 'queued', duplicateOf: null }); }
+      return json({ deleted: true });
+    });
+    render(<Harness />);
+    pick();
+    fireEvent.click(await screen.findByLabelText('Remove Zine.pdf'));
+    expect(fetchMock.mock.calls.some(c => c[1]?.method === 'DELETE')).toBe(false);
+    release();
+    await waitFor(() => {
+      const del = fetchMock.mock.calls.find(c => c[1]?.method === 'DELETE');
+      expect(del && String(del[0])).toContain('/materials/m9');
+    });
+  });
+
+  it('a failed upload has no marker and removing it fires no DELETE', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ error: 'x' }, 500));
+    let last: AttachedFile[] = [];
+    render(<Harness onFiles={f => { last = f; }} />);
+    pick();
+    await waitFor(() => screen.getByText('Could not read this file'));
+    expect(fileMarkers(last)).toEqual([]);
+    fireEvent.click(screen.getByLabelText('Remove Zine.pdf'));
+    await waitFor(() => expect(screen.queryByText('Zine.pdf')).toBeNull());
+    expect(fetchMock.mock.calls.some(c => c[1]?.method === 'DELETE')).toBe(false);
+  });
+
   it('disabled without a session', () => {
     render(<Harness sessionId={null} />);
     expect((screen.getByRole('button', { name: /add a file/i }) as HTMLButtonElement).disabled).toBe(true);
@@ -68,7 +98,7 @@ describe('AddFileButton', () => {
 
 describe('fileMarkers', () => {
   it('sends now with the file pending', () => {
-    const m = fileMarkers([{ id: 'm1', name: 'Zine.pdf', state: 'reading' }, { id: 'm2', name: 'Up.pdf', state: 'uploading' }]);
+    const m = fileMarkers([{ id: 'm1', name: 'Zine.pdf', state: 'reading' }, { id: 'tmp-2', name: 'Up.pdf', state: 'uploading' }]);
     expect(m[0]).toBe('[Instructor added a file: Zine.pdf (id=m1) — search it before answering.] (still being read)');
     expect(m).toHaveLength(1); // still uploading: no id yet, so it waits for the next send
   });
