@@ -24,6 +24,7 @@ export function TargetsIndexTable({ rows, slug }: { rows: IndexRow[]; slug: stri
     return <p className="text-sm text-slate-500">No career targets configured.</p>;
   }
   return (
+    <div className="ad-tablebox">
     <table className="w-full border-collapse text-sm">
       <thead className="text-left text-xs uppercase text-slate-500">
         <tr>
@@ -48,16 +49,17 @@ export function TargetsIndexTable({ rows, slug }: { rows: IndexRow[]; slug: stri
             <td className="text-xs">{r.lastRunAt ? new Date(r.lastRunAt).toLocaleString() : '—'}</td>
             <td>
               {r.stale ? (
-                <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                <span className="cue cue-input">
                   {r.staleReason ? REASON_LABEL[r.staleReason] : 'Stale'}
                 </span>
               ) : (
-                <span className="rounded bg-green-100 px-2 py-0.5 text-xs text-green-800">Fresh</span>
+                <span className="cue cue-done">Fresh</span>
               )}
             </td>
           </tr>
         ))}
       </tbody>
     </table>
+    </div>
   );
 }

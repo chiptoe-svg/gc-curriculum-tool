@@ -3,6 +3,8 @@ import { PartnersTable } from './PartnersTable';
 import { ImportCsvDialog } from './ImportCsvDialog';
 import { AddPartnerDialog } from './AddPartnerDialog';
 
+import '../admin.css';
+
 export const dynamic = 'force-dynamic';
 
 interface Props {
@@ -12,7 +14,7 @@ interface Props {
 export default async function AdminPartnersPage({ searchParams }: Props) {
   const { slug } = await searchParams;
   if (!slug) {
-    return <main className="p-8"><p className="text-sm text-slate-600">Missing slug query param.</p></main>;
+    return <main className="ad ad-main"><p className="ad-meta">Missing slug query param.</p></main>;
   }
   const [raw, positionCounts] = await Promise.all([listPartners(), countPositionsByPartner()]);
   // Compute magicLinkUrl server-side (reads PARTNERS_BASE_URL from process.env,
@@ -33,18 +35,23 @@ export default async function AdminPartnersPage({ searchParams }: Props) {
   }));
 
   return (
-    <main className="mx-auto max-w-6xl p-6 space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Industry partners</h1>
-          <p className="text-sm text-slate-600">{partners.length} on file.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <AddPartnerDialog slug={slug} />
-          <ImportCsvDialog slug={slug} />
+    <div className="ad min-h-screen bg-background">
+      <header className="ad-header">
+        <div className="ad-header-inner">
+          <div>
+            <p className="ad-eyebrow">Admin</p>
+            <h1 className="ad-title">Industry partners</h1>
+            <p className="ad-meta" style={{ marginTop: 4 }}>{partners.length} on file.</p>
+          </div>
+          <div className="ad-nav">
+            <AddPartnerDialog slug={slug} />
+            <ImportCsvDialog slug={slug} />
+          </div>
         </div>
       </header>
-      <PartnersTable partners={partners} slug={slug} />
-    </main>
+      <main className="ad-main">
+        <PartnersTable partners={partners} slug={slug} />
+      </main>
+    </div>
   );
 }

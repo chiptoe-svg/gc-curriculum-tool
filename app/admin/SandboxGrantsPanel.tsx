@@ -158,6 +158,7 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
       {active.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-slate-700">Active grants ({active.length})</h3>
+          <div className="ad-tablebox">
           <table className="w-full border-collapse text-sm">
             <thead className="text-left text-xs uppercase text-slate-500">
               <tr>
@@ -185,6 +186,7 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -192,6 +194,7 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
       {inactive.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-slate-500">Revoked / expired ({inactive.length})</h3>
+          <div className="ad-tablebox">
           <table className="w-full border-collapse text-sm">
             <thead className="text-left text-xs uppercase text-slate-500">
               <tr>
@@ -220,6 +223,7 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -233,6 +237,7 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
         {sandboxCourses.length === 0 ? (
           <p className="text-sm text-slate-500">None yet — they appear here once a tester opens a link and names their course.</p>
         ) : (
+          <div className="ad-tablebox">
           <table className="w-full border-collapse text-sm">
             <thead className="text-left text-xs uppercase text-slate-500">
               <tr><th className="py-2">Course</th><th></th></tr>
@@ -252,6 +257,7 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </section>

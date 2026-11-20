@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { AccessPanel } from './AccessPanel';
 import { listCourses } from '@/lib/db/courses-queries';
 
+import '../admin.css';
+
 export const dynamic = 'force-dynamic';
 
 interface Props {
@@ -14,18 +16,25 @@ export default async function AccessPage({ searchParams }: Props) {
   // /admin/partners).
   const { slug } = await searchParams;
   if (!slug) {
-    return <main className="p-8"><p className="text-sm text-slate-600">Missing slug query param.</p></main>;
+    return <main className="ad ad-main"><p className="ad-meta">Missing slug query param.</p></main>;
   }
   const courseList = (await listCourses()).map((c) => ({ code: c.code, title: c.title }));
   return (
-    <main className="mx-auto max-w-5xl p-6 space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">Faculty access</h1>
-        <p className="text-sm text-slate-600">
-          <Link href={`/admin?slug=${encodeURIComponent(slug)}`} className="text-blue-700 underline">Admin</Link>
-        </p>
+    <div className="ad min-h-screen bg-background">
+      <header className="ad-header">
+        <div className="ad-header-inner">
+          <div>
+            <p className="ad-eyebrow">Admin</p>
+            <h1 className="ad-title">Faculty access</h1>
+          </div>
+          <nav className="ad-nav">
+            <Link href={`/admin?slug=${encodeURIComponent(slug)}`} className="ad-btn">← Admin</Link>
+          </nav>
+        </div>
       </header>
+      <main className="ad-main">
       <AccessPanel slug={slug} courses={courseList} />
-    </main>
+      </main>
+    </div>
   );
 }

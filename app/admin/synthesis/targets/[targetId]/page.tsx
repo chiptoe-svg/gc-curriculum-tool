@@ -23,6 +23,8 @@ import { ReRunButton } from './ReRunButton';
 import { AggregatePanel } from './AggregatePanel';
 import { SufficiencyPanel } from './SufficiencyPanel';
 
+import '../../../admin.css';
+
 export const dynamic = 'force-dynamic';
 
 // Demand→coverage sufficiency seam (Q1). Off by default; the career_target_demand
@@ -38,7 +40,7 @@ interface Props {
 export default async function SynthesisTargetPage({ params, searchParams }: Props) {
   const [{ targetId }, { slug }] = await Promise.all([params, searchParams]);
   if (!slug) {
-    return <main className="p-8"><p className="text-sm text-slate-600">Missing slug query param.</p></main>;
+    return <main className="ad ad-main"><p className="ad-meta">Missing slug query param.</p></main>;
   }
 
   const rows = await db.select().from(careerTargets).where(eq(careerTargets.id, targetId)).limit(1);
@@ -67,19 +69,20 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
   };
 
   const completenessColor: Record<string, string> = {
-    'title-only': 'bg-slate-100 text-slate-600',
-    structured: 'bg-blue-100 text-blue-700',
-    rated: 'bg-violet-100 text-violet-700',
-    interviewed: 'bg-green-100 text-green-700',
+    'title-only': 'cue cue-none',
+    structured: 'cue cue-draft',
+    rated: 'cue cue-read',
+    interviewed: 'cue cue-done',
   };
 
   return (
-    <main className="mx-auto max-w-5xl p-6 space-y-8">
-      <header className="flex items-start justify-between">
+    <div className="ad min-h-screen bg-background">
+      <header className="ad-header">
+        <div className="ad-header-inner">
         <div>
-          <div className="text-xs uppercase tracking-wide text-slate-500">Career target</div>
-          <h1 className="mt-1 text-2xl font-semibold">{target.name}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600">{target.shortDefinition}</p>
+          <p className="ad-eyebrow">Career target</p>
+          <h1 className="ad-title">{target.name}</h1>
+          <p className="ad-lede">{target.shortDefinition}</p>
         </div>
         <ReRunButton
           targetId={targetId}
@@ -88,7 +91,9 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
           submissionsAvailable={submissions > 0}
           lastRunCostCents={latestRun?.costUsdCents ?? null}
         />
+        </div>
       </header>
+      <main className="ad-main">
 
       <HeaderStats
         submissions={submissions}
@@ -150,7 +155,7 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
                     <td className="px-4 py-2 text-slate-700">{pos.positionTitle ?? <span className="text-slate-400">—</span>}</td>
                     <td className="px-4 py-2">
                       {pos.completeness ? (
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${completenessColor[pos.completeness] ?? 'bg-slate-100 text-slate-600'}`}>
+                        <span className={`${completenessColor[pos.completeness] ?? 'cue cue-none'}`}>
                           {completenessLabel[pos.completeness] ?? pos.completeness}
                         </span>
                       ) : (
@@ -167,6 +172,7 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
           </div>
         )}
       </section>
-    </main>
+      </main>
+    </div>
   );
 }
