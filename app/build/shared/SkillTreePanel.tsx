@@ -5,7 +5,7 @@
  * and on the cluster map (the same tree for the cluster's courses, with structure tools). No optimistic writes: after each
  * POST the panel redraws from the tree the API returns.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { counts, readCourse, readProgram, resolveNode } from '@/lib/skill-tree/read';
 import type { NodeReading, Tree, TreeNode, VersionSkills } from '@/lib/skill-tree/types';
 import { DepthForm, NewParent, NodePicker, NodeTools, fmt, pathLabel } from './skillTreeParts';
@@ -32,6 +32,7 @@ export function SkillTreePanel(props: { courseCode: string | null; mode: 'captur
   const [typed, setTyped] = useState('');
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [handFor, setHandFor] = useState<string | null>(null);
+  const created = useRef<Record<string, string>>({});
   const [placing, setPlacing] = useState<{ ref: string; how: 'else' | 'new' } | null>(null);
   const author = (props.authorName ?? typed).trim();
 
@@ -121,54 +122,21 @@ export function SkillTreePanel(props: { courseCode: string | null; mode: 'captur
   const parentCounts = new Map<string, number>();
   for (const l of tree.leaves) if (counts(l)) parentCounts.set(`${l.courseCode}\u0000${l.skillRef}`, (parentCounts.get(`${l.courseCode}\u0000${l.skillRef}`) ?? 0) + 1);
 
+  const ctx: RowCtx = { tree, byId, open, setOpen, visible, course, version, handFor, setHandFor, mode, send, parentCounts };
   const place = (ref: string, nodeId: string) => send({ action: 'place', courseCode: course, skillRef: ref, nodeId });
   const placeUnderNew = async (ref: string, name: string, parentId: string) => {
-    const before = new Set(tree.nodes.map((n) => n.id));
-    const next = await post({ action: 'create', name, parentId });
-    if (!next) return;
-    const made = next.nodes.find((n) => !before.has(n.id) && n.parentId === parentId && n.name === name);
-    if (made && (await place(ref, made.id))) setPlacing(null);
+    const key = `${ref}\u0000${parentId}\u0000${name}`;
+    let madeId = created.current[key];
+    if (!madeId) {
+      const before = new Set(tree.nodes.map((n) => n.id));
+      const next = await post({ action: 'create', name, parentId });
+      if (!next) return;
+      madeId = next.nodes.find((n) => !before.has(n.id) && n.parentId === parentId && n.name === name)?.id;
+      if (!madeId) { setError('The new skill was created but could not be found. Reload the page and look for it in the tree.'); return; }
+      created.current[key] = madeId; // a retry after a failed place must not create it again
+    }
+    if (await place(ref, madeId)) setPlacing(null);
   };
-
-  function Row({ r, depth }: { r: NodeReading; depth: number }) {
-    const n = byId.get(r.nodeId) as TreeNode;
-    const isOpen = open.has(r.nodeId) || (depth === 0 && !open.has(`-${r.nodeId}`));
-    const kids = r.children.filter((c) => visible.has(c.nodeId));
-    const foundational = r.k === null && r.u === null;
-    const hand = tree!.depths.find((h) => resolveNode(tree!, h.nodeId) === r.nodeId && h.courseCode === course && h.instructor === version?.instructor);
-    const toggle = () => setOpen((s) => { const x = new Set(s); const key = depth === 0 ? `-${r.nodeId}` : r.nodeId; const want = depth === 0 ? isOpen : !isOpen; if (want) x.add(key); else x.delete(key); return x; });
-    return (
-      <li data-node={r.nodeId} className="flex flex-col gap-1 border-l pl-2" style={{ marginLeft: depth ? 8 : 0 }}>
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" aria-expanded={isOpen} onClick={toggle} className="text-xs" aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${n.name}`}>{isOpen ? '▾' : '▸'}</button>
-          <span className="font-medium">{n.name}</span>
-          <span className="text-sm">{foundational ? `D${fmt(r.d)}` : `K${fmt(r.k)} U${fmt(r.u)} D${fmt(r.d)}`}</span>
-          {r.byHand && <span className="text-xs">set by hand</span>}
-          {r.byHand && <span className="text-xs">{foundational ? `suggested D${fmt(r.computed.d)}` : `suggested K${fmt(r.computed.k)} U${fmt(r.computed.u)} D${fmt(r.computed.d)}`}</span>}
-          {r.needsReview && <span className="text-xs text-amber-800">Review: the skills under it changed</span>}
-          {mode === 'capture' && version && <button type="button" className={btn} onClick={() => setHandFor(handFor === r.nodeId ? null : r.nodeId)}>Set by hand</button>}
-        </div>
-        {handFor === r.nodeId && course && version && (
-          <DepthForm initial={r.byHand ? r : r.computed} foundational={foundational} hasHand={!!hand}
-            send={(clear, v) => send(clear ? { action: 'depth-clear', nodeId: r.nodeId, courseCode: course, instructor: version.instructor } : { action: 'depth', nodeId: r.nodeId, courseCode: course, instructor: version.instructor, ...v })}
-            onDone={() => setHandFor(null)} />
-        )}
-        {mode === 'cluster' && <NodeTools tree={tree!} node={n} leaves={r.direct.map((d) => ({ courseCode: d.courseCode, skillRef: d.skillRef, statement: d.statement }))} send={send} />}
-        {isOpen && (
-          <ul className="flex flex-col gap-1">
-            {kids.map((c) => <Row key={c.nodeId} r={c} depth={depth + 1} />)}
-            {r.direct.map((d) => (
-              <li key={`${d.courseCode}${d.skillRef}`} className="flex flex-wrap items-center gap-2 pl-4 text-sm">
-                <span>{d.statement}</span>
-                <span className="text-xs">{foundational ? `D${fmt(d.depth.d)}` : `K${fmt(d.depth.k)} U${fmt(d.depth.u)} D${fmt(d.depth.d)}`}</span>
-                {mode === 'cluster' && (parentCounts.get(`${d.courseCode}\u0000${d.skillRef}`) ?? 0) > 1 && <ShareField tree={tree!} d={d} nodeId={r.nodeId} send={send} />}
-              </li>
-            ))}
-          </ul>
-        )}
-      </li>
-    );
-  }
 
   return (
     <section className="flex max-w-full flex-col gap-4 break-words">
@@ -225,10 +193,59 @@ export function SkillTreePanel(props: { courseCode: string | null; mode: 'captur
       <div className="flex flex-col gap-2">
         <h3 className="font-semibold">{mode === 'capture' ? "This course's tree" : 'Skill tree'}</h3>
         {roots.length === 0 ? <p className="text-sm">Nothing is placed yet.</p> : (
-          <ul className="flex flex-col gap-2">{roots.map((n) => { const r = read(n.id); return r ? <Row key={n.id} r={r} depth={0} /> : null; })}</ul>
+          <ul className="flex flex-col gap-2">{roots.map((n) => { const r = read(n.id); return r ? <Row key={n.id} r={r} depth={0} c={ctx} /> : null; })}</ul>
         )}
       </div>
     </section>
+  );
+}
+
+interface RowCtx {
+  tree: Tree; byId: Map<string, TreeNode>; open: Set<string>; setOpen: React.Dispatch<React.SetStateAction<Set<string>>>;
+  visible: Set<string>; course: string | null; version: Version | undefined; handFor: string | null;
+  setHandFor: (id: string | null) => void; mode: 'capture' | 'cluster'; send: (b: Record<string, unknown>) => Promise<boolean>;
+  parentCounts: Map<string, number>;
+}
+
+/** Defined at module level so rows keep their form state when the panel re-renders. */
+function Row({ r, depth, c }: { r: NodeReading; depth: number; c: RowCtx }) {
+  const { byId, open, setOpen, visible, tree, course, version, handFor, setHandFor, mode, send, parentCounts } = c;
+  const n = byId.get(r.nodeId) as TreeNode;
+  const isOpen = open.has(r.nodeId) || (depth === 0 && !open.has(`-${r.nodeId}`));
+  const kids = r.children.filter((k) => visible.has(k.nodeId));
+  const foundational = r.k === null && r.u === null;
+  const hand = tree.depths.find((h) => resolveNode(tree, h.nodeId) === r.nodeId && h.courseCode === course && h.instructor === version?.instructor);
+  const toggle = () => setOpen((s) => { const x = new Set(s); const key = depth === 0 ? `-${r.nodeId}` : r.nodeId; const want = depth === 0 ? isOpen : !isOpen; if (want) x.add(key); else x.delete(key); return x; });
+  return (
+    <li data-node={r.nodeId} className="flex flex-col gap-1 border-l pl-2" style={{ marginLeft: depth ? 8 : 0 }}>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" aria-expanded={isOpen} onClick={toggle} className="text-xs" aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${n.name}`}>{isOpen ? '▾' : '▸'}</button>
+        <span className="font-medium">{n.name}</span>
+        <span className="text-sm">{foundational ? `D${fmt(r.d)}` : `K${fmt(r.k)} U${fmt(r.u)} D${fmt(r.d)}`}</span>
+        {r.byHand && <span className="text-xs">set by hand</span>}
+        {r.byHand && <span className="text-xs">{foundational ? `suggested D${fmt(r.computed.d)}` : `suggested K${fmt(r.computed.k)} U${fmt(r.computed.u)} D${fmt(r.computed.d)}`}</span>}
+        {r.needsReview && <span className="text-xs text-amber-800">Review: the skills under it changed</span>}
+        {mode === 'capture' && version && <button type="button" className={btn} onClick={() => setHandFor(handFor === r.nodeId ? null : r.nodeId)}>Set by hand</button>}
+      </div>
+      {handFor === r.nodeId && course && version && (
+        <DepthForm initial={r.byHand ? r : r.computed} foundational={foundational} hasHand={!!hand}
+          send={(clear, v) => send(clear ? { action: 'depth-clear', nodeId: r.nodeId, courseCode: course, instructor: version.instructor } : { action: 'depth', nodeId: r.nodeId, courseCode: course, instructor: version.instructor, ...v })}
+          onDone={() => setHandFor(null)} />
+      )}
+      {mode === 'cluster' && <NodeTools tree={tree} node={n} leaves={r.direct.map((d) => ({ courseCode: d.courseCode, skillRef: d.skillRef, statement: d.statement }))} send={send} />}
+      {isOpen && (
+        <ul className="flex flex-col gap-1">
+          {kids.map((k) => <Row key={k.nodeId} r={k} depth={depth + 1} c={c} />)}
+          {r.direct.map((d) => (
+            <li key={`${d.courseCode}${d.skillRef}`} className="flex flex-wrap items-center gap-2 pl-4 text-sm">
+              <span>{d.statement}</span>
+              <span className="text-xs">{foundational ? `D${fmt(d.depth.d)}` : `K${fmt(d.depth.k)} U${fmt(d.depth.u)} D${fmt(d.depth.d)}`}</span>
+              {mode === 'cluster' && (parentCounts.get(`${d.courseCode}\u0000${d.skillRef}`) ?? 0) > 1 && <ShareField tree={tree} d={d} nodeId={r.nodeId} send={send} />}
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }
 
