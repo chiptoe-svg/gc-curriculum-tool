@@ -63,7 +63,7 @@ describe('/api/skill-tree', () => {
   });
 
   it('GET with a course lists versions, gone leaves and suggestions only for unplaced skills', async () => {
-    m.tree.leaves = [lf('a'), lf('gone1'), lf('gone1', 'proposed'), lf('rej', 'rejected'), lf('x', 'confirmed', 'GC 2')];
+    m.tree.leaves = [{ ...lf('c'), status: 'proposed', source: 'embedding' }, lf('a'), lf('gone1'), lf('gone1', 'proposed'), lf('rej', 'rejected'), lf('x', 'confirmed', 'GC 2')];
     m.suggestParents.mockResolvedValue({ b: [], c: [] });
     m.suggestNewWordings.mockResolvedValue({ gone1: { skillRef: 'b', statement: 'b', similarity: 0.9 } });
     const body = await (await get('?course=GC%201')).json();

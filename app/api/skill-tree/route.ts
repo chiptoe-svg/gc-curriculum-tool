@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authorizeRequest } from '@/lib/auth/route-auth';
 import { loadLibrary } from '@/lib/builder/library';
+import { counts } from '@/lib/skill-tree/read';
 import * as q from '@/lib/db/skill-tree-queries';
 import { suggestNewWordings, suggestParents } from '@/lib/skill-tree/suggest';
 import { authorOf, bad, readBody, str, type Body } from '@/lib/strings/api';
@@ -8,7 +9,7 @@ import { authorOf, bad, readBody, str, type Body } from '@/lib/strings/api';
 /**
  * GET /api/skill-tree[?course=<code>] → { tree } or, with a course,
  * { tree, versions: [{ instructor, snapshotId, skills, gone: [{ skillRef, statement, suggestion }] }], suggestions }.
- * `gone` are the course's non-rejected leaves whose skill is in none of its captures; `suggestions` (parents) cover only skills with no non-rejected leaf.
+ * `gone` are the course's non-rejected leaves whose skill is in none of its captures; `suggestions` (parents) and the new-wording pool cover only skills with no counting leaf (confirmed, or proposed by a person).
  */
 export async function GET(req: Request): Promise<Response> {
   const auth = await authorizeRequest(req);
@@ -21,7 +22,7 @@ export async function GET(req: Request): Promise<Response> {
   const versionsRaw = lib.courses.find((c) => c.code === course)?.versions ?? [];
   const inCapture = new Set(versionsRaw.flatMap((v) => v.skills.map((s) => s.skillRef)));
   const live = tree.leaves.filter((l) => l.courseCode === course && l.status !== 'rejected');
-  const placed = new Set(live.map((l) => l.skillRef));
+  const placed = new Set(live.filter(counts).map((l) => l.skillRef));
   const goneLeaves = new Map<string, { skillRef: string; statement: string }>();
   for (const l of live) if (!inCapture.has(l.skillRef) && !goneLeaves.has(l.skillRef)) goneLeaves.set(l.skillRef, { skillRef: l.skillRef, statement: l.statement });
   const gone = [...goneLeaves.values()];
