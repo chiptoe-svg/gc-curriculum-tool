@@ -44,6 +44,12 @@ describe('department tree page', () => {
     expect(screen.getByText('K3 U3 D3')).toBeTruthy();   // color master, program reading
     expect(screen.getByText('Color specialist')).toBeTruthy();
   });
+  it('explains in plain words that the strongest course counts per dimension at each skill', async () => {
+    const { default: Page } = await import('@/app/build/tree/page');
+    render(await Page({ searchParams: Promise.resolve({ slug: 'good' }) }));
+    expect(screen.getByText(/the strongest course counts, separately for Know, Understand and Do/)).toBeTruthy();
+    expect(screen.queryByText(/two\s+instructors/)).toBeNull();
+  });
   it('asks for the access link without a valid slug', async () => {
     const { default: Page } = await import('@/app/build/tree/page');
     render(await Page({ searchParams: Promise.resolve({}) }));

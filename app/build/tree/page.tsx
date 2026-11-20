@@ -40,8 +40,8 @@ export default async function TreePage({ searchParams }: { searchParams: Promise
         <Link href={`/build?slug=${encodeURIComponent(slug)}`} className="cb-back">Curriculum builder</Link>
         <h1>Department skill tree</h1>
         <p>
-          Every competency with what the department&rsquo;s courses reach under it, as Know, Understand and Do. Where two
-          instructors teach the same course, the stronger capture counts. Open a competency to see the skills under it.
+          Every competency with what the department&rsquo;s courses reach under it, as Know, Understand and Do. At each
+          skill, the strongest course counts, separately for Know, Understand and Do. Open a competency to see the skills under it.
         </p>
       </header>
       <section className="cb-index__list">

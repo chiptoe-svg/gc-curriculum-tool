@@ -8,6 +8,9 @@
 #
 # 0074 creates four tables, adds four string_points columns and backfills; it deletes and rewrites nothing, so the
 # running (old) build is unaffected. The destructive-statement grep refuses DROP TABLE, DELETE, TRUNCATE, DROP COLUMN.
+# Rollback (by hand; the backup above is the safe route), in FK order: first ALTER TABLE string_points DROP COLUMN node_id,
+# DROP COLUMN need_k, DROP COLUMN need_u, DROP COLUMN need_d; then DROP TABLE skill_tree_events, node_depths, skill_leaves;
+# then DROP TABLE skill_nodes last (the others reference it).
 # Rehearsal: SKILLTREE_SCRATCH=1 runs every step against gc_curriculum_builder_scratch (backup goes to TMPDIR).
 set -uo pipefail
 APP=/Users/admin/projects/curriculum_developer-deploy
