@@ -24,7 +24,6 @@ import { diffInputsVsSnapshot } from '@/lib/capture/inputs-drift';
 import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { CreditsBanner } from '@/app/CreditsBanner';
 import { FeedbackLink } from '@/app/FeedbackLink';
-import { CourseStrings } from '@/components/strings/CourseStrings';
 import '@/components/strings/strings.css';
 import '@/app/build/build.css';
 import './capture.css';
@@ -226,7 +225,6 @@ export default async function CapturePage({ params, searchParams }: Props) {
           />
         )}
         <InputsDriftBanner drift={inputsDrift} />
-        <CourseStrings courseCode={code} mode="capture" query={clientSlug ? `?slug=${encodeURIComponent(clientSlug)}` : ''} />
         <CaptureClient
           course={courseView}
           initialMaterials={materialsView}

@@ -62,6 +62,16 @@ describe('SkillTreePanel', () => {
     expect(calls[0]!.body).toMatchObject({ action: 'retarget', courseCode: 'GC 1010', oldRef: 'old', newRef: 'b' });
   });
 
+  it('hides a skill whose only placement for the course is an embedding suggestion', async () => {
+    const t = baseTree();
+    t.nodes.push(node('vend', 'Vendor selection', null));
+    t.leaves.push({ ...leaf('b', 'vend', 'Calibrate a press'), source: 'embedding' as const, status: 'proposed' as const });
+    mockFetch(t);
+    render(<SkillTreePanel courseCode="GC 1010" mode="capture" authorName="Dr Who" />);
+    await screen.findByText('Agency');
+    expect(screen.queryByText('Vendor selection')).toBeNull();
+  });
+
   it('foundational nodes show D only', async () => {
     mockFetch(baseTree());
     render(<SkillTreePanel courseCode="GC 1010" mode="capture" authorName="Dr Who" />);

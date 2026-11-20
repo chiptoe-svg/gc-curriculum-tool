@@ -109,10 +109,11 @@ export function SkillTreePanel(props: { courseCode: string | null; mode: 'captur
   const allRefs = new Set(versions.flatMap((v) => v.skills.map((s) => s.skillRef)));
   const gone = (version?.gone ?? []).filter((g) => liveLeaves.some((l) => l.skillRef === g.skillRef) && !allRefs.has(g.skillRef));
 
-  // Only nodes on the path to the courses' leaves.
+  // Only nodes on the path to the courses' counting leaves. An embedding-only suggestion is not a row of its own,
+  // so a competency holding nothing else would show as an empty 0 row.
   const visible = new Set<string>();
   const byId = new Map(tree.nodes.map((n) => [n.id, n]));
-  for (const l of liveLeaves) {
+  for (const l of liveLeaves.filter(counts)) {
     for (let id: string | null = resolveNode(tree, l.nodeId); id && !visible.has(id); id = byId.get(id)?.parentId ?? null) visible.add(id);
   }
   const roots = tree.nodes.filter((n) => !n.parentId && !n.retired && !n.mergedInto && visible.has(n.id));

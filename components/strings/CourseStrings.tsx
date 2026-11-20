@@ -72,7 +72,7 @@ export function CourseStrings({ courseCode, mode, query = '' }: CourseStringsPro
     <section className="cb st-panel" data-mode={mode}>
       {here.length > 0 && (
         <div>
-          <h3>Strings through this course</h3>
+          <h3 className={mode === 'capture' ? 'cap-title text-xl' : undefined}>Strings through this course</h3>
           <ul>
             {here.map((s) => (
               <li key={s.id}>
@@ -100,7 +100,7 @@ export function CourseStrings({ courseCode, mode, query = '' }: CourseStringsPro
           </ul>
         </div>
       )}
-      <OrphanSkills courseCode={courseCode} orphans={orphans} authorName={name.trim() || null} onSaved={load} />
+      <OrphanSkills compact={mode === 'capture'} courseCode={courseCode} orphans={orphans} authorName={name.trim() || null} onSaved={load} />
       {askName && <label className="st-name">Your name <input value={name} onChange={(e) => setName(e.target.value)} /></label>}
       {message && <p className="st-notice">{message}</p>}
     </section>
