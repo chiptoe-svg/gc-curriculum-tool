@@ -60,64 +60,61 @@ function DailyCostPanel({
   const today = history.at(-1) ?? { day: '', spentCents: 0 };
   const pct = capCents > 0 ? Math.min(100, (today.spentCents / capCents) * 100) : 0;
   const tone =
-    pct >= 90 ? 'text-destructive'
-    : pct >= 60 ? 'text-amber-700'
-    : 'text-foreground';
+    pct >= 90 ? 'st-tone-issue'
+    : pct >= 60 ? 'st-tone-input'
+    : 'st-tone-done';
   const barTone =
-    pct >= 90 ? 'bg-destructive'
-    : pct >= 60 ? 'bg-amber-500'
-    : 'bg-emerald-500';
+    pct >= 90 ? 'st-fill-issue'
+    : pct >= 60 ? 'st-fill-input'
+    : 'st-fill-done';
   // Find max for sparkline scaling — use the bigger of (history max, cap).
   const histMax = Math.max(0, ...history.map(d => d.spentCents));
   const sparkMax = Math.max(histMax, capCents);
 
   return (
-    <section className="rounded-md border bg-card px-4 py-3">
-      <div className="flex items-baseline justify-between gap-3">
+    <section className="rounded-md st-card">
+      <div className="st-card-row">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Today&apos;s AI cost</p>
-          <p className={`mt-0.5 text-2xl font-semibold ${tone}`}>
-            {dollars(today.spentCents)} <span className="text-sm font-normal text-muted-foreground">of {dollars(capCents)} cap</span>
+          <p className="st-label">Today&apos;s AI cost</p>
+          <p className={`st-big ${tone}`}>
+            {dollars(today.spentCents)} <span className="st-meta">of {dollars(capCents)} cap</span>
           </p>
         </div>
-        <p className="text-xs text-muted-foreground">UTC day · resets at 00:00 UTC</p>
+        <p className="st-meta">UTC day · resets at 00:00 UTC</p>
       </div>
-      <div className="mt-2 h-2 overflow-hidden rounded bg-muted">
+      <div className="st-meter">
         <div
-          className={`h-full ${barTone} transition-all`}
+          className={barTone}
           style={{ width: `${pct}%` }}
           aria-label={`${pct.toFixed(0)}% of cap used`}
         />
       </div>
 
       {history.length > 1 && (
-        <div className="mt-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Last {history.length} days</p>
-          <div className="mt-2 flex items-end gap-1 h-16">
+        <div className="mt-2">
+          <p className="st-label">Last {history.length} days</p>
+          <div className="st-spark">
             {history.map((d, i) => {
               const heightPct = sparkMax > 0 ? (d.spentCents / sparkMax) * 100 : 0;
               const isToday = i === history.length - 1;
               const overCap = d.spentCents > capCents;
               return (
-                <div key={d.day} className="flex flex-1 flex-col items-center gap-1">
-                  <div className="relative w-full h-12 flex items-end">
+                <div key={d.day} className="st-spark-col">
+                  <div className="st-spark-bar">
                     <div
-                      className={
-                        'w-full rounded-sm ' +
-                        (overCap ? 'bg-destructive' : isToday ? 'bg-emerald-600' : 'bg-emerald-300')
-                      }
+                      className={overCap ? 'st-bar-over' : isToday ? 'st-bar-today' : 'st-bar-past'}
                       style={{ height: `${Math.max(2, heightPct)}%` }}
                       title={`${d.day} — ${dollars(d.spentCents)}`}
                     />
                   </div>
-                  <span className={`text-xs ${isToday ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                  <span className={`st-spark-day${isToday ? ' is-today' : ''}`}>
                     {d.day.slice(5)}
                   </span>
                 </div>
               );
             })}
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="st-meta mt-2">
             Hover any bar for the exact figure. Bars exceeding the daily cap show in red. Today is highlighted.
           </p>
         </div>
@@ -285,46 +282,44 @@ export function SettingsClient({
   const modelAvailable = (id: string) => availableModels.length === 0 || availableModels.includes(id);
 
   return (
-    <div className="space-y-6">
+    <div className="st-stack">
       <DailyCostPanel history={costHistory} capCents={capCents} />
 
       {!isAdmin && (
-        <p className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2.5 text-xs text-amber-900">
+        <p className="st-cue st-cue-input">
           Only an admin can change AI model settings. Shown read-only below.
         </p>
       )}
 
-      <section className="rounded-md border bg-card px-4 py-3 text-xs leading-snug text-muted-foreground">
-        <p className="font-medium text-foreground">How roles work</p>
-        <p className="mt-1">
+      <section className="rounded-md st-card st-meta">
+        <h2 className="st-h3">How roles work</h2>
+        <p>
           Each AI function has a role that says what kind of work it does. A role sets the model and reasoning effort for every function in it; roles are changed in the code (<span className="font-mono">lib/ai/models.ts</span>), not here. Here you can move a function to another role or pin it to a specific model.
         </p>
-        <ul className="mt-2 space-y-0.5">
+        <ul className="st-roles">
           {MODEL_ROLES.map(role => (
             <li key={role}>
-              <span className="font-medium text-foreground">{roles[role].label}</span>
+              <strong>{roles[role].label}</strong>
               <span className="ml-2">{roles[role].purpose}</span>
-              <span className="ml-2 font-mono text-foreground">→ {describeModel(roles[role])}</span>
-              {!modelAvailable(roles[role].model) && <span className="ml-2 text-destructive">(not in available list)</span>}
+              <span className="ml-2 st-mono">→ {describeModel(roles[role])}</span>
+              {!modelAvailable(roles[role].model) && <span className="ml-2 st-err">(not in available list)</span>}
             </li>
           ))}
         </ul>
-        <p className="mt-2">
+        <p>
           The model lists offer the models in use or tested here, plus the four campus models (free). The newest
           OpenAI models are listed as not tested here.
         </p>
-        <label className="mt-2 flex items-center gap-2 text-xs">
+        <label className="st-check">
           <input type="checkbox" checked={showAllModels} onChange={e => setShowAllModels(e.target.checked)} />
           Show every model the gateway offers
           {availableModels.length > 0 && <span>({availableModels.length}{modelsStale && ', cached'}; most are older models nobody has tested on our prompts)</span>}
         </label>
-        {modelsError && <p className="mt-2 text-destructive">{modelsError}</p>}
+        {modelsError && <p className="st-err">{modelsError}</p>}
       </section>
 
       {message && (
-        <p className={'rounded border px-3 py-2 text-xs ' + (message.kind === 'ok'
-          ? 'border-green-300 bg-green-50 text-green-800'
-          : 'border-destructive/30 bg-red-50 text-destructive')}>
+        <p role="status" className={'st-cue ' + (message.kind === 'ok' ? 'st-cue-done' : 'st-cue-issue')}>
           {message.text}
         </p>
       )}
@@ -334,15 +329,15 @@ export function SettingsClient({
         if (group === 'custom' && members.length === 0) return null;
         const headingId = `role-${group}`;
         return (
-          <section key={group} aria-labelledby={headingId} className="space-y-3">
+          <section key={group} aria-labelledby={headingId} className="st-group">
             <header>
-              <h2 id={headingId} className="text-sm font-semibold">{group === 'custom' ? 'Custom model' : roles[group].label}</h2>
-              <p className="text-xs text-muted-foreground">
+              <h2 id={headingId} className="st-h2">{group === 'custom' ? 'Custom model' : roles[group].label}</h2>
+              <p className="st-meta">
                 {group === 'custom' ? 'Functions pinned to a specific model.' : `${roles[group].purpose} · ${describeModel(roles[group])}`}
               </p>
               {group !== 'custom' && <Basis evidence={evidenceForKey(evidence, `role:${group}`)} slug={slug} prefix="Role default" />}
             </header>
-            {members.length === 0 && <p className="text-xs italic text-muted-foreground">No functions.</p>}
+            {members.length === 0 && <p className="st-meta italic">No functions.</p>}
             {members.map(functionId => renderFunction(functionId))}
           </section>
         );
@@ -358,23 +353,25 @@ export function SettingsClient({
     const isModified = s.hasOverride || s.tier !== defaults[functionId];
     const isBusy = busy === functionId;
     return (
-      <div key={functionId} className="rounded-md border bg-card px-4 py-3 space-y-2">
+      <div key={functionId} className="rounded-md st-card">
         <header>
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-sm font-semibold">{labels[functionId]}</h3>
-            <span className="font-mono text-xs text-muted-foreground">{describeModel({ model: s.resolvedModel, effort: s.resolvedEffort, provider: s.resolvedProvider, fallback: s.resolvedFallback })}</span>
+          <div className="st-card-row">
+            <h3 className="st-h3">{labels[functionId]}</h3>
+            <span className="st-mono">{describeModel({ model: s.resolvedModel, effort: s.resolvedEffort, provider: s.resolvedProvider, fallback: s.resolvedFallback })}</span>
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">{descriptions[functionId]}</p>
+          <p className="st-meta">{descriptions[functionId]}</p>
           <Basis
             evidence={evidenceFor(evidence, functionId, s.tier === 'custom' ? defaults[functionId] : s.tier, s.tier === 'custom' || (!!routes?.[functionId] && !s.hasOverride))}
             slug={slug}
           />
         </header>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {MODEL_ROLES.map(role => (
-            <RoleButton key={role} label={roles[role].label} active={s.tier === role} disabled={isBusy || !isAdmin} onClick={() => setTier(functionId, role)} />
-          ))}
+        <div className="st-controls">
+          <div className="st-seg">
+            {MODEL_ROLES.map(role => (
+              <RoleButton key={role} label={roles[role].label} active={s.tier === role} disabled={isBusy || !isAdmin} onClick={() => setTier(functionId, role)} />
+            ))}
+          </div>
 
           <ModelDropdown
             isCustom={s.tier === 'custom'}
@@ -386,10 +383,10 @@ export function SettingsClient({
           />
 
           {functionId === 'capture-chat-agent' && (
-            <label className="flex items-center gap-1 text-xs text-muted-foreground">
+            <label className="st-field">
               Interview loop
               <select
-                className="rounded border bg-background px-1 py-0.5 text-xs"
+                className="st-select"
                 value={s.loop === 'pi' ? 'pi' : 'current'}
                 disabled={isBusy || !isAdmin}
                 onChange={e => setLoop(functionId, e.target.value as 'current' | 'pi')}
@@ -405,7 +402,7 @@ export function SettingsClient({
               type="button"
               onClick={() => resetToDefault(functionId)}
               disabled={isBusy}
-              className="ml-auto text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+              className="st-link ml-auto"
             >
               reset to default ({roles[defaults[functionId]].label})
             </button>
@@ -443,12 +440,7 @@ function RoleButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={
-        'rounded-md border px-3 py-1.5 text-xs font-medium disabled:opacity-50 '
-        + (active
-          ? 'border-primary bg-primary/10 text-foreground'
-          : 'border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground')
-      }
+      aria-pressed={active}
     >
       {label}
     </button>
@@ -479,10 +471,7 @@ function ModelDropdown({
         if (v) onSet(v);
       }}
       disabled={disabled}
-      className={
-        'max-w-full rounded border border-input bg-background px-2 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 '
-        + (isCustom ? 'border-primary' : '')
-      }
+      className={'st-select' + (isCustom ? ' is-active' : '')}
     >
       <option value="">pick specific model…</option>
       {groups.map(g => (
@@ -497,12 +486,12 @@ function ModelDropdown({
 /** "Basis: <summary> (<date>) · benchmark →", or a plain note that nothing was benchmarked. */
 function Basis({ evidence, slug, prefix }: { evidence: Evidence | null; slug: string; prefix?: string }) {
   if (!evidence) {
-    return <p className="mt-1 text-xs italic text-muted-foreground">{prefix ? `${prefix}: not` : 'Not'} benchmarked for this function.</p>;
+    return <p className="st-meta italic">{prefix ? `${prefix}: not` : 'Not'} benchmarked for this function.</p>;
   }
   return (
-    <p className="mt-1 text-xs text-muted-foreground">
-      <span className="font-medium text-foreground">{prefix ? `${prefix} basis` : 'Basis'}:</span> {evidence.summary}{' '}
-      <span className="whitespace-nowrap">({evidence.date}) · <a className="underline hover:text-foreground" href={`/settings/benchmarks/${evidence.id}?slug=${encodeURIComponent(slug)}`}>benchmark →</a></span>
+    <p className="st-meta">
+      <strong>{prefix ? `${prefix} basis` : 'Basis'}:</strong> {evidence.summary}{' '}
+      <span className="whitespace-nowrap">({evidence.date}) · <a href={`/settings/benchmarks/${evidence.id}?slug=${encodeURIComponent(slug)}`}>benchmark →</a></span>
     </p>
   );
 }
@@ -516,34 +505,34 @@ function SearchSection({ search, evidence, slug, isAdmin, busy, onSet }: {
   onSet: (v: 'on' | 'off' | null) => void;
 }) {
   return (
-    <section aria-labelledby="search-settings" className="space-y-3">
+    <section aria-labelledby="search-settings" className="st-group">
       <header>
-        <h2 id="search-settings" className="text-sm font-semibold">Search</h2>
-        <p className="text-xs text-muted-foreground">How the interviewer finds passages in a course's materials (campus models, no cost).</p>
+        <h2 id="search-settings" className="st-h2">Search</h2>
+        <p className="st-meta">How the interviewer finds passages in a course's materials (campus models, no cost).</p>
       </header>
       {!search ? (
-        <p className="text-xs text-destructive">Search settings could not be read.</p>
+        <p className="st-err">Search settings could not be read.</p>
       ) : (
         <>
-          <div className="rounded-md border bg-card px-4 py-3 space-y-2">
-            <div className="flex items-baseline justify-between gap-3">
-              <h3 className="text-sm font-semibold">Reranking</h3>
-              <span className="font-mono text-xs text-muted-foreground">campus · {search.rerank.model} · {search.rerank.effective ? 'on' : 'off'}</span>
+          <div className="rounded-md st-card">
+            <div className="st-card-row">
+              <h3 className="st-h3">Reranking</h3>
+              <span className="st-mono">campus · {search.rerank.model} · {search.rerank.effective ? 'on' : 'off'}</span>
             </div>
-            <p className="text-xs text-muted-foreground">Re-orders the 50 best search matches so the most relevant passage comes first. Off returns the plain search order.</p>
+            <p className="st-meta">Re-orders the 50 best search matches so the most relevant passage comes first. Off returns the plain search order.</p>
             <Basis evidence={evidenceForKey(evidence, 'search:rerank')} slug={slug} />
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="st-seg">
               <RoleButton label="On" active={search.rerank.override === 'on'} disabled={busy || !isAdmin} onClick={() => onSet('on')} />
               <RoleButton label="Off" active={search.rerank.override === 'off'} disabled={busy || !isAdmin} onClick={() => onSet('off')} />
               <RoleButton label="Server default" active={search.rerank.override === null} disabled={busy || !isAdmin} onClick={() => onSet(null)} />
             </div>
           </div>
-          <div className="rounded-md border bg-card px-4 py-3 space-y-1">
-            <div className="flex items-baseline justify-between gap-3">
-              <h3 className="text-sm font-semibold">Embedding model</h3>
-              <span className="font-mono text-xs text-muted-foreground">campus · {search.embedding.model}</span>
+          <div className="rounded-md st-card">
+            <div className="st-card-row">
+              <h3 className="st-h3">Embedding model</h3>
+              <span className="st-mono">campus · {search.embedding.model}</span>
             </div>
-            <p className="text-xs text-muted-foreground">Turns passages and questions into vectors for search. Shown only: changing it means re-embedding every course's materials.</p>
+            <p className="st-meta">Turns passages and questions into vectors for search. Shown only: changing it means re-embedding every course's materials.</p>
             <Basis evidence={evidenceForKey(evidence, 'search:embedding')} slug={slug} />
           </div>
         </>

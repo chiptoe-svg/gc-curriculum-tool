@@ -1,0 +1,80 @@
+/* /settings pages in the GC design system (docs/GC-DESIGN-SYSTEM.md v1.1).
+   Purple acts, orange marks, cue colors mean status, amounts use the purple ramp. */
+
+.st-header { border-bottom: 1px solid #E4E2E8; background: #fff; }
+.st-header-inner { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; max-width: 56rem; margin: 0 auto; padding: 20px 16px; }
+.st-header-inner.st-narrow { max-width: 48rem; }
+@media (min-width: 640px) { .st-header-inner { padding-inline: 24px; } }
+.st-main { max-width: 56rem; margin: 0 auto; padding: 24px 16px 64px; }
+.st-main.st-narrow { max-width: 48rem; }
+@media (min-width: 640px) { .st-main { padding-inline: 24px; } }
+.st-eyebrow { font: 500 13px/1.4 var(--font-mono, ui-monospace, monospace); letter-spacing: .08em; text-transform: uppercase; color: #C24F00; }
+.st-title { margin-top: 4px; font-family: var(--font-heading, Georgia, serif); font-weight: 600; font-size: 28px; line-height: 1.15; letter-spacing: -.02em; color: #1D1B22; text-wrap: balance; }
+.st-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.st-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 18px; border-radius: 999px; font: 500 15px var(--font-sans, system-ui, sans-serif); border: 1px solid #D9D6DF; background: #fff; color: #1D1B22; text-decoration: none; cursor: pointer; }
+.st-btn:hover { border-color: #B9B4C4; color: #1D1B22; }
+.st-link { font-size: 14px; font-weight: 500; color: #522D80; text-decoration: underline; text-underline-offset: 3px; background: none; border: 0; padding: 0; cursor: pointer; }
+.st-link:hover { color: #3A1F5C; }
+.st-link:disabled { opacity: .5; cursor: default; }
+
+.st-stack { display: flex; flex-direction: column; gap: 24px; }
+.st-group { display: flex; flex-direction: column; gap: 12px; }
+.st-card.st-card { background: #fff; border: 1px solid #E4E2E8; border-radius: 16px; padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.st-card-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.st-h2 { font-family: var(--font-heading, Georgia, serif); font-weight: 600; font-size: 22px; letter-spacing: -.01em; color: #1D1B22; }
+.st-h3 { font-family: var(--font-heading, Georgia, serif); font-weight: 600; font-size: 18px; letter-spacing: -.005em; color: #1D1B22; }
+.st-label { font: 500 12px var(--font-mono, ui-monospace, monospace); letter-spacing: .08em; text-transform: uppercase; color: #5D5966; }
+.st-meta { font-size: 13px; line-height: 1.5; color: #5D5966; }
+.st-meta strong { color: #1D1B22; font-weight: 600; }
+.st-meta a { color: #522D80; text-underline-offset: 3px; }
+.st-meta a:hover { color: #3A1F5C; }
+.st-mono { font: 400 12px var(--font-mono, ui-monospace, monospace); color: #5D5966; overflow-wrap: anywhere; }
+.st-big { font-family: var(--font-heading, Georgia, serif); font-weight: 600; font-size: 32px; line-height: 1.1; letter-spacing: -.02em; }
+.st-note { background: #ECE6F4; border-radius: 16px; padding: 14px 18px; font-size: 14px; color: #2E2A36; }
+.st-err { font-size: 13px; color: #9B2C2C; }
+.st-check { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
+.st-check input { accent-color: #522D80; width: 18px; height: 18px; }
+
+/* Status cues (design-system shapes) */
+.st-cue { display: flex; align-items: flex-start; gap: 8px; border-radius: 16px; padding: 12px 18px; font-size: 14px; }
+.st-cue::before { content: ""; width: 8px; height: 8px; flex: none; margin-top: 7px; }
+.st-cue-input { background: #FFF4DB; color: #8A5A00; }
+.st-cue-input::before { background: #B57600; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.st-cue-done { background: #E4F0E6; color: #2F6B3A; }
+.st-cue-done::before { background: #2F6B3A; border-radius: 50%; }
+.st-cue-issue { background: #F9E3E3; color: #9B2C2C; }
+.st-cue-issue::before { background: #9B2C2C; transform: rotate(45deg); width: 7px; height: 7px; }
+.st-tone-done { color: #2F6B3A; } .st-tone-input { color: #8A5A00; } .st-tone-issue { color: #9B2C2C; }
+
+/* Cost meter: bar fill carries the status color; past days use the purple ramp */
+.st-meter { height: 8px; overflow: hidden; border-radius: 999px; background: #EFEEF2; }
+.st-meter > div { height: 100%; transition: width .2s; }
+.st-fill-done { background: #2F6B3A; } .st-fill-input { background: #B57600; } .st-fill-issue { background: #9B2C2C; }
+.st-spark { display: flex; align-items: flex-end; gap: 4px; height: 64px; margin-top: 8px; }
+.st-spark-col { display: flex; flex: 1; min-width: 0; flex-direction: column; align-items: center; gap: 4px; }
+.st-spark-bar { position: relative; display: flex; align-items: flex-end; width: 100%; height: 48px; }
+.st-spark-bar > div { width: 100%; border-radius: 3px; }
+.st-bar-past { background: #C7B5E0; } .st-bar-today { background: #5E3F94; } .st-bar-over { background: #9B2C2C; }
+.st-spark-day { font: 400 10px var(--font-mono, ui-monospace, monospace); color: #5D5966; }
+.st-spark-day.is-today { color: #1D1B22; font-weight: 500; }
+
+/* Pill choices */
+.st-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px; background: #ECEAF0; max-width: 100%; }
+.st-seg button { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: transparent; color: #5D5966; font: 500 14px var(--font-sans, system-ui, sans-serif); cursor: pointer; }
+.st-seg button:hover:not(:disabled) { color: #1D1B22; }
+.st-seg button[aria-pressed="true"] { background: #522D80; color: #fff; box-shadow: 0 1px 3px rgba(29,27,34,.12); }
+.st-seg button:disabled { opacity: .5; cursor: default; }
+.st-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 4px; }
+.st-select { min-height: 36px; max-width: 100%; padding: 0 12px; border: 1px solid #DCD9E2; border-radius: 10px; background: #fff; font: 400 13px var(--font-mono, ui-monospace, monospace); color: #1D1B22; }
+.st-select.is-active { border: 2px solid #522D80; padding: 0 11px; background: #ECE6F4; color: #3A1F5C; }
+.st-select:disabled { opacity: .5; }
+.st-field { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: #5D5966; }
+.st-field .st-select { font-family: var(--font-sans, system-ui, sans-serif); }
+.st-roles { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #5D5966; }
+.st-roles strong { color: #1D1B22; font-weight: 600; }
+
+/* Benchmark page */
+.st-summary { background: #fff; border: 1px solid #E4E2E8; border-radius: 16px; padding: 16px 20px; font-size: 15px; }
+
+@media (max-width: 640px) { .st-title { font-size: 24px; } }
