@@ -18,6 +18,8 @@ import { getRerankOverride, rerankEnabledNow } from '@/lib/settings/app-settings
 import { DEFAULT_RERANK_MODEL } from '@/lib/ai/rerank';
 import { DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
 
+import './settings.css';
+
 async function loadSearch(): Promise<SearchState | null> {
   try {
     return {
@@ -40,9 +42,9 @@ export default async function SettingsPage({ searchParams }: Props) {
 
   if (!isValidSlug(slug)) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Access link required</h1>
-        <p className="mt-3 text-muted-foreground">Open this page through the access link your administrator shared.</p>
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="st-title">Access link required</h1>
+        <p className="st-meta mt-3">Open this page through the access link your administrator shared.</p>
       </div>
     );
   }
@@ -58,18 +60,18 @@ export default async function SettingsPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="mx-auto flex max-w-4xl items-baseline justify-between gap-4 px-6 py-4">
+      <header className="st-header">
+        <div className="st-header-inner">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Settings</p>
-            <h1 className="mt-0.5 text-xl font-semibold">AI model selection</h1>
+            <p className="st-eyebrow">Settings</p>
+            <h1 className="st-title">AI model selection</h1>
           </div>
-          <div className="text-sm text-muted-foreground">
-            <Link href={`/?slug=${encodeURIComponent(slug)}`} className="hover:text-foreground">← Hub</Link>
+          <div className="st-nav">
+            <Link href={`/?slug=${encodeURIComponent(slug)}`} className="st-btn">← Hub</Link>
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-4xl px-6 py-6">
+      <main className="st-main">
         <SettingsClient
           slug={slug}
           initialSettings={settings}
