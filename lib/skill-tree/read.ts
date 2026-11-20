@@ -182,15 +182,10 @@ function ancestorFoundational(tree: Tree, nodeId: string): boolean {
   return false;
 }
 
-/** Weighted average over the given master nodes' program readings; null counts as 0 unless null on every master. */
+/** Weighted average over the given master nodes' program readings. K and U average over the non-foundational masters only (null on every master stays null); D averages over all. */
 export function readCareer(tree: Tree, versions: VersionSkills[], weights: Array<{ nodeId: string; weight: number }>): Depth {
   const rs = weights.map((w) => ({ w: w.weight, v: readProgram(tree, versions, w.nodeId) as Depth }));
-  const total = rs.reduce((s, r) => s + r.w, 0);
-  const dim = (key: 'k' | 'u' | 'd'): number | null => {
-    if (rs.every((r) => r.v[key] === null)) return null;
-    return total > 0 ? rs.reduce((s, r) => s + r.w * (r.v[key] ?? 0), 0) / total : 0;
-  };
-  return { k: dim('k'), u: dim('u'), d: dim('d') };
+  return weightedMean(rs);
 }
 
 /** True when every non-null need is met; foundational nodes ignore K and U. */

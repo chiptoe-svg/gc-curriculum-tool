@@ -135,6 +135,21 @@ describe('skill tree readings', () => {
     expect(r.d).toBeCloseTo(3.5);
   });
 
+  it('career K and U skip foundational masters; D averages over all', () => {
+    const t: Tree = {
+      nodes: [node('m1'), node('m2', { foundational: true })],
+      leaves: [leaf('s1', 'm1'), leaf('s2', 'm2')],
+      depths: [],
+    };
+    const v = version({ s1: { k: 4, u: 3, d: 2 }, s2: { k: 5, u: 5, d: 4 } });
+    const r = readCareer(t, [v], [{ nodeId: 'm1', weight: 1 }, { nodeId: 'm2', weight: 1 }]);
+    expect(r.k).toBeCloseTo(4);
+    expect(r.u).toBeCloseTo(3);
+    expect(r.d).toBeCloseTo(3);
+    const only = readCareer(t, [v], [{ nodeId: 'm2', weight: 1 }]);
+    expect(only).toMatchObject({ k: null, u: null });
+  });
+
   it('meets', () => {
     expect(meets({ k: 3, u: 3, d: 3 }, { k: 3, u: null, d: 2 }, false)).toBe(true);
     expect(meets({ k: 2, u: 3, d: 3 }, { k: 3, u: null, d: 2 }, false)).toBe(false);
