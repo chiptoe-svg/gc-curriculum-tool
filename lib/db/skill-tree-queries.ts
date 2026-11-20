@@ -4,14 +4,13 @@
  * lib/skill-tree/read.ts; this file only moves rows.
  */
 import { randomUUID } from 'node:crypto';
-import { and, asc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { isUndefinedTable } from '@/lib/db/pg-errors';
 import {
-  careerTargetRequirements, careerTargets, courseCaptureSnapshots, nodeDepths, skillCompetencyLinks, skillLeaves, skillNodes, skillTreeEvents, stringPoints,
+  careerTargetRequirements, careerTargets, nodeDepths, skillLeaves, skillNodes, skillTreeEvents, stringPoints,
   type SkillTreeEventKind,
 } from '@/lib/db/schema';
-import { hashOf } from '@/lib/strings/hash';
 import { leavesSignature } from '@/lib/skill-tree/read';
 import type { HandDepth, Tree, TreeLeaf, TreeNode } from '@/lib/skill-tree/types';
 
@@ -19,7 +18,7 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Exec = typeof db | Tx;
 
 export type TreeWrite =
-  | { ok: true; tree: Tree; notes?: string[] }
+  | { ok: true; tree: Tree }
   | { ok: false; status: 400 | 404 | 409; error: string };
 
 const MASTER_REFUSAL = 'Competencies are edited in the catalog';
@@ -76,16 +75,15 @@ export async function loadCareerRequirements(exec: Exec = db) {
 // ---------------------------------------------------------------- plumbing
 
 interface Ctx { tx: Tx; tree: Tree }
-interface Done { notes?: string[] }
 
 /** Runs `fn` in one transaction (tree loaded first), then returns the reloaded tree from inside it. */
-async function write(fn: (c: Ctx) => Promise<Done | void>, extra?: () => object): Promise<TreeWrite> {
+async function write(fn: (c: Ctx) => Promise<void>, extra?: () => object): Promise<TreeWrite> {
   try {
     return await db.transaction(async (tx) => {
       const tree = await loadTree(tx);
-      const done = (await fn({ tx, tree })) ?? {};
+      await fn({ tx, tree });
       const after = await loadTree(tx);
-      return { ok: true as const, tree: after, ...(done.notes?.length ? { notes: done.notes } : {}), ...(extra ? extra() : {}) };
+      return { ok: true as const, tree: after, ...(extra ? extra() : {}) };
     });
   } catch (e) {
     if (e instanceof Refuse) return { ok: false, status: e.status, error: e.error };
@@ -126,17 +124,6 @@ function isUnder(tree: Tree, candidate: string, id: string): boolean {
   }
   return false;
 }
-/** The master competency id above (or at) a node. */
-function masterCompetency(tree: Tree, nodeId: string): string | null {
-  const m = byId(tree);
-  const seen = new Set<string>();
-  for (let cur: string | null | undefined = nodeId; cur && !seen.has(cur); cur = m.get(cur)?.parentId) {
-    const n = m.get(cur);
-    if (n?.competencyId) return n.competencyId;
-    seen.add(cur);
-  }
-  return null;
-}
 /** Confirmed beats rejected beats proposed; lower is more decided. */
 const rank = (s: TreeLeaf['status']): number => (s === 'confirmed' ? 0 : s === 'rejected' ? 1 : 2);
 
@@ -145,28 +132,6 @@ const leafKey = (courseCode: string, skillRef: string, nodeId: string) =>
 
 function findLeaf(tree: Tree, courseCode: string, skillRef: string, nodeId: string): TreeLeaf | undefined {
   return tree.leaves.find((l) => l.courseCode === courseCode && l.skillRef === skillRef && l.nodeId === nodeId);
-}
-
-/** A confirmed leaf counts toward its master competency: link every live snapshot of the course that holds the skill. */
-async function writeThroughLink(tx: Tx, tree: Tree, courseCode: string, skillRef: string, nodeId: string, by: string): Promise<string[]> {
-  const competencyId = masterCompetency(tree, nodeId);
-  if (!competencyId) return [];
-  const snaps = await tx.select({ id: courseCaptureSnapshots.id, profile: courseCaptureSnapshots.profile }).from(courseCaptureSnapshots)
-    .where(and(eq(courseCaptureSnapshots.courseCode, courseCode), isNull(courseCaptureSnapshots.retiredAt)));
-  let linked = 0;
-  for (const s of snaps) {
-    const statements = ((s.profile as { competencies?: Array<{ statement?: string }> } | null)?.competencies ?? [])
-      .map((c) => (c.statement ?? '').trim()).filter(Boolean);
-    const statement = statements.find((x) => hashOf(x) === skillRef);
-    if (!statement) continue;
-    await tx.insert(skillCompetencyLinks).values({ snapshotId: s.id, skillRef, statement, competencyId, source: 'faculty', status: 'confirmed', decidedBy: by, decidedAt: sql`now()` })
-      .onConflictDoUpdate({
-        target: [skillCompetencyLinks.snapshotId, skillCompetencyLinks.skillRef, skillCompetencyLinks.competencyId],
-        set: { status: 'confirmed', decidedBy: by, decidedAt: sql`now()` },
-      });
-    linked++;
-  }
-  return linked ? [] : ['No current capture of this course holds that skill, so no competency link was written.'];
 }
 
 const cleanName = (s: string): string => {
@@ -306,7 +271,6 @@ export async function placeLeaf(a: { courseCode: string; skillRef: string; state
       kind: existing ? 'leaf_confirmed' : 'leaf_placed', by: a.by, nodeId: a.nodeId, courseCode: a.courseCode, skillRef: a.skillRef,
       before: existing ? { status: existing.status } : null, after: { status: 'confirmed', source: existing?.source ?? 'faculty' },
     });
-    return { notes: await writeThroughLink(tx, tree, a.courseCode, a.skillRef, a.nodeId, a.by) };
   });
 }
 
@@ -320,7 +284,6 @@ export async function decideLeaf(a: { courseCode: string; skillRef: string; node
       kind: status === 'confirmed' ? 'leaf_confirmed' : 'leaf_rejected', by: a.by, nodeId: a.nodeId, courseCode: a.courseCode, skillRef: a.skillRef,
       before: { status: l.status }, after: { status },
     });
-    if (status === 'confirmed') return { notes: await writeThroughLink(tx, tree, a.courseCode, a.skillRef, a.nodeId, a.by) };
   });
 }
 

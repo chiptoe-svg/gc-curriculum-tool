@@ -179,48 +179,43 @@ describe.skipIf(!SCRATCH)('skill-tree-queries (scratch database)', () => {
   };
   const linksOf = (snapshotId: string) => dbm.db.select().from(s.skillCompetencyLinks).where(orm.eq(s.skillCompetencyLinks.snapshotId, snapshotId));
 
-  it('confirm writes through to the competency link', async () => {
+  it('placing, confirming, rejecting and moving a leaf leave skill_competency_links unchanged', async () => {
     const statement = `${tag} Prepares a press-ready file`;
     const ref = hashOf(statement);
     const snapId = await snapshotFor('link', [statement]);
     const icc = await newNode('icc', masterId);
-    const master = (await q.loadTree()).nodes.find((x) => x.id === masterId)!;
+    expect(await linksOf(snapId)).toHaveLength(0);
 
     // placeLeaf (new, confirmed)
     must(await q.placeLeaf({ courseCode: course('link'), skillRef: ref, statement, nodeId: icc, by }));
-    let links = await linksOf(snapId);
-    expect(links).toHaveLength(1);
-    expect(links[0]).toMatchObject({ competencyId: master.competencyId, status: 'confirmed', source: 'faculty', decidedBy: by });
+    expect(await linksOf(snapId)).toHaveLength(0);
 
-    // decideLeaf confirm on a proposed leaf under a second skill
-    const second = `${tag} Checks color separations`;
+    // decideLeaf confirm on a proposed leaf
+    const second = `${tag} Judges registration`;
     const icc2 = await newNode('icc2', icc);
     await addLeaf('link', hashOf(second), icc2, 'proposed');
-    must(await q.decideLeaf({ courseCode: course('link'), skillRef: hashOf(second), nodeId: icc2, decision: 'confirm', by }));
-    // that skill is not in the capture: a note, no link
-    links = await linksOf(snapId);
-    expect(links).toHaveLength(1);
+    const r = must(await q.decideLeaf({ courseCode: course('link'), skillRef: hashOf(second), nodeId: icc2, decision: 'confirm', by }));
+    expect(r).not.toHaveProperty('notes');
+    expect(await linksOf(snapId)).toHaveLength(0);
+
+    // reject and move do not touch links either
+    must(await q.decideLeaf({ courseCode: course('link'), skillRef: hashOf(second), nodeId: icc2, decision: 'reject', by }));
+    const other = await newNode('other', masterId);
+    must(await q.moveLeaf({ courseCode: course('link'), skillRef: ref, from: icc, to: other, by }));
+    expect(await linksOf(snapId)).toHaveLength(0);
   });
 
-  it('confirm of a skill in the capture, under a nested node, links; reject leaves links alone', async () => {
-    const statement = `${tag} Judges registration`;
+  it('an existing link is neither changed nor re-confirmed by a placement', async () => {
+    const statement = `${tag} Checks color separations`;
     const ref = hashOf(statement);
-    const snapId = await snapshotFor('rej', [statement]);
-    const icc = await newNode('icc3', masterId);
-    const deep = await newNode('deep', icc);
-    await addLeaf('rej', ref, deep, 'proposed');
-    const r = must(await q.decideLeaf({ courseCode: course('rej'), skillRef: ref, nodeId: deep, decision: 'confirm', by }));
-    expect(r.notes).toBeUndefined();
-    expect(await linksOf(snapId)).toHaveLength(1);
-    const r2 = must(await q.decideLeaf({ courseCode: course('rej'), skillRef: ref, nodeId: deep, decision: 'reject', by }));
-    expect(r2.tree.leaves.find((l) => l.courseCode === course('rej') && l.nodeId === deep)!.status).toBe('rejected');
+    const snapId = await snapshotFor('keep', [statement]);
+    const master = (await q.loadTree()).nodes.find((x) => x.id === masterId)!;
+    await dbm.db.insert(s.skillCompetencyLinks).values({ snapshotId: snapId, skillRef: ref, statement, competencyId: master.competencyId!, source: 'faculty', status: 'rejected', decidedBy: 'someone' });
+    const icc = await newNode('keep', masterId);
+    must(await q.placeLeaf({ courseCode: course('keep'), skillRef: ref, statement, nodeId: icc, by }));
     const links = await linksOf(snapId);
     expect(links).toHaveLength(1);
-    expect(links[0]!.status).toBe('confirmed');   // a reject does not delete or change the link
-    // moving does not delete it either
-    const other = await newNode('other', masterId);
-    must(await q.moveLeaf({ courseCode: course('rej'), skillRef: ref, from: deep, to: other, by }));
-    expect(await linksOf(snapId)).toHaveLength(1);
+    expect(links[0]).toMatchObject({ status: 'rejected', decidedBy: 'someone' });
   });
 
   it('retarget keeps parents', async () => {

@@ -146,7 +146,7 @@ async function run(action: unknown, b: Body, by: string): Promise<q.TreeWrite | 
   }
 }
 
-/** POST /api/skill-tree  Body: { action, ...args, authorName? } → 200 { tree, notes, repoint? } | 400/404/409 { error } */
+/** POST /api/skill-tree  Body: { action, ...args, authorName? } → 200 { tree, repoint? } | 400/404/409 { error } */
 export async function POST(req: Request): Promise<Response> {
   const auth = await authorizeRequest(req);
   if (auth.response) return auth.response;
@@ -156,5 +156,5 @@ export async function POST(req: Request): Promise<Response> {
   const r = await run(body.action, body, by);
   if (r instanceof Response) return r;
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status });
-  return NextResponse.json({ tree: r.tree, notes: r.notes ?? [], ...('repoint' in r ? { repoint: r.repoint } : {}) });
+  return NextResponse.json({ tree: r.tree, ...('repoint' in r ? { repoint: r.repoint } : {}) });
 }
