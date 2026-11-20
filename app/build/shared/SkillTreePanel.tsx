@@ -122,7 +122,7 @@ export function SkillTreePanel(props: { courseCode: string | null; mode: 'captur
   const parentCounts = new Map<string, number>();
   for (const l of tree.leaves) if (counts(l)) parentCounts.set(`${l.courseCode}\u0000${l.skillRef}`, (parentCounts.get(`${l.courseCode}\u0000${l.skillRef}`) ?? 0) + 1);
 
-  const ctx: RowCtx = { tree, byId, open, setOpen, visible, course, version, handFor, setHandFor, mode, send, parentCounts };
+  const ctx: RowCtx = { tree, byId, open, setOpen, visible, course, version, handFor, setHandFor, mode, send, parentCounts, rootsOpen: true };
   const place = (ref: string, nodeId: string) => send({ action: 'place', courseCode: course, skillRef: ref, nodeId });
   const placeUnderNew = async (ref: string, name: string, parentId: string) => {
     const key = `${ref}\u0000${parentId}\u0000${name}`;
@@ -200,22 +200,54 @@ export function SkillTreePanel(props: { courseCode: string | null; mode: 'captur
   );
 }
 
+/** Read-only drill-down over readings already computed (the course drawer and the department tree page). */
+export function ReadingTree({ tree, readings, rootsOpen = false }: { tree: Tree; readings: NodeReading[]; rootsOpen?: boolean }) {
+  const [open, setOpen] = useState<Set<string>>(new Set());
+  const byId = useMemo(() => new Map(tree.nodes.map((n) => [n.id, n])), [tree]);
+  const visible = useMemo(() => new Set(tree.nodes.map((n) => n.id)), [tree]);
+  const none = useMemo(() => new Map<string, number>(), []);
+  const ctx: RowCtx = {
+    tree, byId, open, setOpen, visible, course: null, version: undefined, handFor: null, setHandFor: () => {},
+    mode: 'capture', send: async () => false, parentCounts: none, rootsOpen,
+  };
+  return <ul className="flex flex-col gap-2">{readings.map((r) => <Row key={r.nodeId} r={r} depth={0} c={ctx} />)}</ul>;
+}
+
+const one = (n: number | null): string => (n === null ? '–' : n.toFixed(1));
+
+/** The tree's reading of one course version at a node, "Tree: K2.0 U1.5 D3.0"; a click opens the drill-down. Nothing when the node is not in the tree. */
+export function TreeNumber({ tree, version, nodeId }: { tree: Tree; version: VersionSkills; nodeId: string }) {
+  const [open, setOpen] = useState(false);
+  const reading = useMemo(() => (tree.nodes.some((n) => n.id === nodeId) ? readCourse(tree, version, nodeId) : null), [tree, version, nodeId]);
+  if (!reading) return null;
+  const text = reading.k === null && reading.u === null ? `Tree: D${one(reading.d)}` : `Tree: K${one(reading.k)} U${one(reading.u)} D${one(reading.d)}`;
+  return (
+    <>
+      <button type="button" className="cb-linkbtn cb-mono" aria-expanded={open} onClick={() => setOpen(!open)}>{text}</button>
+      {open && <div className="cb-small"><ReadingTree tree={tree} readings={[reading]} rootsOpen /></div>}
+    </>
+  );
+}
+
 interface RowCtx {
   tree: Tree; byId: Map<string, TreeNode>; open: Set<string>; setOpen: React.Dispatch<React.SetStateAction<Set<string>>>;
   visible: Set<string>; course: string | null; version: Version | undefined; handFor: string | null;
   setHandFor: (id: string | null) => void; mode: 'capture' | 'cluster'; send: (b: Record<string, unknown>) => Promise<boolean>;
   parentCounts: Map<string, number>;
+  /** Top-level rows start open (the panel) or closed (the department page). */
+  rootsOpen: boolean;
 }
 
 /** Defined at module level so rows keep their form state when the panel re-renders. */
 function Row({ r, depth, c }: { r: NodeReading; depth: number; c: RowCtx }) {
   const { byId, open, setOpen, visible, tree, course, version, handFor, setHandFor, mode, send, parentCounts } = c;
   const n = byId.get(r.nodeId) as TreeNode;
-  const isOpen = open.has(r.nodeId) || (depth === 0 && !open.has(`-${r.nodeId}`));
+  const rootOpen = depth === 0 && c.rootsOpen;
+  const isOpen = open.has(r.nodeId) || (rootOpen && !open.has(`-${r.nodeId}`));
   const kids = r.children.filter((k) => visible.has(k.nodeId));
   const foundational = r.k === null && r.u === null;
   const hand = tree.depths.find((h) => resolveNode(tree, h.nodeId) === r.nodeId && h.courseCode === course && h.instructor === version?.instructor);
-  const toggle = () => setOpen((s) => { const x = new Set(s); const key = depth === 0 ? `-${r.nodeId}` : r.nodeId; const want = depth === 0 ? isOpen : !isOpen; if (want) x.add(key); else x.delete(key); return x; });
+  const toggle = () => setOpen((s) => { const x = new Set(s); const key = rootOpen ? `-${r.nodeId}` : r.nodeId; const want = rootOpen ? isOpen : !isOpen; if (want) x.add(key); else x.delete(key); return x; });
   return (
     <li data-node={r.nodeId} className="flex flex-col gap-1 border-l pl-2" style={{ marginLeft: depth ? 8 : 0 }}>
       <div className="flex flex-wrap items-center gap-2">

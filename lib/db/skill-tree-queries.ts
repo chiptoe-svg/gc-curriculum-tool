@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
-  courseCaptureSnapshots, nodeDepths, skillCompetencyLinks, skillLeaves, skillNodes, skillTreeEvents, stringPoints,
+  careerTargetRequirements, careerTargets, courseCaptureSnapshots, nodeDepths, skillCompetencyLinks, skillLeaves, skillNodes, skillTreeEvents, stringPoints,
   type SkillTreeEventKind,
 } from '@/lib/db/schema';
 import { hashOf } from '@/lib/strings/hash';
@@ -48,6 +48,16 @@ export async function loadTree(exec: Exec = db): Promise<Tree> {
       leavesSignature: d.leavesSignature, setBy: d.setBy,
     })),
   };
+}
+
+/** Career targets and their entry-horizon requirement rows (every weight source; read.ts careerWeights picks one per competency). */
+export async function loadCareerRequirements(exec: Exec = db) {
+  const targets = await exec.select({ id: careerTargets.id, name: careerTargets.name }).from(careerTargets).orderBy(asc(careerTargets.displayOrder));
+  const rows = await exec.select({
+    careerTargetId: careerTargetRequirements.careerTargetId, competencyId: careerTargetRequirements.competencyId,
+    weight: careerTargetRequirements.weight, weightSource: careerTargetRequirements.weightSource,
+  }).from(careerTargetRequirements).where(eq(careerTargetRequirements.horizon, 'entry'));
+  return { targets, rows };
 }
 
 // ---------------------------------------------------------------- plumbing

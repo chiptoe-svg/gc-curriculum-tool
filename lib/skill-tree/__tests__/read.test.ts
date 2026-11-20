@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Depth } from '@/lib/builder/types';
 import type { HandDepth, Tree, TreeLeaf, TreeNode, VersionSkills } from '../types';
-import { counts, leavesSignature, meets, readCareer, readCourse, readProgram, resolveNode } from '../read';
+import { careerWeights, counts, leavesSignature, meets, readCareer, readCourse, readProgram, resolveNode } from '../read';
 
 const node = (id: string, over: Partial<TreeNode> = {}): TreeNode => ({
   id, name: id, description: null, parentId: null, competencyId: null, foundational: false,
@@ -140,5 +140,21 @@ describe('skill tree readings', () => {
     expect(meets({ k: 2, u: 3, d: 3 }, { k: 3, u: null, d: 2 }, false)).toBe(false);
     expect(meets({ k: null, u: null, d: 3 }, { k: 4, u: 4, d: 3 }, true)).toBe(true);
     expect(meets({ k: null, u: null, d: 2 }, { k: 4, u: 4, d: 3 }, true)).toBe(false);
+  });
+
+  it('career weight prefers employer over faculty over onet over ai; null counts as 1', () => {
+    const rows = [
+      { competencyId: 'a', weight: 0.2, weightSource: 'ai' as const },
+      { competencyId: 'a', weight: 0.3, weightSource: 'onet' as const },
+      { competencyId: 'a', weight: 0.4, weightSource: 'faculty' as const },
+      { competencyId: 'a', weight: 0.5, weightSource: 'employer' as const },
+      { competencyId: 'b', weight: 0.9, weightSource: 'onet' as const },
+      { competencyId: 'b', weight: 0.1, weightSource: 'ai' as const },
+      { competencyId: 'c', weight: null, weightSource: 'faculty' as const },
+      { competencyId: 'd', weight: 0.6, weightSource: 'ai' as const },
+      { competencyId: 'd', weight: null, weightSource: 'onet' as const },
+    ];
+    const w = Object.fromEntries(careerWeights(rows).map((x) => [x.nodeId, x.weight]));
+    expect(w).toEqual({ a: 0.5, b: 0.9, c: 1, d: 1 });
   });
 });

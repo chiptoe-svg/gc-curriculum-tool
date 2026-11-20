@@ -5,9 +5,17 @@ import type { HandDepth, NodeReading, Tree, TreeLeaf, TreeNode, VersionSkills } 
 export const counts = (l: TreeLeaf): boolean =>
   l.status === 'confirmed' || (l.status === 'proposed' && l.source !== 'embedding');
 
+/** One id -> node map per Tree object (trees are replaced, never edited in place), so per-leaf loops do not rebuild it. */
+const nodeMaps = new WeakMap<Tree, Map<string, TreeNode>>();
+function nodeMap(tree: Tree): Map<string, TreeNode> {
+  let m = nodeMaps.get(tree);
+  if (!m) { m = new Map(tree.nodes.map((n) => [n.id, n])); nodeMaps.set(tree, m); }
+  return m;
+}
+
 /** Follows merged_into to the survivor (guarded against cycles). */
 export function resolveNode(tree: Tree, id: string): string {
-  const byId = new Map(tree.nodes.map((n) => [n.id, n]));
+  const byId = nodeMap(tree);
   const seen = new Set<string>();
   let cur = id;
   while (!seen.has(cur)) {
@@ -155,7 +163,7 @@ export function readProgram(tree: Tree, versions: VersionSkills[], nodeId: strin
 }
 
 function ancestorFoundational(tree: Tree, nodeId: string): boolean {
-  const byId = new Map(tree.nodes.map((n) => [n.id, n]));
+  const byId = nodeMap(tree);
   const seen = new Set<string>();
   let cur = byId.get(resolveNode(tree, nodeId))?.parentId ?? null;
   while (cur && !seen.has(cur)) {
@@ -183,4 +191,19 @@ export function readCareer(tree: Tree, versions: VersionSkills[], weights: Array
 export function meets(reading: Depth, need: Depth, foundational: boolean): boolean {
   const ok = (key: 'k' | 'u' | 'd') => need[key] === null || (reading[key] ?? 0) >= need[key]!;
   return ok('d') && (foundational || (ok('k') && ok('u')));
+}
+
+const SOURCE_RANK: Record<string, number> = { employer: 0, faculty: 1, onet: 2, ai: 3 };
+
+/** One weight per competency from career_target_requirements rows: employer, then faculty, then onet, then ai; a null weight counts as 1. */
+export function careerWeights(
+  rows: Array<{ competencyId: string; weight: number | null; weightSource: string }>,
+): Array<{ nodeId: string; weight: number }> {
+  const best = new Map<string, { rank: number; weight: number }>();
+  for (const r of rows) {
+    const rank = SOURCE_RANK[r.weightSource] ?? 99;
+    const cur = best.get(r.competencyId);
+    if (!cur || rank < cur.rank) best.set(r.competencyId, { rank, weight: r.weight ?? 1 });
+  }
+  return [...best].map(([nodeId, b]) => ({ nodeId, weight: b.weight }));
 }
