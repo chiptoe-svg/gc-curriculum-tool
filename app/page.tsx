@@ -7,6 +7,7 @@ import { CATEGORY_LABELS } from '@/lib/db/course-category-seed';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 import { formatCourseLabel, parseCourseCode } from '@/lib/courses/parse-course-code';
 import { isProgramVisible } from '@/lib/courses/program-visibility';
+import './home.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,19 +79,17 @@ export default async function HomePage() {
     ? `/program?slug=${encodeURIComponent(slug)}`
     : null;
 
+  const navBtn = 'home-btn';
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
+      <header className="border-b border-[#E4E2E8] bg-white">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-end justify-between gap-4 px-4 py-5 sm:px-6">
           <div>
-            <p className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Clemson · Graphic Communications
-            </p>
-            <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">
+            <p className="home-eyebrow">Clemson · Graphic Communications</p>
+            <h1 className="home-title mt-1 text-[28px] leading-tight">
               {programHref ? (
                 <a
                   href={programHref}
-                  className="hover:underline"
                   title="Program coverage map: every course against the career targets (requires login)"
                 >
                   Curriculum
@@ -98,10 +97,10 @@ export default async function HomePage() {
               ) : 'Curriculum'}
             </h1>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <CaptureLink
               path="/curriculum/howto"
-              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+              className={navBtn}
               title="Step-by-step: how to capture a course, with screenshots (requires login)"
             >
               How to capture a course
@@ -109,7 +108,7 @@ export default async function HomePage() {
             {slug && (
               <a
                 href={`/build?slug=${encodeURIComponent(slug)}`}
-                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                className={navBtn}
                 title="Curriculum builder: stack courses across the three acts and see how they build toward a career path (requires login)"
               >
                 Curriculum builder
@@ -118,7 +117,7 @@ export default async function HomePage() {
             {askHref && (
               <a
                 href={askHref}
-                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                className={navBtn}
                 title="Ask the curriculum adviser — plain-language Q&A over the curriculum wiki (requires login)"
               >
                 💬 Ask Curriculum Adviser
@@ -128,9 +127,9 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8">
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <p className="max-w-3xl text-sm text-muted-foreground">
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+        <div className="mb-8">
+          <p className="home-lede">
             A living map of the Graphic Communications curriculum. The tool distills the
             essence of each course into a course profile snapshot: the knowledge, understanding,
             and skills students should walk away with, scored at depth from evidence rather
@@ -142,10 +141,10 @@ export default async function HomePage() {
         <div className="space-y-10">
           {groups.map(({ category, rows: catRows }) => (
             <section key={category}>
-              <h2 className="mb-3 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              <h2 className="home-label mb-3">
                 {CATEGORY_LABELS[category]}
               </h2>
-              <ul className="divide-y border-y">
+              <ul className="home-list">
                 {catRows.map((row) => {
                   const editHref = slug
                     ? `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`
@@ -160,45 +159,45 @@ export default async function HomePage() {
                   return (
                     <li
                       key={row.code}
-                      className="grid grid-cols-[7rem_minmax(0,1fr)_auto_8rem_auto] items-baseline gap-x-4 py-3"
+                      className="home-row"
                     >
                       <Link
                         href={`/view/${encodeURIComponent(row.code)}`}
-                        className="font-mono-plex text-sm text-foreground hover:text-muted-foreground"
+                        className="home-code"
                       >
                         {formatCourseLabel(displayCode, pairedByCode.get(row.code) ?? [])}
                       </Link>
                       <Link
                         href={`/view/${encodeURIComponent(row.code)}`}
-                        className="flex items-baseline gap-1.5 font-display text-base text-foreground hover:text-muted-foreground"
+                        className="home-name flex items-baseline gap-1.5"
                       >
                         <span>{row.title ?? '—'}</span>
                         {row.buildsToCareer && (
                           <span title="On the current core curriculum path" className="inline-flex">
                             <CurriculumPathIcon
-                              className="h-3.5 w-3.5 shrink-0 translate-y-px text-emerald-600/70 dark:text-emerald-400/70"
+                              className="home-path h-3.5 w-3.5 shrink-0 translate-y-px"
                               aria-label="On the current core curriculum path"
                             />
                           </span>
                         )}
                       </Link>
                       <StatusPill status={row.status} />
-                      <span className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                      <span className="home-meta">
                         {row.lastCapturedAt
                           ? `${formatDate(row.lastCapturedAt)}${row.lastCapturedBy ? ` · ${row.lastCapturedBy}` : ''}`
                           : ''}
                       </span>
-                      <span className="flex items-baseline gap-3 justify-end">
+                      <span className="home-actions flex items-baseline justify-end gap-4">
                         <Link
                           href={`/view/${encodeURIComponent(row.code)}`}
-                          className="text-sm text-muted-foreground hover:text-foreground"
+                          className="home-link"
                         >
                           View →
                         </Link>
                         {editHref && (
                           <CaptureLink
                             path={editHref}
-                            className="text-sm text-muted-foreground hover:text-foreground"
+                            className="home-link"
                             title="Faculty edit (requires login)"
                           >
                             Edit ↗
@@ -213,8 +212,8 @@ export default async function HomePage() {
           ))}
         </div>
 
-        <p className="mt-10 flex items-center gap-2 border-t pt-4 text-xs text-muted-foreground">
-          <CurriculumPathIcon className="inline h-3.5 w-3.5 shrink-0 text-emerald-600/70 dark:text-emerald-400/70" aria-hidden />
+        <p className="mt-10 flex items-center gap-2 border-t border-[#DCD9E2] pt-4 text-[13px] text-muted-foreground">
+          <CurriculumPathIcon className="home-path inline h-3.5 w-3.5 shrink-0" aria-hidden />
           <span>marks the current core curriculum path: the courses that build toward our career outcomes.</span>
         </p>
       </main>
@@ -223,22 +222,16 @@ export default async function HomePage() {
 }
 
 const STATUS_CONFIG: Record<CaptureStatus, { label: string; className: string }> = {
-  captured:     { label: 'Captured',    className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
-  reviewed:     { label: 'Reviewed',    className: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300' },
-  'ai-drafted': { label: 'In progress',  className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
-  'in-audit':   { label: 'In interview', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
-  'not-started':{ label: 'Not started', className: 'bg-stone-100 text-stone-600 dark:bg-stone-800/40 dark:text-stone-400' },
+  captured:     { label: 'Captured',     className: 'home-cue-done' },
+  reviewed:     { label: 'Reviewed',     className: 'home-cue-read' },
+  'ai-drafted': { label: 'In progress',  className: 'home-cue-draft' },
+  'in-audit':   { label: 'In interview', className: 'home-cue-input' },
+  'not-started':{ label: 'Not started',  className: 'home-cue-none' },
 };
 
 function StatusPill({ status }: { status: CaptureStatus }) {
   const { label, className } = STATUS_CONFIG[status];
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.18em] font-medium ${className}`}
-    >
-      {label}
-    </span>
-  );
+  return <span className={`home-cue ${className}`}>{label}</span>;
 }
 
 function formatDate(d: Date | string): string {
