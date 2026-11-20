@@ -26,11 +26,11 @@ type PillConfig = {
 };
 
 const STATUS_CONFIG: Record<CaptureStatus, PillConfig> = {
-  captured:     { label: 'Captured',    className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
-  reviewed:     { label: 'Reviewed',    className: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300' },
-  'ai-drafted': { label: 'AI drafted',  className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
-  'in-audit':   { label: 'In audit',    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
-  'not-started':{ label: 'Not started', className: 'bg-stone-100 text-stone-600 dark:bg-stone-800/40 dark:text-stone-400' },
+  captured:     { label: 'Captured',    className: 'cs-cue-done' },
+  reviewed:     { label: 'Reviewed',    className: 'cs-cue-read' },
+  'ai-drafted': { label: 'AI drafted',  className: 'cs-cue-draft' },
+  'in-audit':   { label: 'In audit',    className: 'cs-cue-input' },
+  'not-started':{ label: 'Not started', className: 'cs-cue-none' },
 };
 
 // ─── Data-state badge config ───────────────────────────────────────────────
@@ -41,26 +41,16 @@ type DataStateBadgeConfig = {
 };
 
 const DATA_STATE_CONFIG: Record<CourseDataState, DataStateBadgeConfig> = {
-  measured: {
-    label: 'Measured',
-    className: 'bg-violet-100 text-violet-800 border border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700',
-  },
-  intended: {
-    // Reserved for rough-pass increment — amber/syllabus style
-    label: 'Syllabus',
-    className: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700',
-  },
-  'no-data': {
-    label: 'No data',
-    className: 'bg-transparent text-muted-foreground/50 border border-border/50',
-  },
+  measured: { label: 'Measured', className: 'cs-cue-read' },
+  intended: { label: 'Syllabus', className: 'cs-cue-draft' },
+  'no-data': { label: 'No data', className: 'cs-cue-none' },
 };
 
 function DataStateBadge({ state }: { state: CourseDataState }) {
   const { label, className } = DATA_STATE_CONFIG[state];
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.18em] font-medium ${className}`}
+      className={`cs-cue ${className}`}
     >
       {label}
     </span>
@@ -96,7 +86,7 @@ function StatusPill({ status }: { status: CaptureStatus }) {
   const { label, className } = STATUS_CONFIG[status];
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.18em] font-medium ${className}`}
+      className={`cs-cue ${className}`}
     >
       {label}
     </span>
@@ -116,21 +106,18 @@ function StatusCounters({ rows }: { rows: CourseStatusRow[] }) {
   for (const r of rows) counts[r.status]++;
 
   const parts: Array<{ label: string; n: number; color: string }> = [
-    { label: 'captured',    n: counts['captured'],     color: 'text-emerald-700 dark:text-emerald-400' },
-    { label: 'reviewed',    n: counts['reviewed'],     color: 'text-teal-700 dark:text-teal-400' },
-    { label: 'drafted',     n: counts['ai-drafted'],   color: 'text-amber-700 dark:text-amber-400' },
-    { label: 'in audit',    n: counts['in-audit'],     color: 'text-blue-700 dark:text-blue-400' },
-    { label: 'not started', n: counts['not-started'],  color: 'text-stone-500 dark:text-stone-400' },
+    { label: 'captured',    n: counts['captured'],     color: 'cs-cue-done' },
+    { label: 'reviewed',    n: counts['reviewed'],     color: 'cs-cue-read' },
+    { label: 'drafted',     n: counts['ai-drafted'],   color: 'cs-cue-draft' },
+    { label: 'in audit',    n: counts['in-audit'],     color: 'cs-cue-input' },
+    { label: 'not started', n: counts['not-started'],  color: 'cs-cue-none' },
   ];
 
   return (
-    <div className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-1">
-      {parts.map((p, i) => (
-        <span key={p.label} className="flex items-center gap-1">
-          {i > 0 && <span className="text-muted-foreground/40 select-none">·</span>}
-          <span className={`font-body-sans text-xs uppercase tracking-[0.18em] font-medium ${p.color}`}>
-            <span className="tabular-nums">{p.n}</span> {p.label}
-          </span>
+    <div className="cs-counters">
+      {parts.map((p) => (
+        <span key={p.label} className={`cs-cue ${p.color}`}>
+          <span className="cs-cue-count">{p.n}</span> {p.label}
         </span>
       ))}
     </div>
@@ -142,7 +129,6 @@ function StatusCounters({ rows }: { rows: CourseStatusRow[] }) {
 export function CourseRow({
   row,
   slug,
-  index,
   dataState,
   pairedCodes,
   versionCount = 0,
@@ -150,7 +136,7 @@ export function CourseRow({
 }: {
   row: CourseStatusRow;
   slug: string;
-  index: number;
+  index?: number;
   dataState?: CourseDataState;
   pairedCodes: Array<{ pairedCode: string }>;
   versionCount?: number;
@@ -162,97 +148,88 @@ export function CourseRow({
   const historyHref = `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}&panel=history`;
   // Task 8 will build the course detail page — link target is /courses/[code]
   const prereqHref = `/courses/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
-  const delay = Math.min(index * 30, 600); // cap stagger at 600ms
   const isStarted = row.status !== 'not-started';
   const primaryLabel = isStarted ? 'Edit Course' : 'Capture Course';
 
   return (
     <div
       data-testid={`course-row-${row.code}`}
-      className="group relative flex items-center gap-4 rounded-md transition-colors hover:bg-muted/40 animate-in fade-in slide-in-from-bottom-1"
-      style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
+      className="cs-course"
     >
       {/* Main row link — capture is the primary action */}
-      <Link href={captureHref} className="flex flex-1 items-center gap-4 px-3 py-3">
+      <Link href={captureHref} className="cs-course-main">
         {/* Course code */}
-        <span className="w-28 shrink-0 font-mono-plex text-xs uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="cs-course-code">
           {formatCourseLabel(row.code, pairedCodes)}
         </span>
 
         {/* Title */}
-        <span className="flex-1 font-display text-[1.0625rem] font-medium leading-snug tracking-tight">
+        <span className="cs-course-title">
           {row.title}
         </span>
 
         {/* Data-state badge (prereq analysis context) */}
         {dataState && (
-          <span className="shrink-0">
+          <span className="cs-slot-data">
             <DataStateBadge state={dataState} />
           </span>
         )}
 
         {/* Status pill */}
-        <span className="shrink-0">
+        <span className="cs-slot-status">
           <StatusPill status={row.status} />
         </span>
 
         {/* Last captured date */}
-        <span className="w-32 shrink-0 text-right font-mono-plex text-xs text-muted-foreground/70">
+        <span className="cs-course-date">
           {row.lastCapturedAt ? formatDate(row.lastCapturedAt) : ''}
         </span>
 
         {/* State-dependent primary action label + arrow */}
-        <span className="shrink-0 text-xs text-muted-foreground/70">{primaryLabel}</span>
-        <span className="shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5">
-          →
-        </span>
+        <span className="cs-course-act">{primaryLabel} →</span>
       </Link>
 
-      {/* View Course — only when course has been started */}
-      {isStarted && (
+      <div className="cs-course-side">
+        {/* View Course — only when course has been started */}
+        {isStarted && (
+          <Link href={viewHref} className="cs-link">
+            View Course
+          </Link>
+        )}
+
+        {/* What-ifs: the course's list of sketched changes, with a count when there are any */}
         <Link
-          href={viewHref}
-          className="shrink-0 text-xs text-muted-foreground/70 transition-colors hover:text-foreground"
+          href={whatIfsHref}
+          className="cs-link"
+          title={WHAT_IF_COPY.linkTitle}
         >
-          View Course
+          {WHAT_IF_COPY.linkLabel(whatIfCount)}
         </Link>
-      )}
 
-      {/* What-ifs: the course's list of sketched changes, with a count when there are any */}
-      <Link
-        href={whatIfsHref}
-        className="shrink-0 text-xs text-muted-foreground/70 transition-colors hover:text-foreground"
-        title={WHAT_IF_COPY.linkTitle}
-      >
-        {WHAT_IF_COPY.linkLabel(whatIfCount)}
-      </Link>
+        {/* N versions — only when snapshots exist */}
+        {versionCount > 0 && (
+          <Link href={historyHref} className="cs-link cs-link-quiet">
+            {versionCount} versions
+          </Link>
+        )}
 
-      {/* N versions — only when snapshots exist */}
-      {versionCount > 0 && (
+        {/* Prereq view link — demoted, unchanged */}
         <Link
-          href={historyHref}
-          className="shrink-0 text-xs text-muted-foreground/60 transition-colors hover:text-foreground"
+          href={prereqHref}
+          className="cs-link cs-link-quiet"
+          title="View prerequisite edges for this course"
         >
-          {versionCount} versions
+          Prereqs
         </Link>
-      )}
 
-      {/* Prereq view link — demoted, unchanged */}
-      <Link
-        href={prereqHref}
-        className="shrink-0 text-xs text-muted-foreground/50 transition-colors hover:text-foreground"
-        title="View prerequisite edges for this course"
-      >
-        Prereqs
-      </Link>
-
-      <CourseClassControls
-        code={row.code}
-        slug={slug}
-        category={row.category}
-        buildsToCareer={row.buildsToCareer}
-        catalogUrl={row.catalogUrl}
-      />
+        <CourseClassControls
+          code={row.code}
+          slug={slug}
+          category={row.category}
+          buildsToCareer={row.buildsToCareer}
+          catalogUrl={row.catalogUrl}
+        />
+      </div>
     </div>
   );
 }
@@ -279,26 +256,25 @@ function LevelGroup({
   whatIfCountByCode?: Map<string, number>;
 }) {
   return (
-    <div className="mb-6">
+    <div className="cs-group">
       {/* Group header */}
-      <div className="mb-1 flex items-center gap-3">
-        <span className="font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/60 font-medium select-none">
+      <div className="cs-group-head">
+        <span className="cs-label">
           {levelLabel(level)}
         </span>
-        <span className="flex-1 border-t border-border/40" />
-        <span className="font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/40 tabular-nums select-none">
+        <span className="cs-group-rule" />
+        <span className="cs-group-count">
           {rows.length}
         </span>
       </div>
 
       {/* Rows */}
-      <div className="divide-y divide-border/20">
-        {rows.map((row, i) => (
+      <div className="cs-list">
+        {rows.map((row) => (
           <CourseRow
             key={row.code}
             row={row}
             slug={slug}
-            index={startIndex + i}
             dataState={dataStateByCode.get(row.code)}
             pairedCodes={pairedByCode[row.code] ?? []}
             versionCount={snapshotCountByCode.get(row.code) ?? 0}
@@ -331,25 +307,15 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCou
       {/* Status counters — reflect the GC roster (the segregated sections are separate) */}
       <StatusCounters rows={partition.gc} />
 
-      {/* Column header */}
-      <div className="mb-2 flex items-center gap-4 px-3">
-        <span className="w-28 shrink-0 font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/50">
-          Code
-        </span>
-        <span className="flex-1 font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/50">
-          Title
-        </span>
-        <span className="shrink-0 font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/50">
-          Data
-        </span>
-        <span className="shrink-0 font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/50">
-          Status
-        </span>
-        <span className="w-32 shrink-0 text-right font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/50">
-          Last captured
-        </span>
-        {/* prereqs + ask + arrow spacer */}
-        <span className="shrink-0 w-4" />
+      {/* Column header (wide screens only) */}
+      <div className="cs-colhead" aria-hidden="true">
+        <span className="cs-label cs-hc-code">Code</span>
+        <span className="cs-label cs-hc-title">Title</span>
+        <span className="cs-label cs-hc-data">Data</span>
+        <span className="cs-label cs-hc-status">Status</span>
+        <span className="cs-label cs-hc-date">Last captured</span>
+        <span className="cs-label cs-hc-act" />
+        <span className="cs-label cs-hc-side" />
       </div>
 
       {/* Groups */}
@@ -374,49 +340,53 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCou
       {/* Segregated sections — shown only when non-empty (populated via the
           external-access / proposed-course flows; both are separate plans). */}
       {partition.proposed.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-2 px-3 font-body-sans text-xs uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">
-            Proposed · test the waters
-          </h2>
-          {partition.proposed.map((row, i) => (
+        <section className="cs-group">
+          <div className="cs-group-head cs-group-head--proposed">
+            <h2 className="cs-label">Proposed · test the waters</h2>
+            <span className="cs-group-rule" />
+          </div>
+          <div className="cs-list">
+          {partition.proposed.map((row) => (
             <CourseRow
               key={row.code}
               row={row}
               slug={slug}
-              index={globalIndex + i}
               dataState={dataStateByCode.get(row.code)}
               pairedCodes={pairedByCode[row.code] ?? []}
               versionCount={snapshotCountByCode.get(row.code) ?? 0}
             whatIfCount={whatIfCountByCode?.get(row.code) ?? 0}
             />
           ))}
+          </div>
         </section>
       )}
       {partition.external.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-2 px-3 font-body-sans text-xs uppercase tracking-[0.18em] text-blue-700 dark:text-blue-400">
-            External / sandbox
-          </h2>
-          {partition.external.map((row, i) => (
+        <section className="cs-group">
+          <div className="cs-group-head">
+            <h2 className="cs-label">External / sandbox</h2>
+            <span className="cs-group-rule" />
+          </div>
+          <div className="cs-list">
+          {partition.external.map((row) => (
             <CourseRow
               key={row.code}
               row={row}
               slug={slug}
-              index={globalIndex + partition.proposed.length + i}
               dataState={dataStateByCode.get(row.code)}
               pairedCodes={pairedByCode[row.code] ?? []}
               versionCount={snapshotCountByCode.get(row.code) ?? 0}
             whatIfCount={whatIfCountByCode?.get(row.code) ?? 0}
             />
           ))}
+          </div>
         </section>
       )}
 
       {/* Empty state */}
       {rows.length === 0 && (
-        <div className="py-16 text-center text-muted-foreground">
-          <p className="font-body-sans text-sm">No courses in the catalog yet.</p>
-          <p className="mt-2 font-body-sans text-xs text-muted-foreground/60">
+        <div className="cs-center">
+          <p className="cs-body">No courses in the catalog yet.</p>
+          <p className="cs-meta mt-2">
             Use &ldquo;Preload courses&rdquo; above to add your roster.
           </p>
         </div>

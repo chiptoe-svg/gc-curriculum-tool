@@ -7,6 +7,7 @@ vi.mock('@/app/FeedbackLink', () => ({ FeedbackLink: () => null }));
 vi.mock('@/components/strings/CourseStrings', () => ({ CourseStrings: () => null }));
 vi.mock('@/components/strings/strings.css', () => ({}));
 vi.mock('@/app/build/build.css', () => ({}));
+vi.mock('@/app/courses/courses.css', () => ({}));
 vi.mock('@/app/courses/[code]/PrereqEdgesClient', () => ({ PrereqEdgesClient: () => null }));
 vi.mock('@/lib/db/courses-queries', () => ({
   getCourseByCode: async () => ({ code: 'GC 3460', title: 'Digital Imaging', prerequisites: null }),

@@ -80,21 +80,20 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
     });
   }
 
-  const inputClass =
-    'w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring';
+  const inputClass = 'cs-input';
 
   if (done) {
     const viewHref = `/view/${encodeURIComponent(done.code)}`;
     return (
-      <div className="rounded-lg border border-border bg-card p-6 shadow-sm space-y-4">
-        <p className="text-sm font-medium">Course added: {done.code}</p>
-        <p className="text-sm text-muted-foreground">
+      <div className="cs-card cs-card-pad cs-stack">
+        <p className="cs-h2">Course added: {done.code}</p>
+        <p className="cs-meta">
           The course is in the catalog. A faculty editor will capture its profile.
         </p>
-        <div className="flex items-center gap-4">
+        <div className="cs-row">
           <a
             href={viewHref}
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+            className="cs-btn"
           >
             View course →
           </a>
@@ -111,7 +110,7 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
               setPairedRole('lab');
               setError(null);
             }}
-            className="text-sm text-muted-foreground underline-offset-2 hover:underline"
+            className="cs-link cs-link-quiet"
           >
             Add another
           </button>
@@ -121,18 +120,18 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-      <p className="mb-6 text-sm text-muted-foreground">
+    <div className="cs-card cs-card-pad">
+      <p className="cs-meta mb-6">
         {canCapture
           ? 'Add a course to the roster, then go straight into CourseCapture Step 1.'
           : 'Add a course to the roster. It becomes available for a faculty editor to capture.'}
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex gap-3">
-          <div className="w-24">
-            <label className="mb-1 block text-sm font-medium" htmlFor="course-prefix">
-              Prefix <span className="text-destructive">*</span>
+      <form onSubmit={handleSubmit} className="cs-stack">
+        <div className="cs-row" style={{ alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+          <div className="cs-field" style={{ width: '6rem', flex: 'none' }}>
+            <label htmlFor="course-prefix">
+              Prefix <span style={{ color: '#9B2C2C' }}>*</span>
             </label>
             <input
               id="course-prefix"
@@ -145,9 +144,9 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
             />
           </div>
 
-          <div className="flex-1">
-            <label className="mb-1 block text-sm font-medium" htmlFor="course-number">
-              Course number <span className="text-destructive">*</span>
+          <div className="cs-field" style={{ flex: 1 }}>
+            <label htmlFor="course-number">
+              Course number <span style={{ color: '#9B2C2C' }}>*</span>
             </label>
             <input
               id="course-number"
@@ -161,9 +160,9 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
           </div>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="course-title">
-            Title <span className="text-destructive">*</span>
+        <div className="cs-field">
+          <label htmlFor="course-title">
+            Title <span style={{ color: '#9B2C2C' }}>*</span>
           </label>
           <input
             id="course-title"
@@ -176,9 +175,9 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
           />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="catalog-url">
-            Catalog URL <span className="text-muted-foreground font-normal">(optional)</span>
+        <div className="cs-field">
+          <label htmlFor="catalog-url">
+            Catalog URL <small>(optional)</small>
           </label>
           <input
             id="catalog-url"
@@ -196,7 +195,8 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
           <button
             type="button"
             onClick={() => setPairedOpen(true)}
-            className="text-sm text-muted-foreground underline-offset-2 hover:underline"
+            className="cs-link cs-link-quiet"
+            style={{ alignSelf: 'flex-start', minHeight: 36 }}
             disabled={pending}
           >
             + Add a paired course (e.g. lab)
@@ -204,11 +204,11 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
         )}
 
         {pairedOpen && (
-          <div className="rounded-md border border-border p-4 space-y-3">
-            <p className="text-sm font-medium">Paired course</p>
+          <div className="cs-dashed">
+            <p className="cs-flabel" style={{ fontWeight: 600, fontSize: 14 }}>Paired course</p>
 
-            <div>
-              <label className="mb-1 block text-sm font-medium" htmlFor="paired-number">
+            <div className="cs-field">
+              <label htmlFor="paired-number">
                 Paired number
               </label>
               <input
@@ -220,13 +220,13 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
                 className={inputClass}
                 disabled={pending}
               />
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="cs-meta" style={{ fontSize: 13 }}>
                 Uses the same prefix ({prefix.trim() || 'GC'}).
               </p>
             </div>
 
-            <div>
-              <label className="mb-1 block text-sm font-medium" htmlFor="paired-role">
+            <div className="cs-field">
+              <label htmlFor="paired-role">
                 Paired role
               </label>
               <select
@@ -245,7 +245,8 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
             <button
               type="button"
               onClick={() => { setPairedOpen(false); setPairedNumber(''); setPairedRole('lab'); }}
-              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              className="cs-link cs-link-quiet"
+              style={{ alignSelf: 'flex-start' }}
               disabled={pending}
             >
               Remove paired course
@@ -254,7 +255,7 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
         )}
 
         {error && (
-          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p className="cs-alert">
             {error}
           </p>
         )}
@@ -262,7 +263,7 @@ export function NewCourseForm({ slug, canCapture = true }: Props) {
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
+          className="cs-btn cs-btn-primary cs-btn-block"
         >
           {pending ? 'Adding…' : canCapture ? 'Add course & start capture' : 'Add course'}
         </button>
