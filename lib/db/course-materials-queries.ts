@@ -1,7 +1,7 @@
 import { eq, and, asc, isNull, ne, sql } from 'drizzle-orm';
 import { tierChangeNeedsReread } from '@/lib/capture/ingest-selection';
 import { db } from '@/lib/db/client';
-import { courseMaterials } from '@/lib/db/schema';
+import { courseMaterials, captureSessions } from '@/lib/db/schema';
 import { scrubForRecord } from '@/lib/privacy/scrub';
 import { isSyllabusFileName } from '@/lib/capture/materials-policy';
 import type { MaterialRedactions } from '@/lib/privacy/types';
@@ -48,6 +48,7 @@ function mapMaterialRow(row: Record<string, unknown>): CourseMaterialRow {
     retiredAt: row['retired_at'] as Date | null,
     ingestProvider: row['ingest_provider'] as string | null,
     isSyllabus: (row['is_syllabus'] as boolean | null | undefined) ?? false,
+    addedInSession: (row['added_in_session'] as string | null | undefined) ?? null,
   };
 }
 export type ExtractionStatus = 'pending' | 'ok' | 'low_text' | 'failed';
@@ -63,6 +64,8 @@ export interface InsertMaterialInput {
   sourceCode?: string | null;
   /** Explicit syllabus flag (Syllabus-box uploads). Omitted ⇒ derived by isSyllabusInsert. */
   isSyllabus?: boolean;
+  /** Interview session that added this file (migration 0075); omitted/null otherwise. */
+  addedInSession?: string | null;
 }
 
 /** The syllabus flag a new row gets: an explicit flag wins; otherwise only the
@@ -78,6 +81,16 @@ export async function insertMaterial(input: InsertMaterialInput): Promise<Course
     .returning();
   if (!row) throw new Error('insertMaterial: no row returned');
   return row;
+}
+
+/** The course an interview session belongs to, or null when there is no such session. */
+export async function getCaptureSessionCourse(sessionId: string): Promise<string | null> {
+  const [row] = await db
+    .select({ courseCode: captureSessions.courseCode })
+    .from(captureSessions)
+    .where(eq(captureSessions.sessionId, sessionId))
+    .limit(1);
+  return row?.courseCode ?? null;
 }
 
 /** Set-aside reason this file writes on a syllabus a newer one replaced. */
@@ -532,7 +545,8 @@ export async function setMaterialRetired(id: string, retired: boolean): Promise<
 }
 
 /**
- * Atomically claim the oldest queued material for the background ingest
+ * Atomically claim the oldest queued material (a file added in the interview
+ * first: the instructor is waiting on it mid-conversation) for the background ingest
  * worker, flipping it to 'indexing' in the same statement so two workers (or
  * loop ticks) never grab the same row. FOR UPDATE SKIP LOCKED makes concurrent
  * claims pick distinct rows. Returns null when nothing is queued.
@@ -543,7 +557,7 @@ export async function claimNextQueued(): Promise<CourseMaterialRow | null> {
     WHERE id = (
       SELECT id FROM course_materials
       WHERE indexing_status = 'queued'
-      ORDER BY uploaded_at
+      ORDER BY (added_in_session IS NULL), uploaded_at
       LIMIT 1
       FOR UPDATE SKIP LOCKED
     )
@@ -551,6 +565,23 @@ export async function claimNextQueued(): Promise<CourseMaterialRow | null> {
   `);
   const row = (res.rows as Record<string, unknown>[])[0];
   return row ? mapMaterialRow(row) : null;
+}
+
+/** One material's status, scoped to the course (null for another course's id). */
+export async function getMaterialStatusInCourse(
+  courseCode: string,
+  id: string,
+): Promise<{ id: string; indexingStatus: string; extractionStatus: string } | null> {
+  const rows = await db
+    .select({
+      id: courseMaterials.id,
+      indexingStatus: courseMaterials.indexingStatus,
+      extractionStatus: courseMaterials.extractionStatus,
+    })
+    .from(courseMaterials)
+    .where(and(eq(courseMaterials.id, id), eq(courseMaterials.courseCode, courseCode)))
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 /**

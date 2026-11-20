@@ -9,12 +9,15 @@ import { UPLOADABLE_KINDS } from '@/lib/courses/upload-types';
 const prompt = readFileSync(path.join(process.cwd(), 'lib/ai/prompts/capture-chat-agent.md'), 'utf8');
 
 describe('capture-chat-agent prompt: getting a document from the instructor', () => {
-  it('never asks for a file in the chat', () => {
-    expect(prompt).toContain('Never ask the instructor to upload or attach a file in the chat.');
+  it('no longer forbids asking for a file and names the button', () => {
+    expect(prompt).not.toContain('Never ask the instructor to upload');
+    expect(prompt).not.toContain('cannot receive a file');
+    expect(prompt).toContain('"Add a file" button beside Voice');
+    expect(prompt).toContain('[Instructor added a file:');
+    expect(prompt).toContain('search it before answering');
   });
-  it('offers pasting and adding the file under Materials', () => {
-    expect(prompt).toContain('**Paste it into the reply box**');
-    expect(prompt).toContain('**Add the file under Materials**');
+  it('still offers pasting', () => {
+    expect(prompt).toContain('the key part pasted into the reply box');
   });
   it('names the kinds the pickers accept', () => {
     expect(prompt.replace(/\s+/g, ' ')).toContain(`(${UPLOADABLE_KINDS})`);
