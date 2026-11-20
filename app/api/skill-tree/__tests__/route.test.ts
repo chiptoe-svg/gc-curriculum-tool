@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => {
   const tree = { nodes: [], leaves: [] as unknown[], depths: [] };
-  const ok = { ok: true, tree, notes: ['n'] };
+  const ok = { ok: true, tree };
   return {
     tree, ok,
     auth: vi.fn(),
@@ -78,7 +78,7 @@ describe('/api/skill-tree', () => {
     const res = await post({ action: 'place', courseCode: 'GC 1', skillRef: 'a', statement: 'FORGED', nodeId: 'n1', authorName: 'Bo' });
     expect(res.status).toBe(200);
     expect(m.placeLeaf).toHaveBeenCalledWith({ courseCode: 'GC 1', skillRef: 'a', statement: 'a', nodeId: 'n1', by: 'Bo' });
-    expect(await res.json()).toEqual({ tree: m.tree, notes: ['n'] });
+    expect(await res.json()).toEqual({ tree: m.tree });
   });
 
   it('POST place and retarget refuse a skill not in the capture', async () => {
