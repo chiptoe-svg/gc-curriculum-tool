@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { AddFileButton, fileMarkers, type AttachedFile } from '@/app/capture/[code]/AddFileButton';
 
 function Harness({ sessionId = 's1', onFiles }: { sessionId?: string | null; onFiles?: (f: AttachedFile[]) => void }) {
@@ -93,6 +93,84 @@ describe('AddFileButton', () => {
   it('disabled without a session', () => {
     render(<Harness sessionId={null} />);
     expect((screen.getByRole('button', { name: /add a file/i }) as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+describe('AddFileButton duplicates and worker outcomes', () => {
+  beforeEach(() => { vi.restoreAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
+
+  it('a duplicate that is not ready yet is read (polled) and removing it never deletes the existing material', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+      if (init?.method === 'POST') return json({ id: 'old1', duplicateOf: 'old1', indexingStatus: 'queued' });
+      if (init?.method === 'DELETE') return json({ deleted: true });
+      return json({ id: 'old1', indexingStatus: 'ready', extractionStatus: 'ready' });
+    });
+    render(<Harness />);
+    pick();
+    await waitFor(() => screen.getByText('Reading your file…'));
+    expect(screen.queryByText('Already in your materials')).toBeNull();
+    await waitFor(() => screen.getByText('Ready'), { timeout: 8000 });
+    fireEvent.click(screen.getByLabelText('Remove Zine.pdf'));
+    await waitFor(() => expect(screen.queryByText('Zine.pdf')).toBeNull());
+    expect(fetchMock.mock.calls.some(c => c[1]?.method === 'DELETE')).toBe(false);
+  }, 12000);
+
+  it('a set-aside duplicate says so and sends the could-not-be-read marker', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ id: 'old1', duplicateOf: 'old1', indexingStatus: 'pending', setAside: true }));
+    let last: AttachedFile[] = [];
+    render(<Harness onFiles={f => { last = f; }} />);
+    pick();
+    await waitFor(() => screen.getByText('Set aside under Materials — not read'));
+    expect(fileMarkers(last)[0]).toContain('it could not be read');
+  });
+
+  it('the same existing file added twice shows one chip', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => json({ id: 'old1', duplicateOf: 'old1', indexingStatus: 'ready' }));
+    let last: AttachedFile[] = [];
+    render(<Harness onFiles={f => { last = f; }} />);
+    pick();
+    await waitFor(() => screen.getByText('Already in your materials'));
+    pick();
+    await waitFor(() => expect(last.some(f => f.id.startsWith('tmp-'))).toBe(true));
+    await waitFor(() => expect(last.filter(f => f.id.startsWith('tmp-'))).toHaveLength(0));
+    expect(last.filter(f => f.id === 'old1')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Remove Zine.pdf')).toHaveLength(1);
+  });
+
+  it('a worker "skipped" stops the polling and says the file was set aside', async () => {
+    vi.useFakeTimers();
+    let polls = 0;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+      if (init?.method === 'POST') return json({ id: 'm1', indexingStatus: 'queued', duplicateOf: null });
+      polls++;
+      return json({ id: 'm1', indexingStatus: 'skipped', extractionStatus: 'low_text' });
+    });
+    let last: AttachedFile[] = [];
+    render(<Harness onFiles={f => { last = f; }} />);
+    pick();
+    await act(async () => { await vi.advanceTimersByTimeAsync(10); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(3100); });
+    expect(screen.getByText('Set aside — not read')).toBeTruthy();
+    expect(fileMarkers(last)[0]).toContain('it could not be read');
+    const seen = polls;
+    await act(async () => { await vi.advanceTimersByTimeAsync(12000); });
+    expect(polls).toBe(seen);
+  });
+
+  it('gives up after 120 seconds with the could-not-read chip', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+      if (init?.method === 'POST') return json({ id: 'm1', indexingStatus: 'queued', duplicateOf: null });
+      return json({ id: 'm1', indexingStatus: 'indexing', extractionStatus: 'ok' });
+    });
+    render(<Harness />);
+    pick();
+    await act(async () => { await vi.advanceTimersByTimeAsync(10); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(110_000); });
+    expect(screen.getByText('Reading your file…')).toBeTruthy();
+    await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
+    expect(screen.getByText('Could not read this file')).toBeTruthy();
   });
 });
 

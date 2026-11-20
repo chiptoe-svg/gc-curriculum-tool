@@ -10,7 +10,8 @@ import { turnParts } from '@/lib/capture/merge-turn-text';
 import { assistantTurnMessage } from '@/lib/capture/saved-turn';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { InstructorSelect } from './InstructorSelect';
-import { AddFileButton, fileMarkers, type AttachedFile } from './AddFileButton';
+import { AddFileButton, fileMarkers, type AttachedFile, type AddFileHandle } from './AddFileButton';
+import { splitFileMarkers } from '@/lib/ai/agent/interview-controls';
 import { InterviewChecklist } from './InterviewChecklist';
 import { REVISION_MODE_COPY, type RevisionMode } from '@/lib/capture/revision-copy';
 import { EMPTY_CHECKLIST, nextChecklist, type InterviewChecklist as InterviewChecklistData } from '@/lib/capture/interview-checklist';
@@ -290,14 +291,18 @@ export function CaptureChatPanel({
     await postChat(next, t);
   }
   const [attached, setAttached] = useState<AttachedFile[]>([]);
+  const addFileHandle = useRef<AddFileHandle | null>(null);
+  const markable = attached.filter(f => !f.id.startsWith('tmp-'));
   async function handleSend() {
     const text = input.trim();
-    if (!text || busy) return;
-    setInput('');
     const markers = fileMarkers(attached);
+    // A file alone is enough to send: the message is then just its marker line(s).
+    if ((!text && !markers.length) || busy) return;
+    setInput('');
     // Files still uploading have no id yet; they stay and go with the next send.
-    setAttached(attached.filter(f => f.state === 'uploading'));
-    await sendText(markers.length ? `${text}\n${markers.join('\n')}` : text);
+    // The button owns its chips, so it clears the ones this message carries.
+    addFileHandle.current?.clearSent(markable.map(f => f.id));
+    await sendText([text, ...markers].filter(Boolean).join('\n'));
   }
   const ONE_LAST_QUESTION = "I think I'm about ready to finish. Before I generate, look back over everything we've covered and ask me the single most important question still missing for an accurate profile. If we haven't explored how students struggle, fail, and revise — productive failure / problem-solving — that's a strong candidate. Ask just one question, in your own words.";
   async function handleOneLastQuestion() {
@@ -454,7 +459,19 @@ export function CaptureChatPanel({
               return (
                 <div key={i} className="ml-6 rounded-2xl rounded-br-md bg-[#ECE6F4] px-4 py-2.5 sm:ml-12">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[#522D80]">You</p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{m.content}</p>
+                  {(() => {
+                    const { text, files } = splitFileMarkers(m.content);
+                    return (
+                      <>
+                        {text && <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{text}</p>}
+                        {files.map(f => (
+                          <p key={f.id} className="mt-1 text-sm leading-snug">
+                            <span aria-hidden>📎</span> {f.name}{f.readable ? '' : ' (could not be read)'}
+                          </p>
+                        ))}
+                      </>
+                    );
+                  })()}
                 </div>
               );
             }
@@ -566,12 +583,12 @@ export function CaptureChatPanel({
           <div className="mt-4 flex items-center justify-between gap-3">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
-              <AddFileButton courseCode={courseCode} slug={slug} sessionId={sessionId} disabled={busy} files={attached} onChange={setAttached} />
+              <AddFileButton courseCode={courseCode} slug={slug} sessionId={sessionId} disabled={busy} files={attached} onChange={setAttached} handle={addFileHandle} />
             </div>
             <button
               type="button"
               onClick={handleSend}
-              disabled={!input.trim() || busy}
+              disabled={(!input.trim() && fileMarkers(attached).length === 0) || busy}
               className="cap-btn cap-btn-primary"
             >
               {busy ? 'Sending…' : 'Send'}

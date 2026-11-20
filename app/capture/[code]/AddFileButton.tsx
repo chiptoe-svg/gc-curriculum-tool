@@ -1,13 +1,20 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MutableRefObject } from 'react';
 import { MATERIAL_UPLOAD_ACCEPT } from '@/lib/courses/upload-types';
 import { fileAddedMarker } from '@/lib/ai/agent/interview-controls';
 
 export interface AttachedFile {
   id: string;
   name: string;
-  state: 'uploading' | 'reading' | 'ready' | 'failed' | 'duplicate';
+  state: 'uploading' | 'reading' | 'ready' | 'failed' | 'duplicate' | 'skipped' | 'setAside';
+  /** The chip points at a material that was already there: removing the chip must not delete it. */
+  dup?: boolean;
+}
+
+/** What the chat panel can ask of the button: it owns the chips, so it clears the ones a send used. */
+export interface AddFileHandle {
+  clearSent(ids: string[]): void;
 }
 
 const POLL_MS = 3000;
@@ -19,6 +26,8 @@ const LABEL: Record<AttachedFile['state'], string> = {
   ready: 'Ready',
   failed: 'Could not read this file',
   duplicate: 'Already in your materials',
+  skipped: 'Set aside — not read',
+  setAside: 'Set aside under Materials — not read',
 };
 
 const isTemp = (f: AttachedFile) => f.id.startsWith('tmp-');
@@ -28,7 +37,7 @@ export function fileMarkers(files: AttachedFile[]): string[] {
   return files
     .filter(f => !isTemp(f))
     .map(f => {
-      if (f.state === 'failed') return fileAddedMarker(f.name, f.id, false);
+      if (f.state === 'failed' || f.state === 'skipped' || f.state === 'setAside') return fileAddedMarker(f.name, f.id, false);
       const m = fileAddedMarker(f.name, f.id, true);
       return f.state === 'reading' ? `${m} (still being read)` : m;
     });
@@ -41,12 +50,21 @@ export function AddFileButton(props: {
   disabled: boolean;
   files: AttachedFile[];
   onChange: (files: AttachedFile[]) => void;
+  handle?: MutableRefObject<AddFileHandle | null>;
 }) {
-  const { courseCode, slug, sessionId, disabled, files, onChange } = props;
+  const { courseCode, slug, sessionId, disabled, files, onChange, handle } = props;
   const inputRef = useRef<HTMLInputElement>(null);
   const filesRef = useRef(files);
   filesRef.current = files;
   const started = useRef(new Map<string, number>());
+  if (handle) {
+    handle.current = {
+      clearSent(ids) {
+        filesRef.current = filesRef.current.filter(f => !ids.includes(f.id));
+        onChange(filesRef.current);
+      },
+    };
+  }
   const base = `/api/courses/${encodeURIComponent(courseCode)}/materials`;
 
   function update(match: (f: AttachedFile) => boolean, patch: Partial<AttachedFile>) {
@@ -70,7 +88,9 @@ export function AddFileButton(props: {
       form.append('slug', slug);
       if (sessionId) form.append('sessionId', sessionId);
       const res = await fetch(base, { method: 'POST', body: form });
-      const data = (await res.json().catch(() => ({}))) as { id?: string; duplicateOf?: string | null };
+      const data = (await res.json().catch(() => ({}))) as {
+        id?: string; duplicateOf?: string | null; indexingStatus?: string; setAside?: boolean;
+      };
       if (!res.ok || !data.id) throw new Error('upload failed');
       if (!filesRef.current.some(f => f.id === tmp)) {
         // The instructor removed the chip while the upload was running.
@@ -78,7 +98,17 @@ export function AddFileButton(props: {
         return;
       }
       if (data.duplicateOf) {
-        update(f => f.id === tmp, { id: data.duplicateOf, state: 'duplicate' });
+        const existing = data.duplicateOf;
+        if (filesRef.current.some(f => f.id === existing)) {
+          // Already shown as a chip: drop this one (no second key, poll or marker).
+          filesRef.current = filesRef.current.filter(f => f.id !== tmp);
+          onChange(filesRef.current);
+          return;
+        }
+        const st = data.indexingStatus;
+        const state: AttachedFile['state'] = data.setAside ? 'setAside' : st === 'ready' ? 'duplicate' : st === 'skipped' ? 'skipped' : 'reading';
+        if (state === 'reading') started.current.set(existing, Date.now());
+        update(f => f.id === tmp, { id: existing, state, dup: true });
       } else {
         started.current.set(data.id, Date.now());
         update(f => f.id === tmp, { id: data.id, state: 'reading' });
@@ -99,6 +129,7 @@ export function AddFileButton(props: {
           if (r.ok) {
             const s = (await r.json()) as { indexingStatus?: string; extractionStatus?: string };
             if (s.indexingStatus === 'ready') next = 'ready';
+            else if (s.indexingStatus === 'skipped') next = 'skipped';
             else if (s.indexingStatus === 'failed' || s.extractionStatus === 'failed') next = 'failed';
           }
         } catch { /* keep polling */ }
@@ -113,7 +144,7 @@ export function AddFileButton(props: {
   async function remove(f: AttachedFile) {
     filesRef.current = filesRef.current.filter(x => x.id !== f.id);
     onChange(filesRef.current);
-    if (f.state !== 'duplicate' && !isTemp(f)) await deleteMaterial(f.id);
+    if (!f.dup && !isTemp(f)) await deleteMaterial(f.id);
   }
 
   return (

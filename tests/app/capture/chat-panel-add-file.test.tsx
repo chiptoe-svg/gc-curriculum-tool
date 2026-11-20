@@ -15,6 +15,14 @@ function chatStream(): Response {
   return new Response(new ReadableStream<Uint8Array>({ start(c) { c.enqueue(new TextEncoder().encode(JSON.stringify(ev) + '\n')); c.close(); } }), { status: 200, headers: { 'content-type': 'application/x-ndjson' } });
 }
 
+function panel(messages: Array<{ role: 'assistant' | 'user'; content: string }> = [{ role: 'assistant', content: 'Q?' }]) {
+  return render(
+    <CaptureChatPanel courseCode="GC 2400" slug="s" messages={messages} onMessagesChange={() => {}}
+      onGenerate={() => {}} sessionId="s1" onSessionIdChange={() => {}} chooserInstructor="Instructor A"
+      onInstructorChange={() => {}} chooserMode="fresh" onModeChange={() => {}} />,
+  );
+}
+
 describe('CaptureChatPanel sends added files', () => {
   it('appends pending and unreadable markers to the posted text and clears the chips', async () => {
     const posted: string[] = [];
@@ -49,4 +57,60 @@ describe('CaptureChatPanel sends added files', () => {
     expect(screen.queryByLabelText('Remove A.pdf')).toBeNull();
     expect(screen.queryByLabelText('Remove B.pdf')).toBeNull();
   }, 15000);
+
+  it('Send works with a file and no note; the message is just the marker', async () => {
+    const posted: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      const u = String(url);
+      if (u.includes('/chat')) { posted.push(String(init?.body)); return chatStream(); }
+      if (init?.method === 'POST') return json({ id: 'mA', fileName: 'A.pdf', indexingStatus: 'queued', duplicateOf: null });
+      return json({ id: 'mA', indexingStatus: 'ready', extractionStatus: 'ready' });
+    }));
+    panel();
+    const send = screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
+    expect(send.disabled).toBe(true);
+    fireEvent.change(document.querySelector('input[type=file]') as HTMLInputElement, { target: { files: [new File(['x'], 'A.pdf', { type: 'application/pdf' })] } });
+    await waitFor(() => screen.getByText('Reading your file…'));
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(posted.length).toBe(1));
+    const msg = (JSON.parse(posted[0]!) as { message: string }).message;
+    expect(msg).toBe('[Instructor added a file: A.pdf (id=mA) — search it before answering.] (still being read)');
+  });
+
+  it('a file that resolves right after Send is not marked a second time', async () => {
+    const posted: string[] = [];
+    let ready = false;
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      const u = String(url);
+      if (u.includes('/chat')) { posted.push(String(init?.body)); return chatStream(); }
+      if (init?.method === 'POST') return json({ id: 'mA', fileName: 'A.pdf', indexingStatus: 'queued', duplicateOf: null });
+      return json({ id: 'mA', indexingStatus: ready ? 'ready' : 'indexing', extractionStatus: 'ready' });
+    }));
+    panel();
+    fireEvent.change(document.querySelector('input[type=file]') as HTMLInputElement, { target: { files: [new File(['x'], 'A.pdf', { type: 'application/pdf' })] } });
+    await waitFor(() => screen.getByText('Reading your file…'));
+    fireEvent.change(screen.getByPlaceholderText(/type a reply/i), { target: { value: 'one' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    ready = true; // resolves right after the send, before the chip state settles
+    await waitFor(() => expect(posted.length).toBe(1));
+    await new Promise(r => setTimeout(r, 3500)); // one poll tick
+    expect(screen.queryByLabelText('Remove A.pdf')).toBeNull();
+    fireEvent.change(screen.getByPlaceholderText(/type a reply/i), { target: { value: 'two' } });
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(posted.length).toBe(2));
+    expect((JSON.parse(posted[1]!) as { message: string }).message).toBe('two');
+  }, 15000);
+
+  it('shows an added file as a chip in the instructor turn, not the raw marker', () => {
+    panel([
+      { role: 'assistant', content: 'Q?' },
+      { role: 'user', content: 'here\n[Instructor added a file: A.pdf (id=mA) — search it before answering.]\n[Instructor added a file: B.pdf (id=mB) — it could not be read; ask for the key part pasted instead.]' },
+    ]);
+    expect(screen.queryByText(/Instructor added a file/)).toBeNull();
+    expect(screen.getByText('here')).toBeTruthy();
+    expect(screen.getByText(/A\.pdf/)).toBeTruthy();
+    expect(screen.getByText(/B\.pdf.*could not be read/)).toBeTruthy();
+  });
 });

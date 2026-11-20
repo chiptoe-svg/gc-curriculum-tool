@@ -57,6 +57,20 @@ export function fileAddedMarker(rawName: string, id: string, readable: boolean):
     : `[Instructor added a file: ${name} (id=${id}) — it could not be read; ask for the key part pasted instead.]`;
 }
 
+const MARKER_LINE = /^\[Instructor added a file: (.+) \(id=([^)]+)\) — (?:search it before answering\.\]( \(still being read\))?|it could not be read; ask for the key part pasted instead\.\])$/;
+
+/** Display only: splits the marker lines out of an instructor turn (the stored text keeps them). */
+export function splitFileMarkers(content: string): { text: string; files: Array<{ name: string; id: string; readable: boolean }> } {
+  const files: Array<{ name: string; id: string; readable: boolean }> = [];
+  const kept: string[] = [];
+  for (const line of content.split('\n')) {
+    const m = MARKER_LINE.exec(line);
+    if (m) files.push({ name: m[1]!, id: m[2]!, readable: !line.includes('it could not be read') });
+    else kept.push(line);
+  }
+  return { text: kept.join('\n').trim(), files };
+}
+
 /**
  * Must the interviewer search before answering? Reads the instructor's answer
  * AND the interviewer's previous question: answers are often short ("Based on

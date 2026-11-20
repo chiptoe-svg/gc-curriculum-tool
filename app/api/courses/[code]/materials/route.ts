@@ -174,7 +174,21 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       (m) => !m.ignored && m.fileName === file.name && m.sizeBytes === file.size,
     );
     if (dup) {
-      return NextResponse.json({ id: dup.id, duplicateOf: dup.id, indexingStatus: dup.indexingStatus });
+      // A set-aside file stays set aside (the chip says so). Any other copy that was
+      // stored but never read (pending, failed, or left queued) is read now at tier
+      // high; one already being read, ready or skipped is reported as it stands.
+      const setAside = dup.autoSetAside || Boolean(dup.setAsideReason);
+      const readNow = !setAside && ['pending', 'failed', 'queued'].includes(dup.indexingStatus);
+      if (readNow) {
+        await updateMaterialTier(dup.id, 'high');
+        await enqueue(dup.id);
+      }
+      return NextResponse.json({
+        id: dup.id,
+        duplicateOf: dup.id,
+        indexingStatus: readNow ? 'queued' : dup.indexingStatus,
+        ...(setAside ? { setAside: true } : {}),
+      });
     }
   }
 

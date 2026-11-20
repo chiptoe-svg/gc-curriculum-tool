@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorizeCourseWrite } from '@/lib/sandbox/access';
-import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
+import { listMaterialsByCourse, getMaterialStatusInCourse } from '@/lib/db/course-materials-queries';
 import { estimateIngestSeconds } from '@/lib/capture/ingest-eta';
 
 interface RouteContext {
@@ -22,9 +22,9 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
   // ?id=<material id>: that one material's status (404 if not of this course).
   const id = url.searchParams.get('id');
   if (id) {
-    const m = (await listMaterialsByCourse(courseCode)).find((x) => x.id === id);
+    const m = await getMaterialStatusInCourse(courseCode, id);
     if (!m) return NextResponse.json({ error: 'material not found' }, { status: 404 });
-    return NextResponse.json({ id: m.id, indexingStatus: m.indexingStatus, extractionStatus: m.extractionStatus });
+    return NextResponse.json(m);
   }
 
   // Ignored and skipped files are settled: a skipped file (e.g. an image with

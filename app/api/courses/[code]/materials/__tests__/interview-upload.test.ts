@@ -14,12 +14,14 @@ const mockInsert = vi.fn();
 const mockList = vi.fn();
 const mockTier = vi.fn();
 const mockSessionCourse = vi.fn();
+const mockStatus = vi.fn();
 vi.mock('@/lib/db/course-materials-queries', () => ({
   insertMaterial: (...a: unknown[]) => mockInsert(...a),
   listMaterialsByCourse: (...a: unknown[]) => mockList(...a),
   deleteMaterial: vi.fn(),
   updateMaterialTier: (...a: unknown[]) => mockTier(...a),
   getCaptureSessionCourse: (...a: unknown[]) => mockSessionCourse(...a),
+  getMaterialStatusInCourse: (...a: unknown[]) => mockStatus(...a),
 }));
 vi.mock('@/lib/capture/vector-store', () => ({ createVectorStore: vi.fn(), tenantForCourse: (c: string) => c }));
 const mockEnqueue = vi.fn();
@@ -103,6 +105,36 @@ describe('POST materials from the interview', () => {
     expect(mockEnqueue).not.toHaveBeenCalled();
   });
 
+  it.each(['pending', 'failed', 'queued'])('a %s duplicate is read now: tier high, enqueued, reported queued', async (st) => {
+    mockList.mockResolvedValue([
+      { id: 'old', fileName: 'a.pdf', sizeBytes: 5, ignored: false, autoSetAside: false, setAsideReason: null, indexingStatus: st },
+    ]);
+    const res = await POST(...post('a.pdf', SID));
+    expect(await res.json()).toMatchObject({ id: 'old', duplicateOf: 'old', indexingStatus: 'queued' });
+    expect(mockTier).toHaveBeenCalledWith('old', 'high');
+    expect(mockEnqueue).toHaveBeenCalledWith('old');
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('an indexing duplicate is left alone (already being read)', async () => {
+    mockList.mockResolvedValue([
+      { id: 'old', fileName: 'a.pdf', sizeBytes: 5, ignored: false, autoSetAside: false, setAsideReason: null, indexingStatus: 'indexing' },
+    ]);
+    const res = await POST(...post('a.pdf', SID));
+    expect(await res.json()).toMatchObject({ id: 'old', duplicateOf: 'old', indexingStatus: 'indexing' });
+    expect(mockEnqueue).not.toHaveBeenCalled();
+  });
+
+  it('a set-aside duplicate is not enqueued and is reported as set aside', async () => {
+    mockList.mockResolvedValue([
+      { id: 'old', fileName: 'a.pdf', sizeBytes: 5, ignored: false, autoSetAside: true, setAsideReason: 'looks like student work', indexingStatus: 'pending' },
+    ]);
+    const res = await POST(...post('a.pdf', SID));
+    expect(await res.json()).toMatchObject({ id: 'old', duplicateOf: 'old', indexingStatus: 'pending', setAside: true });
+    expect(mockEnqueue).not.toHaveBeenCalled();
+    expect(mockTier).not.toHaveBeenCalled();
+  });
+
   it('two interview files back to back both enqueue', async () => {
     await POST(...post('a.pdf', SID));
     await POST(...post('b.pdf', SID));
@@ -124,10 +156,12 @@ describe('ingest-status ?id=', () => {
     { params: Promise.resolve({ code: 'GC 1010' }) },
   );
   it('reports that material, and 404 for another course\'s', async () => {
-    mockList.mockResolvedValue([{ id: 'x', indexingStatus: 'ready', extractionStatus: 'done', ignored: false }]);
+    mockStatus.mockImplementation(async (c: string, id: string) =>
+      c === 'GC 1010' && id === 'x' ? { id: 'x', indexingStatus: 'ready', extractionStatus: 'done' } : null);
     const ok = await call('&id=x');
     expect(await ok.json()).toEqual({ id: 'x', indexingStatus: 'ready', extractionStatus: 'done' });
     const miss = await call('&id=other-course-material');
     expect(miss.status).toBe(404);
+    expect(mockList).not.toHaveBeenCalled();
   });
 });

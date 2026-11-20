@@ -1,6 +1,6 @@
 /** Interview checks (search trigger, citation check): pure functions, no model calls. */
 import { describe, it, expect } from 'vitest';
-import { fileAddedMarker, checkCitations, chunkIdsInToolResult, citableFromHistory, needsMaterialSearch, previousQuestion } from '@/lib/ai/agent/interview-controls';
+import { fileAddedMarker, splitFileMarkers, checkCitations, chunkIdsInToolResult, citableFromHistory, needsMaterialSearch, previousQuestion } from '@/lib/ai/agent/interview-controls';
 
 describe('needsMaterialSearch', () => {
   it('fires on the previous question when the answer alone names nothing (2070-104)', () => {
@@ -123,5 +123,24 @@ describe('fileAddedMarker', () => {
   });
   it('the unreadable marker does not force a search', () => {
     expect(needsMaterialSearch('here is it\n' + fileAddedMarker('Zine.pdf', 'm1', false), []).required).toBe(false);
+  });
+});
+
+describe('splitFileMarkers', () => {
+  it('pulls marker lines out of a user turn and keeps the typed text', () => {
+    const text = `here you go\n${fileAddedMarker('A (v2).pdf', 'mA', true)} (still being read)\n${fileAddedMarker('B.pdf', 'mB', false)}`;
+    expect(splitFileMarkers(text)).toEqual({
+      text: 'here you go',
+      files: [
+        { name: 'A (v2).pdf', id: 'mA', readable: true },
+        { name: 'B.pdf', id: 'mB', readable: false },
+      ],
+    });
+  });
+  it('a turn with no markers is unchanged', () => {
+    expect(splitFileMarkers('plain answer\nsecond line')).toEqual({ text: 'plain answer\nsecond line', files: [] });
+  });
+  it('a marker-only turn has empty text', () => {
+    expect(splitFileMarkers(fileAddedMarker('A.pdf', 'm1', true)).text).toBe('');
   });
 });

@@ -545,7 +545,8 @@ export async function setMaterialRetired(id: string, retired: boolean): Promise<
 }
 
 /**
- * Atomically claim the oldest queued material for the background ingest
+ * Atomically claim the oldest queued material (a file added in the interview
+ * first: the instructor is waiting on it mid-conversation) for the background ingest
  * worker, flipping it to 'indexing' in the same statement so two workers (or
  * loop ticks) never grab the same row. FOR UPDATE SKIP LOCKED makes concurrent
  * claims pick distinct rows. Returns null when nothing is queued.
@@ -556,7 +557,7 @@ export async function claimNextQueued(): Promise<CourseMaterialRow | null> {
     WHERE id = (
       SELECT id FROM course_materials
       WHERE indexing_status = 'queued'
-      ORDER BY uploaded_at
+      ORDER BY (added_in_session IS NULL), uploaded_at
       LIMIT 1
       FOR UPDATE SKIP LOCKED
     )
@@ -564,6 +565,23 @@ export async function claimNextQueued(): Promise<CourseMaterialRow | null> {
   `);
   const row = (res.rows as Record<string, unknown>[])[0];
   return row ? mapMaterialRow(row) : null;
+}
+
+/** One material's status, scoped to the course (null for another course's id). */
+export async function getMaterialStatusInCourse(
+  courseCode: string,
+  id: string,
+): Promise<{ id: string; indexingStatus: string; extractionStatus: string } | null> {
+  const rows = await db
+    .select({
+      id: courseMaterials.id,
+      indexingStatus: courseMaterials.indexingStatus,
+      extractionStatus: courseMaterials.extractionStatus,
+    })
+    .from(courseMaterials)
+    .where(and(eq(courseMaterials.id, id), eq(courseMaterials.courseCode, courseCode)))
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 /**
