@@ -1,17 +1,48 @@
 import { defaultAct } from '../compute';
-import type { Act } from '../types';
+import type { Act, Depth } from '../types';
 import { depthNow } from './touch';
-import type { PointStatus, StopReading, StringGraph, StringReading } from './types';
+import { isFoundational, meets, readProgram, resolveNode } from '@/lib/skill-tree/read';
+import type { Tree, VersionSkills } from '@/lib/skill-tree/types';
+import type { NodeCheck, PointRow, PointStatus, StopReading, StringGraph, StringReading } from './types';
 
 type Dim = 'k' | 'u' | 'd';
 const DIMS: Dim[] = ['k', 'u', 'd'];
+
+/**
+ * A requires stop that names a tree skill: what arrives is the program reading over the newest versions of the courses
+ * at develops stops before it on every active string through the stop (the whole incoming string is carried).
+ */
+function checkNode(
+  g: StringGraph, p: PointRow, pointId: string, current: string, tree: Tree | undefined, versionsOf: ((code: string) => VersionSkills[]) | undefined,
+): NodeCheck {
+  if (!tree || !versionsOf || !p.nodeId) return { kind: 'not-checkable' };
+  const nodeId = resolveNode(tree, p.nodeId);
+  if (!tree.nodes.some((n) => n.id === nodeId)) return { kind: 'not-checkable' };
+  const codes = new Set<string>();
+  for (const s of g.strings) {
+    if (s.id !== current && s.status !== 'active') continue;
+    const at = s.path.indexOf(pointId);
+    if (at < 0) continue;
+    for (const id of s.path.slice(0, at)) {
+      const q = g.points[id];
+      if (q && q.role === 'develops') codes.add(q.courseCode);
+    }
+  }
+  const versions = [...codes].flatMap((c) => versionsOf(c));
+  const raw = readProgram(tree, versions, nodeId);
+  // One decimal, as shown: a shown 3.0 against a need of 3 must read as met.
+  const r1 = (n: number | null): number | null => (n === null ? null : Math.round(n * 10) / 10);
+  const arriving: Depth = { k: r1(raw.k), u: r1(raw.u), d: r1(raw.d) };
+  const need: Depth = { k: p.needK ?? null, u: p.needU ?? null, d: p.needD ?? null };
+  return { kind: 'checked', nodeId, need, arriving, met: meets(arriving, need, isFoundational(tree, nodeId)), foundational: isFoundational(tree, nodeId) };
+}
 
 export function readString(
   g: StringGraph,
   stringId: string,
   status: Record<string, PointStatus>,
   levelOf: (code: string) => number,
-  options: { fade: number | null },
+  options: { fade: number | null; tree?: Tree; versionsOf?: (code: string) => VersionSkills[] },
 ): StringReading {
   if (options.fade !== null) throw new Error('fade not implemented');
   const str = g.strings.find((s) => s.id === stringId);
@@ -32,8 +63,18 @@ export function readString(
     const slip: Dim[] = [];
     const gap: Dim[] = [];
     let reinforces = false;
+    const nodeCheck: NodeCheck | null = p.role === 'requires' && p.nodeId ? checkNode(g, p, pointId, str.id, options.tree, options.versionsOf) : null;
 
-    if (depth) {
+    if (nodeCheck) {
+      if (nodeCheck.kind === 'checked') {
+        const foundational = nodeCheck.foundational;
+        for (const d of DIMS) {
+          const need = nodeCheck.need[d];
+          if (foundational && d !== 'd') continue;
+          if (need !== null && (nodeCheck.arriving[d] ?? 0) < need) gap.push(d);
+        }
+      }
+    } else if (depth) {
       if (p.role === 'develops') {
         const usable = DIMS.some((d) => depth[d] !== null);
         if (usable) {
@@ -90,6 +131,7 @@ export function readString(
       role: p.role,
       depth,
       status: st,
+      nodeCheck,
       why: link ? link.why : null,
       slip,
       gap,

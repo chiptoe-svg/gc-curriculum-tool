@@ -13,6 +13,11 @@ export interface PointRow {
   u: number | null;
   d: number | null;
   term: number | null;
+  /** A requires point may name the tree skill it needs and how deep (0-5, null = not needed). Absent on points read before 0074. */
+  nodeId?: string | null;
+  needK?: number | null;
+  needU?: number | null;
+  needD?: number | null;
 }
 
 export interface StringRow {
@@ -71,6 +76,11 @@ export type PointStatus =
   | { kind: 'unanchored'; why: 'skill gone' | 'course not found' | 'no capture' }
   | { kind: 'unchecked' };
 
+/** A requires stop's check against the skill tree; null on stops that name no tree skill. */
+export type NodeCheck =
+  | { kind: 'not-checkable' }
+  | { kind: 'checked'; nodeId: string; need: Depth; arriving: Depth; met: boolean; foundational: boolean };
+
 export interface StopReading {
   pointId: string;
   courseCode: string;
@@ -81,6 +91,7 @@ export interface StopReading {
   status: PointStatus;
   /** Link into this stop. */
   why: string | null;
+  nodeCheck: NodeCheck | null;
   slip: Array<'k' | 'u' | 'd'>;
   gap: Array<'k' | 'u' | 'd'>;
   reinforces: boolean;

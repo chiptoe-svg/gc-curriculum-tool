@@ -4,9 +4,11 @@
  * checks the optimistic `version`, bumps it, and re-checks the resulting path before committing.
  */
 import { and, asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import { pgTable, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { db } from '@/lib/db/client';
+import { isUndefinedColumn } from '@/lib/db/pg-errors';
 import {
-  curriculumStringEvents, curriculumStringPath, curriculumStrings, skillOrphanNotes, stringLinks, stringPoints,
+  curriculumStringEvents, curriculumStringPath, curriculumStrings, skillNodes, skillOrphanNotes, skillTreeEvents, stringLinks, stringPoints,
 } from '@/lib/db/schema';
 import { checkBranch, checkMerge, checkPath, MSG } from '@/lib/builder/strings/rules';
 import type { EventRow, LinkRow, OrphanNote, PointRow, Role, StringGraph, StringRow } from '@/lib/builder/strings/types';
@@ -34,6 +36,46 @@ class Refuse extends Error {
 }
 
 // ---------------------------------------------------------------- reads
+
+/** string_points without the 0074 columns (node_id, need_*), so these queries still run where 0074 is not applied. */
+const basePoints = pgTable('string_points', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull(),
+  role: text('role').$type<'develops' | 'requires'>().notNull(),
+  statement: text('statement').notNull(),
+  statementHash: text('statement_hash').notNull(),
+  snapshotId: uuid('snapshot_id'),
+  k: smallint('k'),
+  u: smallint('u'),
+  d: smallint('d'),
+  term: smallint('term'),
+  createdBy: text('created_by').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+const pointCols = {
+  id: stringPoints.id, courseCode: stringPoints.courseCode, role: stringPoints.role, statement: stringPoints.statement,
+  statementHash: stringPoints.statementHash, snapshotId: stringPoints.snapshotId, k: stringPoints.k, u: stringPoints.u,
+  d: stringPoints.d, term: stringPoints.term,
+};
+
+type NodeFields = { nodeId: string | null; needK: number | null; needU: number | null; needD: number | null };
+const NO_NODE: NodeFields = { nodeId: null, needK: null, needU: null, needD: null };
+
+/** node_id / need_* for the given points; empty where migration 0074 is not applied (undefined column). Runs in a savepoint so it cannot abort a caller's transaction. */
+async function loadNodeFields(exec: Exec, ids: string[]): Promise<Map<string, NodeFields>> {
+  const out = new Map<string, NodeFields>();
+  if (!ids.length) return out;
+  try {
+    const rows = await exec.transaction(async (t) =>
+      t.select({ id: stringPoints.id, nodeId: stringPoints.nodeId, needK: stringPoints.needK, needU: stringPoints.needU, needD: stringPoints.needD })
+        .from(stringPoints).where(inArray(stringPoints.id, ids)));
+    for (const r of rows) out.set(r.id, { nodeId: r.nodeId, needK: r.needK, needU: r.needU, needD: r.needD });
+  } catch (err) {
+    if (!isUndefinedColumn(err)) throw err;
+  }
+  return out;
+}
 
 const iso = (d: Date | null) => (d ? d.toISOString() : '');
 
@@ -65,7 +107,7 @@ export async function loadGraph(opts: { courseCodes?: string[]; includeUnlocked?
   for (const p of pathRows) (pathOf.get(p.stringId) ?? pathOf.set(p.stringId, []).get(p.stringId)!).push(p.pointId);
 
   const pointIds = [...new Set(pathRows.map((p) => p.pointId))];
-  const pointRows = pointIds.length ? await exec.select().from(stringPoints).where(inArray(stringPoints.id, pointIds)) : [];
+  const pointRows = pointIds.length ? await exec.select(pointCols).from(stringPoints).where(inArray(stringPoints.id, pointIds)) : [];
   const linkRows = pointIds.length
     ? await exec.select().from(stringLinks).where(and(inArray(stringLinks.fromPoint, pointIds), inArray(stringLinks.toPoint, pointIds)))
     : [];
@@ -83,13 +125,16 @@ export async function loadGraph(opts: { courseCodes?: string[]; includeUnlocked?
     const bp = (e.before as { path?: unknown } | null)?.path;
     if (Array.isArray(bp)) for (const id of bp) if (typeof id === 'string' && !loaded.has(id)) extraIds.add(id);
   }
-  const extraRows = extraIds.size ? await exec.select().from(stringPoints).where(inArray(stringPoints.id, [...extraIds])) : [];
+  const extraRows = extraIds.size ? await exec.select(pointCols).from(stringPoints).where(inArray(stringPoints.id, [...extraIds])) : [];
 
+  const nodeFields = await loadNodeFields(exec, [...pointRows, ...extraRows].map((p) => p.id));
   const points: Record<string, PointRow> = {};
   for (const p of [...pointRows, ...extraRows]) {
+    const nf = nodeFields.get(p.id) ?? NO_NODE;
     points[p.id] = {
       id: p.id, courseCode: p.courseCode, role: p.role, statement: p.statement, statementHash: p.statementHash,
       snapshotId: p.snapshotId, k: p.k, u: p.u, d: p.d, term: p.term,
+      nodeId: nf.nodeId, needK: nf.needK, needU: nf.needU, needD: nf.needD,
     };
   }
   return {
@@ -253,10 +298,18 @@ function requireWhy(why: string): string {
 
 /** Insert the point, or return the id of the one that already holds (course, role, statement hash). */
 export async function upsertPoint(tx: Exec, p: PointInput & { by: string }): Promise<string> {
-  const [ins] = await tx.insert(stringPoints).values({
+  const base = {
     courseCode: p.courseCode, role: p.role, statement: p.statement, statementHash: p.statementHash,
     snapshotId: p.snapshotId, k: p.k, u: p.u, d: p.d, createdBy: p.by,
-  }).onConflictDoNothing({ target: [stringPoints.courseCode, stringPoints.role, stringPoints.statementHash] }).returning({ id: stringPoints.id });
+  };
+  const hasNode = p.nodeId != null || p.needK != null || p.needU != null || p.needD != null;
+  const target = [stringPoints.courseCode, stringPoints.role, stringPoints.statementHash];
+  // Without a tree skill, insert only the pre-0074 columns so this still works where 0074 is not applied.
+  const [ins] = hasNode
+    ? await tx.insert(stringPoints).values({ ...base, nodeId: p.nodeId ?? null, needK: p.needK ?? null, needU: p.needU ?? null, needD: p.needD ?? null })
+        .onConflictDoNothing({ target }).returning({ id: stringPoints.id })
+    : await tx.insert(basePoints).values(base)
+        .onConflictDoNothing({ target: [basePoints.courseCode, basePoints.role, basePoints.statementHash] }).returning({ id: basePoints.id });
   if (ins) return ins.id;
   const [existing] = await tx.select({ id: stringPoints.id }).from(stringPoints)
     .where(and(eq(stringPoints.courseCode, p.courseCode), eq(stringPoints.role, p.role), eq(stringPoints.statementHash, p.statementHash)));
@@ -473,7 +526,7 @@ export async function confirmReword(input: {
   pointId: string; candidate: { statement: string; hash: string }; snapshotId: string | null; depth?: { k: number | null; u: number | null; d: number | null }; by: string;
 }): Promise<WriteResult> {
   return write(async (tx) => {
-    const [pt] = await tx.select().from(stringPoints).where(eq(stringPoints.id, input.pointId)).for('update');
+    const [pt] = await tx.select(pointCols).from(stringPoints).where(eq(stringPoints.id, input.pointId)).for('update');
     if (!pt) throw new Refuse(404, 'Point not found.');
     const clash = await tx.select({ id: stringPoints.id }).from(stringPoints).where(and(
       eq(stringPoints.courseCode, pt.courseCode), eq(stringPoints.role, pt.role), eq(stringPoints.statementHash, input.candidate.hash), ne(stringPoints.id, pt.id),
@@ -485,6 +538,32 @@ export async function confirmReword(input: {
       pointId: pt.id, kind: 'reword_confirmed', by: input.by,
       before: { statement: pt.statement, hash: pt.statementHash, snapshotId: pt.snapshotId, k: pt.k, u: pt.u, d: pt.d },
       after: { statement: next.statement, hash: next.statementHash, snapshotId: next.snapshotId, k: next.k, u: next.u, d: next.d },
+    });
+    return { courseCodes: [pt.courseCode] };
+  });
+}
+
+/** Name the tree skill a requires point checks against and how deep it needs it (nodeId null clears both). */
+export async function setPointNode(input: {
+  pointId: string; nodeId: string | null; need: { k: number | null; u: number | null; d: number | null }; by: string;
+}): Promise<WriteResult> {
+  return write(async (tx) => {
+    const [pt] = await tx.select().from(stringPoints).where(eq(stringPoints.id, input.pointId)).for('update');
+    if (!pt) throw new Refuse(404, 'Point not found.');
+    if (pt.role !== 'requires') throw new Refuse(400, 'Only a skill a course needs can be checked against a tree skill.');
+    const nodeId = input.nodeId;
+    if (nodeId) {
+      const [n] = await tx.select({ id: skillNodes.id }).from(skillNodes).where(eq(skillNodes.id, nodeId));
+      if (!n) throw new Refuse(404, 'Skill not found in the tree.');
+    }
+    const next = nodeId
+      ? { nodeId, needK: input.need.k, needU: input.need.u, needD: input.need.d }
+      : { nodeId: null, needK: null, needU: null, needD: null };
+    await tx.update(stringPoints).set(next).where(eq(stringPoints.id, pt.id));
+    const as = (nodeId: string | null, k: number | null, u: number | null, d: number | null) => ({ pointId: pt.id, nodeId, needK: k, needU: u, needD: d });
+    await tx.insert(skillTreeEvents).values({
+      kind: 'requires_set', nodeId: next.nodeId ?? pt.nodeId, by: input.by,
+      before: as(pt.nodeId, pt.needK, pt.needU, pt.needD), after: as(next.nodeId, next.needK, next.needU, next.needD),
     });
     return { courseCodes: [pt.courseCode] };
   });

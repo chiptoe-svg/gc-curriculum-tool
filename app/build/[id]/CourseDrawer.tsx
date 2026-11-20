@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { WHAT_IF_PREFIX, pageWhatIfs, versionOf, whatIfOf, type PlacedCourse, type PlanResult } from '@/lib/builder/compute';
 import { type CompetencyDepth, type Library, type PlanState, type ProposedCourse } from '@/lib/builder/types';
@@ -10,6 +10,8 @@ import { RequiredSkillsList } from './RequiredSkillsList';
 import { ChangesList, DevelopedSkillsEditor, ObjectivesEditor, ToConfirm, courseEditOps, type EditOps } from './CourseEditors';
 import type { Selection } from './Map';
 import { DepthInputs, Drawer, LevelInput } from './controls';
+import { TreeNumber } from '../shared/SkillTreePanel';
+import type { Tree, VersionSkills } from '@/lib/skill-tree/types';
 
 /** How a level was decided (competency_levels.method; spec 2026-11-20-links-drive-coverage-design.md). */
 const METHOD_LABEL: Record<string, string> = { faculty: 'set by hand', ai: 'AI judgment', scoring: 'scorer', needs_level: 'needs a level', rejected: 'rejected by faculty' };
@@ -184,6 +186,17 @@ function TrackedCourse(props: {
   const inUse = placed.reading.basis;
   const router = useRouter();
   const linkedView = !!version?.linked && !whatIf && inUse === 'discovered';
+  // The department skill tree, fetched once (tree only, no suggestions); readings are computed here from the version already on the page.
+  const [tree, setTree] = useState<Tree | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch('/api/skill-tree').then(r => (r.ok ? r.json() : null)).then(b => { if (live && b?.tree) setTree(b.tree); }).catch(() => {});
+    return () => { live = false; };
+  }, []);
+  const treeVersion = useMemo<VersionSkills | null>(() => (version && !whatIf ? {
+    courseCode: lc.code, instructor: version.instructorName ?? '',
+    skills: new Map(version.skills.map(s => [s.skillRef, { k: s.k, u: s.u, d: s.d }])),
+  } : null), [version, whatIf, lc.code]);
   const [busy, setBusy] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -323,6 +336,7 @@ function TrackedCourse(props: {
               <div className="cb-cgroup__head">
                 <b>{c.name}</b>
                 <span className="cb-mono">{fmtDepth(used, c.foundational)}</span>
+                {tree && treeVersion && <TreeNumber tree={tree} version={treeVersion} nodeId={id} />}
                 <span className="cb-small cb-muted">
                   {linkedView ? (METHOD_LABEL[used.method ?? 'scoring'] ?? 'scorer') + (used.soft ? ', proposed' : '') : ''}
                   {' '}after it <span className="cb-mono">{fmtDepth(after, c.foundational)}</span>{raises.length > 0 && <span className="cb-t-reached"> raises {raises.map(r => r.toUpperCase()).join(', ')}</span>}

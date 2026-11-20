@@ -28,6 +28,7 @@ import { stressTestFlags } from '@/lib/capture/stress-flags';
 import { plainDepth, plainDepthPhrase, plainScores, plainScoresShort, DIM_WORD } from '@/lib/capture/plain-depth';
 import { deriveEvidenceBand } from '@/lib/program/evidence-ladder';
 import { FlagDialog } from '@/components/FlagDialog';
+import { SkillTreePanel } from '@/app/build/shared/SkillTreePanel';
 import { upwardBumps, assembleOverrides } from '@/lib/ai/capture/score-overrides';
 import { RevisionChanges, revisionBlocksApproval, REVISION_BLOCKED_MESSAGE } from './RevisionChanges';
 import { applyGroupDecision, applyRevisionDecision, overrideReference, remapIndices, restoreSection } from '@/lib/capture/revision-changes';
@@ -1538,6 +1539,14 @@ export function ProfileReviewPanel({
           })}
         </section>
       </div>
+
+      {/* ── 2b. PLACE SKILLS IN THE DEPARTMENT TREE ── */}
+      {working.competencies.length > 0 && (
+        <section className="rounded-md border bg-card px-4 py-4 space-y-3">
+          <h3 className="cap-title text-xl">Place skills in the department tree</h3>
+          <SkillTreePanel courseCode={courseCode} mode="capture" />
+        </section>
+      )}
 
       {/* ── 3. STRESS TEST — profile-level findings from the automatic check ── */}
       {stressTestResult && (

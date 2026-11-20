@@ -6,6 +6,8 @@ import { readString } from '@/lib/builder/strings/read';
 import { stringChanges } from '@/lib/builder/strings/touch';
 import type { PointStatus, StopReading, StringGraph } from '@/lib/builder/strings/types';
 import type { Depth } from '@/lib/builder/types';
+import type { Tree, VersionSkills } from '@/lib/skill-tree/types';
+import { pathLabel } from '@/app/build/shared/skillTreeParts';
 
 export interface StringPanelProps {
   graph: StringGraph;
@@ -25,6 +27,9 @@ export interface StringPanelProps {
   hrefOf?: (stringId: string) => string;
   /** Re-run the status check; offered next to "Couldn't check". */
   onRetry?: () => void;
+  /** The skill tree and each course's captures, for stops that check against a tree skill; without them such a stop reads as not checkable. */
+  tree?: Tree | null;
+  versionsOf?: (code: string) => VersionSkills[];
   /** Hooks for the cluster's extend / branch / merge / remove controls (Task 7). */
   stopActions?: (stop: StopReading, position: number) => ReactNode;
   stringActions?: () => ReactNode;
@@ -72,7 +77,7 @@ export function StringPanel(props: StringPanelProps) {
   const name = (props.authorName ?? typedName).trim();
   const status = { ...props.status };
   for (const id of notNow) status[id] = GONE;
-  const reading = readString(graph, stringId, status, levelOf, { fade: null });
+  const reading = readString(graph, stringId, status, levelOf, { fade: null, tree: props.tree ?? undefined, versionsOf: props.versionsOf });
   const changes = stringChanges(graph, status, stringId, levelOf);
   const nameOf = (id: string) => graph.strings.find((s) => s.id === id)?.name ?? 'another string';
   const cannotWrite = busy || !name;
@@ -150,6 +155,13 @@ export function StringPanel(props: StringPanelProps) {
                       {s.gap.length > 0 && <> · Gap in {listDims(s.gap)}</>}
                       {s.reinforces && <> · Reinforces</>}
                     </div>
+                    {s.nodeCheck && (
+                      <p className="st-depth cb-muted">
+                        {s.nodeCheck.kind === 'not-checkable' || !props.tree
+                          ? 'Checked against a tree skill, but that cannot be done right now (the skill tree is not loaded, or it no longer has this skill).'
+                          : <>Checked against {pathLabel(props.tree, s.nodeCheck.nodeId)}: needs {fmt(s.nodeCheck.need)}, arriving {fmt(s.nodeCheck.arriving)}{s.nodeCheck.met ? ' (met)' : ' (not met)'}</>}
+                      </p>
+                    )}
                     <StopStatus s={s} nameBusy={cannotWrite} editable={editable} onRetry={onRetry}
                       confirm={() => s.status.kind === 'changed' && send(`/api/strings/points/${s.pointId}`, 'POST', {
                         candidate: s.status.candidate,

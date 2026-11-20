@@ -3,6 +3,7 @@ import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/re
 import type { PointRow, StringGraph, StringRow } from '@/lib/builder/strings/types';
 import { StopTools, StringTools } from '../StringEdits';
 import type { LockPoint } from '../stringsOnCluster';
+import type { Tree } from '@/lib/skill-tree/types';
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -96,5 +97,43 @@ describe('StringEdits on a merged string and without a name', () => {
     fireEvent.click(go);
     await waitFor(() => expect(calls).toHaveLength(1));
     expect(calls[0]!.body).toMatchObject({ authorName: 'Pat' });
+  });
+  it('Check against a tree skill picks a node and posts it with the needs', async () => {
+    stub();
+    const tree: Tree = {
+      nodes: [{ id: 'icc', name: 'ICC profiles', description: null, parentId: null, competencyId: null, foundational: false, weight: 1, weightSource: 'default', mergedInto: null, retired: false }],
+      leaves: [], depths: [],
+    };
+    // Stop 2 of s1 is the requires point c; develops stops do not offer the check.
+    const { unmount } = render(<StopTools {...common(graph.strings[0]!)} position={1} targets={[]} tree={tree} />);
+    expect(screen.queryByRole('button', { name: 'Check against a tree skill…' })).toBeNull();
+    unmount();
+    render(<StopTools {...common(graph.strings[0]!)} position={2} targets={[]} tree={tree} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Check against a tree skill…' }));
+    expect(screen.getByRole('button', { name: 'Save check' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Search the skill tree'), { target: { value: 'icc' } });
+    fireEvent.click(screen.getByRole('button', { name: 'ICC profiles' }));
+    fireEvent.change(screen.getByLabelText('Needs K'), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText('Needs D'), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save check' }));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]).toMatchObject({ url: '/api/strings/points/c/node', body: { nodeId: 'icc', k: 3, u: null, d: 2, authorName: 'Dr Who' } });
+  });
+  it('a foundational tree skill offers only the D need and posts K and U as null', async () => {
+    stub();
+    const tree: Tree = {
+      nodes: [{ id: 'ag', name: 'Agency', description: null, parentId: null, competencyId: null, foundational: true, weight: 1, weightSource: 'default', mergedInto: null, retired: false }],
+      leaves: [], depths: [],
+    };
+    render(<StopTools {...common(graph.strings[0]!)} position={2} targets={[]} tree={tree} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Check against a tree skill…' }));
+    fireEvent.change(screen.getByLabelText('Search the skill tree'), { target: { value: 'agency' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Agency' }));
+    expect(screen.queryByLabelText('Needs K')).toBeNull();
+    expect(screen.queryByLabelText('Needs U')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Needs D'), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save check' }));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]).toMatchObject({ body: { nodeId: 'ag', k: null, u: null, d: 2 } });
   });
 });

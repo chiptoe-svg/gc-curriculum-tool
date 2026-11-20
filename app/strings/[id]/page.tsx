@@ -7,6 +7,8 @@ import { clusterStringHref } from '@/lib/builder/strings/href';
 import { courseEvidence } from '@/lib/builder/strings/evidence';
 import { exactStatuses } from '@/lib/strings/exact';
 import { UUID } from '@/lib/strings/api';
+import { loadTree } from '@/lib/db/skill-tree-queries';
+import { versionsData } from '@/lib/builder/strings/versions';
 import { StringView } from './StringView';
 import '../../build/build.css';
 import '@/components/strings/strings.css';
@@ -27,7 +29,7 @@ export default async function StringPage({ params, searchParams }: {
     );
   }
   if (!UUID.test(id)) notFound();
-  const [all, lib] = await Promise.all([loadGraph({ includeUnlocked: true }), loadLibrary()]);
+  const [all, lib, tree] = await Promise.all([loadGraph({ includeUnlocked: true }), loadLibrary(), loadTree()]);
   // The whole graph, not one string: the panel names the strings this one merges into or shares stops with.
   const graph = all;
   if (!graph.strings.some((s) => s.id === id)) notFound();
@@ -46,6 +48,7 @@ export default async function StringPage({ params, searchParams }: {
       <Link href={`/strings?slug=${encodeURIComponent(slug)}`} className="cb-back">All strings</Link>
       <StringView
         initialGraph={graph} initialStatus={exactStatuses(lib, Object.values(graph.points))} stringId={id}
+        tree={tree} versions={versionsData(lib, Object.keys(levels))}
         levels={levels} evidence={evidence} editHref={clusterStringHref(codes, `?slug=${encodeURIComponent(slug)}`)} query={`?slug=${encodeURIComponent(slug)}`}
       />
     </div>

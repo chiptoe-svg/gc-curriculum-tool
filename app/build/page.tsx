@@ -45,6 +45,8 @@ export default async function BuildIndex({ searchParams }: { searchParams: Promi
         </p>
       </header>
 
+      <p><Link href={`/build/tree${q}`}>Department skill tree</Link>: every competency with what the courses reach under it, and the program&rsquo;s reading for each career path.</p>
+
       <NewPlan slug={slug} knownName={personalName(grant)} years={PLAN_YEARS} />
 
       <section className="cb-index__list">
