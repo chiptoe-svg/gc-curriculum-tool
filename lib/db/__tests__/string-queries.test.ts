@@ -64,6 +64,7 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
       await db.delete(s.stringPointResolutions).where(orm.inArray(s.stringPointResolutions.pointId, pointIds));
       await db.delete(s.stringPoints).where(orm.inArray(s.stringPoints.id, pointIds));
     }
+    await db.delete(s.skillNodes).where(orm.like(s.skillNodes.id, `${tag}%`));
     await db.delete(s.skillOrphanNotes).where(orm.like(s.skillOrphanNotes.courseCode, `${tag}%`));
     await db.delete(s.curriculumStringEvents).where(orm.sql`${s.curriculumStringEvents.after} ->> 'courseCode' LIKE ${`${tag}%`}`);
   });
@@ -366,5 +367,28 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
     expect(await q.lockString({ name: name('one'), description: 'd', points: [pt('ONE', 1)], whys: [], by: 't' })).toMatchObject({ ok: false, status: 400 });
     expect(await q.lockString({ name: name('bad'), description: 'd', points: [pt('BD', 1), pt('BD', 2)], whys: [], by: 't' })).toMatchObject({ ok: false, status: 400 });
     expect(await q.lockString({ name: name('dup'), description: 'd', points: [pt('DP', 1), pt('DP', 1)], whys: ['w'], by: 't' })).toMatchObject({ ok: false, status: 400 });
+  });
+
+  it('a requires point stores node and need, and setPointNode changes or clears them', async () => {
+    const nodeId = `${tag}-node`;
+    const [parent] = await dbm.db.select({ id: s.skillNodes.id }).from(s.skillNodes).limit(1);
+    if (!parent) throw new Error('the scratch database has no skill tree nodes');
+    await dbm.db.insert(s.skillNodes).values({ id: nodeId, name: `${tag} node`, parentId: parent.id, createdBy: 'tester' });
+    const nm = name('node');
+    const r = must(await q.lockString({
+      name: nm, description: 'd', by: 'tester', whys: ['w'],
+      points: [pt('ND', 1), { ...pt('ND', 2, 'requires'), nodeId, needK: null, needU: 2, needD: 3 }],
+    }));
+    const req = r.graph.points[mine(r, nm).path[1]!]!;
+    expect(req).toMatchObject({ nodeId, needK: null, needU: 2, needD: 3 });
+    expect(r.graph.points[mine(r, nm).path[0]!]).toMatchObject({ nodeId: null });
+    const moved = must(await q.setPointNode({ pointId: req.id, nodeId, need: { k: 1, u: null, d: 4 }, by: 'tester' }));
+    expect(moved.graph.points[req.id]).toMatchObject({ nodeId, needK: 1, needU: null, needD: 4 });
+    const cleared = must(await q.setPointNode({ pointId: req.id, nodeId: null, need: { k: null, u: null, d: null }, by: 'tester' }));
+    expect(cleared.graph.points[req.id]).toMatchObject({ nodeId: null, needD: null });
+    // A develops point cannot name a node.
+    const dev = mine(r, nm).path[0]!;
+    expect(await q.setPointNode({ pointId: dev, nodeId, need: { k: null, u: null, d: 1 }, by: 'tester' })).toMatchObject({ ok: false, status: 400 });
+    await q.setPointNode({ pointId: req.id, nodeId: null, need: { k: null, u: null, d: null }, by: 'tester' });
   });
 });

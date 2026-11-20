@@ -37,6 +37,8 @@ import { Drawer } from '../../[id]/controls';
 import { SkillTreePanel } from '../../shared/SkillTreePanel';
 import { LockString } from '../LockString';
 import { StopTools, StringTools } from '../StringEdits';
+import { versionsOfCourse } from '@/lib/builder/strings/versions';
+import type { Tree } from '@/lib/skill-tree/types';
 import { lockPoint, lockTargets, type SkillInput } from '../stringsOnCluster';
 
 const MAX_PROPOSED = 60; // the server's limits (lib/builder/plan-schema.ts, lib/builder/cluster/state.ts)
@@ -90,6 +92,15 @@ export function ClusterBuilder(props: {
   const levelOf = useCallback((code: string) => library.courses.find(c => c.code === code)?.level ?? 0, [library.courses]);
   const stringTargets = useMemo(() => lockTargets(library, cluster), [library, cluster]);
   const evidenceOf = useCallback((code: string) => courseEvidence(library, code), [library]);
+  /** The skill tree, fetched once a string opens, for stops that check against a tree skill. */
+  const [tree, setTree] = useState<Tree | null>(null);
+  useEffect(() => {
+    if (!openString || tree) return;
+    let live = true;
+    void fetch('/api/skill-tree').then(r => (r.ok ? r.json() : null)).then((b: { tree?: Tree } | null) => { if (live && b?.tree) setTree(b.tree); }).catch(() => { /* stops that name a tree skill read as not checkable */ });
+    return () => { live = false; };
+  }, [openString, tree]);
+  const versionsOf = useCallback((code: string) => versionsOfCourse(library, code), [library]);
 
   // ---- statuses and judging ----------------------------------------------
   const [drafts, setDrafts] = useState<DraftJudgments>({});
@@ -372,11 +383,11 @@ export function ClusterBuilder(props: {
           const common = { graph: strings.graph, str, authorName: author().trim(), onChanged: stringsChanged };
           return (
             <Drawer wide title="String" onClose={() => setOpenString(null)}>
-              <StringPanel graph={strings.graph} status={strings.status} stringId={openStringId} levelOf={levelOf} editable
+              <StringPanel tree={tree} versionsOf={versionsOf} graph={strings.graph} status={strings.status} stringId={openStringId} levelOf={levelOf} editable
                 authorName={author().trim() || null} onChanged={stringsChanged} evidenceOf={evidenceOf} onRetry={() => void strings.refresh()}
                 hrefOf={strings.hrefOf}
                 stringActions={() => <StringTools {...common} targets={stringTargets} />}
-                stopActions={(_, i) => <StopTools {...common} position={i} targets={stringTargets} />} />
+                stopActions={(_, i) => <StopTools {...common} position={i} targets={stringTargets} tree={tree} />} />
             </Drawer>
           );
         })()}

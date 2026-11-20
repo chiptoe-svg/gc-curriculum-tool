@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readString } from '../read';
 import type { PointRow, PointStatus, StringGraph, StringRow } from '../types';
+import type { Tree, TreeLeaf, TreeNode, VersionSkills } from '@/lib/skill-tree/types';
 
 const levelOf = (c: string) => Number(c.split(' ')[1]![0]!);
 const pt = (id: string, courseCode: string, role: PointRow['role']): PointRow => ({
@@ -121,5 +122,66 @@ describe('readString', () => {
     const two = read(graph([pts[1]!, pts[2]!, withDepth(pt('p4', 'GC 4900', 'develops'), 3)], [str('B', ['p2', 'p3', 'p4'])]), {}, 'B');
     expect(two.stops[2]!.reinforces).toBe(true);
     expect(two.reinforcement).toBe(1);
+  });
+});
+
+describe('readString: a requires stop that names a tree skill', () => {
+  const node = (id: string, over: Partial<TreeNode> = {}): TreeNode => ({
+    id, name: id, description: null, parentId: null, competencyId: null, foundational: false,
+    weight: 1, weightSource: 'default', mergedInto: null, retired: false, ...over,
+  });
+  const leaf = (courseCode: string, skillRef: string, nodeId: string): TreeLeaf => ({
+    courseCode, skillRef, nodeId, statement: skillRef, share: null, source: 'faculty', status: 'confirmed',
+  });
+  const tree: Tree = {
+    nodes: [node('icc'), node('icc-old', { mergedInto: 'icc' })],
+    leaves: [leaf('GC 1040', 's1', 'icc'), leaf('GC 2400', 's2', 'icc-old'), leaf('GC 3400', 's3', 'icc')],
+    depths: [],
+  };
+  const ver = (courseCode: string, ref: string, d: number): VersionSkills =>
+    ({ courseCode, instructor: '', skills: new Map([[ref, { k: d, u: d, d }]]) });
+  const versions: Record<string, VersionSkills[]> = {
+    'GC 1040': [ver('GC 1040', 's1', 4)], 'GC 2400': [ver('GC 2400', 's2', 3)], 'GC 3400': [ver('GC 3400', 's3', 5)],
+  };
+  const need = (p: PointRow, n: number | null): PointRow => ({ ...p, nodeId: 'icc', needK: null, needU: null, needD: n });
+  const readT = (g: StringGraph, id = 'A') =>
+    readString(g, id, {}, levelOf, { fade: null, tree, versionsOf: (c) => versions[c] ?? [] });
+
+  it('passes when the arriving courses reach the depth', () => {
+    const g = graph([pt('p1', 'GC 1040', 'develops'), need(pt('p2', 'GC 2400', 'requires'), 4)], [str('A', ['p1', 'p2'])]);
+    const s = readT(g).stops[1]!;
+    expect(s.nodeCheck).toMatchObject({ kind: 'checked', met: true });
+    expect(s.gap).toEqual([]);
+  });
+
+  it('fails when only a non-upstream course reaches it', () => {
+    // GC 3400 (depth 5) is downstream on this string; GC 1040 is not on it at all.
+    const g = graph([pt('p0', 'GC 2000', 'develops'), need(pt('p2', 'GC 2400', 'requires'), 4), pt('p3', 'GC 3400', 'develops')],
+      [str('A', ['p0', 'p2', 'p3']), str('B', ['p0'])]);
+    const s = readT(g).stops[1]!;
+    expect(s.nodeCheck).toMatchObject({ kind: 'checked', met: false });
+    expect(s.gap).toEqual(['d']);
+  });
+
+  it('uses the stronger of two arriving strings', () => {
+    const q = need(pt('q', 'GC 4000', 'requires'), 4);
+    const g = graph([pt('a', 'GC 2400', 'develops'), pt('b', 'GC 1040', 'develops'), q], [str('A', ['a', 'q']), str('B', ['b', 'q'])]);
+    // GC 2400 reaches 3 (short of 4); GC 1040 reaches 4: the string through GC 2400 passes because the other arrives too.
+    expect(readT(g, 'A').stops[1]!.nodeCheck).toMatchObject({ kind: 'checked', met: true });
+  });
+
+  it('follows a merged node', () => {
+    // GC 2400 placed its skill on icc-old, which merged into icc.
+    const g = graph([pt('p1', 'GC 2400', 'develops'), need(pt('p2', 'GC 3000', 'requires'), 3)], [str('A', ['p1', 'p2'])]);
+    expect(readT(g).stops[1]!.nodeCheck).toMatchObject({ kind: 'checked', met: true });
+    const named = graph([pt('p1', 'GC 2400', 'develops'), { ...need(pt('p2', 'GC 3000', 'requires'), 3), nodeId: 'icc-old' }], [str('A', ['p1', 'p2'])]);
+    expect(readT(named).stops[1]!.nodeCheck).toMatchObject({ kind: 'checked', met: true });
+  });
+
+  it('is not checkable without a tree, and a stop without a node keeps the statement check', () => {
+    const g = graph([pt('p1', 'GC 1040', 'develops'), need(pt('p2', 'GC 2400', 'requires'), 4)], [str('A', ['p1', 'p2'])]);
+    expect(read(g, {}).stops[1]!.nodeCheck).toEqual({ kind: 'not-checkable' });
+    const plain = graph([pt('p1', 'GC 1040', 'develops'), pt('p2', 'GC 2400', 'requires')], [str('A', ['p1', 'p2'])]);
+    expect(readT(plain).stops[1]!.nodeCheck).toBeNull();
   });
 });

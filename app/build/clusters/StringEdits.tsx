@@ -8,6 +8,8 @@ import { useState } from 'react';
 import { checkBranch, checkMerge } from '@/lib/builder/strings/rules';
 import type { StringGraph, StringRow } from '@/lib/builder/strings/types';
 import { sendStringWrite } from '@/components/strings/sendStringWrite';
+import { NodePicker, pathLabel } from '@/app/build/shared/skillTreeParts';
+import type { Tree } from '@/lib/skill-tree/types';
 import { sameSkill, type LockPoint } from './stringsOnCluster';
 
 interface Common {
@@ -117,15 +119,62 @@ function ExtendForm(props: Common & { free: LockPoint[]; merged: boolean }) {
 }
 
 /** Remove and Branch from here, shown under one stop. */
-export function StopTools(props: Common & { position: number; targets: LockPoint[] }) {
+export function StopTools(props: Common & { position: number; targets: LockPoint[]; tree?: Tree | null }) {
   const { graph, str, position, targets } = props;
   const canBranch = str.status === 'active' && checkBranch(graph, str.id, position) === null;
   const onString = (t: LockPoint) => str.path.some(id => graph.points[id] && sameSkill(graph.points[id]!, t));
   return (
     <>
       {str.status === 'active' && <RemoveForm {...props} />}
+      {str.status === 'active' && props.tree && graph.points[str.path[position] ?? '']?.role === 'requires' && (
+        <TreeCheckForm {...props} tree={props.tree} pointId={str.path[position]!} />
+      )}
       {canBranch && <BranchForm {...props} free={targets.filter(t => !onString(t))} />}
     </>
+  );
+}
+
+const LEVELS = [0, 1, 2, 3, 4, 5];
+
+/** Check this needed skill against a tree skill: pick the skill, then the level of each of K, U and D the course expects. */
+function TreeCheckForm(props: Common & { tree: Tree; pointId: string }) {
+  const { tree, pointId, graph } = props;
+  const point = graph.points[pointId]!;
+  const [nodeId, setNodeId] = useState<string | null>(point.nodeId ?? null);
+  const [need, setNeed] = useState<Record<'k' | 'u' | 'd', string>>({
+    k: point.needK == null ? '' : String(point.needK), u: point.needU == null ? '' : String(point.needU), d: point.needD == null ? '' : String(point.needD),
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [typed, setTyped] = useState('');
+  const name = (props.authorName || typed).trim();
+  async function send(body: Record<string, unknown>): Promise<boolean> {
+    setBusy(true); setError(null);
+    try {
+      const r = await sendStringWrite({ url: `/api/strings/points/${pointId}/node`, method: 'POST', body, authorName: name, onChanged: props.onChanged });
+      if (!r.ok) setError(r.notice);
+      return r.ok;
+    } finally { setBusy(false); }
+  }
+  const num = (v: string) => (v === '' ? null : Number(v));
+  const none = need.k === '' && need.u === '' && need.d === '';
+  return (
+    <Form open={point.nodeId ? 'Change the tree skill checked…' : 'Check against a tree skill…'} submit="Save check" disabled={busy || !name || !nodeId || none} error={error}
+      onSubmit={() => send({ nodeId, k: num(need.k), u: num(need.u), d: num(need.d) })}>
+      {nodeId
+        ? <p className="cb-small">{pathLabel(tree, nodeId)} <button type="button" className="cb-linkbtn" onClick={() => setNodeId(null)}>Pick another</button></p>
+        : <NodePicker tree={tree} label="Search the skill tree" onPick={setNodeId} />}
+      {(['k', 'u', 'd'] as const).map(dim => (
+        <label key={dim}>Needs {dim.toUpperCase()}
+          <select aria-label={`Needs ${dim.toUpperCase()}`} value={need[dim]} onChange={e => setNeed({ ...need, [dim]: e.target.value })}>
+            <option value="">Not needed</option>
+            {LEVELS.map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+      ))}
+      {point.nodeId && <button type="button" className="cb-linkbtn" disabled={busy || !name} onClick={() => void send({ nodeId: null })}>Stop checking against the tree</button>}
+      {props.authorName ? null : <label className="st-name">Your name <input aria-label="Your name" value={typed} onChange={e => setTyped(e.target.value)} /></label>}
+    </Form>
   );
 }
 
