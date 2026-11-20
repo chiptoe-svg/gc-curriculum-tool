@@ -41,47 +41,45 @@ interface Payload {
   rows: Row[];
 }
 
-const D_PALETTE = ['bg-stone-100', 'bg-amber-100', 'bg-amber-200', 'bg-orange-200', 'bg-orange-300', 'bg-rose-300'];
-
 function depthBg(d: number | null): string {
-  if (d === null || d === undefined) return 'bg-stone-50';
-  return D_PALETTE[Math.max(0, Math.min(5, d))] ?? 'bg-stone-100';
+  if (d === null || d === undefined) return 'pg-dnone';
+  return 'pg-d' + Math.max(0, Math.min(5, d));
 }
 
 function pfDotColor(pf: PfConditions | null): string {
-  if (!pf) return 'bg-stone-300';
+  if (!pf) return 'bg-[#B9B4C4]';
   const w = (v: 'present' | 'partial' | 'absent') => v === 'present' ? 1 : v === 'partial' ? 0.5 : 0;
   const total = w(pf.generate_then_consolidate) + w(pf.open_ended_problems) + w(pf.revision_cycles) + w(pf.structured_post_mortem);
-  if (total >= 3) return 'bg-emerald-500';
-  if (total >= 1.5) return 'bg-amber-400';
-  return 'bg-rose-500';
+  if (total >= 3) return 'bg-[#2F6B3A]';
+  if (total >= 1.5) return 'bg-[#B57600]';
+  return 'bg-[#9B2C2C]';
 }
 
 function statusChip(s: Row['scaffoldingStatus']): { label: string; cls: string } {
   switch (s) {
-    case 'well_scaffolded':  return { label: 'well-scaffolded', cls: 'bg-emerald-100 text-emerald-900' };
-    case 'top_heavy':        return { label: 'top-heavy',       cls: 'bg-amber-100 text-amber-900' };
-    case 'bottom_heavy':     return { label: 'bottom-heavy',    cls: 'bg-amber-100 text-amber-900' };
-    case 'coverage_only':    return { label: 'coverage-only',   cls: 'bg-orange-100 text-orange-900' };
-    case 'no_introduction':  return { label: 'no intro',        cls: 'bg-orange-200 text-orange-900' };
-    case 'brittle_scaffold': return { label: 'brittle',         cls: 'bg-rose-100 text-rose-900' };
-    case 'not_addressed':    return { label: 'not addressed',   cls: 'bg-stone-100 text-stone-700' };
+    case 'well_scaffolded':  return { label: 'well-scaffolded', cls: 'pg-cue-done' };
+    case 'top_heavy':        return { label: 'top-heavy',       cls: 'pg-cue-input' };
+    case 'bottom_heavy':     return { label: 'bottom-heavy',    cls: 'pg-cue-input' };
+    case 'coverage_only':    return { label: 'coverage-only',   cls: 'pg-cue-input' };
+    case 'no_introduction':  return { label: 'no intro',        cls: 'pg-cue-issue' };
+    case 'brittle_scaffold': return { label: 'brittle',         cls: 'pg-cue-issue' };
+    case 'not_addressed':    return { label: 'not addressed',   cls: 'pg-cue-none' };
   }
 }
 
 function pfChip(s: Row['pfStatus'], cum: number): { label: string; cls: string } {
   if (s === 'no_data') {
-    return { label: 'no PF data', cls: 'bg-stone-50 text-stone-400 italic' };
+    return { label: 'no PF data', cls: 'pg-cue-none' };
   }
   const label = `${s.replaceAll('_', '-')} · ${cum.toFixed(2)}`;
   switch (s) {
-    case 'well_developed': return { label, cls: 'bg-emerald-100 text-emerald-900' };
-    case 'developing':     return { label, cls: 'bg-amber-100 text-amber-900' };
-    case 'thin':           return { label, cls: 'bg-orange-100 text-orange-900' };
-    case 'absent':         return { label, cls: 'bg-stone-100 text-stone-700' };
+    case 'well_developed': return { label, cls: 'pg-cue-done' };
+    case 'developing':     return { label, cls: 'pg-cue-draft' };
+    case 'thin':           return { label, cls: 'pg-cue-input' };
+    case 'absent':         return { label, cls: 'pg-cue-none' };
     default: {
       const _exhaustive: never = s;
-      return { label: String(_exhaustive), cls: 'bg-stone-100 text-stone-700' };
+      return { label: String(_exhaustive), cls: 'pg-cue-none' };
     }
   }
 }
@@ -110,33 +108,33 @@ export function ScaffoldingStripClient({ slug, targets, selectedTargetId }: Prop
   }, [targetId, slug]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium">Career target</label>
+    <div className="pg-stack">
+      <div className="pg-row">
+        <label className="pg-label">Career target</label>
         <select
           value={targetId}
           onChange={e => setTargetId(e.target.value)}
-          className="rounded border border-input bg-background px-2 py-1 text-sm"
+          className="pg-select"
         >
           {targets.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        {loading && <span className="text-xs text-muted-foreground">Loading…</span>}
-        {error && <span className="text-xs text-destructive">{error}</span>}
+        {loading && <span className="pg-meta">Loading…</span>}
+        {error && <span className="pg-err">{error}</span>}
       </div>
 
       {data && (
-        <div className="overflow-x-auto rounded border bg-card">
-          <table className="text-xs">
+        <div className="pg-card pg-matrix">
+          <table className="pg-table">
             <thead>
-              <tr className="bg-muted/40">
-                <th className="sticky left-0 z-10 bg-muted/40 px-2 py-2 text-left font-medium min-w-[220px]">Sub-competency</th>
+              <tr>
+                <th className="pg-sticky min-w-[220px]">Sub-competency</th>
                 {data.courses.map(c => (
-                  <th key={c.snapshotId} className="px-2 py-2 text-left font-medium min-w-[120px]">
-                    <div className="font-mono">{c.courseCode}</div>
-                    <div className="text-xs font-normal text-muted-foreground truncate max-w-[120px]">{c.courseTitle}</div>
+                  <th key={c.snapshotId} className="min-w-[120px]" style={{ textAlign: 'left' }}>
+                    <div className="pg-code">{c.courseCode}</div>
+                    <div className="text-xs font-normal truncate max-w-[120px]">{c.courseTitle}</div>
                   </th>
                 ))}
-                <th className="px-2 py-2 text-left font-medium min-w-[220px]">Status</th>
+                <th className="min-w-[220px]" style={{ textAlign: 'left' }}>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -145,23 +143,23 @@ export function ScaffoldingStripClient({ slug, targets, selectedTargetId }: Prop
                 const pf = pfChip(r.pfStatus, r.cumulativePfScore);
                 const cellBySnap = new Map(r.cells.map(c => [c.snapshotId, c]));
                 return (
-                  <tr key={r.subCompetency.id} className="border-t">
-                    <td className="sticky left-0 z-10 bg-card px-2 py-1.5">{r.subCompetency.name}</td>
+                  <tr key={r.subCompetency.id}>
+                    <td className="pg-sticky">{r.subCompetency.name}</td>
                     {data.courses.map(c => {
                       const cell = cellBySnap.get(c.snapshotId);
-                      if (!cell) return <td key={c.snapshotId} className="px-1 py-0.5"><div className="h-6 w-full rounded bg-stone-50 border border-dashed border-stone-200" /></td>;
+                      if (!cell) return <td key={c.snapshotId} className="px-1 py-0.5"><div className="h-6 w-full rounded border border-dashed" style={{ borderColor: '#DCD9E2', background: '#FBFBFA' }} /></td>;
                       return (
                         <td key={c.snapshotId} className="px-1 py-0.5">
                           <div
-                            className={`relative h-6 w-full rounded ${depthBg(cell.dDepth)} ring-1 ring-stone-300`}
+                            className={`relative h-6 w-full rounded ${depthBg(cell.dDepth)}`}
                             title={`K=${cell.kDepth ?? '·'} U=${cell.uDepth ?? '·'} D=${cell.dDepth}`}
                           >
                             <span className={`absolute left-0.5 top-0.5 h-1.5 w-1.5 rounded-full ${pfDotColor(cell.pfConditions)}`} title="Productive-failure conditions are assessed at the course level and shown against each sub-competency this course contributes to." />
                             {cell.pfConditions?.structured_post_mortem === 'present' && (
-                              <span className="absolute right-0.5 top-0 text-[8px] font-bold text-emerald-700">R</span>
+                              <span className="absolute right-0.5 top-0 text-[8px] font-bold text-[#2F6B3A]">R</span>
                             )}
                             {cell.pfConditions?.structured_post_mortem === 'partial' && (
-                              <span className="absolute right-0.5 top-0 text-[8px] font-bold text-amber-700">r</span>
+                              <span className="absolute right-0.5 top-0 text-[8px] font-bold text-[#8A5A00]">r</span>
                             )}
                           </div>
                         </td>
@@ -169,8 +167,8 @@ export function ScaffoldingStripClient({ slug, targets, selectedTargetId }: Prop
                     })}
                     <td className="px-2 py-1">
                       <div className="flex flex-col gap-0.5">
-                        <span className={`inline-flex w-fit rounded px-1.5 py-0.5 text-xs font-medium ${status.cls}`}>{status.label}</span>
-                        <span className={`inline-flex w-fit rounded px-1.5 py-0.5 text-xs font-medium ${pf.cls}`}>{pf.label}</span>
+                        <span className={`pg-cue ${status.cls}`}>{status.label}</span>
+                        <span className={`pg-cue ${pf.cls}`}>{pf.label}</span>
                       </div>
                     </td>
                   </tr>
@@ -178,14 +176,14 @@ export function ScaffoldingStripClient({ slug, targets, selectedTargetId }: Prop
               })}
             </tbody>
           </table>
-          <p className="mt-2 px-2 text-xs text-stone-500">
+          <p className="pg-meta" style={{ padding: '8px 16px 12px' }}>
             PF dots reflect course-level productive-failure conditions applied to each sub-competency the course contributes to. &ldquo;no PF data&rdquo; means Audit Area 7 was not assessed for that course (distinct from &ldquo;absent&rdquo;).
           </p>
         </div>
       )}
 
-      <div className="space-y-1 text-xs text-muted-foreground">
-        <p><span className="inline-block h-2 w-2 rounded-full bg-emerald-500 mr-1.5 align-middle" />green dot = ≥3 PF conditions present · <span className="inline-block h-2 w-2 rounded-full bg-amber-400 mx-1.5 align-middle" />amber = ≥1.5 · <span className="inline-block h-2 w-2 rounded-full bg-rose-500 mx-1.5 align-middle" />red = &lt;1.5 · <span className="inline-block h-2 w-2 rounded-full bg-stone-300 mx-1.5 align-middle" />grey = PF not assessed</p>
+      <div className="pg-meta" style={{ display: 'grid', gap: 4 }}>
+        <p><span className="inline-block h-2 w-2 rounded-full bg-[#2F6B3A] mr-1.5 align-middle" />green dot = ≥3 PF conditions present · <span className="inline-block h-2 w-2 rounded-full bg-[#B57600] mx-1.5 align-middle" />amber = ≥1.5 · <span className="inline-block h-2 w-2 rounded-full bg-[#9B2C2C] mx-1.5 align-middle" />red = &lt;1.5 · <span className="inline-block h-2 w-2 rounded-full bg-[#B9B4C4] mx-1.5 align-middle" />grey = PF not assessed</p>
         <p>R = structured post-mortem present · r = partial · cell background = D depth (0–5, light→saturated)</p>
       </div>
     </div>

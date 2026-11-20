@@ -16,6 +16,7 @@ import { reliabilityForModel } from '@/lib/program/reliability-summary';
 import { countScoredPairsForRows, staleSnapshotButtonLabel } from '@/lib/program/stale-pairs';
 import { BAND_FLOORS, BAND_LABELS, MEMBERSHIP_CUTOFF, PINNED_LABEL, bandOf } from '@/lib/catalog/membership';
 import { filterByImportance } from './importance-filter';
+import './program.css';
 
 interface MatrixData {
   courses: MatrixCourse[];
@@ -54,24 +55,14 @@ interface SelectedCell {
   cell: MatrixCoverageCell | null;  // null when not yet scored
 }
 
-// Convert a max(K/U/D) depth into a Tailwind background class.
+// Convert a max(K/U/D) depth into a design-system D0-D5 ramp class (program.css).
 function depthColor(maxDepth: number | null): string {
-  if (maxDepth === null) return 'bg-slate-100';   // not scored yet
-  if (maxDepth === 0) return 'bg-slate-50';        // not present
-  if (maxDepth === 1) return 'bg-orange-100';
-  if (maxDepth === 2) return 'bg-orange-200';
-  if (maxDepth === 3) return 'bg-amber-300';
-  if (maxDepth === 4) return 'bg-lime-400';
-  if (maxDepth === 5) return 'bg-emerald-500';
-  return 'bg-slate-100';
+  if (maxDepth === null) return 'pg-dnone';   // not scored yet
+  return 'pg-d' + Math.max(0, Math.min(5, maxDepth));
 }
 
-function depthText(maxDepth: number | null): string {
-  if (maxDepth === null) return 'text-slate-400';
-  if (maxDepth === 0) return 'text-slate-300';
-  if (maxDepth >= 5) return 'text-white';
-  if (maxDepth >= 4) return 'text-slate-900';
-  return 'text-slate-700';
+function depthText(_maxDepth: number | null): string {
+  return '';   // text color is part of the ramp class
 }
 
 function maxOf(c: MatrixCoverageCell | null): number | null {
@@ -107,22 +98,15 @@ function psDepthOf(c: MatrixCoverageCell | null): number | null {
 }
 
 function psColor(d: number | null): string {
-  if (d === null) return 'bg-slate-100';
-  if (d === 0) return 'bg-slate-50';
-  if (d === 1) return 'bg-slate-100';        // de-emphasized: low PF contribution
-  if (d === 2) return 'bg-slate-200';        // de-emphasized
-  if (d === 3) return 'bg-amber-200';         // emerging
-  if (d === 4) return 'bg-lime-400';          // problem-solving territory
-  if (d === 5) return 'bg-emerald-600';       // mastery / creative judgment
-  return 'bg-slate-100';
+  if (d === null) return 'pg-dnone';
+  if (d <= 1) return 'pg-d0';        // de-emphasized: low PF contribution
+  if (d === 2) return 'pg-d1';       // de-emphasized
+  if (d === 3) return 'pg-d2';       // emerging
+  return 'pg-d' + Math.min(5, d);    // 4: problem-solving territory, 5: mastery
 }
 
-function psText(d: number | null): string {
-  if (d === null) return 'text-slate-400';
-  if (d <= 2) return 'text-slate-500';
-  if (d === 3) return 'text-amber-900';
-  if (d === 4) return 'text-slate-900';
-  return 'text-white';
+function psText(_d: number | null): string {
+  return '';
 }
 
 function fmtDate(d: string | Date): string {
@@ -284,11 +268,11 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
 
   if (data.courses.length === 0) {
     return (
-      <div className="rounded-md border bg-card px-6 py-12 text-center">
-        <h2 className="text-lg font-semibold">No snapshots yet</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+      <div className="pg-card pg-center">
+        <h2 className="pg-h2">No snapshots yet</h2>
+        <p className="pg-meta mt-2">
           Capture and snapshot at least one course before the coverage matrix has anything to show.{' '}
-          <Link href={`/capture/GC%201010?slug=${encodeURIComponent(slug)}`} className="underline hover:text-foreground">
+          <Link href={`/capture/GC%201010?slug=${encodeURIComponent(slug)}`} className="pg-link">
             Start with a course
           </Link>.
         </p>
@@ -298,9 +282,9 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
 
   if (data.targets.length === 0) {
     return (
-      <div className="rounded-md border bg-card px-6 py-12 text-center">
-        <h2 className="text-lg font-semibold">No career targets defined</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+      <div className="pg-card pg-center">
+        <h2 className="pg-h2">No career targets defined</h2>
+        <p className="pg-meta mt-2">
           The matrix scores courses against career targets and their sub-competencies. Define those first in the prototype area.
         </p>
       </div>
@@ -315,14 +299,14 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
   const totalPairs = data.courses.length * data.targets.length;
 
   return (
-    <div className="space-y-5">
+    <div className="pg-stack">
       {/* Status & refresh */}
-      <section className="rounded-md border bg-card px-4 py-3 flex items-center justify-between">
-        <div className="text-xs text-muted-foreground">
+      <section className="pg-card pg-card-pad pg-bar">
+        <div className="pg-meta">
           <p>
-            <span className="font-medium text-foreground">{data.courses.length} course{data.courses.length === 1 ? '' : 's'}</span> with snapshots ·
+            <span className="font-semibold">{data.courses.length} course{data.courses.length === 1 ? '' : 's'}</span> with snapshots ·
             {' '}
-            <span className="font-medium text-foreground">{data.targets.length} career target{data.targets.length === 1 ? '' : 's'}</span> ·
+            <span className="font-semibold">{data.targets.length} career target{data.targets.length === 1 ? '' : 's'}</span> ·
             {' '}
             {/* m-G (final whole-branch review): "matrix pairs" here, "stale
                 snapshots" in the button/progress text below — two
@@ -330,24 +314,24 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
                 missing competencies scored in one call; an unlinked
                 competency has no pair at all) that must never share a
                 bare word like "pairs" or "scored" alone. */}
-            <span className="font-medium text-foreground">{scoredCount}/{totalPairs}</span> matrix pairs scored
+            <span className="font-semibold">{scoredCount}/{totalPairs}</span> matrix pairs scored
           </p>
           {refreshing ? (
-            <p className="mt-1 flex items-center gap-2 text-muted-foreground">
+            <p className="mt-1 flex items-center gap-2">
               <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-transparent" aria-hidden />
               Scoring {staleSnapshotCount} snapshot{staleSnapshotCount === 1 ? '' : 's'}… {scoreElapsed}s · heavy model, ~3–8s each (usually under 2 min).
             </p>
           ) : refreshStatus ? (
-            <p className="mt-1 text-muted-foreground">{refreshStatus}</p>
+            <p className="mt-1">{refreshStatus}</p>
           ) : null}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="pg-row">
           {isAdmin && (
             <button
               type="button"
               onClick={handleRefresh}
               disabled={refreshing || staleSnapshotCount === 0}
-              className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+              className="pg-btn pg-btn-primary"
             >
               {refreshing ? 'Scoring…' : staleSnapshotButtonLabel(staleSnapshotCount)}
             </button>
@@ -355,7 +339,7 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
           <button
             type="button"
             onClick={() => setFlagsOpen(o => !o)}
-            className="ml-3 rounded-md border border-input bg-background px-3 py-1.5 text-xs hover:bg-muted"
+            className="pg-btn"
           >
             ⚑ {openFlags.length} open {openFlags.length === 1 ? 'flag' : 'flags'}
           </button>
@@ -363,21 +347,21 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
       </section>
 
       {flagsOpen && (
-        <section className="rounded-md border bg-card">
-          <header className="border-b px-4 py-2 text-xs font-semibold">Dispute flags</header>
+        <section className="pg-card">
+          <header className="pg-card-head pg-label">Dispute flags</header>
           <FlagsPanel flags={flags} slug={slug} isAdmin={isAdmin} onChanged={() => void refetchFlags()} />
         </section>
       )}
 
       {/* Lens toggle */}
-      <section className="rounded-md border bg-card px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Lens:</span>
-          <div className="flex rounded-md border overflow-hidden text-xs">
+      <section className="pg-card pg-card-pad pg-stack" style={{ gap: 12 }}>
+        <div className="pg-row">
+          <span className="pg-label">Lens</span>
+          <div className="pg-seg">
             <button
               type="button"
               onClick={() => setLens('coverage')}
-              className={'px-3 py-1.5 ' + (lens === 'coverage' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/50 text-foreground')}
+              aria-pressed={lens === 'coverage'}
               title="Show K/U/D coverage colored by max depth across all three dimensions"
             >
               Coverage
@@ -385,18 +369,18 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
             <button
               type="button"
               onClick={() => setLens('problem-solving')}
-              className={'px-3 py-1.5 border-l ' + (lens === 'problem-solving' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/50 text-foreground')}
+              aria-pressed={lens === 'problem-solving'}
               title="Upper-depth opportunity map: emphasizes the U/D upper-range depths where problem-solving CAN form. Reads depth alone — whether the program actually builds problem-solving (productive failure × reflection × sequence) is the Scaffolding view (Phase 1B). Per docs/background.html §8."
             >
               Upper-depth
             </button>
           </div>
-          <span className="ml-3 text-xs text-muted-foreground">Scores:</span>
-          <div className="flex rounded-md border overflow-hidden text-xs">
+          <span className="pg-label">Scores</span>
+          <div className="pg-seg">
             <button
               type="button"
               onClick={() => setDepthDisplay('bands')}
-              className={'px-3 py-1.5 ' + (depthDisplay === 'bands' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/50 text-foreground')}
+              aria-pressed={depthDisplay === 'bands'}
               title="Show depth bands (— / L / W / H) — the resolution the instrument is known to support; exact 0–5 integers are one click away in the cell detail. Rationale: no inter-rater reliability data exists yet for the depth scale (A6 study queued), so program-level displays don't present integers as if they were precise measurements."
             >
               Bands
@@ -404,18 +388,18 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
             <button
               type="button"
               onClick={() => setDepthDisplay('exact')}
-              className={'px-3 py-1.5 border-l ' + (depthDisplay === 'exact' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/50 text-foreground')}
+              aria-pressed={depthDisplay === 'exact'}
               title="Show exact 0–5 integers per dimension. Treat as point estimates with unknown error bars until the reliability study lands."
             >
               Exact
             </button>
           </div>
-          <label className="ml-3 flex items-center gap-2 text-xs text-muted-foreground">
+          <label className="pg-row pg-meta">
             <span>Show competencies at least</span>
             <select
               value={importanceFloor}
               onChange={e => setImportanceFloor(Number(e.target.value))}
-              className="rounded-md border bg-card px-2 py-1 text-xs text-foreground"
+              className="pg-select"
             >
               <option value={BAND_FLOORS.somewhat}>{BAND_LABELS.somewhat}</option>
               <option value={BAND_FLOORS.important}>{BAND_LABELS.important}</option>
@@ -423,18 +407,18 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
             </select>
           </label>
         </div>
-        <p className="w-full text-xs text-muted-foreground">
+        <p className="pg-meta">
           Pinned competencies always show. Competencies below Important are not scored yet, so their cells may be empty.
         </p>
         {lens === 'problem-solving' && psRollup && (
-          <div className="text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{psRollup.reachedDeep}</span>
+          <div className="pg-meta">
+            <span className="font-semibold">{psRollup.reachedDeep}</span>
             <span> of {psRollup.total} sub-competencies reach the upper-range U/D depth (≥4) across the program. </span>
-            <span className="text-amber-700">{psRollup.reachedPracticed}</span>
+            <span className="font-semibold">{psRollup.reachedPracticed}</span>
             <span> practiced (=3), </span>
-            <span className="text-slate-500">{psRollup.reachedShallow}</span>
+            <span className="font-semibold">{psRollup.reachedShallow}</span>
             <span> shallow (1–2), </span>
-            <span className="text-slate-400">{psRollup.absent}</span>
+            <span className="font-semibold">{psRollup.absent}</span>
             <span> absent.</span>
             {/* TODO(evidence-ladder): add "N of M upper-depth cells materials-supported"
                 split here once the coverage cell payload exposes per-claim source/citations.
@@ -449,19 +433,15 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
       </section>
 
       {/* Target tabs */}
-      <section className="border-b">
-        <div className="flex gap-1 overflow-x-auto">
+      <section>
+        <div className="pg-tabs">
           {data.targets.map(t => (
             <button
               key={t.id}
               type="button"
               onClick={() => setActiveTargetId(t.id)}
-              className={
-                'px-3 py-2 text-xs font-medium border-b-2 -mb-px ' + (t.id === activeTargetId
-                  ? 'border-primary text-foreground'
-                  : 'border-transparent text-muted-foreground hover:text-foreground')
-              }
-            >
+              className="pg-tab"
+              aria-pressed={t.id === activeTargetId}>
               {t.name}
             </button>
           ))}
@@ -470,25 +450,24 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
 
       {/* Matrix */}
       {activeTarget && (
-        <section className="rounded-md border bg-card overflow-x-auto">
+        <section className="pg-card pg-matrix">
           {visibleSubs.length === 0 ? (
-            <p className="px-6 py-8 text-center text-sm text-muted-foreground">
+            <p className="pg-meta pg-center">
               {activeTarget.name} has no sub-competencies defined yet.
             </p>
           ) : (
-            <table className="w-full text-xs">
+            <table className="pg-table">
               <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="text-left px-3 py-2 sticky left-0 bg-muted/30 font-semibold text-muted-foreground">Course</th>
+                <tr>
+                  <th className="pg-sticky">Course</th>
                   {visibleSubs.map(s => (
                     <th
                       key={s.id}
-                      className="px-2 py-2 font-medium text-muted-foreground border-l align-bottom"
-                      style={{ minWidth: '88px', maxWidth: '120px' }}
+                                            style={{ minWidth: '88px', maxWidth: '120px' }}
                       title={s.name}
                     >
-                      <div className="text-xs leading-tight">{s.name}</div>
-                      <div className="mt-0.5 text-[10px] font-normal leading-tight text-muted-foreground/80">
+                      <div className="leading-tight" style={{ color: '#1D1B22' }}>{s.name}</div>
+                      <div className="mt-0.5 text-[10px] font-normal leading-tight">
                         {(() => {
                           const b = bandOf(s.weight);
                           const label = b ? BAND_LABELS[b] : s.pinned ? PINNED_LABEL : '';
@@ -501,12 +480,12 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
               </thead>
               <tbody>
                 {data.courses.map(course => (
-                  <tr key={course.snapshotId} className="border-t">
-                    <th className="text-left px-3 py-2 sticky left-0 bg-card border-r" style={{ minWidth: '120px' }}>
-                      <div className="font-mono text-xs text-foreground">{formatCourseLabel(course.courseCode, course.pairedCodes)}</div>
-                      <div className="text-xs text-muted-foreground truncate" style={{ maxWidth: '190px' }} title={course.courseTitle}>{course.courseTitle}</div>
+                  <tr key={course.snapshotId}>
+                    <th className="pg-sticky" style={{ minWidth: '120px' }}>
+                      <div className="pg-code">{formatCourseLabel(course.courseCode, course.pairedCodes)}</div>
+                      <div className="pg-meta truncate" style={{ maxWidth: '190px' }} title={course.courseTitle}>{course.courseTitle}</div>
                       {course.instructorName && (
-                        <div className="text-xs italic text-muted-foreground truncate" style={{ maxWidth: '190px' }} title={`Captured by ${course.instructorName}`}>by {course.instructorName}</div>
+                        <div className="pg-meta italic truncate" style={{ maxWidth: '190px' }} title={`Captured by ${course.instructorName}`}>by {course.instructorName}</div>
                       )}
                     </th>
                     {visibleSubs.map(s => {
@@ -524,33 +503,29 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
                         <td
                           key={s.id}
                           onClick={() => setSelected({ course, subCompetency: s, cell })}
-                          className={
-                            'px-2 py-2 text-center border-l cursor-pointer transition '
-                            + colorClass + ' '
-                            + (isSelected ? 'ring-2 ring-primary ring-inset' : 'hover:opacity-80')
-                          }
+                          className={'pg-cell ' + colorClass + (isSelected ? ' is-selected' : '')}
                           title={cell?.rationale || (cell === null ? 'Not scored yet — click to score' : '')}
                         >
                           {cell ? (
-                            <div className="font-mono text-xs">
+                            <div>
                               {depthDisplay === 'bands'
                                 ? `${depthBand(cell.kDepth)?.short ?? '·'}/${depthBand(cell.uDepth)?.short ?? '·'}/${depthBand(cell.dDepth)?.short ?? '·'}`
                                 : `${cell.kDepth ?? '—'}/${cell.uDepth ?? '—'}/${cell.dDepth}`}
                             </div>
                           ) : (
-                            <div className="text-xs italic text-muted-foreground">—</div>
+                            <div className="pg-cell-note">—</div>
                           )}
                           {/* A16: K1-only dissociation badge — exposure, not coverage. */}
                           {cell && isMentionOnly(cell.kDepth, cell.uDepth, cell.dDepth) && (
                             <div
-                              className="text-xs italic leading-tight opacity-80"
+                              className="pg-cell-note"
                               title="Mentioned, never engaged — K=1 with no Understand or Do evidence. The topic was delivered (e.g. appeared in a lecture or module) but students never reasoned about it or performed it. Counts as exposure, not coverage."
                             >
                               mention only
                             </div>
                           )}
                           {cellFlags.length > 0 && (
-                            <div className="text-xs" title={`${cellFlags.length} open flag${cellFlags.length === 1 ? '' : 's'}`} aria-label="open flags">⚑{cellFlags.length > 1 ? cellFlags.length : ''}</div>
+                            <div className="pg-flagmark" title={`${cellFlags.length} open flag${cellFlags.length === 1 ? '' : 's'}`} aria-label="open flags">⚑{cellFlags.length > 1 ? cellFlags.length : ''}</div>
                           )}
                         </td>
                       );
@@ -564,34 +539,34 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
       )}
 
       {/* Legend */}
-      <section className="rounded-md border bg-muted/20 px-4 py-3">
+      <section className="pg-card pg-card-pad">
         {lens === 'coverage' ? (
           depthDisplay === 'bands' ? (
             <>
-              <div className="flex items-center gap-4 flex-wrap text-xs">
-                <span className="text-muted-foreground">Cell text = K/U/D band:</span>
-                <span className="flex items-center gap-1"><span className="inline-block h-4 w-6 rounded bg-slate-50 text-slate-400 text-center font-mono leading-4">—</span><span className="text-muted-foreground">not present (0)</span></span>
-                <span className="flex items-center gap-1"><span className={`inline-block h-4 w-6 rounded ${depthColor(2)} ${depthText(2)} text-center font-mono leading-4`}>L</span><span className="text-muted-foreground">low (1–2)</span></span>
-                <span className="flex items-center gap-1"><span className={`inline-block h-4 w-6 rounded ${depthColor(3)} ${depthText(3)} text-center font-mono leading-4`}>W</span><span className="text-muted-foreground">working (3)</span></span>
-                <span className="flex items-center gap-1"><span className={`inline-block h-4 w-6 rounded ${depthColor(4)} ${depthText(4)} text-center font-mono leading-4`}>H</span><span className="text-muted-foreground">high (4–5)</span></span>
-                <span className="flex items-center gap-1"><span className="inline-block h-4 w-6 rounded bg-slate-100 text-slate-400 text-center font-mono leading-4">·</span><span className="text-muted-foreground">no data (foundational K/U)</span></span>
-                <span className="flex items-center gap-1 ml-auto">
-                  <span className={`inline-block h-4 w-6 rounded ${depthColor(null)}`}></span>
-                  <span className="text-muted-foreground">not scored</span>
+              <div className="pg-legend">
+                <span>Cell text = K/U/D band:</span>
+                <span><span className="pg-sw pg-d0">—</span><span>not present (0)</span></span>
+                <span><span className={`pg-sw ${depthColor(2)}`}>L</span><span>low (1–2)</span></span>
+                <span><span className={`pg-sw ${depthColor(3)}`}>W</span><span>working (3)</span></span>
+                <span><span className={`pg-sw ${depthColor(4)}`}>H</span><span>high (4–5)</span></span>
+                <span><span className="pg-sw pg-dnone">·</span><span>no data (foundational K/U)</span></span>
+                <span style={{ marginLeft: 'auto' }}>
+                  <span className={`pg-sw ${depthColor(null)}`}></span>
+                  <span>not scored</span>
                 </span>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="pg-meta mt-2">
                 Bands are the display default because the 0–5 depth instrument has no published reliability data yet — exact integers are point estimates with unknown error bars (the calibration study is queued). Click any cell for the exact scores, evidence, and rationale, or switch &ldquo;Scores: Exact&rdquo; above. Cell color = max(K, U, D). Cells marked <span className="italic">mention only</span> are K=1 with no Understand/Do evidence — the topic was delivered but never engaged; treat as exposure, not coverage.
               </p>
             </>
           ) : (
           <>
-            <div className="flex items-center gap-4 flex-wrap text-xs">
-              <span className="text-muted-foreground">Cell color = max(K, U, D):</span>
+            <div className="pg-legend">
+              <span>Cell color = max(K, U, D):</span>
               {[0, 1, 2, 3, 4, 5].map(n => (
                 <span key={n} className="flex items-center gap-1">
-                  <span className={`inline-block h-4 w-6 rounded ${depthColor(n)} ${depthText(n)} text-center font-mono leading-4`}>{n}</span>
-                  <span className="text-muted-foreground">{
+                  <span className={`pg-sw ${depthColor(n)}`}>{n}</span>
+                  <span>{
                     n === 0 ? 'not present' :
                     n === 1 ? 'mentioned' :
                     n === 2 ? 'introduced' :
@@ -601,24 +576,24 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
                   }</span>
                 </span>
               ))}
-              <span className="flex items-center gap-1 ml-auto">
-                <span className={`inline-block h-4 w-6 rounded ${depthColor(null)}`}></span>
-                <span className="text-muted-foreground">not scored</span>
+              <span style={{ marginLeft: 'auto' }}>
+                <span className={`pg-sw ${depthColor(null)}`}></span>
+                <span>not scored</span>
               </span>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="pg-meta mt-2">
               Each cell shows K/U/D scores — treat them as point estimates with unknown error bars until the reliability study lands. Click a cell for details and evidence. Click &ldquo;Score&rdquo; to run the AI scorer on missing pairs. Cells marked <span className="italic">mention only</span> are K=1 with no Understand/Do evidence — delivered but never engaged; exposure, not coverage.
             </p>
           </>
           )
         ) : (
           <>
-            <div className="flex items-center gap-4 flex-wrap text-xs">
-              <span className="text-muted-foreground">Cell color = max(U, D), graded:</span>
+            <div className="pg-legend">
+              <span>Cell color = max(U, D), graded:</span>
               {[0, 1, 2, 3, 4, 5].map(n => (
                 <span key={n} className="flex items-center gap-1">
-                  <span className={`inline-block h-4 w-6 rounded ${psColor(n)} ${psText(n)} text-center font-mono leading-4`}>{n}</span>
-                  <span className="text-muted-foreground">{
+                  <span className={`pg-sw ${psColor(n)}`}>{n}</span>
+                  <span>{
                     n === 0 ? 'absent' :
                     n === 1 ? 'shallow' :
                     n === 2 ? 'shallow' :
@@ -629,10 +604,10 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
                 </span>
               ))}
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              This <strong>upper-depth opportunity map</strong> emphasizes the U/D upper-range depths — where the <em>opportunity</em> for problem-solving formation appears. It reads <strong>depth alone</strong>; whether a course actually builds transferable problem-solving (productive failure × structured reflection × sequence) is the Scaffolding view (Phase 1B), not this map. U-4/5 = reasons through and critiques principles in novel cases; D-4/5 = adapts to new conditions, performs with creative judgment. Lower depths are de-emphasized but not hidden — they contribute in degrees, per <a href="https://tonkin.people.clemson.edu/pages/gc-curriculum/background.html#problem-solving" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">background.html §8</a>. K is excluded (recall alone doesn&rsquo;t indicate problem-solving).
+            <p className="pg-meta mt-2">
+              This <strong>upper-depth opportunity map</strong> emphasizes the U/D upper-range depths — where the <em>opportunity</em> for problem-solving formation appears. It reads <strong>depth alone</strong>; whether a course actually builds transferable problem-solving (productive failure × structured reflection × sequence) is the Scaffolding view (Phase 1B), not this map. U-4/5 = reasons through and critiques principles in novel cases; D-4/5 = adapts to new conditions, performs with creative judgment. Lower depths are de-emphasized but not hidden — they contribute in degrees, per <a href="https://tonkin.people.clemson.edu/pages/gc-curriculum/background.html#problem-solving" target="_blank" rel="noopener noreferrer" className="pg-link">background.html §8</a>. K is excluded (recall alone doesn&rsquo;t indicate problem-solving).
             </p>
-            <p className="mt-1 text-xs text-muted-foreground italic">
+            <p className="pg-meta mt-1 italic">
               v2 (planned): weight the contribution of each contributing snapshot by its productive-failure conditions (Audit Area 7 of CourseCapture) so this view also reflects whether the courses that reach upper depths do so through the kind of pedagogy that produces transferable problem-solving rather than memorization at depth.
             </p>
           </>
@@ -684,7 +659,7 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
         />
       )}
       {scoringError && (
-        <p className="text-xs text-destructive">Scoring error: {scoringError}</p>
+        <p className="pg-err">Scoring error: {scoringError}</p>
       )}
     </div>
   );
@@ -713,27 +688,27 @@ function CellDetailDrawer({
 }) {
   const { course, subCompetency, cell } = selected;
   return (
-    <section className="rounded-md border bg-card shadow-sm">
-      <header className="flex items-center justify-between border-b px-4 py-2">
+    <section className="pg-card">
+      <header className="pg-card-head pg-bar">
         <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          <p className="pg-eyebrow">
             {course.courseCode} × {targetName}
           </p>
-          <h3 className="mt-0.5 text-sm font-semibold">{subCompetency.name}</h3>
+          <h3 className="pg-h2" style={{ fontSize: 18 }}>{subCompetency.name}</h3>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="pg-btn pg-btn-sm"
         >
           close
         </button>
       </header>
-      <div className="px-4 py-3 space-y-3 text-xs">
+      <div className="pg-card-pad pg-stack text-xs" style={{ gap: 14 }}>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Course</p>
+          <p className="pg-label">Course</p>
           <p className="mt-0.5 text-sm">{course.courseTitle}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="pg-meta mt-0.5">
             Snapshot {course.snapshotCaption || ''} · {fmtDate(course.snapshotCreatedAt)}
             {course.instructorName ? ` · by ${course.instructorName}` : ''}
           </p>
@@ -748,19 +723,19 @@ function CellDetailDrawer({
             </div>
 
             {isMentionOnly(cell.kDepth, cell.uDepth, cell.dDepth) && (
-              <p className="rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
+              <p className="pg-note" style={{ background: '#FFF4DB', color: '#8A5A00' }}>
                 <span className="font-semibold">Mention only.</span> K=1 with no Understand or Do evidence — the topic was delivered but students never reasoned about it or performed it. This is the K1-only dissociation case: exposure, not coverage.
               </p>
             )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Confidence</p>
+                <p className="pg-label">Confidence</p>
                 <p className="mt-0.5">{cell.confidence}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Scored by</p>
-                <p className="mt-0.5 font-mono text-xs" title="The model that produced this cell's scores. Provider/model changes alter scoring behavior — comparisons across cells scored by different models carry that caveat.">{cell.model}</p>
+                <p className="pg-label">Scored by</p>
+                <p className="mt-0.5 pg-code" title="The model that produced this cell's scores. Provider/model changes alter scoring behavior — comparisons across cells scored by different models carry that caveat.">{cell.model}</p>
               </div>
             </div>
 
@@ -769,9 +744,9 @@ function CellDetailDrawer({
               if (rel) {
                 return (
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Stability</p>
+                    <p className="pg-label">Stability</p>
                     <p
-                      className="mt-0.5 text-xs text-muted-foreground"
+                      className="pg-meta mt-0.5"
                       title="Test-retest stability — the same model gave the same band this fraction of the time across N=5 re-runs on fixed inputs. Consistency, not correctness; human validation is separate (study part iii, pending)."
                     >
                       Re-run agreement ({rel.date}): D {Math.round(rel.d * 100)}% · U {Math.round(rel.u * 100)}% · K {Math.round(rel.k * 100)}%
@@ -781,44 +756,44 @@ function CellDetailDrawer({
               }
               return (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Stability</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground italic">Stability not yet measured for this model.</p>
+                  <p className="pg-label">Stability</p>
+                  <p className="pg-meta mt-0.5 italic">Stability not yet measured for this model.</p>
                 </div>
               );
             })()}
 
             {cell.matchedCompetency && (
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Matched snapshot competency</p>
+                <p className="pg-label">Matched snapshot competency</p>
                 <p className="mt-0.5 leading-snug">{cell.matchedCompetency}</p>
               </div>
             )}
 
             {cell.evidenceExcerpt && (
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Evidence</p>
-                <blockquote className="mt-0.5 border-l-2 border-muted pl-2 italic text-muted-foreground">
+                <p className="pg-label">Evidence</p>
+                <blockquote className="pg-quote mt-0.5">
                   {cell.evidenceExcerpt}
                 </blockquote>
               </div>
             )}
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Rationale</p>
-              <p className="mt-0.5 leading-snug text-muted-foreground">{cell.rationale}</p>
+              <p className="pg-label">Rationale</p>
+              <p className="pg-meta mt-0.5">{cell.rationale}</p>
             </div>
 
-            <div className="flex items-center gap-3 pt-2 border-t">
+            <div className="pg-row" style={{ borderTop: '1px solid #EEECF2', paddingTop: 12 }}>
               <Link
                 href={`/capture/${encodeURIComponent(course.courseCode)}?slug=${encodeURIComponent(slug)}`}
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="pg-link"
               >
                 View snapshot →
               </Link>
               <button
                 type="button"
                 onClick={onFlag}
-                className="rounded-md border border-input bg-background px-2.5 py-1 text-xs hover:bg-muted"
+                className="pg-btn pg-btn-sm"
               >
                 ⚑ Flag this reading{openFlagCount > 0 ? ` (${openFlagCount} open)` : ''}
               </button>
@@ -827,7 +802,8 @@ function CellDetailDrawer({
                   type="button"
                   onClick={onScore}
                   disabled={scoring}
-                  className="ml-auto rounded-md border border-input bg-background px-2.5 py-1 text-xs hover:bg-muted disabled:opacity-50"
+                  className="pg-btn pg-btn-sm"
+                  style={{ marginLeft: 'auto' }}
                 >
                   {scoring ? 'Re-scoring…' : 'Re-score this pair'}
                 </button>
@@ -836,13 +812,13 @@ function CellDetailDrawer({
           </>
         ) : (
           <div className="space-y-3">
-            <p className="italic text-muted-foreground">This (snapshot, target) pair has not been scored yet.</p>
+            <p className="pg-meta italic">This (snapshot, target) pair has not been scored yet.</p>
             {isAdmin && (
               <button
                 type="button"
                 onClick={onScore}
                 disabled={scoring}
-                className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                className="pg-btn pg-btn-sm pg-btn-primary"
               >
                 {scoring ? 'Scoring…' : 'Score this pair'}
               </button>
@@ -850,7 +826,7 @@ function CellDetailDrawer({
             <button
               type="button"
               onClick={onFlag}
-              className="rounded-md border border-input bg-background px-2.5 py-1 text-xs hover:bg-muted"
+              className="pg-btn pg-btn-sm"
             >
               ⚑ Flag this reading{openFlagCount > 0 ? ` (${openFlagCount} open)` : ''}
             </button>
@@ -865,17 +841,18 @@ function DepthCell({ label, value }: { label: string; value: number | null }) {
   if (value === null) {
     return (
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="mt-0.5 text-sm italic text-muted-foreground">—</p>
+        <p className="pg-label">{label}</p>
+        <p className="pg-meta mt-0.5 italic">—</p>
       </div>
     );
   }
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={`mt-0.5 text-xl font-mono ${value >= 4 ? 'text-emerald-700' : value >= 2 ? 'text-amber-700' : 'text-slate-600'}`}>
-        {value}
-        <span className="ml-1.5 align-middle text-xs font-sans text-muted-foreground">{depthBand(value)?.word}</span>
+      <p className="pg-label">{label}</p>
+      <p className="mt-0.5 text-xl font-mono">
+        <span className={`pg-sw ${depthColor(value)}`} style={{ height: 28, minWidth: 34, fontSize: 16 }}>
+        {value}</span>
+        <span className="ml-1.5 align-middle text-xs font-sans pg-meta">{depthBand(value)?.word}</span>
       </p>
     </div>
   );
