@@ -26,8 +26,8 @@ type PillConfig = {
 };
 
 const STATUS_CONFIG: Record<CaptureStatus, PillConfig> = {
-  captured:     { label: 'Captured',    className: 'cs-cue-read' },
-  reviewed:     { label: 'Reviewed',    className: 'cs-cue-done' },
+  captured:     { label: 'Captured',    className: 'cs-cue-done' },
+  reviewed:     { label: 'Reviewed',    className: 'cs-cue-read' },
   'ai-drafted': { label: 'AI drafted',  className: 'cs-cue-draft' },
   'in-audit':   { label: 'In audit',    className: 'cs-cue-input' },
   'not-started':{ label: 'Not started', className: 'cs-cue-none' },
@@ -106,8 +106,8 @@ function StatusCounters({ rows }: { rows: CourseStatusRow[] }) {
   for (const r of rows) counts[r.status]++;
 
   const parts: Array<{ label: string; n: number; color: string }> = [
-    { label: 'captured',    n: counts['captured'],     color: 'cs-cue-read' },
-    { label: 'reviewed',    n: counts['reviewed'],     color: 'cs-cue-done' },
+    { label: 'captured',    n: counts['captured'],     color: 'cs-cue-done' },
+    { label: 'reviewed',    n: counts['reviewed'],     color: 'cs-cue-read' },
     { label: 'drafted',     n: counts['ai-drafted'],   color: 'cs-cue-draft' },
     { label: 'in audit',    n: counts['in-audit'],     color: 'cs-cue-input' },
     { label: 'not started', n: counts['not-started'],  color: 'cs-cue-none' },
