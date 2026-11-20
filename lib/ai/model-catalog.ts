@@ -3,7 +3,7 @@
  * newest OpenAI models marked untested. The gateway lists ~100 more (gpt-4o, gpt-4.1, o3, …); those stay
  * behind a "show everything" switch because nobody has tried them on our prompts.
  */
-import { CAMPUS_MODELS, MODEL_PRICING } from '@/lib/ai/models';
+import { CAMPUS_MODELS, MODEL_PRICING, VETTED_OPENAI_MODELS } from '@/lib/ai/models';
 
 export interface CatalogModel {
   id: string;
@@ -12,22 +12,13 @@ export interface CatalogModel {
   note: string | null;
 }
 
-const OPENAI_VETTED: Array<{ id: string; note: string | null }> = [
-  { id: 'gpt-6.1-sol', note: null },
-  { id: 'gpt-6.1-terra', note: null },
-  { id: 'gpt-6.2-sol', note: 'not tested here' },
-  { id: 'gpt-6.2-astra', note: 'not tested here' },
-  { id: 'gpt-5.4-mini', note: null },
-  { id: 'gpt-5.4-nano', note: null },
-];
-
 function priceOf(id: string): string {
   const p = MODEL_PRICING[id];
   return p ? `$${p.input.toFixed(2)} / $${p.output.toFixed(2)} per M tokens` : 'price not on file';
 }
 
 export const VETTED_MODELS: CatalogModel[] = [
-  ...OPENAI_VETTED.map(m => ({ id: m.id, provider: 'openai' as const, price: priceOf(m.id), note: m.note })),
+  ...VETTED_OPENAI_MODELS.map(m => ({ id: m.id, provider: 'openai' as const, price: priceOf(m.id), note: m.note })),
   ...CAMPUS_MODELS.map(id => ({ id, provider: 'campus' as const, price: 'free', note: null })),
 ];
 

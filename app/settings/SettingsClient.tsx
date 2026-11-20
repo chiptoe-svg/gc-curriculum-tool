@@ -7,6 +7,13 @@ import type {
   FunctionSettingRow,
 } from '@/lib/ai/function-settings';
 import { DEFAULT_REASONING_EFFORT, MODEL_ROLES, isCampusModel, type ModelRole, type RoleProvider, type RoleSetting } from '@/lib/ai/models';
+import { pickerGroups } from '@/lib/ai/model-catalog';
+import { evidenceFor, evidenceForKey, type Evidence } from '@/lib/settings/evidence-lookup';
+
+export interface SearchState {
+  rerank: { override: 'on' | 'off' | null; effective: boolean; model: string };
+  embedding: { model: string };
+}
 
 interface Props {
   slug: string;
@@ -28,6 +35,10 @@ interface Props {
    *  classify()). A non-admin viewer sees everything read-only with a
    *  note, instead of a save/reset click 403ing in front of them. */
   isAdmin: boolean;
+  /** The evidence register (docs/benchmarks), without page bodies. */
+  evidence?: Evidence[];
+  /** Reranker and embedding settings; null when they could not be read. */
+  search?: SearchState | null;
 }
 
 /**
@@ -127,7 +138,12 @@ export function SettingsClient({
   capCents,
   isAdmin,
   routes,
+  evidence = [],
+  search: initialSearch = null,
 }: Props) {
+  const [showAllModels, setShowAllModels] = useState(false);
+  const [search, setSearch] = useState<SearchState | null>(initialSearch);
+  const [searchBusy, setSearchBusy] = useState(false);
   const [settings, setSettings] = useState<FunctionSettingRow[]>(initialSettings);
   const [busy, setBusy] = useState<AIFunctionId | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
@@ -243,6 +259,29 @@ export function SettingsClient({
     }
   }
 
+  async function setRerank(value: 'on' | 'off' | null) {
+    setSearchBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/settings/search?slug=${encodeURIComponent(slug)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ rerank: value }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage({ kind: 'error', text: (json as { error?: string }).error ?? 'Save failed' });
+        return;
+      }
+      setSearch(json as SearchState);
+      setMessage({ kind: 'ok', text: `Reranking → ${value === null ? 'server default' : value}` });
+    } catch (e) {
+      setMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Save failed' });
+    } finally {
+      setSearchBusy(false);
+    }
+  }
+
   const modelAvailable = (id: string) => availableModels.length === 0 || availableModels.includes(id);
 
   return (
@@ -270,11 +309,15 @@ export function SettingsClient({
             </li>
           ))}
         </ul>
-        {availableModels.length > 0 && (
-          <p className="mt-2 text-xs">
-            {availableModels.length} chat-capable model{availableModels.length === 1 ? '' : 's'} available from this API key{modelsStale && ' (cached — could not refresh)'}.
-          </p>
-        )}
+        <p className="mt-2">
+          The model lists offer the models in use or tested here, plus the four campus models (free). The newest
+          OpenAI models are listed as not tested here.
+        </p>
+        <label className="mt-2 flex items-center gap-2 text-xs">
+          <input type="checkbox" checked={showAllModels} onChange={e => setShowAllModels(e.target.checked)} />
+          Show every model the gateway offers
+          {availableModels.length > 0 && <span>({availableModels.length}{modelsStale && ', cached'}; most are older models nobody has tested on our prompts)</span>}
+        </label>
         {modelsError && <p className="mt-2 text-destructive">{modelsError}</p>}
       </section>
 
@@ -297,12 +340,15 @@ export function SettingsClient({
               <p className="text-xs text-muted-foreground">
                 {group === 'custom' ? 'Functions pinned to a specific model.' : `${roles[group].purpose} · ${describeModel(roles[group])}`}
               </p>
+              {group !== 'custom' && <Basis evidence={evidenceForKey(evidence, `role:${group}`)} slug={slug} prefix="Role default" />}
             </header>
             {members.length === 0 && <p className="text-xs italic text-muted-foreground">No functions.</p>}
             {members.map(functionId => renderFunction(functionId))}
           </section>
         );
       })}
+
+      <SearchSection search={search} evidence={evidence} slug={slug} isAdmin={isAdmin} busy={searchBusy} onSet={setRerank} />
     </div>
   );
 
@@ -319,6 +365,10 @@ export function SettingsClient({
             <span className="font-mono text-xs text-muted-foreground">{describeModel({ model: s.resolvedModel, effort: s.resolvedEffort, provider: s.resolvedProvider, fallback: s.resolvedFallback })}</span>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">{descriptions[functionId]}</p>
+          <Basis
+            evidence={evidenceFor(evidence, functionId, s.tier === 'custom' ? defaults[functionId] : s.tier, s.tier === 'custom' || (!!routes?.[functionId] && !s.hasOverride))}
+            slug={slug}
+          />
         </header>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -330,6 +380,7 @@ export function SettingsClient({
             isCustom={s.tier === 'custom'}
             currentValue={s.customModel ?? ''}
             availableModels={availableModels}
+            showAll={showAllModels}
             disabled={isBusy || !isAdmin}
             onSet={(value) => setTier(functionId, 'custom', value)}
           />
@@ -408,31 +459,18 @@ function ModelDropdown({
   isCustom,
   currentValue,
   availableModels,
+  showAll,
   disabled,
   onSet,
 }: {
   isCustom: boolean;
   currentValue: string;
   availableModels: string[];
+  showAll: boolean;
   disabled: boolean;
   onSet: (model: string) => void;
 }) {
-  // When the list hasn't loaded yet (or failed), fall back to a disabled
-  // placeholder so the UI doesn't render an empty unusable dropdown.
-  if (availableModels.length === 0) {
-    return (
-      <span className="text-xs italic text-muted-foreground">
-        (loading models…)
-      </span>
-    );
-  }
-
-  // Show the current custom model in the dropdown even if it's somehow no
-  // longer in the available list — so users can see what they picked.
-  const optionList = isCustom && currentValue && !availableModels.includes(currentValue)
-    ? [currentValue, ...availableModels]
-    : availableModels;
-
+  const groups = pickerGroups(availableModels, showAll, isCustom && currentValue ? currentValue : null);
   return (
     <select
       value={isCustom ? currentValue : ''}
@@ -442,14 +480,74 @@ function ModelDropdown({
       }}
       disabled={disabled}
       className={
-        'rounded border border-input bg-background px-2 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 '
+        'max-w-full rounded border border-input bg-background px-2 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 '
         + (isCustom ? 'border-primary' : '')
       }
     >
       <option value="">pick specific model…</option>
-      {optionList.map(m => (
-        <option key={m} value={m}>{m}</option>
+      {groups.map(g => (
+        <optgroup key={g.label} label={g.label}>
+          {g.models.map(m => <option key={m.id} value={m.id}>{m.text}</option>)}
+        </optgroup>
       ))}
     </select>
+  );
+}
+
+/** "Basis: <summary> (<date>) · benchmark →", or a plain note that nothing was benchmarked. */
+function Basis({ evidence, slug, prefix }: { evidence: Evidence | null; slug: string; prefix?: string }) {
+  if (!evidence) {
+    return <p className="mt-1 text-xs italic text-muted-foreground">{prefix ? `${prefix}: not` : 'Not'} benchmarked for this function.</p>;
+  }
+  return (
+    <p className="mt-1 text-xs text-muted-foreground">
+      <span className="font-medium text-foreground">{prefix ? `${prefix} basis` : 'Basis'}:</span> {evidence.summary}{' '}
+      <span className="whitespace-nowrap">({evidence.date}) · <a className="underline hover:text-foreground" href={`/settings/benchmarks/${evidence.id}?slug=${encodeURIComponent(slug)}`}>benchmark →</a></span>
+    </p>
+  );
+}
+
+function SearchSection({ search, evidence, slug, isAdmin, busy, onSet }: {
+  search: SearchState | null;
+  evidence: Evidence[];
+  slug: string;
+  isAdmin: boolean;
+  busy: boolean;
+  onSet: (v: 'on' | 'off' | null) => void;
+}) {
+  return (
+    <section aria-labelledby="search-settings" className="space-y-3">
+      <header>
+        <h2 id="search-settings" className="text-sm font-semibold">Search</h2>
+        <p className="text-xs text-muted-foreground">How the interviewer finds passages in a course's materials (campus models, no cost).</p>
+      </header>
+      {!search ? (
+        <p className="text-xs text-destructive">Search settings could not be read.</p>
+      ) : (
+        <>
+          <div className="rounded-md border bg-card px-4 py-3 space-y-2">
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="text-sm font-semibold">Reranking</h3>
+              <span className="font-mono text-xs text-muted-foreground">campus · {search.rerank.model} · {search.rerank.effective ? 'on' : 'off'}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Re-orders the 50 best search matches so the most relevant passage comes first. Off returns the plain search order.</p>
+            <Basis evidence={evidenceForKey(evidence, 'search:rerank')} slug={slug} />
+            <div className="flex flex-wrap items-center gap-2">
+              <RoleButton label="On" active={search.rerank.override === 'on'} disabled={busy || !isAdmin} onClick={() => onSet('on')} />
+              <RoleButton label="Off" active={search.rerank.override === 'off'} disabled={busy || !isAdmin} onClick={() => onSet('off')} />
+              <RoleButton label="Server default" active={search.rerank.override === null} disabled={busy || !isAdmin} onClick={() => onSet(null)} />
+            </div>
+          </div>
+          <div className="rounded-md border bg-card px-4 py-3 space-y-1">
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="text-sm font-semibold">Embedding model</h3>
+              <span className="font-mono text-xs text-muted-foreground">campus · {search.embedding.model}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Turns passages and questions into vectors for search. Shown only: changing it means re-embedding every course's materials.</p>
+            <Basis evidence={evidenceForKey(evidence, 'search:embedding')} slug={slug} />
+          </div>
+        </>
+      )}
+    </section>
   );
 }

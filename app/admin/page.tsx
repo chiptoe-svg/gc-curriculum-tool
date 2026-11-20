@@ -31,6 +31,8 @@ export default async function AdminPage({ searchParams }: Props) {
           <Link href={`/admin/bundles?slug=${encodeURIComponent(slug)}`} className="text-blue-700 underline">Skill bundles</Link>
           {' · '}
           <Link href={`/admin/membership?slug=${encodeURIComponent(slug)}`} className="text-blue-700 underline">Career target competencies</Link>
+          {' · '}
+          <Link href={`/settings?slug=${encodeURIComponent(slug)}`} className="text-blue-700 underline">Settings</Link>
         </p>
       </header>
       <SandboxGrantsPanel slug={slug} sandboxCourses={sandboxCourses} />

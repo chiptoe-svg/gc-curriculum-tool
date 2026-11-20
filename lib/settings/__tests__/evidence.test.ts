@@ -27,7 +27,7 @@ describe('evidence register', () => {
     const list = loadEvidence(d);
     expect(list.map(e => e.id)).toEqual(['b-new', 'a-old']);
     expect(list[0]).toMatchObject({ title: 'New', date: '2026-11-19', applies: ['capture-chat-agent', 'role:converse'], summary: 'New summary' });
-    expect(list[0].body.trim()).toBe('Body text.');
+    expect(list[0]!.body.trim()).toBe('Body text.');
   });
 
   it('looks up function first, then role; campus-routed functions skip the role', () => {

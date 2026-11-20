@@ -12,7 +12,22 @@ import {
 import { ROLE_SETTINGS } from '@/lib/ai/models';
 import { getDailyCapCents, getDailyCostHistory } from '@/lib/rate-limit/daily-cap';
 import { getViewerAccess } from '@/lib/auth/viewer';
-import { SettingsClient } from './SettingsClient';
+import { SettingsClient, type SearchState } from './SettingsClient';
+import { loadEvidence } from '@/lib/settings/evidence';
+import { getRerankOverride, rerankEnabledNow } from '@/lib/settings/app-settings';
+import { DEFAULT_RERANK_MODEL } from '@/lib/ai/rerank';
+import { DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
+
+async function loadSearch(): Promise<SearchState | null> {
+  try {
+    return {
+      rerank: { override: await getRerankOverride(), effective: await rerankEnabledNow(), model: process.env.RERANK_MODEL?.trim() || DEFAULT_RERANK_MODEL },
+      embedding: { model: DEFAULT_EMBEDDING_MODEL },
+    };
+  } catch {
+    return null;
+  }
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -32,11 +47,13 @@ export default async function SettingsPage({ searchParams }: Props) {
     );
   }
 
-  const [settings, costHistory, { isAdmin }] = await Promise.all([
+  const [settings, costHistory, { isAdmin }, search] = await Promise.all([
     listAllFunctionSettings(),
     getDailyCostHistory(14),
     getViewerAccess(await headers()),
+    loadSearch(),
   ]);
+  const evidence = loadEvidence().map(e => ({ ...e, body: '' }));
   const capCents = getDailyCapCents();
 
   return (
@@ -65,6 +82,8 @@ export default async function SettingsPage({ searchParams }: Props) {
           costHistory={costHistory}
           capCents={capCents}
           isAdmin={isAdmin}
+          evidence={evidence}
+          search={search}
         />
       </main>
     </div>

@@ -46,6 +46,20 @@ export interface RoleSetting {
  */
 export const CAMPUS_MODELS = ['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017', 'glm-5.3', 'gptoss-120b'] as const;
 
+/**
+ * OpenAI models /settings offers by default (owner, 2026-11-20): the ones in use or tested here, plus the newest
+ * marked "not tested here". Everything else the gateway lists stays behind a "show everything" switch
+ * (lib/ai/model-catalog.ts).
+ */
+export const VETTED_OPENAI_MODELS: ReadonlyArray<{ id: string; note: string | null }> = [
+  { id: 'gpt-6.1-sol', note: null },
+  { id: 'gpt-6.1-terra', note: null },
+  { id: 'gpt-6.2-sol', note: 'not tested here' },
+  { id: 'gpt-6.2-astra', note: 'not tested here' },
+  { id: 'gpt-5.4-mini', note: null },
+  { id: 'gpt-5.4-nano', note: null },
+];
+
 export function isCampusModel(id: string): boolean {
   return (CAMPUS_MODELS as readonly string[]).includes(id);
 }
