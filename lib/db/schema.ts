@@ -1030,7 +1030,7 @@ export const targetSubCompetencies = pgView('target_sub_competencies', {
 }).existing();
 
 /**
- * VIEW (migration 0056): per-target coverage cells in the old
+ * VIEW (migration 0056; reads competency_levels since 0072): per-target coverage cells in the old
  * snapshot_target_coverage row shape — each snapshot_competency_coverage row
  * once per target that uses the competency. Read-only; write
  * snapshotCompetencyCoverage.
@@ -1048,6 +1048,31 @@ export const targetCoverage = pgView('target_coverage', {
   rationale: text('rationale').notNull(),
   model: text('model').notNull(),
   generatedAt: timestamp('generated_at', { withTimezone: true }).notNull(),
+}).existing();
+
+/** How a course version's level on a competency was decided (competency_levels.method, migration 0072). */
+export type LevelMethod = 'faculty' | 'ai' | 'scoring' | 'needs_level' | 'rejected';
+
+/**
+ * VIEW (migration 0072, spec 2026-11-20-links-drive-coverage-design.md): a course version's level on a
+ * competency under one rule — faculty level, else AI level, else the scorer's cell unless faculty rejected
+ * every link ('rejected', 0), else 'needs_level' (0). Read levels here (target_coverage reads it too);
+ * snapshot_competency_coverage stays the scorer's record (scoring, staleness, reset).
+ */
+export const competencyLevels = pgView('competency_levels', {
+  snapshotId: uuid('snapshot_id').notNull(),
+  competencyId: text('competency_id').notNull(),
+  kDepth: integer('k_depth'),
+  uDepth: integer('u_depth'),
+  dDepth: integer('d_depth').notNull(),
+  method: text('method').$type<LevelMethod>().notNull(),
+  matchedCompetency: text('matched_competency'),
+  evidenceExcerpt: text('evidence_excerpt'),
+  confidence: text('confidence').notNull(),
+  rationale: text('rationale').notNull(),
+  model: text('model').notNull(),
+  generatedAt: timestamp('generated_at', { withTimezone: true }).notNull(),
+  rollupRationale: text('rollup_rationale'),
 }).existing();
 
 // Per-function AI model settings. One row per function ID. Each row carries
