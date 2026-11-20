@@ -29,9 +29,12 @@ function checkNode(
     }
   }
   const versions = [...codes].flatMap((c) => versionsOf(c));
-  const arriving = readProgram(tree, versions, nodeId);
+  const raw = readProgram(tree, versions, nodeId);
+  // One decimal, as shown: a shown 3.0 against a need of 3 must read as met.
+  const r1 = (n: number | null): number | null => (n === null ? null : Math.round(n * 10) / 10);
+  const arriving: Depth = { k: r1(raw.k), u: r1(raw.u), d: r1(raw.d) };
   const need: Depth = { k: p.needK ?? null, u: p.needU ?? null, d: p.needD ?? null };
-  return { kind: 'checked', nodeId, need, arriving: { k: arriving.k, u: arriving.u, d: arriving.d }, met: meets(arriving, need, isFoundational(tree, nodeId)), foundational: isFoundational(tree, nodeId) };
+  return { kind: 'checked', nodeId, need, arriving, met: meets(arriving, need, isFoundational(tree, nodeId)), foundational: isFoundational(tree, nodeId) };
 }
 
 export function readString(

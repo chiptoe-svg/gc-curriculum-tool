@@ -163,6 +163,14 @@ describe('readString: a requires stop that names a tree skill', () => {
     expect(s.gap).toEqual(['d']);
   });
 
+  it('compares on values rounded to one decimal, so a shown 3.0 against a need of 3 is met', () => {
+    const near: Record<string, VersionSkills[]> = { 'GC 1040': [ver('GC 1040', 's1', 2.96)] };
+    const g = graph([pt('p1', 'GC 1040', 'develops'), need(pt('p2', 'GC 2400', 'requires'), 3)], [str('A', ['p1', 'p2'])]);
+    const s = readString(g, 'A', {}, levelOf, { fade: null, tree, versionsOf: (c) => near[c] ?? [] }).stops[1]!;
+    expect(s.nodeCheck).toMatchObject({ kind: 'checked', met: true, arriving: { d: 3 } });
+    expect(s.gap).toEqual([]);
+  });
+
   it('uses the stronger of two arriving strings', () => {
     const q = need(pt('q', 'GC 4000', 'requires'), 4);
     const g = graph([pt('a', 'GC 2400', 'develops'), pt('b', 'GC 1040', 'develops'), q], [str('A', ['a', 'q']), str('B', ['b', 'q'])]);
