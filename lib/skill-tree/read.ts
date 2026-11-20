@@ -162,6 +162,12 @@ export function readProgram(tree: Tree, versions: VersionSkills[], nodeId: strin
   return build(tree, resolveNode(tree, nodeId), placedForVersions(tree, versions), null, null, ancestorFoundational(tree, nodeId));
 }
 
+/** True when the node (after following a merge) or any ancestor is foundational: such nodes read D only. */
+export function isFoundational(tree: Tree, nodeId: string): boolean {
+  const id = resolveNode(tree, nodeId);
+  return !!nodeMap(tree).get(id)?.foundational || ancestorFoundational(tree, id);
+}
+
 function ancestorFoundational(tree: Tree, nodeId: string): boolean {
   const byId = nodeMap(tree);
   const seen = new Set<string>();

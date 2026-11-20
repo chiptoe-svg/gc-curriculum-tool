@@ -184,4 +184,24 @@ describe('readString: a requires stop that names a tree skill', () => {
     const plain = graph([pt('p1', 'GC 1040', 'develops'), pt('p2', 'GC 2400', 'requires')], [str('A', ['p1', 'p2'])]);
     expect(readT(plain).stops[1]!.nodeCheck).toBeNull();
   });
+
+  it('a need for K with nothing arriving fails on a non-foundational node', () => {
+    const g = graph([pt('p0', 'GC 9000', 'develops'), { ...pt('p2', 'GC 2400', 'requires'), nodeId: 'icc', needK: 3, needU: null, needD: null }], [str('A', ['p0', 'p2'])]);
+    const s = readT(g).stops[1]!;
+    expect(s.nodeCheck).toMatchObject({ kind: 'checked', met: false });
+    expect(s.gap).toEqual(['k']);
+  });
+
+  it('a foundational node (or one under a foundational parent) is read on D only', () => {
+    const ft: Tree = { nodes: [node('agency', { foundational: true }), node('grit', { parentId: 'agency' })], leaves: [leaf('GC 1040', 's1', 'grit')], depths: [] };
+    const vs: Record<string, VersionSkills[]> = { 'GC 1040': [ver('GC 1040', 's1', 4)] };
+    for (const nodeId of ['agency', 'grit']) {
+      const g = graph([pt('p1', 'GC 1040', 'develops'), { ...pt('p2', 'GC 2400', 'requires'), nodeId, needK: 5, needU: 5, needD: 4 }], [str('A', ['p1', 'p2'])]);
+      const s = readString(g, 'A', {}, levelOf, { fade: null, tree: ft, versionsOf: (c) => vs[c] ?? [] }).stops[1]!;
+      expect(s.nodeCheck).toMatchObject({ kind: 'checked', met: true });
+      expect(s.gap).toEqual([]);
+      const none = graph([pt('p0', 'GC 9000', 'develops'), { ...pt('p2', 'GC 2400', 'requires'), nodeId, needK: 5, needU: null, needD: 2 }], [str('A', ['p0', 'p2'])]);
+      expect(readString(none, 'A', {}, levelOf, { fade: null, tree: ft, versionsOf: () => [] }).stops[1]!.gap).toEqual(['d']);
+    }
+  });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Depth } from '@/lib/builder/types';
 import type { HandDepth, Tree, TreeLeaf, TreeNode, VersionSkills } from '../types';
-import { careerWeights, counts, leavesSignature, meets, readCareer, readCourse, readProgram, resolveNode } from '../read';
+import { isFoundational, careerWeights, counts, leavesSignature, meets, readCareer, readCourse, readProgram, resolveNode } from '../read';
 
 const node = (id: string, over: Partial<TreeNode> = {}): TreeNode => ({
   id, name: id, description: null, parentId: null, competencyId: null, foundational: false,
@@ -156,5 +156,14 @@ describe('skill tree readings', () => {
     ];
     const w = Object.fromEntries(careerWeights(rows).map((x) => [x.nodeId, x.weight]));
     expect(w).toEqual({ a: 0.5, b: 0.9, c: 1, d: 1 });
+  });
+
+  it('isFoundational: the node, an ancestor, or a merge survivor', () => {
+    const t = tree({ nodes: [node('a', { foundational: true }), node('b', { parentId: 'a' }), node('c'), node('d', { mergedInto: 'b' })], leaves: [] });
+    expect(isFoundational(t, 'a')).toBe(true);
+    expect(isFoundational(t, 'b')).toBe(true);
+    expect(isFoundational(t, 'd')).toBe(true);
+    expect(isFoundational(t, 'c')).toBe(false);
+    expect(isFoundational(t, 'missing')).toBe(false);
   });
 });

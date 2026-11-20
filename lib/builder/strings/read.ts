@@ -1,7 +1,7 @@
 import { defaultAct } from '../compute';
 import type { Act, Depth } from '../types';
 import { depthNow } from './touch';
-import { meets, readProgram, resolveNode } from '@/lib/skill-tree/read';
+import { isFoundational, meets, readProgram, resolveNode } from '@/lib/skill-tree/read';
 import type { Tree, VersionSkills } from '@/lib/skill-tree/types';
 import type { NodeCheck, PointRow, PointStatus, StopReading, StringGraph, StringReading } from './types';
 
@@ -31,8 +31,7 @@ function checkNode(
   const versions = [...codes].flatMap((c) => versionsOf(c));
   const arriving = readProgram(tree, versions, nodeId);
   const need: Depth = { k: p.needK ?? null, u: p.needU ?? null, d: p.needD ?? null };
-  const foundational = arriving.k === null && arriving.u === null;
-  return { kind: 'checked', nodeId, need, arriving: { k: arriving.k, u: arriving.u, d: arriving.d }, met: meets(arriving, need, foundational) };
+  return { kind: 'checked', nodeId, need, arriving: { k: arriving.k, u: arriving.u, d: arriving.d }, met: meets(arriving, need, isFoundational(tree, nodeId)), foundational: isFoundational(tree, nodeId) };
 }
 
 export function readString(
@@ -65,7 +64,7 @@ export function readString(
 
     if (nodeCheck) {
       if (nodeCheck.kind === 'checked') {
-        const foundational = nodeCheck.arriving.k === null && nodeCheck.arriving.u === null;
+        const foundational = nodeCheck.foundational;
         for (const d of DIMS) {
           const need = nodeCheck.need[d];
           if (foundational && d !== 'd') continue;

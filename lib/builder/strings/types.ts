@@ -79,7 +79,7 @@ export type PointStatus =
 /** A requires stop's check against the skill tree; null on stops that name no tree skill. */
 export type NodeCheck =
   | { kind: 'not-checkable' }
-  | { kind: 'checked'; nodeId: string; need: Depth; arriving: Depth; met: boolean };
+  | { kind: 'checked'; nodeId: string; need: Depth; arriving: Depth; met: boolean; foundational: boolean };
 
 export interface StopReading {
   pointId: string;
