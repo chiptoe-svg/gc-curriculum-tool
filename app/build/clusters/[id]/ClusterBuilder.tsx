@@ -88,6 +88,8 @@ export function ClusterBuilder(props: {
   const strings = useStringsAt(catalogCodes, q);
   const [openString, setOpenString] = useState<string | null>(null);
   const [treeOpen, setTreeOpen] = useState(false);
+  // One side drawer at a time: opening a course or a string closes the tree.
+  useEffect(() => { if (selected || openString) setTreeOpen(false); }, [selected, openString]);
   const stringsChanged = strings.changed;
   const levelOf = useCallback((code: string) => library.courses.find(c => c.code === code)?.level ?? 0, [library.courses]);
   const stringTargets = useMemo(() => lockTargets(library, cluster), [library, cluster]);
@@ -328,7 +330,7 @@ export function ClusterBuilder(props: {
         <button type="button" className="cb-btn" onClick={stepBack} disabled={!saving.canUndo} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
         <button type="button" className="cb-btn" aria-pressed={!libraryOpen} onClick={() => setLibraryOpen(!libraryOpen)}
           title="Hide or show the course library">{libraryOpen ? 'Hide library' : 'Show library'}</button>
-        <button type="button" className="cb-btn" aria-pressed={treeOpen} onClick={() => setTreeOpen(!treeOpen)}
+        <button type="button" className="cb-btn" aria-pressed={treeOpen} onClick={() => { if (!treeOpen) { setSelected(null); setOpenString(null); } setTreeOpen(!treeOpen); }}
           title="Place this cluster's skills in the department skill tree">Skill tree</button>
         <span className={`cb-save cb-save--${save}`} role="status">
           {save === 'saved' ? 'Saved' : save === 'saving' ? 'Saving…' : save === 'dirty' ? 'Unsaved changes' : 'Not saved'}

@@ -247,4 +247,36 @@ describe('ClusterBuilder skill tree', () => {
     const props = JSON.parse(screen.getByTestId('skill-tree-panel').getAttribute('data-props')!);
     expect(props).toMatchObject({ courseCode: null, mode: 'cluster', courseCodes: ['GC 1010', 'GC 2070'], authorName: 'Tester' });
   });
+
+  it('opening a course closes the tree drawer, and opening the tree closes the course drawer', () => {
+    stubFetch(() => json(200, {}));
+    mount(state({ cards: [{ ref: 'GC 1010', x: 20, y: 20 }, { ref: 'GC 2070', x: 300, y: 20 }] }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skill tree' }));
+    expect(screen.getByTestId('skill-tree-panel')).toBeTruthy();
+    fireEvent.click(card('GC 2070'));
+    expect(screen.queryByTestId('skill-tree-panel')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Required skills' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Skill tree' }));
+    expect(screen.getByTestId('skill-tree-panel')).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Required skills' })).toBeNull();
+  });
+
+  it('opening a string closes the tree drawer, and opening the tree closes the string drawer', async () => {
+    const SNAP = '8b1f0c2e-0000-4000-8000-0000000000a1';
+    const row = (id: string, code: string, statement: string) => ({ id, courseCode: code, role: 'develops', statement, statementHash: hash(statement), snapshotId: SNAP, k: 1, u: 1, d: 1, term: null });
+    stubFetch(c => (c.url === '/api/strings/resolve' ? json(200, {
+      graph: { strings: [{ id: 'str1', name: 'Ink path', description: '', status: 'active', endNote: null, mergedInto: null, version: 1, path: ['a', 'b'] }],
+        points: { a: row('a', 'GC 1010', SUP), b: row('b', 'GC 2070', NEED) }, links: [], events: [] }, status: {}, levels: {}, notes: [],
+    }) : json(500, {})));
+    mount(state());
+    const open = await screen.findByRole('button', { name: 'String Ink path' });
+    fireEvent.click(screen.getByRole('button', { name: 'Skill tree' }));
+    expect(screen.getByTestId('skill-tree-panel')).toBeTruthy();
+    fireEvent.click(open);
+    await screen.findByRole('button', { name: 'Rename' });
+    expect(screen.queryByTestId('skill-tree-panel')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Skill tree' }));
+    expect(screen.getByTestId('skill-tree-panel')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Rename' })).toBeNull();
+  });
 });
