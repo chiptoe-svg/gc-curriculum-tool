@@ -12,6 +12,8 @@ vi.mock('@/lib/db/client', () => ({
   },
 }));
 
+vi.mock('@/lib/program/scoring-links', () => ({ ensureScoringLink: vi.fn(async () => 'zero') }));
+
 vi.mock('@/lib/db/schema', () => ({
   snapshotCompetencyCoverage: {
     snapshotId: 'snapshot_id',
