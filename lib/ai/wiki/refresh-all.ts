@@ -216,6 +216,36 @@ export function planRefresh(inputs: RefreshInputs, opts: RefreshOptions): Refres
   };
 }
 
+/**
+ * Plan only what newly scored competencies changed (owner, 2026-11-19: the /program button "should
+ * do what we are doing - only build what changed"). The button used to fire a full per-snapshot
+ * rebuild for every scored snapshot (~52 program pages each; 22 snapshots cost $236.59 on Oct 19).
+ *
+ * Pages: each scored competency's page (when it has one to generate), the target pages that list a
+ * scored competency, then the index; course pages only for courses whose LATEST snapshot is in
+ * `courseSnapshotIds` (the caller passes snapshots that came out above zero; an older snapshot does
+ * not feed its course page). The manifest stays complete so links resolve.
+ */
+export function planChangedRefresh(
+  inputs: RefreshInputs,
+  changed: { competencyIds: ReadonlyArray<string>; courseSnapshotIds: ReadonlyArray<string> },
+  listed: ReadonlyArray<{ careerTargetId: string; competencyId: string }>,
+): RefreshPlan {
+  const full = planRefresh(inputs, {});
+  const comps = new Set(changed.competencyIds);
+  const targets = new Set(listed.filter(l => comps.has(l.competencyId)).map(l => l.careerTargetId));
+  const nonIndex = full.manifest.filter(p =>
+    (p.type === 'competency' && comps.has(p.slug)) || (p.type === 'target' && targets.has(p.slug)));
+  const programPages = nonIndex.length === 0 ? [] : [...nonIndex, { type: 'index' as const, slug: 'index', path: 'index.md' }];
+  const snaps = new Set(changed.courseSnapshotIds);
+  return {
+    courses: full.courses.filter(c => snaps.has(c.snapshotId)),
+    programPages,
+    programBatches: chunk(programPages, WIKI_PAGES_PER_CALL),
+    manifest: full.manifest,
+  };
+}
+
 /** Old seed path: one updateWikiForSnapshot per snapshot, ceil(pages/6) calls each. */
 export function oldPathCallCount(pagesPerSnapshot: ReadonlyArray<number>): number {
   return pagesPerSnapshot.reduce((n, p) => n + Math.ceil(p / WIKI_PAGES_PER_CALL), 0);

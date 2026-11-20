@@ -20,6 +20,7 @@ vi.mock('@/lib/db/capture-snapshots-queries', () => ({
   getSnapshotById: vi.fn((id: string) => Promise.resolve({ id, courseCode: id === 'snap-a' ? 'GC 1010' : 'GC 2020', profile: {} })),
 }));
 vi.mock('@/lib/ai/wiki/update', () => ({ regenerateWikiInBackground: vi.fn() }));
+vi.mock('@/lib/program/refresh-after-scoring', () => ({ refreshWikiAfterScoringInBackground: vi.fn() }));
 
 const upsertCoverageCell = vi.fn().mockResolvedValue(undefined);
 const listStaleSnapshots = vi.fn();

@@ -28,70 +28,18 @@
  * capture or coverage re-score in the app process also writes the wiki clone.
  */
 
-import {
-  generateProgramWikiBatch,
-  updateWikiForSnapshot,
-} from '@/lib/ai/wiki/update';
-import {
-  latestSnapshotPerCourse,
-  loadProgramCourseSummaries,
-  loadRefreshInputs,
-  oldPathCallCount,
-  parseRefreshArgs,
-  planRefresh,
-  runRefresh,
-} from '@/lib/ai/wiki/refresh-all';
-import { readWikiPage, writeAndPush } from '@/lib/wiki/git-ops';
-import { and, eq } from 'drizzle-orm';
-import { db } from '@/lib/db/client';
-import { subCompetencies } from '@/lib/db/schema';
-import { loadProblemSolvingInputs } from '@/lib/db/problem-solving-queries';
-import { buildProblemSolvingCommit } from '@/lib/program/problem-solving-profile';
+import { oldPathCallCount, parseRefreshArgs, planRefresh } from '@/lib/ai/wiki/refresh-all';
+import { runWikiRefresh } from '@/lib/ai/wiki/refresh-run';
 
 async function main() {
   const args = parseRefreshArgs(process.argv.slice(2));
-  const inputs = await loadRefreshInputs();
-  const plan = planRefresh(inputs, args);
+  const { inputs, result } = await runWikiRefresh(i => planRefresh(i, args), { dryRun: args.dryRun });
 
   const oldCalls = oldPathCallCount(inputs.oldPathPagesPerSnapshot);
   console.log(
     `Old per-snapshot path (seed.ts): ${inputs.snapshots.length} snapshot(s), ` +
     `${inputs.oldPathPagesPerSnapshot.reduce((a, b) => a + b, 0)} page generations, ~${oldCalls} LLM calls.`,
   );
-
-  // Course summaries feed the index and concept pages; built from ALL courses
-  // (not just this run's selection) so the index stays complete.
-  const allLatest = latestSnapshotPerCourse(inputs.snapshots).map(s => ({
-    courseCode: s.courseCode, snapshotId: s.id, createdAt: s.createdAt,
-  }));
-  const programCourses = plan.programPages.length > 0
-    ? await loadProgramCourseSummaries(allLatest, inputs.latestProfiles)
-    : [];
-
-  const result = await runRefresh(plan, {
-    generateCourse: async snapshotId => {
-      const r = await updateWikiForSnapshot(snapshotId, { pageTypes: ['course'] });
-      return { pages: [...r.raw, ...r.wiki], logEntry: r.logEntry };
-    },
-    generateProgramBatch: async (batch, manifest) => {
-      const r = await generateProgramWikiBatch(batch, {
-        manifest,
-        programCourses,
-        totals: { totalSnapshots: inputs.snapshots.length, totalCoursesWithSnapshots: allLatest.length },
-      });
-      return { pages: r.wiki, logEntry: r.logEntry };
-    },
-    write: writeAndPush,
-    problemSolvingCommit: async () => {
-      const has = await db.select({ id: subCompetencies.id }).from(subCompetencies)
-        .where(and(eq(subCompetencies.id, 'problem-solving'), eq(subCompetencies.retired, false)));
-      if (has.length === 0) return null;
-      return buildProblemSolvingCommit(await loadProblemSolvingInputs());
-    },
-    readPage: path => readWikiPage(path),
-    log: line => console.log(line),
-  }, { dryRun: args.dryRun });
-
   console.log(`One-pass estimate: ${result.estimatedCalls} LLM calls vs ~${oldCalls} on the old path.`);
   if (!args.dryRun) {
     console.log(`\nRefresh complete: ${result.succeeded}/${result.succeeded + result.failed} unit(s) succeeded.`);
