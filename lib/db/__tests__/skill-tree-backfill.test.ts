@@ -10,9 +10,12 @@
  *   $P "$DATABASE_URL" -v ON_ERROR_STOP=1 -f drizzle/0072_competency_levels.sql   # only if competency_levels is missing
  *   $P "$DATABASE_URL" -v ON_ERROR_STOP=1 -f drizzle/0073_app_settings.sql        # only if app_settings is missing
  *   pnpm vitest run lib/db/__tests__/skill-tree-backfill.test.ts
- * 0074 may be absent or already applied in the scratch DB (the query tests need it applied). Either way the test runs the
- * file inside its rolled-back transaction; when it is already applied, it first drops the 0074 objects inside that same
- * transaction (DDL rolls back), so the backfill is still exercised from scratch and the DB ends unchanged.
+ * 0074 may be absent or already applied in the scratch DB (the query tests need it applied). The test never touches the
+ * shared tables: inside its rolled-back transaction it creates a private schema, puts it first on the search_path, and
+ * clones string_points (without the 0074 columns) into it. The file's unqualified CREATE/ALTER/INSERT then land in the
+ * private schema, while reads of sub_competencies, skill_competency_links, snapshots and rollups still resolve to public
+ * (read locks only). So it holds no ACCESS EXCLUSIVE lock on a table other test files use and can run in parallel with them.
+ * The file's "already applied" guard looks at every schema, so the test narrows it to current_schema() (the one text change).
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -22,7 +25,9 @@ try { process.loadEnvFile('.env.local'); } catch { /* no .env.local: the suite s
 const SCRATCH = /\/gc_curriculum_builder_scratch(\?|$)/.test(process.env.DATABASE_URL ?? '');
 
 // The file is one BEGIN ... COMMIT transaction; run its body inside the test's own transaction.
-const body = readFileSync('drizzle/0074_skill_tree.sql', 'utf8').replace(/^BEGIN;$/m, '').replace(/^COMMIT;$/m, '');
+const body = readFileSync('drizzle/0074_skill_tree.sql', 'utf8').replace(/^BEGIN;$/m, '').replace(/^COMMIT;$/m, '')
+  .replace("table_name = 'skill_nodes')", "table_name = 'skill_nodes' AND table_schema = current_schema())");
+const SCHEMA = `bf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 describe.skipIf(!SCRATCH)('migration 0074 backfill (scratch database, rolled back)', () => {
   let pool: Pool;
@@ -36,10 +41,12 @@ describe.skipIf(!SCRATCH)('migration 0074 backfill (scratch database, rolled bac
     expect((await c.query('select current_database() d')).rows[0].d).toBe('gc_curriculum_builder_scratch');
     await c.query('BEGIN');
     await c.query(`create temp table levels_before on commit drop as ${LEVELS}`);
-    if ((await c.query(`select 1 from information_schema.tables where table_name = 'skill_nodes'`)).rowCount) {
-      await c.query(`ALTER TABLE string_points DROP COLUMN node_id, DROP COLUMN need_k, DROP COLUMN need_u, DROP COLUMN need_d`);
-      await c.query('DROP TABLE skill_tree_events, node_depths, skill_leaves, skill_nodes');
-    }
+    expect(body).toContain('table_schema = current_schema()');   // the guard replacement matched
+    await c.query(`CREATE SCHEMA ${SCHEMA}`);
+    await c.query(`SET LOCAL search_path = ${SCHEMA}, public`);
+    // string_points as it was before 0074: a private copy for the file to ALTER.
+    await c.query(`CREATE TABLE ${SCHEMA}.string_points (LIKE public.string_points INCLUDING DEFAULTS INCLUDING CONSTRAINTS)`);
+    await c.query(`ALTER TABLE ${SCHEMA}.string_points DROP COLUMN IF EXISTS node_id, DROP COLUMN IF EXISTS need_k, DROP COLUMN IF EXISTS need_u, DROP COLUMN IF EXISTS need_d`);
     await c.query(body);
   });
   afterAll(async () => {
