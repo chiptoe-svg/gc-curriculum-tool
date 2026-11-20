@@ -27,6 +27,9 @@ export interface MatchDecision {
 }
 
 /** A skill as linked to a catalog competency (spec 2026-11-15-skill-competency-links-design.md). */
+/** How a level was decided (competency_levels.method, migration 0072). */
+export type LevelMethod = 'faculty' | 'ai' | 'scoring' | 'needs_level' | 'rejected';
+
 export interface LinkedSkill extends Skill {
   source: 'embedding' | 'ai' | 'scoring' | 'faculty';
   status: 'proposed' | 'confirmed' | 'rejected';
@@ -35,14 +38,14 @@ export interface LinkedSkill extends Skill {
 
 /**
  * A course's level on one catalog competency. For a captured course read through links: `links` are the skills
- * counted toward it, `method` says how they were combined ('max' = the highest linked skill), and `soft` is set
+ * counted toward it, `method` says how the level was decided (competency_levels, 0072), and `soft` is set
  * when every link is still a proposal. `source`: the older scoring's matched statement, when links are not in use.
  */
 export interface CompetencyDepth extends Depth {
   competencyId: string;
   source?: string | null;
   links?: LinkedSkill[];
-  method?: 'max' | 'ai' | 'faculty';
+  method?: LevelMethod;
   rationale?: string | null;
   soft?: boolean;
 }

@@ -19,7 +19,7 @@ const bad = (error: string) => NextResponse.json({ error }, { status: 400 });
  *   confirm | reject | reopen  — an existing link (skillRef)
  *   add                         — link a skill of this capture to a competency (confirmed, source faculty)
  *   rollup                      — set this competency's level by hand ({ k, u, d }, each 0–5 or null)
- *   rollup-clear                — back to the highest linked skill
+ *   rollup-clear                — back to the scorer's level
  * → 200 { ok: true } | 400 | 404
  */
 export async function POST(req: Request): Promise<Response> {

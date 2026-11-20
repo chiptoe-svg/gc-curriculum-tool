@@ -10,6 +10,9 @@ import { RequiredSkillsList } from './RequiredSkillsList';
 import { ChangesList, DevelopedSkillsEditor, ObjectivesEditor, ToConfirm, courseEditOps, type EditOps } from './CourseEditors';
 import type { Selection } from './Map';
 import { DepthInputs, Drawer, LevelInput } from './controls';
+
+/** How a level was decided (competency_levels.method; spec 2026-11-20-links-drive-coverage-design.md). */
+const METHOD_LABEL: Record<string, string> = { faculty: 'set by hand', ai: 'AI judgment', scoring: 'scorer', needs_level: 'needs a level', rejected: 'rejected by faculty' };
 import { BASIS_WORD, STRATA, fmtDepth, stratumRank } from './ui';
 
 export function CourseDrawer(props: {
@@ -320,7 +323,7 @@ function TrackedCourse(props: {
                 <b>{c.name}</b>
                 <span className="cb-mono">{fmtDepth(used, c.foundational)}</span>
                 <span className="cb-small cb-muted">
-                  {linkedView ? (used.method === 'faculty' ? 'set by hand' : used.method === 'ai' ? 'AI judgment' : 'highest skill') + (used.soft ? ', proposed' : '') : ''}
+                  {linkedView ? (METHOD_LABEL[used.method ?? 'scoring'] ?? 'scorer') + (used.soft ? ', proposed' : '') : ''}
                   {' '}after it <span className="cb-mono">{fmtDepth(after, c.foundational)}</span>{raises.length > 0 && <span className="cb-t-reached"> raises {raises.map(r => r.toUpperCase()).join(', ')}</span>}
                 </span>
               </div>
@@ -330,7 +333,7 @@ function TrackedCourse(props: {
                   {(used.links ?? []).map(l => (
                     <li key={l.skillRef} className={`cb-link cb-link--${l.status}`}>
                       <span className="cb-link__text">{l.statement} <span className="cb-mono">{fmtDepth(l, l.k == null && l.u == null)}</span></span>
-                      <span className="cb-link__meta">{l.status === 'confirmed' ? 'confirmed' : `proposed by ${l.source === 'scoring' ? 'the old scoring' : l.source === 'embedding' ? `similarity ${l.similarity?.toFixed(2) ?? ''}` : l.source}`}</span>
+                      <span className="cb-link__meta">{l.status === 'confirmed' ? 'confirmed' : `proposed by ${l.source === 'scoring' ? 'the scorer' : l.source === 'embedding' ? `similarity ${l.similarity?.toFixed(2) ?? ''}` : l.source}`}</span>
                       <button type="button" className="cb-iconbtn" title="Confirm this grouping" disabled={busy || l.status === 'confirmed'} onClick={() => decide({ action: 'confirm', competencyId: id, skillRef: l.skillRef })}>✓</button>
                       <button type="button" className="cb-iconbtn" title="Remove the skill from this group (the skill stays)" disabled={busy} onClick={() => decide({ action: 'reject', competencyId: id, skillRef: l.skillRef })}>✗</button>
                     </li>
@@ -348,7 +351,7 @@ function TrackedCourse(props: {
               ) : (
                 <div className="cb-small">
                   <button type="button" className="cb-linkbtn" onClick={() => { setEditing(id); setDraft({ k: used.k, u: used.u, d: used.d }); }}>Set the competency level</button>
-                  {used.method !== 'max' && <> · <button type="button" className="cb-linkbtn" disabled={busy} onClick={() => decide({ action: 'rollup-clear', competencyId: id })}>Use the highest skill</button></>}
+                  {(used.method === 'faculty' || used.method === 'ai') && <> · <button type="button" className="cb-linkbtn" disabled={busy} onClick={() => decide({ action: 'rollup-clear', competencyId: id })}>Use the scorer's level</button></>}
                 </div>
               ))}
             </div>
