@@ -8,6 +8,8 @@ import { countWhatIfsByCourse } from '@/lib/db/what-if-queries';
 import { CoursesIndex } from './CoursesIndex';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
+import './courses.css';
+
 export const dynamic = 'force-dynamic';
 
 interface Props {
@@ -19,9 +21,9 @@ export default async function CoursesPage({ searchParams }: Props) {
 
   if (!isValidSlug(slug)) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Access link required</h1>
-        <p className="mt-3 text-muted-foreground">
+      <div className="cs-main is-narrow cs-center">
+        <h1 className="cs-title">Access link required</h1>
+        <p className="cs-meta mt-3">
           Open this page through the access link your administrator shared.
         </p>
       </div>
@@ -46,36 +48,34 @@ export default async function CoursesPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
+      <header className="cs-header">
+        <div className="cs-header-inner">
           <div>
-            <p className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Catalog · GC
-            </p>
-            <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">Courses</h1>
+            <p className="cs-eyebrow">Catalog · GC</p>
+            <h1 className="cs-title">Courses</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="cs-nav">
             <Link
               href={`/program?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="cs-btn"
             >
               Coverage matrix →
             </Link>
             <Link
               href={`/wiki?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="cs-btn"
             >
               Wiki →
             </Link>
             <Link
               href={`/ask?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="cs-btn"
             >
               💬 Ask
             </Link>
             <Link
               href={`/?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="cs-btn"
             >
               ← Hub
             </Link>
@@ -83,7 +83,7 @@ export default async function CoursesPage({ searchParams }: Props) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="cs-main">
         <CoursesIndex rows={rows} rosterRows={rosterRows} slug={slug} pairedByCode={pairedByCode} snapshotCountByCode={snapshotCountByCode} whatIfCountByCode={whatIfCountByCode} />
       </main>
     </div>

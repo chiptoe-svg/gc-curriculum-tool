@@ -31,6 +31,7 @@ vi.mock('@/lib/db/course-materials-queries', () => ({
 vi.mock('@/lib/capture/vector-store', () => ({ createVectorStore: () => ({ deleteByMaterial: vi.fn() }), tenantForCourse: (c: string) => c }));
 vi.mock('@/lib/auth/admin-auth', () => ({ checkAdminAuth: (_r: unknown, o: { slug?: string }) => o.slug === 'valid-slug' }));
 vi.mock('next/headers', () => ({ headers: vi.fn() }));
+vi.mock('@/app/courses/courses.css', () => ({}));
 vi.mock('@/app/courses/new/NewCourseForm', () => ({
   NewCourseForm: (p: { canCapture: boolean }) => `NEW-COURSE-FORM canCapture=${p.canCapture}`,
 }));

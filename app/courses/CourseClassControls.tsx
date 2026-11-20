@@ -43,7 +43,7 @@ export function CourseClassControls({ code, slug, category, buildsToCareer, cata
     return (
       <button
         onClick={() => setOpen(true)}
-        className="shrink-0 text-xs text-muted-foreground/50 transition-colors hover:text-foreground"
+        className="cs-link cs-link-quiet"
         title="Edit category / career mapping / catalog URL"
       >
         Edit
@@ -52,43 +52,43 @@ export function CourseClassControls({ code, slug, category, buildsToCareer, cata
   }
 
   return (
-    <div className="absolute right-2 top-10 z-10 w-72 rounded-lg border border-border bg-card p-3 shadow-lg">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">{code}</span>
-        <button onClick={() => setOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+    <div className="cs-pop">
+      <div className="cs-row" style={{ justifyContent: 'space-between' }}>
+        <span className="cs-label">{code}</span>
+        <button onClick={() => setOpen(false)} className="cs-x" aria-label="Close">✕</button>
       </div>
-      <label className="mb-2 block">
-        <span className="mb-1 block font-body-sans text-xs uppercase tracking-[0.14em] text-muted-foreground/70">Category</span>
+      <label className="cs-field">
+        <span className="cs-label">Category</span>
         <select
           value={cat}
           onChange={(e) => setCat(e.target.value as CourseCategory)}
-          className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs"
+          className="cs-input cs-input-sm"
         >
           {CATEGORY_ORDER.map((c) => (
             <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
           ))}
         </select>
       </label>
-      <label className="mb-2 flex items-center gap-2">
+      <label className="cs-check">
         <input type="checkbox" checked={builds} onChange={(e) => setBuilds(e.target.checked)} />
-        <span className="font-body-sans text-xs">Builds toward career outcomes</span>
+        <span>Builds toward career outcomes</span>
       </label>
-      <label className="mb-2 block">
-        <span className="mb-1 block font-body-sans text-xs uppercase tracking-[0.14em] text-muted-foreground/70">Catalog URL</span>
+      <label className="cs-field">
+        <span className="cs-label">Catalog URL</span>
         <input
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://catalog.clemson.edu/…"
-          className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs"
+          className="cs-input cs-input-sm"
         />
       </label>
-      {error && <p className="mb-2 font-body-sans text-xs text-destructive">{error}</p>}
-      <div className="flex justify-end">
+      {error && <p className="cs-err">{error}</p>}
+      <div className="cs-row" style={{ justifyContent: 'flex-end' }}>
         <button
           onClick={save}
           disabled={pending}
-          className="rounded-md bg-foreground px-3 py-1 font-body-sans text-xs uppercase tracking-[0.14em] text-background disabled:opacity-40"
+          className="cs-btn cs-btn-primary cs-btn-sm"
         >
           {pending ? 'Saving…' : 'Save'}
         </button>

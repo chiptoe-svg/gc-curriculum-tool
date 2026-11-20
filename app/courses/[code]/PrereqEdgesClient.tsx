@@ -32,8 +32,8 @@ function KudInput({
   onChange: (v: number | null) => void;
 }) {
   return (
-    <label className="flex items-center gap-1">
-      <span className="font-mono-plex text-xs uppercase tracking-[0.14em] text-muted-foreground w-3">{label}</span>
+    <label className="cs-kud-wrap">
+      <span className="cs-label">{label}</span>
       <input
         type="number"
         min={0}
@@ -41,7 +41,7 @@ function KudInput({
         step={1}
         value={value ?? ''}
         placeholder="—"
-        className="w-10 rounded border border-border bg-background px-1 py-0.5 text-center font-mono-plex text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+        className={`cs-kud ${value === null || value < 0 || value > 5 ? 'cs-dnone' : `cs-d${Math.floor(value)}`}`}
         onChange={(e) => {
           const raw = e.target.value.trim();
           onChange(raw === '' ? null : Math.max(0, Math.min(5, Number(raw))));
@@ -127,17 +127,17 @@ function EdgeRow({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded border border-border bg-card px-3 py-2">
+    <div className="cs-edge">
       {/* Sub-competency name */}
-      <span className="flex-1 min-w-[12rem] text-sm font-medium leading-snug">
+      <span className="cs-edge-name">
         {subCompName}
-        <span className="ml-1.5 font-mono-plex text-xs uppercase tracking-[0.14em] text-muted-foreground/60">
+        <span className="cs-edge-src">
           {edge.source === 'llm_seed' ? 'ai-seeded' : 'faculty'}
         </span>
       </span>
 
       {/* KUD inputs */}
-      <div className="flex items-center gap-2" onBlur={handleKudBlur}>
+      <div className="cs-row" onBlur={handleKudBlur}>
         <KudInput label="K" value={k} onChange={setK} />
         <KudInput label="U" value={u} onChange={setU} />
         <KudInput label="D" value={d} onChange={setD} />
@@ -148,11 +148,7 @@ function EdgeRow({
         onClick={handleConfirmToggle}
         disabled={isPending}
         title={confirmed ? 'Confirmed — click to un-confirm' : 'Click to confirm'}
-        className={`shrink-0 rounded-full px-2.5 py-0.5 font-body-sans text-xs uppercase tracking-[0.14em] font-medium transition-colors
-          ${confirmed
-            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 hover:bg-emerald-200'
-            : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400 hover:bg-stone-200'
-          }`}
+        className={`cs-cue ${confirmed ? 'cs-cue-done' : 'cs-cue-draft'}`}
       >
         {confirmed ? 'Confirmed' : 'Unconfirmed'}
       </button>
@@ -160,14 +156,15 @@ function EdgeRow({
       {/* Delete */}
       <button
         onClick={() => { void handleDelete(); }}
-        className="shrink-0 text-xs text-muted-foreground/40 hover:text-destructive transition-colors"
+        className="cs-x"
         title="Delete this edge"
+        aria-label="Delete this edge"
       >
         ✕
       </button>
 
       {error && (
-        <p className="w-full text-xs text-destructive">{error}</p>
+        <p className="cs-err" style={{ width: '100%' }}>{error}</p>
       )}
     </div>
   );
@@ -191,8 +188,8 @@ function PrereqGroup({
   onMutated: () => void;
 }) {
   return (
-    <div className="space-y-1.5">
-      <p className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
+    <div className="cs-group-stack">
+      <p className="cs-label">
         {prereqCode}
       </p>
       {edges.map((e) => (
@@ -278,7 +275,8 @@ function AddEdgeControl({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className="cs-link"
+        style={{ alignSelf: 'flex-start', minHeight: 36 }}
       >
         + Add edge
       </button>
@@ -286,27 +284,27 @@ function AddEdgeControl({
   }
 
   return (
-    <div className="rounded border border-border bg-card p-4 space-y-3">
-      <p className="font-body-sans text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+    <div className="cs-card cs-card-pad cs-stack" style={{ gap: 14 }}>
+      <p className="cs-label">
         Add edge
       </p>
-      <div className="flex flex-wrap gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-muted-foreground">Prereq course code</label>
+      <div className="cs-row" style={{ alignItems: 'flex-end' }}>
+        <div className="cs-field">
+          <label>Prereq course code</label>
           <input
             type="text"
             value={prereqCode}
             onChange={(e) => setPrereqCode(e.target.value)}
             placeholder="e.g. GC 2010"
-            className="w-32 rounded border border-border bg-background px-2 py-1 font-mono-plex text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+            className="cs-input cs-mono" style={{ width: '8rem' }}
           />
         </div>
-        <div className="flex flex-col gap-1 flex-1 min-w-[16rem]">
-          <label className="text-xs text-muted-foreground">Sub-competency</label>
+        <div className="cs-field" style={{ flex: '1 1 16rem' }}>
+          <label>Sub-competency</label>
           <select
             value={subCompId}
             onChange={(e) => setSubCompId(e.target.value)}
-            className="rounded border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+            className="cs-input"
           >
             <option value="">Select…</option>
             {allSubComps.map((sc) => (
@@ -317,26 +315,26 @@ function AddEdgeControl({
           </select>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground">Expected attainment:</span>
+      <div className="cs-row">
+        <span className="cs-meta">Expected attainment:</span>
         <KudInput label="K" value={ek} onChange={setEk} />
         <KudInput label="U" value={eu} onChange={setEu} />
         <KudInput label="D" value={ed} onChange={setEd} />
       </div>
       {error && (
-        <p className="text-xs text-destructive">{error}</p>
+        <p className="cs-err">{error}</p>
       )}
-      <div className="flex gap-2">
+      <div className="cs-row">
         <button
           onClick={handleAdd}
           disabled={isPending}
-          className="rounded bg-foreground px-3 py-1.5 text-xs text-background hover:opacity-90 disabled:opacity-50"
+          className="cs-btn cs-btn-primary cs-btn-sm"
         >
           {isPending ? 'Adding…' : 'Add'}
         </button>
         <button
           onClick={() => { setOpen(false); setError(null); }}
-          className="rounded border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+          className="cs-btn cs-btn-sm"
         >
           Cancel
         </button>
@@ -422,41 +420,41 @@ export function PrereqEdgesClient({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="cs-stack" style={{ gap: 24 }}>
       {/* Seed button */}
-      <div className="flex items-center gap-4">
+      <div className="cs-row">
         <button
           onClick={handleSeed}
           disabled={isSeeding}
-          className="rounded bg-foreground px-4 py-2 text-sm text-background hover:opacity-90 disabled:opacity-50"
+          className="cs-btn cs-btn-primary"
         >
           {isSeeding ? 'Seeding from syllabus…' : 'Seed from syllabus prerequisites'}
         </button>
         {seedResult && (
-          <p className="text-sm text-muted-foreground">
+          <p className="cs-meta">
             Seeded {seedResult.inserted} edge{seedResult.inserted !== 1 ? 's' : ''}
             {seedResult.skippedConfirmed > 0 && `, skipped ${seedResult.skippedConfirmed} confirmed`}.
           </p>
         )}
         {seedError && (
-          <p className="text-sm text-destructive">{seedError}</p>
+          <p className="cs-err">{seedError}</p>
         )}
       </div>
 
       {/* Unknown prereqs */}
       {unknownPrereqs.length > 0 && (
-        <div className="rounded border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-4 py-3 space-y-1">
-          <p className="font-body-sans text-xs font-medium uppercase tracking-[0.14em] text-amber-800 dark:text-amber-300">
+        <div className="cs-alert cs-alert-input">
+          <p className="cs-label" style={{ color: '#8A5A00' }}>
             Unknown prerequisite courses — not yet in the catalog
           </p>
-          <ul className="space-y-0.5">
+          <ul>
             {unknownPrereqs.map((uc) => (
-              <li key={uc} className="text-sm text-amber-900 dark:text-amber-200">
-                <span className="font-mono-plex">{uc}</span>
+              <li key={uc}>
+                <span className="cs-mono">{uc}</span>
                 {' — '}
                 <a
                   href={`/courses?slug=${encodeURIComponent(slug)}`}
-                  className="text-amber-700 underline hover:no-underline dark:text-amber-400"
+                  style={{ textUnderlineOffset: 3 }}
                 >
                   add it to the roster
                 </a>
@@ -468,11 +466,11 @@ export function PrereqEdgesClient({
 
       {/* Edge list grouped by prereq course */}
       {grouped.size === 0 ? (
-        <p className="text-sm text-muted-foreground italic">
+        <p className="cs-meta">
           No prerequisite edges yet. Seed from the syllabus or add manually.
         </p>
       ) : (
-        <div className="space-y-5">
+        <div className="cs-stack">
           {Array.from(grouped.entries()).map(([prereqCode, groupEdges]) => (
             <PrereqGroup
               key={prereqCode}

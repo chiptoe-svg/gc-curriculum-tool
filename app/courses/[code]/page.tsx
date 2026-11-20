@@ -24,6 +24,7 @@ import { FeedbackLink } from '@/app/FeedbackLink';
 import { CourseStrings } from '@/components/strings/CourseStrings';
 import '@/components/strings/strings.css';
 import '@/app/build/build.css';
+import '../courses.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,29 +36,16 @@ interface Props {
 // ─── Gap status badge ────────────────────────────────────────────────────
 
 function GapBadge({ status }: { status: SubCompetencyGap['status'] }) {
-  if (status === 'met') {
-    return (
-      <span className="inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.14em] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-        Met
-      </span>
-    );
-  }
-  if (status === 'gap') {
-    return (
-      <span className="inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.14em] font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-        Gap
-      </span>
-    );
-  }
+  if (status === 'met') return <span className="cs-cue cs-cue-done">Met</span>;
+  if (status === 'gap') return <span className="cs-cue cs-cue-issue">Gap</span>;
   // no_data
-  return (
-    <span className="inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.14em] font-medium bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400">
-      No data
-    </span>
-  );
+  return <span className="cs-cue cs-cue-draft">No data</span>;
 }
 
 // ─── KUD value cell ──────────────────────────────────────────────────────
+
+/** Design-system D0-D5 ramp class for a 0-5 level; anything else stays neutral. */
+const levelClass = (v: number | null) => (v === null || v < 0 || v > 5 ? 'cs-dnone' : `cs-d${Math.floor(v)}`);
 
 function KudCell({
   label,
@@ -75,17 +63,15 @@ function KudCell({
   // A7 (2026-06-12): chip shows depth BANDS (— / L / W / H) — the resolution
   // the instrument is known to support; the exact integers stay in the
   // tooltip. See lib/program/depth-band.ts.
+  // Restyle: the needed band sits on the D0-D5 ramp; a red outline marks a gap.
   return (
     <span
-      className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-mono-plex text-xs
-        ${hasGap
-          ? 'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300'
-          : 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
-        }`}
+      className={`cs-chip ${hasGap ? 'cs-chip-gap' : ''}`}
       title={`${label}: needs ${needed} (${depthBand(needed)?.word}), delivered ${delivered ?? '?'}${delivered != null ? ` (${depthBand(delivered)?.word})` : ''} — exact values; bands shown in chip`}
     >
-      <span className="font-medium">{label}</span>
-      <span className="text-xs text-muted-foreground">{depthBand(delivered)?.short ?? '?'}→{depthBand(needed)?.short}</span>
+      <span>{label}</span>
+      <span>{depthBand(delivered)?.short ?? '?'}→</span>
+      <span className={`cs-lv ${levelClass(needed)}`}>{depthBand(needed)?.short}</span>
     </span>
   );
 }
@@ -101,7 +87,7 @@ function GapList({
 }) {
   if (gaps.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground italic">
+      <p className="cs-meta">
         No confirmed edges yet — confirm edges above to run the gap analysis.
       </p>
     );
@@ -112,47 +98,47 @@ function GapList({
   const noData = gaps.filter((g) => g.status === 'no_data').length;
 
   return (
-    <div className="space-y-4">
+    <div className="cs-stack">
       {/* Summary bar */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="cs-meta">
         Across {gaps.length} sub-competenc{gaps.length === 1 ? 'y' : 'ies'} covered by confirmed edges:{' '}
-        {met > 0 && <strong className="text-foreground">{met} met</strong>}
+        {met > 0 && <strong>{met} met</strong>}
         {met > 0 && (gapped > 0 || noData > 0) && ', '}
-        {gapped > 0 && <strong className="text-foreground">{gapped} with gaps</strong>}
+        {gapped > 0 && <strong>{gapped} with gaps</strong>}
         {gapped > 0 && noData > 0 && ', '}
-        {noData > 0 && <strong className="text-foreground">{noData} no prerequisite data yet</strong>}.
+        {noData > 0 && <strong>{noData} no prerequisite data yet</strong>}.
       </p>
 
       {/* Gap rows */}
-      <div className="divide-y divide-border rounded border border-border">
+      <div className="cs-gaps">
         {gaps.map((g) => {
           const name = subCompNames[g.subCompetencyId] ?? g.subCompetencyId;
           return (
-            <div key={g.subCompetencyId} className="flex flex-wrap items-start gap-3 px-4 py-3">
+            <div key={g.subCompetencyId} className="cs-gap">
               {/* Name */}
-              <div className="flex-1 min-w-[12rem]">
-                <p className="text-sm font-medium leading-snug">{name}</p>
+              <div className="cs-gap-name">
+                <p>{name}</p>
                 {g.basis === 'intended' && (
-                  <p className="mt-0.5 font-body-sans text-xs italic text-amber-700 dark:text-amber-400">
+                  <p className="cs-gap-note">
                     syllabus-promise — not verified
                   </p>
                 )}
                 {g.basis === 'mixed' && (
-                  <p className="mt-0.5 font-body-sans text-xs italic text-amber-700 dark:text-amber-400">
+                  <p className="cs-gap-note">
                     partial — some prereqs unverified
                   </p>
                 )}
                 {g.contributingPrereqs.length > 0 && (
-                  <p className="mt-0.5 font-mono-plex text-xs text-muted-foreground/60">
+                  <p className="cs-gap-via">
                     via {g.contributingPrereqs.join(', ')}
                   </p>
                 )}
               </div>
 
               {/* KUD dimension cells (only show dims where needed > 0) */}
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="cs-gap-chips">
                 {g.status === 'no_data' ? (
-                  <span className="text-xs text-muted-foreground italic">
+                  <span className="cs-meta">
                     prerequisite not yet captured
                   </span>
                 ) : (
@@ -180,7 +166,7 @@ function GapList({
               </div>
 
               {/* Status badge */}
-              <div className="shrink-0">
+              <div>
                 <GapBadge status={g.status} />
               </div>
             </div>
@@ -201,9 +187,9 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
   // Auth gate
   if (!isValidSlug(slug)) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Access link required</h1>
-        <p className="mt-3 text-muted-foreground">
+      <div className="cs-main is-narrow cs-center">
+        <h1 className="cs-title">Access link required</h1>
+        <p className="cs-meta mt-3">
           Open this page through the access link your administrator shared.
         </p>
       </div>
@@ -253,32 +239,32 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b">
-        <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
+      <header className="cs-header">
+        <div className="cs-header-inner">
           <div>
-            <p className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="cs-eyebrow">
               Courses · {code}
             </p>
-            <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">
+            <h1 className="cs-title">
               {course.title}
             </h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="cs-nav">
             <Link
               href={`/explore/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="cs-btn"
             >
               {WHAT_IF_COPY.linkLabel(whatIfCount)} →
             </Link>
             <Link
               href={`/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="cs-btn"
             >
               Capture →
             </Link>
             <Link
               href={`/courses?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="cs-btn"
             >
               ← Courses
             </Link>
@@ -287,25 +273,25 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8 space-y-10">
+      <main className="cs-main cs-stack" style={{ gap: 40 }}>
         <CourseStrings courseCode={code} mode="course" query={`?slug=${encodeURIComponent(slug)}`} />
 
 
         {/* Course meta */}
         {course.prerequisites && (
-          <section>
-            <h2 className="mb-1 font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground">
+          <section className="cs-stack" style={{ gap: 6 }}>
+            <h2 className="cs-label">
               Catalog prerequisites
             </h2>
-            <p className="text-sm text-foreground/80">{course.prerequisites}</p>
+            <p className="cs-body">{course.prerequisites}</p>
           </section>
         )}
 
         {/* ── Section A: Edge confirm / edit ─────────────────────────────── */}
-        <section>
-          <div className="mb-4">
-            <h2 className="font-display text-lg font-semibold tracking-tight">Prerequisites</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
+        <section className="cs-section">
+          <div className="cs-stack" style={{ gap: 6 }}>
+            <h2 className="cs-h2">Prerequisites</h2>
+            <p className="cs-meta">
               Tag which sub-competencies each prerequisite course must have developed — and to what
               depth — for students to succeed in this course. Confirmed edges drive the gap analysis
               below.
@@ -323,12 +309,12 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
         </section>
 
         {/* ── Section B: Deterministic gap view ──────────────────────────── */}
-        <section>
-          <div className="mb-4">
-            <h2 className="font-display text-lg font-semibold tracking-tight">
+        <section className="cs-section">
+          <div className="cs-stack" style={{ gap: 6 }}>
+            <h2 className="cs-h2">
               Prerequisite gap analysis
             </h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
+            <p className="cs-meta">
               For each confirmed edge, compares what this course expects students to arrive with
               against what the prerequisite course's latest captured snapshot actually delivers.
               Only confirmed edges are included. <strong>Basis: measured</strong> uses the
