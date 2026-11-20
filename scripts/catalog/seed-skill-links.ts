@@ -1,7 +1,9 @@
 /**
  * Seed skill -> competency links (spec docs/superpowers/specs/2026-11-15-skill-competency-links-design.md).
  *
- *   pnpm tsx scripts/catalog/seed-skill-links.ts --expect-db <database name> [--apply] [--floor 0.45] [--top 3]
+ *   pnpm tsx scripts/catalog/seed-skill-links.ts --expect-db <database name> [--apply] [--floor 0.45] [--top 3] [--scoring-only]
+ *
+ * --scoring-only: only the scoring links (no embeddings, no model calls); used to backfill after 0072.
  *
  * For every non-retired capture snapshot, each statement in profile.competencies becomes a skill. Two kinds of
  * proposed link are added (status 'proposed'; nothing existing is changed or removed; re-running adds only what
@@ -33,6 +35,8 @@ async function main(): Promise<number> {
   const { normalizeStatement } = await import('@/lib/catalog/project-trail');
   const { embedBatch, DEFAULT_EMBEDDING_MODEL } = await import('@/lib/ai/embeddings');
   const { skillCompetencyLinks } = await import('@/lib/db/schema');
+  const { scoringLinkFor, scoringConflict } = await import('@/lib/program/scoring-links');
+  const scoringOnly = process.argv.includes('--scoring-only');
 
   const expect = argValue('--expect-db');
   const apply = process.argv.includes('--apply');
@@ -52,14 +56,23 @@ async function main(): Promise<number> {
   const cov = (await db.execute(sql`
     SELECT snapshot_id, competency_id, matched_competency FROM snapshot_competency_coverage
     WHERE matched_competency IS NOT NULL AND greatest(coalesce(k_depth,0), coalesce(u_depth,0), coalesce(d_depth,0)) > 0`)).rows as Array<{ snapshot_id: string; competency_id: string; matched_competency: string }>;
-  const bySnapStmt = new Map(skills.map(s => [`${s.snapshotId}|${s.statement}`, s]));
+  const statementsBySnap = new Map(snaps.map(s => [s.id, s.statements]));
   const links = new Map<string, typeof skillCompetencyLinks.$inferInsert>();
   for (const c of cov) {
-    const s = bySnapStmt.get(`${c.snapshot_id}|${c.matched_competency.trim()}`);
-    if (!s) continue;
-    links.set(`${s.snapshotId}|${s.skillRef}|${c.competency_id}`, { ...s, competencyId: c.competency_id, source: 'scoring', status: 'proposed' });
+    const hit = scoringLinkFor(statementsBySnap.get(c.snapshot_id) ?? [], c.matched_competency);
+    if (!hit) continue;
+    links.set(`${c.snapshot_id}|${hit.skillRef}|${c.competency_id}`, { snapshotId: c.snapshot_id, ...hit, competencyId: c.competency_id, source: 'scoring', status: 'proposed' });
   }
   const scoring = links.size;
+  if (scoringOnly) {
+    console.log(`links: ${scoring} from the scoring (--scoring-only: no embeddings, no model calls)`);
+    if (!apply) { console.log('DRY RUN: nothing written.'); return 0; }
+    const rows = [...links.values()];
+    let added = 0;
+    for (let i = 0; i < rows.length; i += 500) added += (await db.insert(skillCompetencyLinks).values(rows.slice(i, i + 500)).onConflictDoUpdate(scoringConflict).returning({ ok: skillCompetencyLinks.snapshotId })).length;
+    console.log(`added or upgraded ${added} link(s) (an embedding suggestion the scorer matched becomes a scoring link); ${rows.length - added} already there, kept as they were`);
+    return 0;
+  }
 
   // 2. Embedding proposals.
   const bundles = await listActiveBundles();

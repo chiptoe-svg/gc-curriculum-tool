@@ -1,3 +1,4 @@
+import { ensureScoringLink } from '@/lib/program/scoring-links';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies, subCompetencies } from '@/lib/db/schema';
@@ -86,6 +87,13 @@ export async function upsertCoverageCell(input: UpsertCoverageCellInput): Promis
   }).onConflictDoUpdate({
     target: [snapshotCompetencyCoverage.snapshotId, snapshotCompetencyCoverage.competencyId],
     set: values,
+  });
+  // Every score makes its own link (spec 2026-11-20-links-drive-coverage-design.md); never changes an existing one.
+  await ensureScoringLink(db, {
+    snapshotId: input.snapshotId,
+    competencyId: input.subCompetencyId,
+    matchedCompetency: input.matchedCompetency,
+    level: Math.max(input.kDepth ?? 0, input.uDepth ?? 0, input.dDepth ?? 0),
   });
 }
 
