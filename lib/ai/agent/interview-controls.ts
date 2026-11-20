@@ -50,7 +50,8 @@ function fileNameTokens(fileNames: string[]): Set<string> {
 }
 
 /** The line the instructor's turn carries when a file was added in the interview. */
-export function fileAddedMarker(name: string, id: string, readable: boolean): string {
+export function fileAddedMarker(rawName: string, id: string, readable: boolean): string {
+  const name = rawName.replace(/[\r\n[\]]+/g, ' ').trim();
   return readable
     ? `[Instructor added a file: ${name} (id=${id}) — search it before answering.]`
     : `[Instructor added a file: ${name} (id=${id}) — it could not be read; ask for the key part pasted instead.]`;

@@ -10,6 +10,7 @@ import { turnParts } from '@/lib/capture/merge-turn-text';
 import { assistantTurnMessage } from '@/lib/capture/saved-turn';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { InstructorSelect } from './InstructorSelect';
+import { AddFileButton, fileMarkers, type AttachedFile } from './AddFileButton';
 import { InterviewChecklist } from './InterviewChecklist';
 import { REVISION_MODE_COPY, type RevisionMode } from '@/lib/capture/revision-copy';
 import { EMPTY_CHECKLIST, nextChecklist, type InterviewChecklist as InterviewChecklistData } from '@/lib/capture/interview-checklist';
@@ -288,11 +289,15 @@ export function CaptureChatPanel({
     onMessagesChange(next);
     await postChat(next, t);
   }
+  const [attached, setAttached] = useState<AttachedFile[]>([]);
   async function handleSend() {
     const text = input.trim();
     if (!text || busy) return;
     setInput('');
-    await sendText(text);
+    const markers = fileMarkers(attached);
+    // Files still uploading have no id yet; they stay and go with the next send.
+    setAttached(attached.filter(f => f.state === 'uploading'));
+    await sendText(markers.length ? `${text}\n${markers.join('\n')}` : text);
   }
   const ONE_LAST_QUESTION = "I think I'm about ready to finish. Before I generate, look back over everything we've covered and ask me the single most important question still missing for an accurate profile. If we haven't explored how students struggle, fail, and revise — productive failure / problem-solving — that's a strong candidate. Ask just one question, in your own words.";
   async function handleOneLastQuestion() {
@@ -559,7 +564,10 @@ export function CaptureChatPanel({
             className="mt-1.5 w-full resize-y rounded-[10px] border border-[#D9D6DF] bg-white px-3 py-2 text-sm focus:border-[#522D80] focus:outline-none focus:ring-2 focus:ring-[#522D80]/25"
           />
           <div className="mt-4 flex items-center justify-between gap-3">
-            <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
+              <AddFileButton courseCode={courseCode} slug={slug} sessionId={sessionId} disabled={busy} files={attached} onChange={setAttached} />
+            </div>
             <button
               type="button"
               onClick={handleSend}

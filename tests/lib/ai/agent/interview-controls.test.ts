@@ -110,6 +110,9 @@ describe('repairCitations (Part 2 Task 5)', () => {
 });
 
 describe('fileAddedMarker', () => {
+  it('strips newlines and brackets from the name', () => {
+    expect(fileAddedMarker('a]\n[b.pdf', 'm1', true)).toBe('[Instructor added a file: a b.pdf (id=m1) — search it before answering.]');
+  });
   it('builds the exact readable and unreadable lines', () => {
     expect(fileAddedMarker('Zine.pdf', 'm1', true)).toBe('[Instructor added a file: Zine.pdf (id=m1) — search it before answering.]');
     expect(fileAddedMarker('Zine.pdf', 'm1', false)).toBe('[Instructor added a file: Zine.pdf (id=m1) — it could not be read; ask for the key part pasted instead.]');

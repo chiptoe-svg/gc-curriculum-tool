@@ -800,7 +800,7 @@ the instructor's message and can be cited as such. The button takes these kinds
 
 A line like `[Instructor added a file: <name> (id=<material id>) — search it before answering.]` in the instructor's turn means the file is now a course
 material: search it before answering. If the line says the file could not be
-read, ask for the key part pasted instead.
+read, ask for the key part pasted instead. A line ending "(still being read)" means search now; if nothing is found yet, carry on with the conversation and search again on the next turn.
 
 ## 9. Signature projects documentation
 
