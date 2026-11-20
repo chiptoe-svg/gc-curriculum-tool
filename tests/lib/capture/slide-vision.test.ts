@@ -163,6 +163,18 @@ describe('describeSlide — request shape', () => {
     expect(url).toBe('http://localhost:9999/v1/chat/completions');
   });
 
+  it('leaves room for a full verbatim transcription of a text-heavy slide (max_tokens 1200)', async () => {
+    // 2026-11-20: at 300, a dense slide's "text" field overran the cap (finish_reason "length"), so the JSON was cut
+    // off on both attempts and the slide was dropped; the same slide finished at 350 tokens with room for 1200.
+    fetchSpy.mockResolvedValueOnce(
+      makeOkResponse({ topic: 't', teaches: 'x', keyVisual: '', text: '', contentLevel: 'low' }),
+    );
+    await describeSlide(SAMPLE_PNG);
+    const [_url, init] = fetchSpy.mock.calls[0]!;
+    const body = JSON.parse((init as RequestInit).body as string);
+    expect(body.max_tokens).toBe(1200);
+  });
+
   it('keeps repetition_penalty 1.3 on the local omlx fallback (untested at 1.05)', async () => {
     fetchSpy.mockResolvedValueOnce(
       makeOkResponse({ topic: 't', teaches: 'x', keyVisual: '', text: '', contentLevel: 'low' }),

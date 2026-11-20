@@ -385,7 +385,13 @@ interface DoclingResponse {
     md_content?: string | null;
     text_content?: string | null;
     /** Requested only when describing pictures, to count blank descriptions. */
-    json_content?: { pictures?: Array<{ meta?: { description?: { text?: string | null } | null } | null }> } | null;
+    json_content?: {
+      pages?: Record<string, { size?: { width?: number; height?: number } }>;
+      pictures?: Array<{
+        meta?: { description?: { text?: string | null } | null } | null;
+        prov?: Array<{ page_no?: number; bbox?: { l: number; t: number; r: number; b: number } }>;
+      }>;
+    } | null;
   };
 }
 
@@ -395,9 +401,22 @@ interface DoclingResponse {
  * errors (seen 2026-10-28: the Spark's docling could not reach localhost:3000).
  */
 function countBlankDescriptions(data: DoclingResponse): { blank: number; total: number } {
-  const pictures = data.document?.json_content?.pictures ?? [];
+  const json = data.document?.json_content;
+  // docling describes only pictures covering at least picture_area_threshold (default 0.05) of their page; a smaller
+  // one (an icon in a screenshot) has no description by design, so it is not a failure (2026-11-20). A picture whose
+  // size can't be worked out still counts.
+  const pictures = (json?.pictures ?? []).filter(p => {
+    const prov = p.prov?.[0];
+    const size = prov?.page_no != null ? json?.pages?.[String(prov.page_no)]?.size : undefined;
+    if (!prov?.bbox || !size?.width || !size?.height) return true;
+    const area = Math.abs((prov.bbox.r - prov.bbox.l) * (prov.bbox.t - prov.bbox.b)) / (size.width * size.height);
+    return area >= DOCLING_PICTURE_AREA_THRESHOLD;
+  });
   return { blank: pictures.filter(p => !p.meta?.description?.text?.trim()).length, total: pictures.length };
 }
+
+/** docling's PictureDescriptionBaseOptions.picture_area_threshold default; we don't override it. */
+const DOCLING_PICTURE_AREA_THRESHOLD = 0.05;
 
 interface TaskStatusResponse {
   task_id: string;

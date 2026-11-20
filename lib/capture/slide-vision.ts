@@ -135,7 +135,9 @@ async function describeSlideOn(png: Buffer, be: SlideBackend): Promise<SlideNote
       ] },
     ],
     response_format: { type: 'json_object' },
-    max_tokens: 300,
+    // Room for the verbatim "text" field (added 2026-08-02) on a text-heavy slide. At 300, dense slides hit the cap
+    // on every attempt (finish_reason "length", truncated JSON → slide dropped); probe 2026-11-20: one finished at 350.
+    max_tokens: 1200,
     temperature: 0.2,
     // Pin thinking OFF (both backends honor it) — no reasoning preamble before the JSON.
     chat_template_kwargs: { enable_thinking: false },

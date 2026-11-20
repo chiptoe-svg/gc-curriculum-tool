@@ -269,6 +269,37 @@ describe('DoclingExtractor', () => {
       expect(cfg.engine_options.headers).toEqual({ Authorization: 'Bearer proxy-secret' });
     });
 
+    it('does not count a picture too small for docling to describe (under 5% of the page) as blank', async () => {
+      // 2026-11-20: a 0.1%-of-page icon in a software screenshot came back with no description (docling skips
+      // pictures under its 5% area threshold), which re-ran the whole file on the fallback docling for nothing.
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const pages = { '1': { size: { width: 500, height: 250 } } };
+      const icon = { meta: null, prov: [{ page_no: 1, bbox: { l: 10, t: 20, r: 20, b: 10 } }] };
+      const chart = { meta: { description: { text: 'a bar chart' } }, prov: [{ page_no: 1, bbox: { l: 0, t: 250, r: 250, b: 0 } }] };
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ status: 'success', document: { md_content: '## ok', json_content: { pages, pictures: [icon, chart] } } }),
+      });
+      const r = await new DoclingExtractor(PRIMARY).extract({ fileBytes: Buffer.from('x'), mimeType: PPTX, fileName: 'a.pptx' });
+      expect(r.text).toContain('## ok');
+      expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
+      expect(warn.mock.calls.some(c => String(c[0]).includes('blank'))).toBe(false);
+      warn.mockRestore();
+    });
+
+    it('still counts a large picture with no description as blank', async () => {
+      const pages = { '1': { size: { width: 500, height: 250 } } };
+      const big = { meta: null, prov: [{ page_no: 1, bbox: { l: 0, t: 250, r: 250, b: 0 } }] };
+      let call = 0;
+      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async () => {
+        call += 1;
+        const pictures = call === 1 ? [big] : [{ ...big, meta: { description: { text: 'fine' } } }];
+        return { ok: true, json: async () => ({ status: 'success', document: { md_content: '## ok', json_content: { pages, pictures } } }) };
+      });
+      await new DoclingExtractor(PRIMARY).extract({ fileBytes: Buffer.from('x'), mimeType: PPTX, fileName: 'a.pptx' });
+      expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(2);
+    });
+
     it('keeps the text and warns when the last docling also leaves a description blank', async () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(ok([{ meta: { description: { text: '' } } }]));
