@@ -56,3 +56,14 @@ describe('suggestParents', () => {
     expect(await suggestParents(tree, [{ skillRef: 's', statement: 'S' }])).toEqual({});
   });
 });
+
+describe('suggestNewWordings', () => {
+  it('returns {} when embedding fails', async () => {
+    const { suggestNewWordings } = await import('../suggest');
+    expect(await suggestNewWordings([{ skillRef: 'g', statement: 'g' }], [{ skillRef: 'p', statement: 'p' }])).toEqual({});
+  });
+  it('returns {} with nothing to compare', async () => {
+    const { suggestNewWordings } = await import('../suggest');
+    expect(await suggestNewWordings([], [{ skillRef: 'p', statement: 'p' }])).toEqual({});
+  });
+});

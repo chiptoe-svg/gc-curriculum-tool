@@ -73,3 +73,27 @@ export async function suggestParents(
     return {};
   }
 }
+
+/** For skills gone from a capture, the closest unplaced skill of the same course (cosine >= 0.80), keyed by the gone skillRef; any embedding error returns {}. */
+export async function suggestNewWordings(
+  gone: Array<{ skillRef: string; statement: string }>, pool: Array<{ skillRef: string; statement: string }>,
+): Promise<Record<string, { skillRef: string; statement: string; similarity: number }>> {
+  if (!gone.length || !pool.length) return {};
+  try {
+    const all = new Map<string, { kind: 'course_skill'; ref: string; text: string }>();
+    for (const s of [...gone, ...pool]) all.set(s.skillRef, { kind: 'course_skill', ref: s.skillRef, text: s.statement });
+    const wanted = [...all.values()];
+    await embedMissing(db, wanted, DEFAULT_EMBEDDING_MODEL, (t) => embedBatch(t));
+    const vecs = await readVectors(db, 'course_skill', wanted, DEFAULT_EMBEDDING_MODEL);
+    const poolVecs = pool.flatMap((p) => { const vec = vecs.get(p.skillRef); return vec ? [{ ...p, vec }] : []; });
+    const out: Record<string, { skillRef: string; statement: string; similarity: number }> = {};
+    for (const g of gone) {
+      const v = vecs.get(g.skillRef);
+      const hit = v ? closestNewWording(v, poolVecs) : null;
+      if (hit) out[g.skillRef] = hit;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
