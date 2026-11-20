@@ -1091,6 +1091,14 @@ export const aiFunctionSettings = pgTable('ai_function_settings', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Small operator settings that aren't per AI function (migration 0073). Key 'search.rerank': 'on' | 'off';
+// no row = follow the RERANK env switch.
+export const appSettings = pgTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // In-flight CourseCapture audit conversation, persisted so faculty can
 // resume after a closed tab, a failed Generate, or a next-day return.
 // One row per course (PK course_code). Cleared on profile confirmation

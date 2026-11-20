@@ -14,7 +14,7 @@
 
 import { Filters } from 'weaviate-client';
 import { getWeaviateClient } from './weaviate-client';
-import { rerankEnabled } from '@/lib/ai/rerank';
+import { rerankEnabledNow } from '@/lib/settings/app-settings';
 import { candidateLimit, rerankTopK } from './rerank-hits';
 import {
   ensureSchema,
@@ -202,8 +202,8 @@ export function createWeaviateVectorStore(): VectorStore {
             : Filters.and(...filterParts);
 
       // Rerank (2026-11-19): fetch 50 candidates, rerank on the passage text, keep the top k.
-      // RERANK=off returns the plain hybrid top k. A reranker failure falls back to hybrid order.
-      const reranking = rerankEnabled();
+      // Off (the /settings override, else RERANK=off) returns the plain hybrid top k. A reranker failure falls back to hybrid order.
+      const reranking = await rerankEnabledNow();
       const result = await chunks.query.hybrid(input.queryText, {
         vector: input.queryVector,
         limit: candidateLimit(input.k, reranking),

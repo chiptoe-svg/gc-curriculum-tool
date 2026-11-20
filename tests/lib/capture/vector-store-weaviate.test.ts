@@ -68,6 +68,11 @@ function makeMockCol(cls: string, tenant: string) {
 // verify withTenant was called with the right argument.
 const lastAccess: { cls?: string; tenant?: string } = {};
 
+// The /settings override is tested in lib/settings/__tests__/rerank-switch.test.ts; here, the env switch alone.
+vi.mock('@/lib/settings/app-settings', () => ({
+  rerankEnabledNow: async () => process.env.RERANK?.trim().toLowerCase() !== 'off',
+}));
+
 vi.mock('@/lib/capture/weaviate-client', () => ({
   getWeaviateClient: vi.fn().mockResolvedValue({
     collections: {
