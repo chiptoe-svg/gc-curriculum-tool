@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 
+vi.mock('@/app/explore/explore.css', () => ({}));
 vi.mock('next/navigation', () => ({
   notFound: () => { throw new Error('notFound'); },
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),

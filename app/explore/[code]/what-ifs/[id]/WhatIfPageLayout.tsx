@@ -30,6 +30,8 @@ export interface WhatIfBase {
 
 const wikiCourseHref = (code: string, q: string) => `/wiki/courses/${code.toLowerCase().replace(/\s+/g, '-')}${q}`;
 const level = (v: number | null) => (v === null ? '–' : String(v));
+/** Design-system D0-D5 ramp; a level that was not scored stays neutral. */
+const levelClass = (v: number | null) => (v === null || v < 0 || v > 5 ? 'ex-dnone' : `ex-d${Math.floor(v)}`);
 
 function Md({ children }: { children: string }) {
   return <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>;
@@ -84,27 +86,33 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
   const title = view.title ?? WHAT_IF_COPY.untitled;
 
   return (
-    <div className="wiki-index wiki-page whatif-page">
-      <header className="wiki-index__top">
-        <p className="wiki-page__kind">{view.courseCode}</p>
-        <h1 className="wiki-index__title wiki-page__title">{title}</h1>
-        <div className="mt-3 max-w-2xl rounded border-2 border-foreground px-4 py-3">
-          <p className="text-base"><strong>{WHAT_IF_COPY.banner}</strong></p>
-          <p className="mt-1 text-sm">{WHAT_IF_COPY.predictedExplain}</p>
-        </div>
-        <p className="wiki-index__status">
+    <div className="min-h-screen bg-background">
+      <header className="ex-header">
+        <div className="ex-header-inner">
+          <div className="ex-stack" style={{ gap: 12 }}>
+            <div>
+              <p className="ex-eyebrow">{view.courseCode}</p>
+              <h1 className="ex-title">{title}</h1>
+            </div>
+            <div className="ex-note">
+              <p><strong>{WHAT_IF_COPY.banner}</strong></p>
+              <p className="mt-1">{WHAT_IF_COPY.predictedExplain}</p>
+            </div>
+            <p className="ex-meta">
           {WHAT_IF_COPY.lastUpdatedBy(view.authorName, formatDate(view.pageCreatedAt))}{' '}
           {base.approvedAt && (base.approvedBy
             ? WHAT_IF_COPY.basedOn(base.approvedBy, formatDate(base.approvedAt))
             : WHAT_IF_COPY.basedOnUnknown(formatDate(base.approvedAt)))}
-        </p>
-        {base.state === 'newer' && <p className="wiki-beta">{WHAT_IF_COPY.newerVersion}</p>}
-        {base.state === 'withdrawn' && <p className="wiki-beta">{WHAT_IF_COPY.withdrawnVersion}</p>}
-        {base.state === 'gone' && <p className="wiki-beta">{WHAT_IF_COPY.goneVersion}</p>}
+            </p>
+            {base.state === 'newer' && <p className="ex-alert ex-alert-input">{WHAT_IF_COPY.newerVersion}</p>}
+            {base.state === 'withdrawn' && <p className="ex-alert">{WHAT_IF_COPY.withdrawnVersion}</p>}
+            {base.state === 'gone' && <p className="ex-alert">{WHAT_IF_COPY.goneVersion}</p>}
+          </div>
+        </div>
       </header>
 
-      <div className="wiki-page__body">
-        <article className="wiki-prose">
+      <main className="ex-main ex-page">
+        <article className="ex-article">
           <h2>{WHAT_IF_COPY.sectionChanges}</h2>
           {prose.whatChanges && <Md>{prose.whatChanges}</Md>}
           <h3>{WHAT_IF_COPY.added}</h3>
@@ -146,14 +154,14 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
           <h2>{WHAT_IF_COPY.sectionCourse}</h2>
           {prose.description && <Md>{prose.description}</Md>}
           <h3>{WHAT_IF_COPY.ratingsHeading}</h3>
-          <div className="whatif-table-scroll" tabIndex={0} role="region" aria-label={WHAT_IF_COPY.ratingsHeading}>
+          <div className="ex-table-scroll" tabIndex={0} role="region" aria-label={WHAT_IF_COPY.ratingsHeading}>
           <table>
             <thead>
               <tr>
                 <th>{WHAT_IF_COPY.colRating}</th>
-                <th>{WHAT_IF_COPY.colK}</th>
-                <th>{WHAT_IF_COPY.colU}</th>
-                <th>{WHAT_IF_COPY.colD}</th>
+                <th className="ex-lvcol">{WHAT_IF_COPY.colK}</th>
+                <th className="ex-lvcol">{WHAT_IF_COPY.colU}</th>
+                <th className="ex-lvcol">{WHAT_IF_COPY.colD}</th>
               </tr>
             </thead>
             <tbody>
@@ -161,15 +169,17 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
                 <tr key={n}>
                   <td>
                     <span>{r.statement}</span>
-                    {r.status !== 'approved' && <div className="text-sm"><PredictedBrief rating={r} /></div>}
+                    {r.status !== 'approved' && <div className="ex-small"><PredictedBrief rating={r} /></div>}
                   </td>
-                  {(['k', 'u', 'd'] as Array<keyof Kud>).map(d => <td key={d}>{level(r.kud[d])}</td>)}
+                  {(['k', 'u', 'd'] as Array<keyof Kud>).map(d => (
+                    <td key={d} className="ex-lvcol"><span className={`ex-lv ${levelClass(r.kud[d])}`}>{level(r.kud[d])}</span></td>
+                  ))}
                 </tr>
               ))}
             </tbody>
           </table>
           </div>
-          {hasFoundational && <p className="text-sm">{WHAT_IF_COPY.foundationalNote}</p>}
+          {hasFoundational && <p className="ex-small">{WHAT_IF_COPY.foundationalNote}</p>}
 
           <h2>{WHAT_IF_COPY.sectionNeighbors}</h2>
           {prose.neighbors && <Md>{prose.neighbors}</Md>}
@@ -194,7 +204,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
           {knockOn.laterCourses.length > 0 && (
             <>
               <h3>{WHAT_IF_COPY.laterHeading}</h3>
-              <p className="text-sm">{WHAT_IF_COPY.effectsNote}</p>
+              <p className="ex-small">{WHAT_IF_COPY.effectsNote}</p>
               <ul>
                 {knockOn.laterCourses.map((l, n) => (
                   <li key={n}>
@@ -221,7 +231,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
           )}
           {knockOn.careerNotComputed && <p>{WHAT_IF_COPY.careerNotComputed}</p>}
           {neighborsEmpty && <p>{WHAT_IF_COPY.neighborsNone}</p>}
-          {knockOn.laterCourses.length === 0 && <p className="text-sm">{WHAT_IF_COPY.effectsNote}</p>}
+          {knockOn.laterCourses.length === 0 && <p className="ex-small">{WHAT_IF_COPY.effectsNote}</p>}
 
           <h2>{WHAT_IF_COPY.sectionQuestions}</h2>
           {prose.questions.length > 0
@@ -242,13 +252,13 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
           ) : <p>{WHAT_IF_COPY.basisNone}</p>}
         </article>
 
-        <aside className="wiki-page__aside" aria-label="Actions">
-          <section>
-            <p><Link href={`/explore/${encodeURIComponent(view.courseCode)}${q}`}>{WHAT_IF_COPY.listLink}</Link></p>
-            <p><Link href={wikiCourseHref(view.courseCode, q)}>{WHAT_IF_COPY.courseLink} {view.courseCode}</Link></p>
+        <aside className="ex-aside" aria-label="Actions">
+          <section className="ex-card">
+            <Link href={`/explore/${encodeURIComponent(view.courseCode)}${q}`} className="ex-link">{WHAT_IF_COPY.listLink}</Link>
+            <Link href={wikiCourseHref(view.courseCode, q)} className="ex-link">{WHAT_IF_COPY.courseLink} {view.courseCode}</Link>
           </section>
           {canManage && (
-            <section>
+            <section className="ex-card">
               <WhatIfActions
                 courseCode={view.courseCode}
                 whatIfId={view.id}
@@ -259,7 +269,7 @@ export function WhatIfPageLayout({ view, base, canManage, slug }: {
             </section>
           )}
         </aside>
-      </div>
+      </main>
     </div>
   );
 }

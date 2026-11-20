@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { apiErrorText } from '@/lib/ai/credit-client';
 import { WHAT_IF_COPY } from '@/lib/what-if/copy';
 
-const btn = 'rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50';
+const btn = 'ex-btn ex-btn-sm';
 
 /** Delete with the confirmation shown in the page (never a browser dialog). On success goes to the course's what-if list. */
 export function DeleteWhatIf({
@@ -49,15 +49,15 @@ export function DeleteWhatIf({
         </button>
       )}
       {confirming && (
-        <div role="alertdialog" aria-label={WHAT_IF_COPY.remove} className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">
-          <p>{WHAT_IF_COPY.removeConfirm}</p>
-          <div className="mt-2 flex gap-2">
+        <div role="alertdialog" aria-label={WHAT_IF_COPY.remove} className="ex-alert">
+          <div><p>{WHAT_IF_COPY.removeConfirm}</p>
+          <div className="ex-row mt-2">
             <button type="button" className={btn} disabled={busy} onClick={() => void remove()}>{WHAT_IF_COPY.removeYes}</button>
             <button type="button" className={btn} disabled={busy} onClick={() => setConfirming(false)}>{WHAT_IF_COPY.removeNo}</button>
-          </div>
+          </div></div>
         </div>
       )}
-      {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="ex-err mt-2">{error}</p>}
     </div>
   );
 }

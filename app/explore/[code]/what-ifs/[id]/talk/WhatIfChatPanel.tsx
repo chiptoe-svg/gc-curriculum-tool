@@ -25,14 +25,14 @@ const attachmentText = (status: InitialAttachment['status'], reason: string | nu
 function EstimateCard({ q }: { q: QuickEstimate }) {
   const moved = q.profile.ratings.filter(r => r.status !== 'approved');
   return (
-    <div className="mt-2 rounded border bg-background px-3 py-2 text-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="ex-estimate">
+      <p className="ex-label">
         {WHAT_IF_COPY.estimateHeading}{q.candidate ? ` — ${q.candidate}` : ''}
       </p>
       {moved.length === 0 ? (
         <p className="mt-1">{WHAT_IF_COPY.estimateNothingMoved}</p>
       ) : (
-        <ul className="mt-1 space-y-1">
+        <ul>
           {moved.map((r, i) => (
             <li key={i}>
               <span className="font-medium">{r.statement}</span>{' '}
@@ -197,53 +197,53 @@ export function WhatIfChatPanel({
   return (
     <section
       data-testid="what-if-panel"
-      className="rounded-md border bg-card shadow-sm"
+      className="ex-card ex-chat"
       onDragOver={e => e.preventDefault()}
       onDrop={e => { e.preventDefault(); void upload(Array.from(e.dataTransfer?.files ?? [])); }}
     >
-      <div className="border-b px-4 py-2">
-        <h2 className="text-sm font-semibold">{WHAT_IF_COPY.talkHeading}</h2>
-        <p className="text-xs text-muted-foreground">{WHAT_IF_COPY.talkIntro}</p>
+      <div className="ex-card-head">
+        <h2 className="ex-h2" style={{ fontSize: 20 }}>{WHAT_IF_COPY.talkHeading}</h2>
+        <p className="ex-meta">{WHAT_IF_COPY.talkIntro}</p>
       </div>
 
-      <div ref={transcriptRef} className="max-h-[55vh] min-h-[240px] space-y-3 overflow-y-auto px-4 py-3">
+      <div ref={transcriptRef} className="ex-transcript">
         {empty && (
-          <div className="mr-12 rounded-lg bg-muted/40 px-3 py-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{WHAT_IF_COPY.assistantLabel}</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm">{WHAT_IF_COPY.opening}</p>
+          <div className="ex-msg">
+            <p className="ex-label">{WHAT_IF_COPY.assistantLabel}</p>
+            <p>{WHAT_IF_COPY.opening}</p>
           </div>
         )}
         {lines.map(m => (m.role === 'user' ? (
-          <div key={m.key} className="ml-12 rounded-lg bg-primary/10 px-3 py-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{WHAT_IF_COPY.youLabel}</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{m.content}</p>
+          <div key={m.key} className="ex-msg ex-msg-user">
+            <p className="ex-label">{WHAT_IF_COPY.youLabel}</p>
+            <p>{m.content}</p>
           </div>
         ) : (
-          <div key={m.key} className="mr-12 rounded-lg bg-muted/40 px-3 py-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{WHAT_IF_COPY.assistantLabel}</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{m.content}</p>
+          <div key={m.key} className="ex-msg">
+            <p className="ex-label">{WHAT_IF_COPY.assistantLabel}</p>
+            <p>{m.content}</p>
             {m.estimates.map((q, i) => <EstimateCard key={i} q={q} />)}
           </div>
         )))}
         {pending !== null && (
           <>
-            <div className="ml-12 rounded-lg bg-primary/10 px-3 py-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{WHAT_IF_COPY.youLabel}</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{pending}</p>
+            <div className="ex-msg ex-msg-user">
+              <p className="ex-label">{WHAT_IF_COPY.youLabel}</p>
+              <p>{pending}</p>
             </div>
-            <p className="text-xs italic text-muted-foreground">{status}</p>
+            <p className="ex-meta" style={{ fontStyle: 'italic' }}>{status}</p>
           </>
         )}
       </div>
 
       {error && (
-        <div role="alert" className="mx-4 my-3 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div role="alert" className="ex-alert ex-chat-alert">
           {error}
         </div>
       )}
 
-      <div className="border-t px-4 pb-4 pt-4">
-        <label htmlFor="what-if-reply" className="block text-xs font-medium text-muted-foreground">{WHAT_IF_COPY.replyLabel}</label>
+      <div className="ex-card-foot">
+        <label htmlFor="what-if-reply" className="ex-label">{WHAT_IF_COPY.replyLabel}</label>
         <textarea
           id="what-if-reply"
           value={input}
@@ -258,12 +258,12 @@ export function WhatIfChatPanel({
           }}
           rows={3}
           placeholder={WHAT_IF_COPY.replyPlaceholder}
-          className="mt-1.5 w-full resize-y rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          className="ex-textarea mt-2"
         />
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="ex-row mt-3" style={{ justifyContent: 'space-between' }}>
+          <div className="ex-row">
             <VoiceRecorder slug={slug} onTranscript={t => setInput(prev => (prev.trim() ? `${prev.trim()}\n\n${t}` : t))} disabled={busy} />
-            <label className="cursor-pointer rounded border border-input bg-background px-3 py-1.5 text-sm hover:bg-muted">
+            <label className="ex-btn ex-btn-sm ex-file">
               <input
                 type="file"
                 multiple
@@ -278,14 +278,14 @@ export function WhatIfChatPanel({
             type="button"
             onClick={() => void send()}
             disabled={!input.trim() || busy}
-            className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+            className="ex-btn ex-btn-primary"
           >
             {busy ? WHAT_IF_COPY.sending : WHAT_IF_COPY.send}
           </button>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">{WHAT_IF_COPY.attachHint}</p>
+        <p className="ex-meta mt-2">{WHAT_IF_COPY.attachHint}</p>
         {attachments.length > 0 && (
-          <ul className="mt-2 space-y-1 text-sm">
+          <ul className="ex-body mt-2" style={{ listStyle: 'none', padding: 0 }}>
             {attachments.map(a => (
               <li key={a.key}><span className="font-medium">{a.fileName}</span> — <span>{a.text}</span></li>
             ))}
@@ -293,16 +293,16 @@ export function WhatIfChatPanel({
         )}
       </div>
 
-      <div className="border-t px-4 py-4">
+      <div className="ex-card-foot">
         <button
           type="button"
           onClick={() => void createPage()}
           disabled={lines.length === 0 || busy || creating || uploads > 0}
-          className="w-full rounded-md border border-input bg-background px-4 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50"
+          className="ex-btn ex-btn-block"
         >
           {hasPage ? WHAT_IF_COPY.updatePage : WHAT_IF_COPY.createPage}
         </button>
-        {creating && <p className="mt-2 text-center text-sm text-muted-foreground">{WHAT_IF_COPY.creatingPage}</p>}
+        {creating && <p className="ex-meta mt-2 text-center">{WHAT_IF_COPY.creatingPage}</p>}
       </div>
     </section>
   );

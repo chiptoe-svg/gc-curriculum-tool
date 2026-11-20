@@ -7,7 +7,7 @@ import { apiErrorText } from '@/lib/ai/credit-client';
 import { WHAT_IF_COPY } from '@/lib/what-if/copy';
 import { DeleteWhatIf } from './DeleteWhatIf';
 
-const btn = 'rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50';
+const btn = 'ex-btn ex-btn-sm';
 
 /** What the author (or an admin) can do on the page: update, rename, delete, go back to the conversation. */
 export function WhatIfActions({
@@ -71,8 +71,8 @@ export function WhatIfActions({
   }
 
   return (
-    <div className="space-y-3 border-t pt-4">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="ex-stack" style={{ gap: 12 }}>
+      <div className="ex-row">
         <Link
           href={`/explore/${encodeURIComponent(courseCode)}/what-ifs/${whatIfId}/talk?slug=${encodeURIComponent(slug)}`}
           className={btn}
@@ -92,27 +92,27 @@ export function WhatIfActions({
         <DeleteWhatIf courseCode={courseCode} whatIfId={whatIfId} slug={slug} disabled={busy !== null} />
       </div>
 
-      {busy === 'update' && <p className="text-sm text-muted-foreground">{WHAT_IF_COPY.updating}</p>}
+      {busy === 'update' && <p className="ex-meta">{WHAT_IF_COPY.updating}</p>}
 
       {renaming && (
         <form
-          className="flex flex-wrap items-center gap-2"
+          className="ex-row"
           onSubmit={e => { e.preventDefault(); if (draft.trim()) void rename(); }}
         >
-          <label htmlFor="what-if-title" className="text-sm">{WHAT_IF_COPY.renameLabel}</label>
+          <label htmlFor="what-if-title" className="ex-body">{WHAT_IF_COPY.renameLabel}</label>
           <input
             id="what-if-title"
             value={draft}
             maxLength={120}
             onChange={e => setDraft(e.target.value)}
-            className="min-w-[16rem] flex-1 rounded border border-input bg-background px-2 py-1.5 text-sm"
+            className="ex-input min-w-[12rem] flex-1"
           />
           <button type="submit" className={btn} disabled={busy !== null || !draft.trim()}>{WHAT_IF_COPY.renameSave}</button>
           <button type="button" className={btn} onClick={() => setRenaming(false)}>{WHAT_IF_COPY.renameCancel}</button>
         </form>
       )}
 
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="ex-err">{error}</p>}
     </div>
   );
 }

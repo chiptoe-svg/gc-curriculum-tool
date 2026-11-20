@@ -34,40 +34,40 @@ export function WhatIfList({
   const base = `/explore/${encodeURIComponent(courseCode)}/what-ifs`;
   const q = `?slug=${encodeURIComponent(slug)}`;
   return (
-    <section className="space-y-6">
+    <section className="ex-stack">
       <div>
-        <h2 className="text-lg font-semibold">{WHAT_IF_COPY.listHeading}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{WHAT_IF_COPY.listIntro}</p>
+        <h2 className="ex-h2">{WHAT_IF_COPY.listHeading}</h2>
+        <p className="ex-meta mt-1">{WHAT_IF_COPY.listIntro}</p>
       </div>
 
       {canStart
         ? <StartWhatIf courseCode={courseCode} slug={slug} defaultName={defaultName} />
-        : <p className="text-sm text-muted-foreground">{WHAT_IF_COPY.listNoApproved}</p>}
+        : <p className="ex-meta">{WHAT_IF_COPY.listNoApproved}</p>}
 
       {whatIfs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{WHAT_IF_COPY.listEmpty}</p>
+        <p className="ex-meta">{WHAT_IF_COPY.listEmpty}</p>
       ) : (
-        <ul className="divide-y rounded-md border">
+        <ul className="ex-list ex-card">
           {whatIfs.map(w => (
-            <li key={w.id} className="px-4 py-3">
+            <li key={w.id}>
               {w.pageCreatedAt || w.skillsOnly ? (
                 <>
-                  <Link href={`${base}/${w.id}${q}`} className="font-medium underline-offset-2 hover:underline">
+                  <Link href={`${base}/${w.id}${q}`} className="ex-list-title">
                     {w.title ?? WHAT_IF_COPY.untitled}
                   </Link>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="ex-meta mt-1">
                     {WHAT_IF_COPY.listBy(w.authorName, formatDate(w.pageCreatedAt ?? w.createdAt))}
                   </p>
-                  {w.skillsOnly && <p className="mt-0.5 text-xs font-medium">{WHAT_IF_COPY.listSkillsOnly}</p>}
-                  {w.summary && <p className="mt-1 text-sm">{w.summary}</p>}
+                  {w.skillsOnly && <p className="mt-2"><span className="ex-cue ex-cue-draft">{WHAT_IF_COPY.listSkillsOnly}</span></p>}
+                  {w.summary && <p className="ex-body mt-2">{w.summary}</p>}
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-medium">{WHAT_IF_COPY.listUnfinished}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="ex-list-title">{WHAT_IF_COPY.listUnfinished}</p>
+                  <p className="ex-meta mt-1">
                     {WHAT_IF_COPY.listBy(w.authorName, formatDate(w.createdAt))}
                   </p>
-                  <Link href={`${base}/${w.id}/talk${q}`} className="mt-1 inline-block text-sm underline-offset-2 hover:underline">
+                  <Link href={`${base}/${w.id}/talk${q}`} className="ex-link mt-2 inline-block text-sm">
                     {WHAT_IF_COPY.listContinue}
                   </Link>
                 </>
