@@ -80,7 +80,7 @@ CREATE TABLE skill_tree_events (
   at timestamptz NOT NULL DEFAULT now(),
   before jsonb,
   after jsonb,
-  CONSTRAINT skill_tree_events_kind_check CHECK (kind IN ('migrated', 'created', 'renamed', 'described', 'reparented', 'merged', 'split', 'weight', 'leaf_placed', 'leaf_confirmed', 'leaf_rejected', 'leaf_moved', 'leaf_share', 'leaf_retargeted', 'depth_set', 'depth_cleared'))
+  CONSTRAINT skill_tree_events_kind_check CHECK (kind IN ('migrated', 'created', 'renamed', 'described', 'reparented', 'merged', 'split', 'weight', 'leaf_placed', 'leaf_confirmed', 'leaf_rejected', 'leaf_moved', 'leaf_share', 'leaf_retargeted', 'depth_set', 'depth_cleared', 'requires_set'))
 );
 CREATE INDEX idx_skill_tree_events_node_at ON skill_tree_events (node_id, at DESC);
 

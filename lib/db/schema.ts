@@ -1760,7 +1760,7 @@ export const nodeDepths = pgTable('node_depths', {
   check('node_depths_method_check', sql`${t.method} IN ('faculty', 'ai')`),
 ]);
 
-export type SkillTreeEventKind = 'migrated' | 'created' | 'renamed' | 'described' | 'reparented' | 'merged' | 'split' | 'weight' | 'leaf_placed' | 'leaf_confirmed' | 'leaf_rejected' | 'leaf_moved' | 'leaf_share' | 'leaf_retargeted' | 'depth_set' | 'depth_cleared';
+export type SkillTreeEventKind = 'migrated' | 'created' | 'renamed' | 'described' | 'reparented' | 'merged' | 'split' | 'weight' | 'leaf_placed' | 'leaf_confirmed' | 'leaf_rejected' | 'leaf_moved' | 'leaf_share' | 'leaf_retargeted' | 'depth_set' | 'depth_cleared' | 'requires_set';
 
 /** Audit trail of every skill-tree change. */
 export const skillTreeEvents = pgTable('skill_tree_events', {
@@ -1775,5 +1775,5 @@ export const skillTreeEvents = pgTable('skill_tree_events', {
   after: jsonb('after'),
 }, (t) => [
   index('idx_skill_tree_events_node_at').on(t.nodeId, sql`${t.at} DESC`),
-  check('skill_tree_events_kind_check', sql`${t.kind} IN ('migrated', 'created', 'renamed', 'described', 'reparented', 'merged', 'split', 'weight', 'leaf_placed', 'leaf_confirmed', 'leaf_rejected', 'leaf_moved', 'leaf_share', 'leaf_retargeted', 'depth_set', 'depth_cleared')`),
+  check('skill_tree_events_kind_check', sql`${t.kind} IN ('migrated', 'created', 'renamed', 'described', 'reparented', 'merged', 'split', 'weight', 'leaf_placed', 'leaf_confirmed', 'leaf_rejected', 'leaf_moved', 'leaf_share', 'leaf_retargeted', 'depth_set', 'depth_cleared', 'requires_set')`),
 ]);

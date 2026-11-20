@@ -6,7 +6,7 @@
 import { and, asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
-  curriculumStringEvents, curriculumStringPath, curriculumStrings, skillNodes, skillOrphanNotes, stringLinks, stringPoints,
+  curriculumStringEvents, curriculumStringPath, curriculumStrings, skillNodes, skillOrphanNotes, skillTreeEvents, stringLinks, stringPoints,
 } from '@/lib/db/schema';
 import { checkBranch, checkMerge, checkPath, MSG } from '@/lib/builder/strings/rules';
 import type { EventRow, LinkRow, OrphanNote, PointRow, Role, StringGraph, StringRow } from '@/lib/builder/strings/types';
@@ -509,7 +509,11 @@ export async function setPointNode(input: {
       ? { nodeId, needK: input.need.k, needU: input.need.u, needD: input.need.d }
       : { nodeId: null, needK: null, needU: null, needD: null };
     await tx.update(stringPoints).set(next).where(eq(stringPoints.id, pt.id));
-    // No event row: curriculum_string_events.kind is a closed list and this change adds no migration.
+    const as = (nodeId: string | null, k: number | null, u: number | null, d: number | null) => ({ pointId: pt.id, nodeId, needK: k, needU: u, needD: d });
+    await tx.insert(skillTreeEvents).values({
+      kind: 'requires_set', nodeId: next.nodeId ?? pt.nodeId, by: input.by,
+      before: as(pt.nodeId, pt.needK, pt.needU, pt.needD), after: as(next.nodeId, next.needK, next.needU, next.needD),
+    });
     return { courseCodes: [pt.courseCode] };
   });
 }

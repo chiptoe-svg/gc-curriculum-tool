@@ -64,6 +64,7 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
       await db.delete(s.stringPointResolutions).where(orm.inArray(s.stringPointResolutions.pointId, pointIds));
       await db.delete(s.stringPoints).where(orm.inArray(s.stringPoints.id, pointIds));
     }
+    await db.delete(s.skillTreeEvents).where(orm.like(s.skillTreeEvents.nodeId, `${tag}%`));
     await db.delete(s.skillNodes).where(orm.like(s.skillNodes.id, `${tag}%`));
     await db.delete(s.skillOrphanNotes).where(orm.like(s.skillOrphanNotes.courseCode, `${tag}%`));
     await db.delete(s.curriculumStringEvents).where(orm.sql`${s.curriculumStringEvents.after} ->> 'courseCode' LIKE ${`${tag}%`}`);
@@ -382,13 +383,23 @@ describe.skipIf(!SCRATCH)('string-queries (scratch database)', () => {
     const req = r.graph.points[mine(r, nm).path[1]!]!;
     expect(req).toMatchObject({ nodeId, needK: null, needU: 2, needD: 3 });
     expect(r.graph.points[mine(r, nm).path[0]!]).toMatchObject({ nodeId: null });
+    const evs = () => dbm.db.select().from(s.skillTreeEvents).where(orm.and(orm.eq(s.skillTreeEvents.kind, 'requires_set'), orm.sql`${s.skillTreeEvents.after} ->> 'pointId' = ${req.id}`));
+    expect(await evs()).toHaveLength(0);
     const moved = must(await q.setPointNode({ pointId: req.id, nodeId, need: { k: 1, u: null, d: 4 }, by: 'tester' }));
     expect(moved.graph.points[req.id]).toMatchObject({ nodeId, needK: 1, needU: null, needD: 4 });
+    const setEv = await evs();
+    expect(setEv).toHaveLength(1);
+    expect(setEv[0]).toMatchObject({ kind: 'requires_set', nodeId, by: 'tester',
+      before: { pointId: req.id, nodeId, needK: null, needU: 2, needD: 3 }, after: { pointId: req.id, nodeId, needK: 1, needU: null, needD: 4 } });
     const cleared = must(await q.setPointNode({ pointId: req.id, nodeId: null, need: { k: null, u: null, d: null }, by: 'tester' }));
     expect(cleared.graph.points[req.id]).toMatchObject({ nodeId: null, needD: null });
+    const all = await evs();
+    expect(all).toHaveLength(2);
+    expect(all.find((e) => (e.after as { nodeId: string | null }).nodeId === null)).toMatchObject({ nodeId, before: { nodeId } });
     // A develops point cannot name a node.
     const dev = mine(r, nm).path[0]!;
     expect(await q.setPointNode({ pointId: dev, nodeId, need: { k: null, u: null, d: 1 }, by: 'tester' })).toMatchObject({ ok: false, status: 400 });
+    expect(await evs()).toHaveLength(2); // the refused write left no event
     await q.setPointNode({ pointId: req.id, nodeId: null, need: { k: null, u: null, d: null }, by: 'tester' });
   });
 });

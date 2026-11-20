@@ -19,7 +19,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   if (!UUID.test(id)) return bad('Point not found.', 404);
   const body = await readBody(req);
   const by = authorOf(auth.grant, body);
-  if (!by) return bad('A name is required.');
+  if (!by) return bad('Add your name first.');
   if (body.nodeId !== null && !str(body.nodeId)) return bad('Say which tree skill to check against.');
   const k = need(body.k), u = need(body.u), d = need(body.d);
   if (k === undefined || u === undefined || d === undefined) return bad('Each need is a whole number from 0 to 5.');
