@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { publicCopyUrl, sendToPublicCopy } from '@/lib/wiki/public-copy';
 import { isValidSlug } from '@/lib/slug';
 import { loadTargetMap, type TargetWithCompetencies } from '@/lib/wiki/course-views';
+import '../wiki.css';
 import { DEPTH_SCALE, EVIDENCE_LABELS, CAREER_TARGETS_BETA, TOOL_OVERVIEW_URL } from '../HowToRead';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +25,7 @@ export default async function WikiGuidePage({ searchParams }: Props) {
   const targets: TargetWithCompetencies[] | null = await loadTargetMap().catch(() => null);
 
   return (
-    <div className="wiki-index wiki-page wiki-guide">
+    <div className="wiki-index wiki-gc wiki-page wiki-guide">
       <header className="wiki-index__top">
         <div className="wiki-index__bar">
           <nav className="wiki-page__crumbs">
@@ -69,7 +70,7 @@ export default async function WikiGuidePage({ searchParams }: Props) {
         <h2 id="depth">The depth scale</h2>
         <table>
           <thead><tr><th scope="col">Depth</th><th scope="col">What it looks like</th></tr></thead>
-          <tbody>{DEPTH_SCALE.map(([n, t]) => <tr key={n}><td>{n}</td><td>{t}</td></tr>)}</tbody>
+          <tbody>{DEPTH_SCALE.map(([n, t]) => <tr key={n}><td><span className={`lv d${n}`}>D{n}</span></td><td>{t}</td></tr>)}</tbody>
         </table>
 
         <h2 id="evidence">What a score rests on</h2>

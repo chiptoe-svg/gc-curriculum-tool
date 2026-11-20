@@ -18,7 +18,7 @@ import { ObjectiveGuidePanel } from './ObjectiveGuidePanel';
 
 export interface PageLink { href: string; label: string }
 
-const depth = (v: number | null) => (v === null ? '–' : String(v));
+const depth = (v: number | null) => (v === null ? '–' : <span className={`lv d${v}`}>{v}</span>);
 function Md({ children }: { children: string }) {
   return <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>;
 }

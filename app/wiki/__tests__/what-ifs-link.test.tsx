@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 
+vi.mock('@/app/wiki/wiki.css', () => ({}));
 vi.mock('next/navigation', () => ({
   notFound: () => { throw new Error('notFound'); },
   redirect: (u: string) => { throw new Error(`redirect ${u}`); },

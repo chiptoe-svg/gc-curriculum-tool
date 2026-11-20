@@ -7,6 +7,7 @@ import { loadWikiIndex, levelGroup, codeFromSlug, type WikiCourse } from '@/lib/
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { AskTab } from '@/components/AskTab';
 import { HowToRead, CAREER_TARGETS_BETA, TOOL_OVERVIEW_URL, TOOL_DOCS_URL } from './HowToRead';
+import './wiki.css';
 import { loadTargetMap, loadRetiredCompetencyIds, withoutRetired, type TargetWithCompetencies } from '@/lib/wiki/course-views';
 
 export const dynamic = 'force-dynamic';
@@ -60,7 +61,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
   const isEmpty = data.courses.length === 0;
 
   return (
-    <div className="wiki-index">
+    <div className="wiki-index wiki-gc">
       <header className="wiki-index__top">
         <div className="wiki-index__bar">
           <span className="wiki-index__brand">Graphic Communications, Clemson</span>
@@ -76,6 +77,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
             {faculty && <FeedbackLink />}
           </nav>
         </div>
+        <p className="wiki-page__kind">Knowledge base</p>
         <h1 className="wiki-index__title">Curriculum knowledge base</h1>
         <p className="wiki-index__lede">
           What each Graphic Communications course actually has students{' '}

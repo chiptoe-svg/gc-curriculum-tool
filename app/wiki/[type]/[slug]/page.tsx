@@ -12,6 +12,7 @@ import { loadWikiIndex, levelGroup, codeFromSlug, listFromFrontmatter } from '@/
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { countWhatIfsByCourse } from '@/lib/db/what-if-queries';
 import { WHAT_IF_COPY } from '@/lib/what-if/copy';
+import '../../wiki.css';
 import { CoursePageLayout } from '../../CoursePageLayout';
 import { captureFact, courseLevelLabel } from '@/lib/wiki/course-page';
 import { TermsHint, CAREER_TARGETS_BETA } from '../../HowToRead';
@@ -129,7 +130,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
   const relatedShown = related.filter(r => r.slugs.length > 0);
 
   return (
-    <div className="wiki-index wiki-page">
+    <div className="wiki-index wiki-gc wiki-page">
       <header className="wiki-index__top">
         <div className="wiki-index__bar">
           <nav className="wiki-page__crumbs">
