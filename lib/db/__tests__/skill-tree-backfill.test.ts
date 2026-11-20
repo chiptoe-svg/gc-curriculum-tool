@@ -10,7 +10,9 @@
  *   $P "$DATABASE_URL" -v ON_ERROR_STOP=1 -f drizzle/0072_competency_levels.sql   # only if competency_levels is missing
  *   $P "$DATABASE_URL" -v ON_ERROR_STOP=1 -f drizzle/0073_app_settings.sql        # only if app_settings is missing
  *   pnpm vitest run lib/db/__tests__/skill-tree-backfill.test.ts
- * (0074 itself is NOT applied permanently; if it already is in the scratch DB, the test fails on its own guard.)
+ * 0074 may be absent or already applied in the scratch DB (the query tests need it applied). Either way the test runs the
+ * file inside its rolled-back transaction; when it is already applied, it first drops the 0074 objects inside that same
+ * transaction (DDL rolls back), so the backfill is still exercised from scratch and the DB ends unchanged.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -34,6 +36,10 @@ describe.skipIf(!SCRATCH)('migration 0074 backfill (scratch database, rolled bac
     expect((await c.query('select current_database() d')).rows[0].d).toBe('gc_curriculum_builder_scratch');
     await c.query('BEGIN');
     await c.query(`create temp table levels_before on commit drop as ${LEVELS}`);
+    if ((await c.query(`select 1 from information_schema.tables where table_name = 'skill_nodes'`)).rowCount) {
+      await c.query(`ALTER TABLE string_points DROP COLUMN node_id, DROP COLUMN need_k, DROP COLUMN need_u, DROP COLUMN need_d`);
+      await c.query('DROP TABLE skill_tree_events, node_depths, skill_leaves, skill_nodes');
+    }
     await c.query(body);
   });
   afterAll(async () => {
