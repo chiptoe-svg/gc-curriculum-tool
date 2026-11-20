@@ -210,7 +210,7 @@ describe.skipIf(!SCRATCH)('skill-tree-queries (scratch database)', () => {
     const ref = hashOf(statement);
     const snapId = await snapshotFor('keep', [statement]);
     const master = (await q.loadTree()).nodes.find((x) => x.id === masterId)!;
-    await dbm.db.insert(s.skillCompetencyLinks).values({ snapshotId: snapId, skillRef: ref, statement, competencyId: master.competencyId!, source: 'faculty', status: 'rejected', decidedBy: 'someone' });
+    await dbm.db.insert(s.skillCompetencyLinks).values({ snapshotId: snapId, skillRef: ref, statement, competencyId: master.competencyId!, source: 'faculty', status: 'rejected', decidedBy: 'someone', decidedAt: new Date() });
     const icc = await newNode('keep', masterId);
     must(await q.placeLeaf({ courseCode: course('keep'), skillRef: ref, statement, nodeId: icc, by }));
     const links = await linksOf(snapId);
