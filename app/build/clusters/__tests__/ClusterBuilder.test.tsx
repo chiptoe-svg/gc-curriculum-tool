@@ -8,6 +8,8 @@ import { ClusterBuilder } from '../[id]/ClusterBuilder';
 
 vi.mock('next/link', () => ({ default: ({ children, href, ...rest }: { children: React.ReactNode; href: string }) => <a href={href} {...rest}>{children}</a> }));
 
+vi.mock('../../shared/SkillTreePanel', () => ({ SkillTreePanel: (p: unknown) => <div data-testid="skill-tree-panel" data-props={JSON.stringify(p)} /> }));
+
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 const hash = (s: string) => textHash(normalizeStatement(s));
@@ -233,5 +235,16 @@ describe('ClusterBuilder string panel', () => {
     await screen.findByRole('button', { name: 'Rename' });
     fireEvent.keyDown(window, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Rename' })).toBeNull());
+  });
+});
+
+describe('ClusterBuilder skill tree', () => {
+  it('cluster builder opens the skill tree with its courses', () => {
+    stubFetch(() => json(200, {}));
+    mount(state({ cards: [{ ref: 'GC 1010', x: 20, y: 20 }, { ref: 'GC 2070', x: 300, y: 20 }, { ref: 'what-if-x', x: 600, y: 20 }] }));
+    expect(screen.queryByTestId('skill-tree-panel')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Skill tree' }));
+    const props = JSON.parse(screen.getByTestId('skill-tree-panel').getAttribute('data-props')!);
+    expect(props).toMatchObject({ courseCode: null, mode: 'cluster', courseCodes: ['GC 1010', 'GC 2070'], authorName: 'Tester' });
   });
 });

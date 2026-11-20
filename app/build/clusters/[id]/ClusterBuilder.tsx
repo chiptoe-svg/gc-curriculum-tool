@@ -34,6 +34,7 @@ import { useStringsAt } from '@/components/strings/useStringsAt';
 import { OrphanSkills } from '@/components/strings/OrphanSkills';
 import { courseEvidence } from '@/lib/builder/strings/evidence';
 import { Drawer } from '../../[id]/controls';
+import { SkillTreePanel } from '../../shared/SkillTreePanel';
 import { LockString } from '../LockString';
 import { StopTools, StringTools } from '../StringEdits';
 import { lockPoint, lockTargets, type SkillInput } from '../stringsOnCluster';
@@ -84,6 +85,7 @@ export function ClusterBuilder(props: {
   const q = `?slug=${encodeURIComponent(props.slug)}`;
   const strings = useStringsAt(catalogCodes, q);
   const [openString, setOpenString] = useState<string | null>(null);
+  const [treeOpen, setTreeOpen] = useState(false);
   const stringsChanged = strings.changed;
   const levelOf = useCallback((code: string) => library.courses.find(c => c.code === code)?.level ?? 0, [library.courses]);
   const stringTargets = useMemo(() => lockTargets(library, cluster), [library, cluster]);
@@ -315,6 +317,8 @@ export function ClusterBuilder(props: {
         <button type="button" className="cb-btn" onClick={stepBack} disabled={!saving.canUndo} title="Undo the last change (Ctrl or Cmd + Z)">Undo</button>
         <button type="button" className="cb-btn" aria-pressed={!libraryOpen} onClick={() => setLibraryOpen(!libraryOpen)}
           title="Hide or show the course library">{libraryOpen ? 'Hide library' : 'Show library'}</button>
+        <button type="button" className="cb-btn" aria-pressed={treeOpen} onClick={() => setTreeOpen(!treeOpen)}
+          title="Place this cluster's skills in the department skill tree">Skill tree</button>
         <span className={`cb-save cb-save--${save}`} role="status">
           {save === 'saved' ? 'Saved' : save === 'saving' ? 'Saving…' : save === 'dirty' ? 'Unsaved changes' : 'Not saved'}
         </span>
@@ -358,6 +362,11 @@ export function ClusterBuilder(props: {
             strings={strings.graph} status={strings.status} onOpenString={id => { setSelected(null); setOpenString(id); }} />
         </main>
 
+        {treeOpen && (
+          <Drawer wide title="Skill tree" onClose={() => setTreeOpen(false)}>
+            <SkillTreePanel courseCode={null} mode="cluster" courseCodes={catalogCodes} authorName={author().trim() || null} />
+          </Drawer>
+        )}
         {openStringId && (() => {
           const str = strings.graph.strings.find(x => x.id === openStringId)!;
           const common = { graph: strings.graph, str, authorName: author().trim(), onChanged: stringsChanged };
