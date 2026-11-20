@@ -486,6 +486,7 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
             Show revoked
           </label>
         </div>
+        <div className="ad-tablebox">
         <table className="w-full border-collapse text-sm">
           <thead className="text-left text-xs uppercase text-slate-500">
             <tr>
@@ -515,6 +516,7 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
             ))}
           </tbody>
         </table>
+        </div>
         {visibleGrants.length === 0 && <p className="text-sm text-slate-500">No one has access yet. Add the first person above.</p>}
       </div>
     </section>

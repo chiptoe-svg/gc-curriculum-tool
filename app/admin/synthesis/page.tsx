@@ -9,6 +9,8 @@ import { stalenessCheck } from '@/lib/ai/synthesis/staleness';
 import { getLatestRun } from '@/lib/ai/synthesis/orchestrator';
 import { TargetsIndexTable, type IndexRow } from './TargetsIndexTable';
 
+import '../admin.css';
+
 export const dynamic = 'force-dynamic';
 
 interface Props {
@@ -18,7 +20,7 @@ interface Props {
 export default async function SynthesisIndexPage({ searchParams }: Props) {
   const { slug } = await searchParams;
   if (!slug) {
-    return <main className="p-8"><p className="text-sm text-slate-600">Missing slug query param.</p></main>;
+    return <main className="ad ad-main"><p className="ad-meta">Missing slug query param.</p></main>;
   }
 
   const targets = await db.select().from(careerTargets).orderBy(asc(careerTargets.displayOrder));
@@ -45,15 +47,22 @@ export default async function SynthesisIndexPage({ searchParams }: Props) {
   );
 
   return (
-    <main className="mx-auto max-w-6xl p-6 space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">Industry partner synthesis</h1>
-        <p className="text-sm text-slate-600">
-          Aggregated insights and proposed KUD edits per career target. Faculty reviews and curates;
-          the tool never auto-writes to the curriculum.
-        </p>
+    <div className="ad min-h-screen bg-background">
+      <header className="ad-header">
+        <div className="ad-header-inner">
+          <div>
+            <p className="ad-eyebrow">Admin</p>
+            <h1 className="ad-title">Industry partner synthesis</h1>
+            <p className="ad-lede">
+              Aggregated insights and proposed KUD edits per career target. Faculty reviews and curates;
+              the tool never auto-writes to the curriculum.
+            </p>
+          </div>
+        </div>
       </header>
-      <TargetsIndexTable rows={rows} slug={slug} />
-    </main>
+      <main className="ad-main">
+        <TargetsIndexTable rows={rows} slug={slug} />
+      </main>
+    </div>
   );
 }

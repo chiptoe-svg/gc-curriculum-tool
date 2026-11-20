@@ -56,7 +56,7 @@ export function AggregatePanel({
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-semibold">Aggregate</h2>
           {stale && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+            <span className="cue cue-input">
               Stale — new submissions since last run
             </span>
           )}

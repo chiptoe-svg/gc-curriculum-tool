@@ -71,6 +71,7 @@ export function PartnersTable({ partners, slug }: { partners: AdminPartnerRow[];
   }
 
   return (
+    <div className="ad-tablebox">
     <table className="w-full border-collapse text-sm">
       <thead className="text-left text-xs uppercase text-slate-500">
         <tr>
@@ -130,5 +131,6 @@ export function PartnersTable({ partners, slug }: { partners: AdminPartnerRow[];
         ))}
       </tbody>
     </table>
+    </div>
   );
 }

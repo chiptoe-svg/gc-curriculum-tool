@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { SandboxGrantsPanel } from './SandboxGrantsPanel';
 import { listSandboxCourses } from '@/lib/sandbox/courses';
 
+import './admin.css';
+
 export const dynamic = 'force-dynamic';
 
 interface Props {
@@ -13,29 +15,32 @@ export default async function AdminPage({ searchParams }: Props) {
   // factor is the slug, passed to the panel's API calls (matches /admin/partners).
   const { slug } = await searchParams;
   if (!slug) {
-    return <main className="p-8"><p className="text-sm text-slate-600">Missing slug query param.</p></main>;
+    return <main className="ad ad-main"><p className="ad-meta">Missing slug query param.</p></main>;
   }
   const sandboxCourses = (await listSandboxCourses()).map(c => ({ code: c.code, title: c.title }));
+  const q = encodeURIComponent(slug);
   return (
-    <main className="mx-auto max-w-4xl p-6 space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-sm text-slate-600">
-          Operator tools.{' '}
-          <Link href={`/admin/access?slug=${encodeURIComponent(slug)}`} className="text-blue-700 underline">Faculty access</Link>
-          {' · '}
-          <Link href={`/admin/partners?slug=${encodeURIComponent(slug)}`} className="text-blue-700 underline">Partners</Link>
-          {' · '}
-          <Link href="/admin/synthesis" className="text-blue-700 underline">Synthesis</Link>
-          {' · '}
-          <Link href={`/admin/bundles?slug=${encodeURIComponent(slug)}`} className="text-blue-700 underline">Skill bundles</Link>
-          {' · '}
-          <Link href={`/admin/membership?slug=${encodeURIComponent(slug)}`} className="text-blue-700 underline">Career target competencies</Link>
-          {' · '}
-          <Link href={`/settings?slug=${encodeURIComponent(slug)}`} className="text-blue-700 underline">Settings</Link>
-        </p>
+    <div className="ad min-h-screen bg-background">
+      <header className="ad-header">
+        <div className="ad-header-inner">
+          <div>
+            <p className="ad-eyebrow">Admin</p>
+            <h1 className="ad-title">Admin</h1>
+            <p className="ad-lede">Operator tools.</p>
+          </div>
+          <nav className="ad-nav">
+            <Link href={`/admin/access?slug=${q}`} className="ad-btn">Faculty access</Link>
+            <Link href={`/admin/partners?slug=${q}`} className="ad-btn">Partners</Link>
+            <Link href="/admin/synthesis" className="ad-btn">Synthesis</Link>
+            <Link href={`/admin/bundles?slug=${q}`} className="ad-btn">Skill bundles</Link>
+            <Link href={`/admin/membership?slug=${q}`} className="ad-btn">Career target competencies</Link>
+            <Link href={`/settings?slug=${q}`} className="ad-btn">Settings</Link>
+          </nav>
+        </div>
       </header>
-      <SandboxGrantsPanel slug={slug} sandboxCourses={sandboxCourses} />
-    </main>
+      <main className="ad-main">
+        <SandboxGrantsPanel slug={slug} sandboxCourses={sandboxCourses} />
+      </main>
+    </div>
   );
 }
