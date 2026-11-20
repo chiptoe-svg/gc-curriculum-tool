@@ -19,6 +19,14 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
+  // ?id=<material id>: that one material's status (404 if not of this course).
+  const id = url.searchParams.get('id');
+  if (id) {
+    const m = (await listMaterialsByCourse(courseCode)).find((x) => x.id === id);
+    if (!m) return NextResponse.json({ error: 'material not found' }, { status: 404 });
+    return NextResponse.json({ id: m.id, indexingStatus: m.indexingStatus, extractionStatus: m.extractionStatus });
+  }
+
   // Ignored and skipped files are settled: a skipped file (e.g. an image with
   // no text) will never be indexed, so counting it would leave the progress
   // bar waiting forever.

@@ -1,7 +1,7 @@
 import { eq, and, asc, isNull, ne, sql } from 'drizzle-orm';
 import { tierChangeNeedsReread } from '@/lib/capture/ingest-selection';
 import { db } from '@/lib/db/client';
-import { courseMaterials } from '@/lib/db/schema';
+import { courseMaterials, captureSessions } from '@/lib/db/schema';
 import { scrubForRecord } from '@/lib/privacy/scrub';
 import { isSyllabusFileName } from '@/lib/capture/materials-policy';
 import type { MaterialRedactions } from '@/lib/privacy/types';
@@ -81,6 +81,16 @@ export async function insertMaterial(input: InsertMaterialInput): Promise<Course
     .returning();
   if (!row) throw new Error('insertMaterial: no row returned');
   return row;
+}
+
+/** The course an interview session belongs to, or null when there is no such session. */
+export async function getCaptureSessionCourse(sessionId: string): Promise<string | null> {
+  const [row] = await db
+    .select({ courseCode: captureSessions.courseCode })
+    .from(captureSessions)
+    .where(eq(captureSessions.sessionId, sessionId))
+    .limit(1);
+  return row?.courseCode ?? null;
 }
 
 /** Set-aside reason this file writes on a syllabus a newer one replaced. */

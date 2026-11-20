@@ -5,7 +5,7 @@ import { putLocal, courseSlug, safeFilename, keyFromLocalUrl, deleteLocal } from
 import { getCourseByCode, clearCourseCanvasImport } from '@/lib/db/courses-queries';
 import { hashIp } from '@/lib/ip-hash';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
-import { insertMaterial, listMaterialsByCourse, deleteMaterial, updateMaterialTier } from '@/lib/db/course-materials-queries';
+import { insertMaterial, listMaterialsByCourse, deleteMaterial, updateMaterialTier, getCaptureSessionCourse } from '@/lib/db/course-materials-queries';
 import { createVectorStore, tenantForCourse } from '@/lib/capture/vector-store';
 import { enqueue } from '@/lib/capture/ingest-queue';
 import { supersedeOlderSyllabi } from '@/lib/capture/syllabus-replace';
@@ -32,6 +32,8 @@ const ALLOWED_MIME_TYPES = new Set<string>([
   ...SUPPORTED_MIME_TYPES,
   ...LEGACY_OFFICE_MIME_TYPES,
 ]);
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface RouteContext {
   params: Promise<{ code: string }>;
@@ -160,6 +162,22 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     );
   }
 
+  // A file added from the interview carries its session id: it is read in full
+  // at once (tier high, enqueued) instead of waiting for the Ingest step.
+  const rawSession = form.get('sessionId');
+  const sessionId = typeof rawSession === 'string' && UUID_RE.test(rawSession) ? rawSession : null;
+  if (sessionId) {
+    if ((await getCaptureSessionCourse(sessionId)) !== code) {
+      return NextResponse.json({ error: 'That interview session is not for this course.' }, { status: 400 });
+    }
+    const dup = (await listMaterialsByCourse(code)).find(
+      (m) => !m.ignored && m.fileName === file.name && m.sizeBytes === file.size,
+    );
+    if (dup) {
+      return NextResponse.json({ id: dup.id, duplicateOf: dup.id, indexingStatus: dup.indexingStatus });
+    }
+  }
+
   // Store on local disk; we do NOT extract/index on the request path — that
   // happens in the background ingest worker so the upload returns immediately
   // and a burst doesn't saturate the box (see lib/capture/ingest-queue.ts).
@@ -183,9 +201,23 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     sizeBytes: file.size,
     ipHash,
     isSyllabus,
+    ...(sessionId ? { addedInSession: sessionId } : {}),
   });
   // A Syllabus-box upload replaces the older syllabus (owner 2026-11-06).
   await supersedeOlderSyllabi(material);
+
+  if (sessionId) {
+    await updateMaterialTier(material.id, 'high');
+    await enqueue(material.id);
+    return NextResponse.json({
+      id: material.id,
+      fileName: material.fileName,
+      blobUrl: material.blobUrl,
+      indexingStatus: 'queued',
+      addedInSession: sessionId,
+      duplicateOf: null,
+    });
+  }
 
   if (isTriageEnabled()) {
     // Phase-1 (list-mode) upload: store now, but do NOT enqueue and do NOT block
