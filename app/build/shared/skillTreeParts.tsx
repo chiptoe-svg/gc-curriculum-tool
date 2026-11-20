@@ -53,6 +53,40 @@ export function NewParent({ tree, onCreate }: { tree: Tree; onCreate: (name: str
   );
 }
 
+/** "Add a parent skill under this": a name field that creates a new skill directly under the given node. */
+export function AddSkillUnder({ node, send }: { node: TreeNode; send: Send }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  return (
+    <div className="flex flex-col gap-1">
+      <div><button type="button" className="rounded border px-2 py-0.5 text-xs" onClick={() => setOpen(!open)}>Add a parent skill under this</button></div>
+      {open && (
+        <div className="flex flex-wrap gap-1">
+          <input aria-label="Name of the new skill" placeholder="Name of the new skill" value={name} onChange={(e) => setName(e.target.value)} className="rounded border px-2 py-1 text-sm" />
+          <button type="button" disabled={!name.trim()} className="rounded border px-2 py-0.5 text-xs"
+            onClick={async () => { if (await send({ action: 'create', name: name.trim(), parentId: node.id })) { setName(''); setOpen(false); } }}>Add skill</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** One placed skill's tools: Move to…, and Confirm / Not here while it is only suggested. */
+export function LeafTools({ tree, courseCode, skillRef, nodeId, proposed, send }: {
+  tree: Tree; courseCode: string; skillRef: string; nodeId: string; proposed: boolean; send: Send;
+}) {
+  const [moving, setMoving] = useState(false);
+  const b = 'rounded border px-2 py-0.5 text-xs';
+  return (
+    <span className="flex flex-wrap items-center gap-1">
+      {proposed && <button type="button" className={b} onClick={() => void send({ action: 'confirm', courseCode, skillRef, nodeId })}>Confirm</button>}
+      {proposed && <button type="button" className={b} onClick={() => void send({ action: 'reject', courseCode, skillRef, nodeId })}>Not here</button>}
+      <button type="button" className={b} onClick={() => setMoving(!moving)}>Move to…</button>
+      {moving && <NodePicker tree={tree} label="Move to" exclude={new Set([nodeId])} onPick={(to) => void send({ action: 'move', courseCode, skillRef, from: nodeId, to }).then((ok) => { if (ok) setMoving(false); })} />}
+    </span>
+  );
+}
+
 /** Three 0-5 selects (K and U hidden on foundational rows), plus Clear when a hand value exists. */
 export function DepthForm({ initial, foundational, hasHand, send, onDone }: {
   initial: { k: number | null; u: number | null; d: number | null }; foundational: boolean; hasHand: boolean;
@@ -76,7 +110,7 @@ export function DepthForm({ initial, foundational, hasHand, send, onDone }: {
   );
 }
 
-/** Cluster-only structure tools for one node: rename, move, merge, split, weight. */
+/** Cluster-only structure tools for one node: rename, move, merge, split, weight. A master competency has none of them (the server refuses them, and its own weight never affects a reading). */
 export function NodeTools({ tree, node, leaves, send }: {
   tree: Tree; node: TreeNode; leaves: Array<{ courseCode: string; skillRef: string; statement: string }>; send: Send;
 }) {
@@ -87,6 +121,7 @@ export function NodeTools({ tree, node, leaves, send }: {
   const [pickedNodes, setPickedNodes] = useState<Set<string>>(new Set());
   const [pickedLeaves, setPickedLeaves] = useState<Set<string>>(new Set());
   const kids = tree.nodes.filter((n) => n.parentId === node.id && live(n));
+  const isMaster = !!node.competencyId;
   const own = new Set([node.id]);
   const done = async (body: Record<string, unknown>) => { if (await send(body)) setMode(null); };
   const toggle = (set: Set<string>, setter: (s: Set<string>) => void, key: string) => {
@@ -95,6 +130,7 @@ export function NodeTools({ tree, node, leaves, send }: {
   const btn = (m: NonNullable<typeof mode>, text: string) => (
     <button type="button" className="rounded border px-2 py-0.5 text-xs" onClick={() => setMode(mode === m ? null : m)}>{text}</button>
   );
+  if (isMaster) return null;
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-1">
@@ -117,7 +153,7 @@ export function NodeTools({ tree, node, leaves, send }: {
           <input aria-label="Name of the new skill" placeholder="Name of the new skill" value={newName} onChange={(e) => setNewName(e.target.value)} className="rounded border px-2 py-1 text-sm" />
           <p>Move these to it:</p>
           {kids.map((c) => <label key={c.id}><input type="checkbox" checked={pickedNodes.has(c.id)} onChange={() => toggle(pickedNodes, setPickedNodes, c.id)} /> {c.name}</label>)}
-          {leaves.map((l) => { const key = `${l.courseCode}\u0000${l.skillRef}`; return <label key={key}><input type="checkbox" checked={pickedLeaves.has(key)} onChange={() => toggle(pickedLeaves, setPickedLeaves, key)} /> {l.statement}</label>; })}
+          {leaves.map((l) => { const key = `${l.courseCode}\u0000${l.skillRef}`; return <label key={key}><input type="checkbox" checked={pickedLeaves.has(key)} onChange={() => toggle(pickedLeaves, setPickedLeaves, key)} /> {l.courseCode} — {l.statement}</label>; })}
           <button type="button" disabled={!newName.trim()} className="self-start rounded border px-2 py-0.5" onClick={() => void done({
             action: 'split', id: node.id, newName: newName.trim(), moveNodes: [...pickedNodes],
             moveLeaves: leaves.filter((l) => pickedLeaves.has(`${l.courseCode}\u0000${l.skillRef}`)).map((l) => ({ courseCode: l.courseCode, skillRef: l.skillRef })),

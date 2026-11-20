@@ -140,4 +140,93 @@ describe('SkillTreePanel', () => {
       expect((await screen.findByRole('alert')).textContent).toMatch(/could not be found/);
     });
   });
+
+  describe('building the tree under existing placements', () => {
+    const masterTree = (status: 'confirmed' | 'proposed' = 'confirmed'): Tree => ({
+      nodes: [node('m', 'Color management', null, { competencyId: 'comp' }), node('icc', 'ICC profiles', 'm'), node('free', 'Free skill', null)],
+      leaves: [{ ...leaf('a', 'm', 'Build a profile'), status, source: status === 'proposed' ? ('ai' as const) : ('faculty' as const) }],
+      depths: [],
+    });
+    const leafRow = async (text: string | RegExp) => (await screen.findByText(text)).closest('li') as HTMLElement;
+
+    it('Move to… on a placed skill sends move with from and to', async () => {
+      const calls = mockFetch(masterTree());
+      render(<SkillTreePanel courseCode="GC 1010" mode="capture" authorName="Dr Who" />);
+      const row = await leafRow('Build a profile');
+      fireEvent.click(within(row).getByRole('button', { name: 'Move to…' }));
+      fireEvent.change(within(row).getByLabelText('Move to'), { target: { value: 'icc' } });
+      fireEvent.click(within(row).getByRole('button', { name: 'Color management › ICC profiles' }));
+      await waitFor(() => expect(calls).toHaveLength(1));
+      expect(calls[0]!.body).toMatchObject({ action: 'move', courseCode: 'GC 1010', skillRef: 'a', from: 'm', to: 'icc' });
+    });
+
+    it('a proposed placement shows suggested, Confirm and Not here', async () => {
+      const calls = mockFetch(masterTree('proposed'));
+      render(<SkillTreePanel courseCode="GC 1010" mode="capture" authorName="Dr Who" />);
+      const row = await leafRow('Build a profile');
+      expect(within(row).getByText('suggested')).toBeTruthy();
+      fireEvent.click(within(row).getByRole('button', { name: 'Confirm' }));
+      await waitFor(() => expect(calls).toHaveLength(1));
+      expect(calls[0]!.body).toMatchObject({ action: 'confirm', courseCode: 'GC 1010', skillRef: 'a', nodeId: 'm' });
+      fireEvent.click(within(row).getByRole('button', { name: 'Not here' }));
+      await waitFor(() => expect(calls).toHaveLength(2));
+      expect(calls[1]!.body).toMatchObject({ action: 'reject', courseCode: 'GC 1010', skillRef: 'a', nodeId: 'm' });
+    });
+
+    it('a confirmed placement has Move to… but no Confirm or Not here, and no suggested label', async () => {
+      mockFetch(masterTree());
+      render(<SkillTreePanel courseCode="GC 1010" mode="capture" authorName="Dr Who" />);
+      const row = await leafRow('Build a profile');
+      expect(within(row).getByRole('button', { name: 'Move to…' })).toBeTruthy();
+      expect(within(row).queryByRole('button', { name: 'Confirm' })).toBeNull();
+      expect(within(row).queryByRole('button', { name: 'Not here' })).toBeNull();
+      expect(within(row).queryByText('suggested')).toBeNull();
+    });
+
+    it.each(['capture', 'cluster'] as const)('Add a parent skill under this works on a master row (%s mode)', async (mode) => {
+      const calls = mockFetch(masterTree());
+      if (mode === 'capture') render(<SkillTreePanel courseCode="GC 1010" mode="capture" authorName="Dr Who" />);
+      else render(<SkillTreePanel courseCode={null} mode="cluster" courseCodes={['GC 1010']} authorName="Dr Who" />);
+      const row = (await screen.findByText('Color management')).closest('[data-node]') as HTMLElement;
+      fireEvent.click(within(row).getAllByRole('button', { name: 'Add a parent skill under this' })[0]!);
+      fireEvent.change(within(row).getAllByLabelText('Name of the new skill')[0]!, { target: { value: 'Profile building' } });
+      fireEvent.click(within(row).getAllByRole('button', { name: 'Add skill' })[0]!);
+      await waitFor(() => expect(calls).toHaveLength(1));
+      expect(calls[0]!.body).toMatchObject({ action: 'create', name: 'Profile building', parentId: 'm' });
+    });
+
+    it('master rows hide the tools the server refuses; other rows keep them', async () => {
+      const t = masterTree();
+      t.leaves.push(leaf('z', 'free', 'Another skill'));
+      mockFetch(t);
+      render(<SkillTreePanel courseCode={null} mode="cluster" courseCodes={['GC 1010']} authorName="Dr Who" />);
+      const master = (await screen.findByText('Color management')).closest('[data-node="m"]') as HTMLElement;
+      for (const hidden of ['Rename', 'Move under…', 'Merge into…', 'Split…', 'Set weight']) expect(within(master).queryByRole('button', { name: hidden })).toBeNull();
+      expect(within(master).queryByLabelText('Weight for Color management')).toBeNull();
+      const plain = (await screen.findByText('Free skill')).closest('[data-node="free"]') as HTMLElement;
+      for (const shown of ['Rename', 'Move under…', 'Merge into…', 'Split…', 'Set weight']) expect(within(plain).getAllByRole('button', { name: shown }).length).toBeGreaterThan(0);
+    });
+
+    it('cluster mode shows the course code on each placed skill', async () => {
+      mockFetch(masterTree());
+      render(<SkillTreePanel courseCode={null} mode="cluster" courseCodes={['GC 1010']} authorName="Dr Who" />);
+      expect(await screen.findByText('GC 1010 — Build a profile')).toBeTruthy();
+    });
+
+    it('capture mode shows the bare statement', async () => {
+      mockFetch(masterTree());
+      render(<SkillTreePanel courseCode="GC 1010" mode="capture" authorName="Dr Who" />);
+      expect(await screen.findByText('Build a profile')).toBeTruthy();
+      expect(screen.queryByText(/GC 1010 —/)).toBeNull();
+    });
+
+    it('the split checklist names the course of each skill', async () => {
+      const t: Tree = { nodes: [node('r', 'Print production', null), node('icc', 'ICC profiles', 'r')], leaves: [leaf('a', 'icc', 'Build a profile')], depths: [] };
+      mockFetch(t);
+      render(<SkillTreePanel courseCode={null} mode="cluster" courseCodes={['GC 1010']} authorName="Dr Who" />);
+      const row = (await screen.findByText('ICC profiles')).closest('[data-node="icc"]') as HTMLElement;
+      fireEvent.click(within(row).getAllByRole('button', { name: 'Split…' })[0]!);
+      expect(within(row).getAllByLabelText(/GC 1010 — Build a profile/).length).toBeGreaterThan(0);
+    });
+  });
 });

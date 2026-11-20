@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { counts, readCourse, readProgram, resolveNode } from '@/lib/skill-tree/read';
 import type { NodeReading, Tree, TreeNode, VersionSkills } from '@/lib/skill-tree/types';
-import { DepthForm, NewParent, NodePicker, NodeTools, fmt, pathLabel } from './skillTreeParts';
+import { AddSkillUnder, DepthForm, LeafTools, NewParent, NodePicker, NodeTools, fmt, pathLabel } from './skillTreeParts';
 
 interface Version {
   instructor: string; snapshotId: string | null;
@@ -122,7 +122,7 @@ export function SkillTreePanel(props: { courseCode: string | null; mode: 'captur
   const parentCounts = new Map<string, number>();
   for (const l of tree.leaves) if (counts(l)) parentCounts.set(`${l.courseCode}\u0000${l.skillRef}`, (parentCounts.get(`${l.courseCode}\u0000${l.skillRef}`) ?? 0) + 1);
 
-  const ctx: RowCtx = { tree, byId, open, setOpen, visible, course, version, handFor, setHandFor, mode, send, parentCounts, rootsOpen: true };
+  const ctx: RowCtx = { tree, byId, open, setOpen, visible, course, version, handFor, setHandFor, mode, send, parentCounts, rootsOpen: true, editable: true };
   const place = (ref: string, nodeId: string) => send({ action: 'place', courseCode: course, skillRef: ref, nodeId });
   const placeUnderNew = async (ref: string, name: string, parentId: string) => {
     const key = `${ref}\u0000${parentId}\u0000${name}`;
@@ -208,7 +208,7 @@ export function ReadingTree({ tree, readings, rootsOpen = false }: { tree: Tree;
   const none = useMemo(() => new Map<string, number>(), []);
   const ctx: RowCtx = {
     tree, byId, open, setOpen, visible, course: null, version: undefined, handFor: null, setHandFor: () => {},
-    mode: 'capture', send: async () => false, parentCounts: none, rootsOpen,
+    mode: 'capture', send: async () => false, parentCounts: none, rootsOpen, editable: false,
   };
   return <ul className="flex flex-col gap-2">{readings.map((r) => <Row key={r.nodeId} r={r} depth={0} c={ctx} />)}</ul>;
 }
@@ -236,6 +236,8 @@ interface RowCtx {
   parentCounts: Map<string, number>;
   /** Top-level rows start open (the panel) or closed (the department page). */
   rootsOpen: boolean;
+  /** False for the read-only drill-down: no tools. */
+  editable: boolean;
 }
 
 /** Defined at module level so rows keep their form state when the panel re-renders. */
@@ -247,6 +249,8 @@ function Row({ r, depth, c }: { r: NodeReading; depth: number; c: RowCtx }) {
   const kids = r.children.filter((k) => visible.has(k.nodeId));
   const foundational = r.k === null && r.u === null;
   const hand = tree.depths.find((h) => resolveNode(tree, h.nodeId) === r.nodeId && h.courseCode === course && h.instructor === version?.instructor);
+  const leafOf = (d: { courseCode: string; skillRef: string }) =>
+    tree.leaves.find((l) => l.courseCode === d.courseCode && l.skillRef === d.skillRef && counts(l) && resolveNode(tree, l.nodeId) === r.nodeId);
   const toggle = () => setOpen((s) => { const x = new Set(s); const key = rootOpen ? `-${r.nodeId}` : r.nodeId; const want = rootOpen ? isOpen : !isOpen; if (want) x.add(key); else x.delete(key); return x; });
   return (
     <li data-node={r.nodeId} className="flex flex-col gap-1 border-l pl-2" style={{ marginLeft: depth ? 8 : 0 }}>
@@ -264,14 +268,17 @@ function Row({ r, depth, c }: { r: NodeReading; depth: number; c: RowCtx }) {
           send={(clear, v) => send(clear ? { action: 'depth-clear', nodeId: r.nodeId, courseCode: course, instructor: version.instructor } : { action: 'depth', nodeId: r.nodeId, courseCode: course, instructor: version.instructor, ...v })}
           onDone={() => setHandFor(null)} />
       )}
-      {mode === 'cluster' && <NodeTools tree={tree} node={n} leaves={r.direct.map((d) => ({ courseCode: d.courseCode, skillRef: d.skillRef, statement: d.statement }))} send={send} />}
+      {c.editable && <AddSkillUnder node={n} send={send} />}
+      {mode === 'cluster' && c.editable && <NodeTools tree={tree} node={n} leaves={r.direct.map((d) => ({ courseCode: d.courseCode, skillRef: d.skillRef, statement: d.statement }))} send={send} />}
       {isOpen && (
         <ul className="flex flex-col gap-1">
           {kids.map((k) => <Row key={k.nodeId} r={k} depth={depth + 1} c={c} />)}
           {r.direct.map((d) => (
             <li key={`${d.courseCode}${d.skillRef}`} className="flex flex-wrap items-center gap-2 pl-4 text-sm">
-              <span>{d.statement}</span>
+              <span>{mode === 'cluster' ? `${d.courseCode} — ${d.statement}` : d.statement}</span>
+              {leafOf(d) && leafOf(d)!.status === 'proposed' && <span className="text-xs">suggested</span>}
               <span className="text-xs">{foundational ? `D${fmt(d.depth.d)}` : `K${fmt(d.depth.k)} U${fmt(d.depth.u)} D${fmt(d.depth.d)}`}</span>
+              {c.editable && leafOf(d) && <LeafTools tree={tree} courseCode={d.courseCode} skillRef={d.skillRef} nodeId={leafOf(d)!.nodeId} proposed={leafOf(d)!.status === 'proposed'} send={send} />}
               {mode === 'cluster' && (parentCounts.get(`${d.courseCode}\u0000${d.skillRef}`) ?? 0) > 1 && <ShareField tree={tree} d={d} nodeId={r.nodeId} send={send} />}
             </li>
           ))}
