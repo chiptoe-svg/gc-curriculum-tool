@@ -47,6 +47,9 @@ Compared against our interviewer prompt `lib/ai/prompts/capture-chat-agent.md` (
 
 ## Not adopting (and why)
 
+- **The educator as the source of knowledge** (paper p. 6): Primer defers to the educator; our interviewer ranks the materials
+  above instructor testimony (`capture-chat-agent.md`, "Disagreement triangulation") and records disagreements as findings,
+  because the audit characterizes a course that already runs. We keep that order.
 - **Sticky notes and slides as two writing surfaces** (note 3): a larger interface change; our review step and progress
   strip already show the developing record. Revisit only if faculty ask to see captured items during the interview.
 - **Live voice turn-taking tweaks**: we record and transcribe; no live voice loop.

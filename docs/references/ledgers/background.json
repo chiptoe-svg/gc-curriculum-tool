@@ -1580,7 +1580,7 @@
     },
     {
       "id": "bg-primer-fair",
-      "location": "§7 (course-opportunity score)",
+      "location": "§7 (course-opportunity score); future-work paragraph on assessment",
       "claim_text": "Mollick et al.: without a record of what each simulation elicited, feedback may evaluate students on skills they were not given a fair opportunity to demonstrate",
       "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
       "quote": "Without that mapping, feedback may evaluate students on skills they were not given a fair opportunity to demonstrate.",
@@ -1605,9 +1605,9 @@
     {
       "id": "bg-roscoe-3",
       "location": "§7 Explaining to others",
-      "claim_text": "Tutors trained to give elaborative explanations scored higher than less trained tutors",
+      "claim_text": "Tutors trained to give elaborative explanations scored higher on comprehension, transfer and delayed recall; even with training, knowledge-telling often occurred more than knowledge-building",
       "held_file": "pdfs:roscoe-2007-understanding-tutor-learning.pdf",
-      "quote": "Tutors trained to give explanations that include new examples, discuss underlying principles and applications, connect ideas, or otherwise elaborate upon the source materials scored higher than less trained tutors",
+      "quote": "Tutors trained to give explanations that include new examples, discuss underlying principles and applications, connect ideas, or otherwise elaborate upon the source materials scored higher than less trained tutors on measures of comprehension, transfer, and delayed recall ... Even with training in knowledge-building strategies, knowledge-telling often occurred more frequently than knowledge-building.",
       "page": "manuscript p. 19"
     },
     {
@@ -1668,8 +1668,8 @@
     },
     {
       "id": "bg-primer-formative",
-      "location": "§7 Explaining to others; §10",
-      "claim_text": "Primer's educator sessions do not establish its effectiveness as a learning intervention",
+      "location": "§7 Explaining to others; §10 Primer comparison; §17 entry",
+      "claim_text": "Primer's educator sessions informed its development but do not establish its effectiveness as a learning intervention",
       "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
       "quote": "These sessions supported the development of Primer, and we are grateful for educator input, but they do not establish its effectiveness as a learning intervention.",
       "page": "p. 11"
@@ -1700,8 +1700,8 @@
     },
     {
       "id": "bg-bastani-1",
-      "location": "§15 AI practice for prerequisite gaps",
-      "claim_text": "Nearly a thousand high school math students; GPT Base mimics ChatGPT; GPT Tutor designed to safeguard learning; +48%/+127% practice; -17% after access removed; safeguards largely mitigate",
+      "location": "§15 AI practice for prerequisite gaps; §17 entry",
+      "claim_text": "Nearly a thousand high school math students; GPT Base mimics ChatGPT; +48% practice (GPT Base), +127% (GPT Tutor); GPT Base students 17% worse once access removed; safeguards largely mitigate",
       "held_file": "pdfs:bastani-2025-genai-without-guardrails.pdf",
       "quote": "nearly a thousand high school math students with access to generative AI tutors. To understand the differential impact of tool design on learning, we deploy two generative AI tutors: one that mimics a standard ChatGPT interface (\"GPT Base\") and one with prompts designed to safeguard learning (\"GPT Tutor\"). Consistent with prior work, our results show that having GPT-4 access while solving problems significantly improves performance (48% improvement in grades for GPT Base and 127% for GPT Tutor). However, we additionally find that when access is subsequently taken away, students actually perform worse than those who never had access (17% reduction in grades for GPT Base)—i.e., unfettered access to GPT-4 can harm educational outcomes. These negative learning effects are largely mitigated by the safeguards in GPT Tutor.",
       "page": "p. 1 (abstract)"
@@ -1721,6 +1721,102 @@
       "held_file": "pdfs:soderstrom-2015-learning-versus-performance.pdf",
       "quote": "During the instruction or training process, however, what we can observe and measure is performance, which is often an unreliable index of whether the relatively long-term changes that constitute learning have taken place.",
       "page": "p. 176 (abstract)"
+    },
+    {
+      "id": "bg-icap-3",
+      "location": "§7 Explaining to others",
+      "claim_text": "Notes in one's own words are often constructive because they may include conclusions and inferences",
+      "held_file": "pdfs:chi-2014-icap-framework.pdf",
+      "quote": "take notes in their own words (which is often constructive because the summary may include conclusions and inferences)",
+      "page": "p. 230"
+    },
+    {
+      "id": "bg-kobayashi-4",
+      "location": "§7 Explaining to others",
+      "claim_text": "Teaching-with-preparing estimate rests on 16 comparisons (preparing-to-teach overall k = 28)",
+      "held_file": "pdfs:kobayashi-2019-preparing-to-teach-meta.pdf",
+      "quote": "Teaching with preparing-to-teach group vs. control group Overall 16 0.56",
+      "page": "p. 199 (Table 3)"
+    },
+    {
+      "id": "bg-kobayashi-5",
+      "location": "§7 Explaining to others",
+      "claim_text": "Moderator effects may be confounded with other methodological features; effects relative to studying without teaching expectancy",
+      "held_file": "pdfs:kobayashi-2019-preparing-to-teach-meta.pdf",
+      "quote": "there is a possibility that the observed effects of testing time and teaching activity type may have been confounded with those of other methodological features of included studies",
+      "page": "p. 201"
+    },
+    {
+      "id": "bg-kobayashi-6",
+      "location": "§7 Explaining to others",
+      "claim_text": "Comparator: studying without teaching expectancy",
+      "held_file": "pdfs:kobayashi-2019-preparing-to-teach-meta.pdf",
+      "quote": "examined the effects of preparing-to-teach and subsequent teaching (relative to mere studying without teaching expectancy) on the acquisition of domain knowledge",
+      "page": "p. 192 (abstract)"
+    },
+    {
+      "id": "bg-lachner-2",
+      "location": "§7 Explaining to others",
+      "claim_text": "Several recent studies did not replicate the non-interactive teaching effect",
+      "held_file": "pdfs:lachner-2022-learning-by-teaching-no-audience.pdf",
+      "quote": "several recent studies did not replicate this effect",
+      "page": "p. 575 (abstract)"
+    },
+    {
+      "id": "bg-lachner-3",
+      "location": "§7 Explaining to others",
+      "claim_text": "The recommendation is hedged: based on limited evidence; covers learning from expository texts or multimedia",
+      "held_file": "pdfs:lachner-2022-learning-by-teaching-no-audience.pdf",
+      "quote": "Based on the limited available evidence, it seems advisable to use non-interactive teaching as an activity when students have to acquire complex conceptual knowledge from expository texts or multimedia material.",
+      "page": "p. 600"
+    },
+    {
+      "id": "bg-primer-k12",
+      "location": "§10 Primer comparison; §17 entry",
+      "claim_text": "Primer's testing sessions were with K–12 educators",
+      "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
+      "quote": "the Generative AI Labs team held individual testing sessions with K–12 educators",
+      "page": "p. 10"
+    },
+    {
+      "id": "bg-bastani-3",
+      "location": "§15; §17 entry",
+      "claim_text": "The study took place at a high school in Turkey; nearly 1,000 students; each session has three contiguous parts ending in an unassisted closed-book exam",
+      "held_file": "pdfs:bastani-2025-genai-without-guardrails.pdf",
+      "quote": "The study took place at a large high school in Turkey during the Fall semester of the 2023–2024 academic year. ... nearly 1,000 students. ... Each session has three contiguous parts: ... The third part is an unassisted evaluation, where students take a closed-book, closed-laptop exam.",
+      "page": "p. 2"
+    },
+    {
+      "id": "bg-bastani-4",
+      "location": "§15",
+      "claim_text": "Students used GPT Base as a crutch by asking for and copying solutions",
+      "held_file": "pdfs:bastani-2025-genai-without-guardrails.pdf",
+      "quote": "students often use GPT Base as a “crutch” by asking for and copying solutions",
+      "page": "p. 2"
+    },
+    {
+      "id": "bg-bastani-5",
+      "location": "§15; §17 entry",
+      "claim_text": "GPT Tutor used guardrails designed based on teacher input",
+      "held_file": "pdfs:bastani-2025-genai-without-guardrails.pdf",
+      "quote": "guardrails designed based on teacher input (called GPT Tutor)",
+      "page": "p. 2"
+    },
+    {
+      "id": "bg-bastani-6",
+      "location": "§15",
+      "claim_text": "The exam measures short-term learning, not long-term learning",
+      "held_file": "pdfs:bastani-2025-genai-without-guardrails.pdf",
+      "quote": "Our analysis focuses on short-term learning (estimated via exam performance) rather than long-term learning",
+      "page": "p. 2 (footnote)"
+    },
+    {
+      "id": "bg-bastani-7",
+      "location": "§15",
+      "claim_text": "Students' self-reported perceptions of the tutors' effects were overly optimistic",
+      "held_file": "pdfs:bastani-2025-genai-without-guardrails.pdf",
+      "quote": "students’ own self-reported perceptions of the effects of GPT tutors on their exam performance and learning are overly optimistic",
+      "page": "p. 4"
     }
   ]
 }

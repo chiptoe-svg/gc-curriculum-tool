@@ -9,7 +9,7 @@
 
 **Accessibility:** Full text held.
 
-**What the background doc claims it says:** Non-interactive teaching is advisable for complex conceptual knowledge and less useful for basic conceptual or procedural knowledge (p. 600).
+**What the background doc claims it says:** "Based on the limited available evidence," non-interactive teaching "seems advisable" for complex conceptual knowledge from expository texts or multimedia and is less useful for basic conceptual or procedural knowledge (p. 600); several recent studies did not replicate the effect (p. 575, abstract).
 
 **What it actually says (synthesis):** A narrative review proposing a preliminary model of when and why explaining to an absent or fictitious audience (e.g., on video) helps. Evidence links the effect to generative processing and possibly motivation; social presence is "a double-edged sword" (p. 589). Practice advice (p. 600): explain aloud, from memory, after studying with a teaching expectancy, then restudy. Caveats: mostly lab studies, mostly STEM, many immediate tests, a large share of gray literature (pp. 599–600).
 
