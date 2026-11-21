@@ -1577,6 +1577,150 @@
       "held_file": "pdfs:chi-2025-activations-as-features.pdf",
       "quote": "the comparison with the baseline does not imply that our method outperforms the baseline",
       "page": "PDF p. 3"
+    },
+    {
+      "id": "bg-primer-fair",
+      "location": "§7 (course-opportunity score)",
+      "claim_text": "Mollick et al.: without a record of what each simulation elicited, feedback may evaluate students on skills they were not given a fair opportunity to demonstrate",
+      "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
+      "quote": "Without that mapping, feedback may evaluate students on skills they were not given a fair opportunity to demonstrate.",
+      "page": "p. 13"
+    },
+    {
+      "id": "bg-roscoe-1",
+      "location": "§7 Explaining to others",
+      "claim_text": "Tutors' explanations may involve reflective knowledge-building or knowledge-telling",
+      "held_file": "pdfs:roscoe-2007-understanding-tutor-learning.pdf",
+      "quote": "tutoring sessions may incorporate either reflective knowledge-building (e.g., monitoring of comprehension and knowledge) or knowledge-telling (e.g., summarization with little monitoring or elaboration)",
+      "page": "manuscript p. 2"
+    },
+    {
+      "id": "bg-roscoe-2",
+      "location": "§7 Explaining to others",
+      "claim_text": "Tutors tended to give explanations that revealed answers, summarized facts, or described procedures; the bias appeared across age, domains, and formats",
+      "held_file": "pdfs:roscoe-2007-understanding-tutor-learning.pdf",
+      "quote": "Tutors tended to give explanations that simply revealed answers, summarized facts, or described procedures with little elaboration or construction of knowledge. This knowledge-telling bias was demonstrated by tutors across age, domains, and formats",
+      "page": "manuscript p. 19"
+    },
+    {
+      "id": "bg-roscoe-3",
+      "location": "§7 Explaining to others",
+      "claim_text": "Tutors trained to give elaborative explanations scored higher than less trained tutors",
+      "held_file": "pdfs:roscoe-2007-understanding-tutor-learning.pdf",
+      "quote": "Tutors trained to give explanations that include new examples, discuss underlying principles and applications, connect ideas, or otherwise elaborate upon the source materials scored higher than less trained tutors",
+      "page": "manuscript p. 19"
+    },
+    {
+      "id": "bg-icap-1",
+      "location": "§7 Explaining to others",
+      "claim_text": "Constructive outputs contain new ideas beyond the information given; verbatim self-explanation is only active",
+      "held_file": "pdfs:chi-2014-icap-framework.pdf",
+      "quote": "the outputs of generative behaviors should contain new ideas that go beyond the information given; otherwise such behaviors are merely active/manipulative ... If the student's self-explanation is verbatim to what was read, then the student is only repeating or selfexplaining actively rather than constructively",
+      "page": "p. 222"
+    },
+    {
+      "id": "bg-icap-2",
+      "location": "§7 Explaining to others",
+      "claim_text": "The output must be evaluated to see whether students treated the task as constructive; the mode often can only be classified after evaluation",
+      "held_file": "pdfs:chi-2014-icap-framework.pdf",
+      "quote": "this output (the concept maps) needs to be evaluated to determine whether in fact the students treated it as a constructive task ... And often an accurate classification of an activity's mode can only be done after such evaluations.",
+      "page": "p. 238"
+    },
+    {
+      "id": "bg-kobayashi-1",
+      "location": "§7 Explaining to others",
+      "claim_text": "28 studies; g = 0.35 preparing-to-teach, 0.56 teaching with preparing-to-teach; larger when interactive",
+      "held_file": "pdfs:kobayashi-2019-preparing-to-teach-meta.pdf",
+      "quote": "The synthesis of 28 studies indicated that the estimated effect sizes (Hedges' gs) were 0.35 for preparing-to-teach and 0.56 for teaching with preparing-to-teach. ... The learning benefits of teaching with preparing-to-teach were larger when students expected and engaged in an interactive teaching activity than when they expected and engaged in a non-interactive teaching activity.",
+      "page": "p. 192 (abstract)"
+    },
+    {
+      "id": "bg-kobayashi-2",
+      "location": "§7 Explaining to others",
+      "claim_text": "Interactive g = 0.84 vs non-interactive g = 0.48 for teaching with preparing-to-teach",
+      "held_file": "pdfs:kobayashi-2019-preparing-to-teach-meta.pdf",
+      "quote": "The learning effects of teaching with preparing-to-teach were also significantly larger for interactive (k = 4), g = 0.84 ... for non-interactive (k = 12), g = 0.48",
+      "page": "pp. 198-199"
+    },
+    {
+      "id": "bg-kobayashi-3",
+      "location": "§7 Explaining to others",
+      "claim_text": "Heterogeneity very high (I2 76-94%); delayed tests within 1 week",
+      "held_file": "pdfs:kobayashi-2019-preparing-to-teach-meta.pdf",
+      "quote": "studies included in the present meta-analyses administered delayed tests within 1 week ... heterogeneity in the effect size across comparison groups for the overall and subgroup analyses was very high (I2s = 76–94%)",
+      "page": "pp. 200-201"
+    },
+    {
+      "id": "bg-lachner-1",
+      "location": "§7 Explaining to others",
+      "claim_text": "Non-interactive teaching advisable for complex conceptual knowledge, less useful for basic conceptual or procedural knowledge",
+      "held_file": "pdfs:lachner-2022-learning-by-teaching-no-audience.pdf",
+      "quote": "it seems advisable to use non-interactive teaching as an activity when students have to acquire complex conceptual knowledge from expository texts or multimedia material. It seems less useful when students have to acquire more basic conceptual knowledge or procedural knowledge",
+      "page": "p. 600"
+    },
+    {
+      "id": "bg-primer-teachback",
+      "location": "§7 Explaining to others",
+      "claim_text": "In Teachback students teach a concept and uncover gaps, clarify and integrate what they know",
+      "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
+      "quote": "in Teachback, they teach a concept to someone else and, as they respond to questions and misunderstandings, uncover gaps in their own knowledge, and clarify and integrate what they know",
+      "page": "p. 7"
+    },
+    {
+      "id": "bg-primer-formative",
+      "location": "§7 Explaining to others; §10",
+      "claim_text": "Primer's educator sessions do not establish its effectiveness as a learning intervention",
+      "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
+      "quote": "These sessions supported the development of Primer, and we are grateful for educator input, but they do not establish its effectiveness as a learning intervention.",
+      "page": "p. 11"
+    },
+    {
+      "id": "bg-primer-intake-1",
+      "location": "§10 Primer comparison",
+      "claim_text": "Primer's intake treats the educator as the source of knowledge; structured interview to elicit what a general model lacks",
+      "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
+      "quote": "It treats the educator as the source of pedagogical and content knowledge. ... We built the intake process around a structured interview designed to elicit and encode the knowledge that a general model does not have.",
+      "page": "p. 6"
+    },
+    {
+      "id": "bg-primer-intake-2",
+      "location": "§10 Primer comparison",
+      "claim_text": "Agents ask one question at a time, encourage uploads; interview elicits assessment criteria and materials",
+      "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
+      "quote": "elicits student level, prior knowledge, common misconceptions, current teaching approach, assessment criteria, and available materials. Primer agents are explicitly instructed to ask one question at a time, encourage file uploads",
+      "page": "p. 6"
+    },
+    {
+      "id": "bg-primer-intake-3",
+      "location": "§10 Primer comparison",
+      "claim_text": "Educator goals become a reviewable design and then a playable simulation; Wharton Generative AI Labs; open-source",
+      "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
+      "quote": "Educator goals are translated into a reviewable design, to be refined and approved, and then developed into a playable simulation.",
+      "page": "p. 6 (Figure 2 caption); affiliation and 'open-source' on p. 1"
+    },
+    {
+      "id": "bg-bastani-1",
+      "location": "§15 AI practice for prerequisite gaps",
+      "claim_text": "Nearly a thousand high school math students; GPT Base mimics ChatGPT; GPT Tutor designed to safeguard learning; +48%/+127% practice; -17% after access removed; safeguards largely mitigate",
+      "held_file": "pdfs:bastani-2025-genai-without-guardrails.pdf",
+      "quote": "nearly a thousand high school math students with access to generative AI tutors. To understand the differential impact of tool design on learning, we deploy two generative AI tutors: one that mimics a standard ChatGPT interface (\"GPT Base\") and one with prompts designed to safeguard learning (\"GPT Tutor\"). Consistent with prior work, our results show that having GPT-4 access while solving problems significantly improves performance (48% improvement in grades for GPT Base and 127% for GPT Tutor). However, we additionally find that when access is subsequently taken away, students actually perform worse than those who never had access (17% reduction in grades for GPT Base)—i.e., unfettered access to GPT-4 can harm educational outcomes. These negative learning effects are largely mitigated by the safeguards in GPT Tutor.",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "bg-bastani-2",
+      "location": "§15 AI practice for prerequisite gaps",
+      "claim_text": "GPT Tutor arm: negative effect eradicated but no positive effect on the exam",
+      "held_file": "pdfs:bastani-2025-genai-without-guardrails.pdf",
+      "quote": "this negative effect is essentially eradicated in the GPT Tutor arm, though we still do not observe a positive effect",
+      "page": "p. 2"
+    },
+    {
+      "id": "bg-soderstrom-1",
+      "location": "§15 AI practice for prerequisite gaps",
+      "claim_text": "Performance during instruction is an unreliable index of learning",
+      "held_file": "pdfs:soderstrom-2015-learning-versus-performance.pdf",
+      "quote": "During the instruction or training process, however, what we can observe and measure is performance, which is often an unreliable index of whether the relatively long-term changes that constitute learning have taken place.",
+      "page": "p. 176 (abstract)"
     }
   ]
 }

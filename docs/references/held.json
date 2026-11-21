@@ -342,6 +342,34 @@
       "ref-chi-2025": {
         "file": "pdfs:chi-2025-activations-as-features.pdf",
         "note": "arXiv:2512.19456v1, acquired 2026-11-15 from arXiv; read in full"
+      },
+      "ref-bastani-2025": {
+        "file": "pdfs:bastani-2025-genai-without-guardrails.pdf",
+        "note": "PNAS 122(26); marked SEE CORRECTION: the correction (10.1073/pnas.2518204122, Aug 2025, via Europe PMC PMC12403119) fixes one author affiliation only. Read pp. 1-5"
+      },
+      "ref-chi-wylie-2014": {
+        "file": "pdfs:chi-2014-icap-framework.pdf",
+        "note": "printed pages = PDF page + 217 (PDF p. 1 is the publisher cover). Read the ICAP definitions and the 'evaluate students' outputs' section"
+      },
+      "ref-kobayashi-2019": {
+        "file": "pdfs:kobayashi-2019-preparing-to-teach-meta.pdf",
+        "note": "printed pages 192-203 = PDF pp. 1-12; read in full"
+      },
+      "ref-lachner-2022": {
+        "file": "pdfs:lachner-2022-learning-by-teaching-no-audience.pdf",
+        "note": "printed pages 575-607 = PDF pp. 1-33; read abstract, mechanisms (pp. 588-589), research agenda and conclusions (pp. 599-600)"
+      },
+      "ref-mollick-2026-primer": {
+        "file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
+        "note": "SSRN 7696720; printed page = PDF page; paper body pp. 1-17 read"
+      },
+      "ref-roscoe-chi-2007": {
+        "file": "pdfs:roscoe-2007-understanding-tutor-learning.pdf",
+        "note": "author manuscript; pages cited are manuscript (PDF) pages, not the printed RER 77(4) 534-574 pages"
+      },
+      "ref-soderstrom-bjork-2015": {
+        "file": "pdfs:soderstrom-2015-learning-versus-performance.pdf",
+        "note": "printed page 176 = PDF p. 1 (abstract) read"
       }
     },
     "measurement-hypotheses-deep-dive.html": {
