@@ -53,3 +53,29 @@ describe('makeBlindPairs', () => {
     expect(JSON.stringify(a.pairs)).not.toContain('baseline');
   });
 });
+
+import { summarizeArm } from '@/scripts/bench/agent-judge';
+describe('summarizeArm', () => {
+  const profile = 'Students build a poster brief for the client every term in studio.';
+  const cell = (excerpt: string, d = 2, sub = 's') => ({ sub, k: null, u: null, d, excerpt });
+  const base = (runs: Array<{ cells: ReturnType<typeof cell>[]; retrieved: Array<{ id: string; text: string }> }>) =>
+    summarizeArm([{ course: 'GC 1', subs: ['s'], profile, runs }]);
+
+  it('an excerpt found only in a retrieved chunk is grounded and not a break', () => {
+    const r = base([{ cells: [cell('kerning accuracy counts for twenty points')], retrieved: [{ id: 'c', text: 'Rubric: kerning accuracy counts for twenty points.' }] }]);
+    expect(r.breaks).toBe(0); expect(r.groundedRetrieved).toBe(1); expect(r.groundedProfile).toBe(0);
+  });
+  it('an excerpt in the profile counts as profile-grounded', () => {
+    const r = base([{ cells: [cell('poster brief for the client every term')], retrieved: [] }]);
+    expect(r.breaks).toBe(0); expect(r.groundedProfile).toBe(1);
+  });
+  it('an excerpt found nowhere is a break', () => {
+    const r = base([{ cells: [cell('invented sentence found nowhere at all')], retrieved: [{ id: 'c', text: 'other' }] }]);
+    expect(r.breaks).toBe(1); expect(r.above).toBe(1);
+  });
+  it('stability averages over cells across 2+ runs', () => {
+    const r = base([{ cells: [cell('poster brief for the client every term', 2)], retrieved: [] }, { cells: [cell('poster brief for the client every term', 5)], retrieved: [] }]);
+    expect(r.stability).toBeCloseTo(2 / 3); // k,u both null=none agree; d band differs
+    expect(base([{ cells: [cell('x', 2)], retrieved: [] }]).stability).toBeNaN();
+  });
+});

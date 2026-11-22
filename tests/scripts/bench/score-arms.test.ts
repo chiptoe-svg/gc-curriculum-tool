@@ -110,4 +110,23 @@ describe('checker', () => {
     expect(r.calls).toBe(2);
     expect(r.usdUnits).toBe(3);
   });
+
+  it('uncheckedCells counts a cell whose verdict for a scored dim is missing', async () => {
+    runPiTask.mockResolvedValue({ ...piBase, value: { competencies: [
+      { competency_id: 'c1', know: { quote: null, level: 0 }, understand: { quote: null, level: 0 }, do: { quote: null, level: 0 } },
+      // c2 has no verdict for its scored D dim
+    ] } });
+    const r = await runScoreArm('checker', case1, model);
+    expect(r.uncheckedCells).toBe(1);
+  });
+
+  it('exposes the chunks the checker retrieved', async () => {
+    fetchExecute.mockResolvedValue({ chunks: [{ id: 'ch1', text: 'Rubric text here.', parentSectionText: null }] });
+    runPiTask.mockImplementation(async (input: { tools: { name: string; execute: (a: unknown) => Promise<unknown> }[] }) => {
+      await input.tools.find(t => t.name === 'fetch_material_section')!.execute({ materialId: 'm' });
+      return { ...piBase, value: { competencies: [] } };
+    });
+    const r = await runScoreArm('checker', case1, model);
+    expect(r.retrieved).toEqual([{ id: 'ch1', text: 'Rubric text here.' }]);
+  });
 });

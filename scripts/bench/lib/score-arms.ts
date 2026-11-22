@@ -23,6 +23,10 @@ export interface Cell { sub: string; k: number | null; u: number | null; d: numb
 export interface ArmResult {
   cells: Cell[]; calls: number; tokens: TokenCounts; usdUnits: number; credits: number | null; ms: number;
   forcedSubmit?: boolean; toolCalls?: number;
+  /** Chunks/sections this arm itself retrieved ([] for single). */
+  retrieved: Array<{ id: string; text: string }>;
+  /** Checker only: cells with a missing verdict for a scored dim (floored). 0 otherwise. */
+  uncheckedCells: number;
 }
 export type ArmName = 'single' | 'agent' | 'checker';
 export interface ArmModel { id: string; level?: string; endpoint: PiEndpoint }
@@ -44,7 +48,7 @@ async function single(c: ScoreCase, model: ArmModel): Promise<ArmResult> {
     competencies: c.competencies, modelOverride: model.id, reasoningEffortOverride: model.level,
   });
   // The single call reports no token counts, only paid cost (0 on campus).
-  return { cells: r.result.cells.map(toCell), calls: 1, tokens: { ...ZERO }, usdUnits: r.costUsdCents, credits: null, ms: Date.now() - t0 };
+  return { cells: r.result.cells.map(toCell), calls: 1, tokens: { ...ZERO }, usdUnits: r.costUsdCents, credits: null, ms: Date.now() - t0, retrieved: [], uncheckedCells: 0 };
 }
 
 const profileText = (p: unknown) => JSON.stringify(p, null, 1);
@@ -111,7 +115,7 @@ async function agent(c: ScoreCase, model: ArmModel): Promise<ArmResult> {
     // Same rule the single path enforces: foundational competencies are D-only.
     return known.get(x.competency_id)!.foundational ? { ...cell, k: null, u: null } : cell;
   });
-  return { cells, calls: 1, tokens: r.tokens, usdUnits: r.usdUnits, credits: r.credits, ms: r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls.length };
+  return { cells, calls: 1, tokens: r.tokens, usdUnits: r.usdUnits, credits: r.credits, ms: r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls.length, retrieved: [...seen], uncheckedCells: 0 };
 }
 
 // Adapted from scripts/bench/judge-factcheck.ts.
@@ -172,14 +176,17 @@ async function checker(c: ScoreCase, model: ArmModel): Promise<ArmResult> {
     if (!v?.quote || !findQuote(v.quote, sources()).found) return Math.min(score, floor);
     return Math.min(score, Number(v.level ?? 0));
   };
+  let uncheckedCells = 0;
   const cells = base.cells.map(cell => {
     const v = byId.get(cell.sub);
+    if ((cell.k != null && !v?.know) || (cell.u != null && !v?.understand) || !v?.do) uncheckedCells++;
     return { ...cell, k: cap(cell.k, v?.know, FLOOR.k), u: cap(cell.u, v?.understand, FLOOR.u), d: cap(cell.d, v?.do, FLOOR.d) as number };
   });
   return {
     cells, calls: 2, tokens: addTokens(base.tokens, r.tokens), usdUnits: base.usdUnits + r.usdUnits,
     // The single call's credits are unknown (no token telemetry), so this is the checker call's alone.
     credits: r.credits, ms: base.ms + r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls.length,
+    retrieved: [...seen], uncheckedCells,
   };
 }
 

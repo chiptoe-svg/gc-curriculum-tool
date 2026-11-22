@@ -100,10 +100,36 @@ async function withBackoff<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+export interface SummaryCase { course: string; subs: string[]; profile: string; runs: Array<{ cells: Cell[]; retrieved: Array<{ id: string; text: string }> }> }
+/** Evidence measures. Sources per run = the profile plus the chunks that run itself retrieved. */
+export function summarizeArm(cases: SummaryCase[]) {
+  let cells = 0, above = 0, breaks = 0, groundedProfile = 0, groundedRetrieved = 0; const stab: number[] = [];
+  for (const c of cases) {
+    for (const r of c.runs) {
+      const profileSrc = [{ id: 'profile', text: c.profile }];
+      const sources = [...profileSrc, ...r.retrieved];
+      for (const cell of r.cells) {
+        cells++;
+        if ((cell.k ?? 0) > 1 || (cell.u ?? 0) > 0 || cell.d > 0) {
+          above++;
+          if (findQuote(cell.excerpt, profileSrc).found) groundedProfile++;
+          else if (findQuote(cell.excerpt, sources).found) groundedRetrieved++;
+        }
+        if (evidenceBreaks(cell, sources).length) breaks++;
+      }
+    }
+    for (const sub of c.subs) {
+      const v = c.runs.map(r => r.cells.find(x => x.sub === sub)).filter((x): x is Cell => !!x);
+      if (v.length >= 2) stab.push(stability(v));
+    }
+  }
+  return { cells, above, breaks, groundedProfile, groundedRetrieved, stability: stab.length ? stab.reduce((a, b) => a + b, 0) / stab.length : NaN };
+}
+
 type StoredCell = Cell & { grounded: boolean };
 interface CallRec {
   key: Key; ok: boolean; error?: string; calls?: number; tokens?: ArmResult['tokens']; usdUnits?: number;
-  credits?: number | null; ms?: number; forcedSubmit?: boolean; toolCalls?: number; cells: StoredCell[];
+  credits?: number | null; ms?: number; retrieved?: Array<{ id: string; text: string }>; uncheckedCells?: number; forcedSubmit?: boolean; toolCalls?: number; cells: StoredCell[];
 }
 
 async function main() {
@@ -188,7 +214,7 @@ async function main() {
     try {
       const r = await withBackoff(() => runScoreArm(k.arm as ArmName, c.scoreCase, model));
       const cells = r.cells.map(x => ({ ...x, grounded: findQuote(x.excerpt, [{ id: 'profile', text: c.profileText }]).found }));
-      calls.push({ key: k, ok: true, calls: r.calls, tokens: r.tokens, usdUnits: r.usdUnits, credits: r.credits, ms: r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls, cells });
+      calls.push({ key: k, ok: true, calls: r.calls, tokens: r.tokens, usdUnits: r.usdUnits, credits: r.credits, ms: r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls, retrieved: r.retrieved, uncheckedCells: r.uncheckedCells, cells });
       if (paid) {
         if (r.credits === null) throw new Error(`arm ${k.arm} returned unknown credits in --paid mode; stopping rather than ignore spend`);
         spent += r.credits; checkCreditCeiling(spent, maxCredits);
@@ -220,24 +246,12 @@ async function main() {
   const f = (x: number, d = 2) => (Number.isNaN(x) ? 'n/a' : x.toFixed(d));
   const rows: string[] = [];
   const pairInputs: PairInput[] = [];
-  const profileSrc = (course: string) => [{ id: 'profile', text: byCourse.get(course)!.profileText }];
-  const measure = (name: string, perCourseRuns: (course: string) => Cell[][], extra: { calls: string; tokens: string; credits: string; spc: string; errors: number }) => {
-    let cellsN = 0, above = 0, breaks = 0, groundedN = 0; const stab: number[] = [];
-    for (const c of cases) {
-      const runsCells = perCourseRuns(c.course);
-      for (const r of runsCells) for (const cell of r) {
-        cellsN++;
-        if ((cell.k ?? 0) > 1 || (cell.u ?? 0) > 0 || cell.d > 0) { above++; if (findQuote(cell.excerpt, profileSrc(c.course)).found) groundedN++; }
-        if (evidenceBreaks(cell, profileSrc(c.course)).length) breaks++;
-      }
-      for (const sub of c.subs) {
-        const v = runsCells.map(r => r.find(x => x.sub === sub.id)).filter((x): x is Cell => !!x);
-        if (v.length >= 2) stab.push(stability(v));
-      }
-    }
-    rows.push(`| ${name} | ${cellsN} | ${breaks} | ${above ? f(groundedN / above) : 'n/a'} | ${f(avg(stab))} | ${extra.calls} | ${extra.tokens} | ${extra.credits} | ${extra.spc} | ${extra.errors} |`);
+  const measure = (name: string, perCourse: (course: string) => Array<{ cells: Cell[]; retrieved: Array<{ id: string; text: string }> }>, extra: { calls: string; tokens: string; credits: string; spc: string; errors: number; unchecked: string }) => {
+    const m = summarizeArm(cases.map(c => ({ course: c.course, subs: c.subs.map(x => x.id), profile: c.profileText, runs: perCourse(c.course) })));
+    const share = (n: number) => (m.above ? f(n / m.above) : 'n/a');
+    rows.push(`| ${name} | ${m.cells} | ${m.breaks} | ${share(m.groundedProfile)} | ${share(m.groundedRetrieved)} | ${f(m.stability)} | ${extra.calls} | ${extra.tokens} | ${extra.credits} | ${extra.spc} | ${extra.errors} | ${extra.unchecked} |`);
   };
-  measure('baseline (stored Sol, post-2026-10-19)', c => [byCourse.get(c)!.baseline], { calls: '-', tokens: '-', credits: '-', spc: '-', errors: 0 });
+  measure('baseline (stored Sol, post-2026-10-19)', c => [{ cells: byCourse.get(c)!.baseline, retrieved: [] }], { unchecked: '-', calls: '-', tokens: '-', credits: '-', spc: '-', errors: 0 });
   const candidates = new Map<string, Array<{ course: string; sub: string; cell: Cell }>>();
   for (const m of models) for (const arm of arms) {
     const label = `${m.id}:${m.level ?? ''}`;
@@ -245,7 +259,8 @@ async function main() {
     const ok = mine.filter(c => c.ok);
     const tok = ok.reduce((s, c) => s + (c.tokens ? c.tokens.freshInput + c.tokens.cachedInput + c.tokens.output : 0), 0);
     const cr = ok.map(c => c.credits);
-    measure(`${arm} / ${label}`, course => ok.filter(c => c.key.course === course).map(c => c.cells), {
+    measure(`${arm} / ${label}`, course => ok.filter(c => c.key.course === course).map(c => ({ cells: c.cells, retrieved: c.retrieved ?? [] })), {
+      unchecked: arm === 'checker' ? String(ok.reduce((s, c) => s + (c.uncheckedCells ?? 0), 0)) : '-',
       calls: String(ok.reduce((s, c) => s + (c.calls ?? 0), 0)), tokens: String(tok),
       credits: cr.some(x => x === null) ? 'unknown (single arm has no token telemetry)' : f(cr.reduce((s: number, x) => s + (x ?? 0), 0), 3),
       spc: f(avg(ok.map(c => (c.ms ?? 0) / 1000)), 1), errors: mine.length - ok.length,
@@ -269,13 +284,13 @@ async function main() {
   writeFileSync(join(out, 'summary.md'), [
     `# Scoring benchmark summary`, '',
     `Courses: ${courses.join(', ')}; runs: ${runs}; mode: ${paid ? `paid (ceiling ${maxCredits} credits, spent ${spent.toFixed(3)})` : 'campus (free)'}.`, '',
-    '| arm / model | cells | evidence breaks | grounding share | stability | calls | tokens | credits | s/course | errors |',
+    '| arm / model | cells | evidence breaks | grounded in profile | grounded in retrieved files | stability | calls | tokens | credits | s/course | errors |',
     '|---|---|---|---|---|---|---|---|---|---|', ...rows, '',
     '## Notes',
-    '- Evidence sources for breaks and grounding are the profile text only (chunks an agent fetched are not available to the baseline). Each stored cell in calls.json has `grounded` (excerpt found in the profile). "Grounding share" is the share of above-floor cells whose excerpt is found in the profile, so agent/checker cells quoting fetched chunks count as ungrounded here.',
-    '- Evidence breaks counts cells with at least one dimension above its floor and no profile-grounded quote.',
+    '- Source rule: evidence breaks and grounding use, per arm result, the profile text PLUS every chunk/section that arm itself retrieved for that course (baseline and single: profile only). Grounding is split: found in the profile, else found in a retrieved file; shares are of above-floor cells. Each stored cell in calls.json has `grounded` (found in the profile alone).',
+    '- Evidence breaks counts cells with at least one dimension above its floor and no grounded quote.',
     '- Stability: per cell, share of K/U/D whose depth band matches in every run, averaged over cells (needs 2+ runs).',
-    '- The checker arm floors missing verdicts (K1/U0/D0); the number of missing verdicts is not exposed by the arm.',
+    '- Unchecked (checker): cells whose checker verdict was missing for a scored dimension; those scores are floored (K1/U0/D0).',
     `- Agent/checker tasks that hit the forced-submit path: ${ng}.`,
     '- Blind pairs: baseline vs each arm x model modal cell (A/B by seeded RNG; seed in blind-pairs.json; key in blind-key.json).', '',
   ].join('\n'));
