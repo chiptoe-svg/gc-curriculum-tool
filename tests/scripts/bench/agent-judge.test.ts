@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assertSafeDb, checkCreditCeiling, pendingKeys, assertNoPaidKey, scrubPaidKey, assertPaidArgs, makeBlindPairs, keyId } from '@/scripts/bench/agent-judge';
+import { assertCanSpend, parseArms, parseModels, withBackoff, assertSafeDb, checkCreditCeiling, pendingKeys, assertNoPaidKey, scrubPaidKey, assertPaidArgs, makeBlindPairs, keyId } from '@/scripts/bench/agent-judge';
 
 describe('assertSafeDb', () => {
   it('rejects live and accepts bench/scratch', () => {
@@ -22,14 +22,15 @@ describe('paid guards', () => {
     expect(() => assertNoPaidKey(env, false)).not.toThrow();
   });
   it('--paid without --max-credits throws', () => {
-    expect(() => assertPaidArgs(true, null)).toThrow();
-    expect(() => assertPaidArgs(true, 5)).not.toThrow();
-    expect(() => assertPaidArgs(false, null)).not.toThrow();
+    expect(() => assertPaidArgs(true, null, ['agent'])).toThrow();
+    expect(() => assertPaidArgs(true, 5, ['agent'])).not.toThrow();
+    expect(() => assertPaidArgs(false, null, ['single'])).not.toThrow();
   });
 });
 describe('checkCreditCeiling', () => {
   it('throws once spent exceeds max', () => {
-    expect(() => checkCreditCeiling(5, 5)).not.toThrow();
+    expect(() => checkCreditCeiling(4.99, 5)).not.toThrow();
+    expect(() => checkCreditCeiling(5, 5)).toThrow();
     expect(() => checkCreditCeiling(5.01, 5)).toThrow();
     expect(() => checkCreditCeiling(99, null)).not.toThrow();
   });
@@ -77,5 +78,38 @@ describe('summarizeArm', () => {
     const r = base([{ cells: [cell('poster brief for the client every term', 2)], retrieved: [] }, { cells: [cell('poster brief for the client every term', 5)], retrieved: [] }]);
     expect(r.stability).toBeCloseTo(2 / 3); // k,u both null=none agree; d band differs
     expect(base([{ cells: [cell('x', 2)], retrieved: [] }]).stability).toBeNaN();
+  });
+});
+
+describe('pre-call spend guard', () => {
+  it('refuses a paid call when spent equals max', () => {
+    expect(() => assertCanSpend(5, 5, 0)).toThrow();
+    expect(() => assertCanSpend(4, 5, 0)).not.toThrow();
+  });
+  it('refuses when spent + projected would exceed max', () => {
+    expect(() => assertCanSpend(4, 5, 1.5)).toThrow();
+    expect(() => assertCanSpend(4, 5, 1)).not.toThrow();
+  });
+});
+describe('startup validation', () => {
+  it('--paid with single or checker is rejected', () => {
+    expect(() => assertPaidArgs(true, 5, ['single'])).toThrow(/telemetry/);
+    expect(() => assertPaidArgs(true, 5, ['agent', 'checker'])).toThrow(/telemetry/);
+  });
+  it('unknown arm name is rejected', () => {
+    expect(() => parseArms('single,bogus')).toThrow(/bogus/);
+    expect(parseArms('single,agent')).toEqual(['single', 'agent']);
+  });
+  it('models parse as id[:level] and reject empties', () => {
+    expect(parseModels('a:low,b')).toEqual([{ id: 'a', level: 'low' }, { id: 'b', level: undefined }]);
+    expect(() => parseModels(':low')).toThrow();
+    expect(() => parseModels('')).toThrow();
+  });
+});
+describe('withBackoff', () => {
+  it('does not retry in paid mode', async () => {
+    let n = 0;
+    await expect(withBackoff(async () => { n++; throw new Error('ECONNRESET'); }, false)).rejects.toThrow();
+    expect(n).toBe(1);
   });
 });

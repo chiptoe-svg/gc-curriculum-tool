@@ -26,9 +26,32 @@ export function assertSafeDb(url: string): void {
   if (!name || !/bench|scratch/.test(name)) throw new Error('refusing: DATABASE_URL must name a bench or scratch database');
 }
 
-/** Throw once spending exceeds the ceiling. A null ceiling means unpaid: nothing to enforce. */
+/** Throw once spending reaches the ceiling. A null ceiling means unpaid: nothing to enforce. */
 export function checkCreditCeiling(spent: number, max: number | null): void {
-  if (max !== null && spent > max) throw new Error(`credit ceiling exceeded: spent ${spent.toFixed(3)} > max ${max}`);
+  if (max !== null && spent >= max) throw new Error(`credit ceiling exceeded: spent ${spent.toFixed(3)} > max ${max}`);
+}
+
+/** Run before EVERY paid call: refuse at the ceiling, or if the largest call seen so far would cross it. */
+export function assertCanSpend(spent: number, max: number, projected: number): void {
+  if (spent >= max) throw new Error(`credit ceiling reached before call: spent ${spent.toFixed(3)} >= max ${max}`);
+  if (spent + projected > max) throw new Error(`credit ceiling: spent ${spent.toFixed(3)} + projected ${projected.toFixed(3)} would exceed max ${max}`);
+}
+
+const ARMS: ArmName[] = ['single', 'agent', 'checker'];
+export function parseArms(s: string): ArmName[] {
+  const arms = s.split(',').map(x => x.trim()).filter(Boolean);
+  if (!arms.length) throw new Error('--arms is empty');
+  for (const a of arms) if (!ARMS.includes(a as ArmName)) throw new Error(`unknown arm "${a}" (use single, agent, checker)`);
+  return arms as ArmName[];
+}
+export function parseModels(s: string): Array<{ id: string; level?: string }> {
+  const out = s.split(',').map(x => x.trim()).filter(Boolean).map(x => {
+    const [id, level, ...rest] = x.split(':');
+    if (!id || rest.length || level === '') throw new Error(`bad model "${x}" (use id or id:level)`);
+    return { id, level };
+  });
+  if (!out.length) throw new Error('--models required, e.g. qwen3.8-27b-fp8:off');
+  return out;
 }
 
 export function pendingKeys(all: Key[], done: Iterable<Key | string>): Key[] {
@@ -47,8 +70,11 @@ export function scrubPaidKey(env: Record<string, string | undefined>, paid: bool
   delete env.OPENAI_API_KEY;
   return had;
 }
-export function assertPaidArgs(paid: boolean, maxCredits: number | null): void {
-  if (paid && (maxCredits === null || !(maxCredits > 0))) throw new Error('--paid requires --max-credits <n> (> 0)');
+export function assertPaidArgs(paid: boolean, maxCredits: number | null, arms: string[]): void {
+  if (!paid) return;
+  if (maxCredits === null || !(maxCredits > 0)) throw new Error('--paid requires --max-credits <n> (> 0)');
+  const bad = arms.filter(a => a === 'single' || a === 'checker');
+  if (bad.length) throw new Error(`--paid cannot run ${bad.join(', ')}: the single call has no token telemetry, so its credits are unknown (ledger note: add telemetry first)`);
 }
 
 export function mulberry32(seed: number): () => number {
@@ -89,12 +115,12 @@ export function modalCell(cells: Cell[]): Cell | undefined {
 }
 
 /** Retry gateway errors (5xx, connection) twice with a pause. Copied from role-judge. */
-async function withBackoff<T>(fn: () => Promise<T>): Promise<T> {
+export async function withBackoff<T>(fn: () => Promise<T>, retry = true): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try { return await fn(); } catch (e) {
       const status = (e as { status?: number }).status;
       const gateway = (typeof status === 'number' && status >= 500) || /ECONNRESET|ETIMEDOUT|ECONNREFUSED|fetch failed|Connection error|timed out/i.test((e as Error).message);
-      if (!gateway || attempt >= 2) throw e;
+      if (!retry || !gateway || attempt >= 2) throw e;
       await new Promise(r => setTimeout(r, 30_000 * (attempt + 1)));
     }
   }
@@ -137,16 +163,15 @@ async function main() {
   const arg = (n: string) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : undefined; };
   const paid = argv.includes('--paid');
   const maxCredits = arg('--max-credits') !== undefined ? Number(arg('--max-credits')) : null;
-  assertPaidArgs(paid, maxCredits);
   assertSafeDb(process.env.DATABASE_URL ?? '');
   if (scrubPaidKey(process.env, paid)) console.log('OpenAI key removed for campus run');
   assertNoPaidKey(process.env, paid);
   if (!paid) process.env.AI_PROVIDER = 'campus';
 
   const out = arg('--out'); if (!out) throw new Error('--out <dir> required');
-  const arms = (arg('--arms') ?? 'single,agent,checker').split(',') as ArmName[];
-  const models = (arg('--models') ?? '').split(',').filter(Boolean).map(s => { const [id, level] = s.split(':'); return { id: id!, level }; });
-  if (!models.length) throw new Error('--models required, e.g. qwen3.8-27b-fp8:off');
+  const arms = parseArms(arg('--arms') ?? 'single,agent,checker');
+  const models = parseModels(arg('--models') ?? '');
+  assertPaidArgs(paid, maxCredits, arms);
   let courses = (arg('--courses') ?? '').split(',').map(s => s.trim()).filter(Boolean);
   if (!courses.length) throw new Error('--courses required');
   const probe = arg('--cases-probe'); if (probe) courses = courses.slice(0, Number(probe));
@@ -208,21 +233,24 @@ async function main() {
   const todo = pendingKeys(all, calls.map(c => c.key));
   console.log(`harness: ${all.length} keys, ${todo.length} pending; models ${models.map(m => m.id).join(',')}; ${paid ? 'PAID' : 'campus (free)'}`);
 
+  const projected = new Map<string, number>(); // largest per-call credits seen, per model|arm
   const execKey = async (k: Key, model: { id: string; level?: string; endpoint: Awaited<ReturnType<typeof endpointFor>> }) => {
     const c = byCourse.get(k.course)!;
     const t0 = Date.now();
+    const pk = `${k.model}|${k.arm}`;
     try {
-      const r = await withBackoff(() => runScoreArm(k.arm as ArmName, c.scoreCase, model));
+      if (paid) assertCanSpend(spent, maxCredits!, projected.get(pk) ?? 0);
+      const r = await withBackoff(() => runScoreArm(k.arm as ArmName, c.scoreCase, model), !paid); // no retries when paid: a retry may re-bill
       const cells = r.cells.map(x => ({ ...x, grounded: findQuote(x.excerpt, [{ id: 'profile', text: c.profileText }]).found }));
       calls.push({ key: k, ok: true, calls: r.calls, tokens: r.tokens, usdUnits: r.usdUnits, credits: r.credits, ms: r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls, retrieved: r.retrieved, uncheckedCells: r.uncheckedCells, cells });
       if (paid) {
         if (r.credits === null) throw new Error(`arm ${k.arm} returned unknown credits in --paid mode; stopping rather than ignore spend`);
-        spent += r.credits; checkCreditCeiling(spent, maxCredits);
+        spent += r.credits; projected.set(pk, Math.max(projected.get(pk) ?? 0, r.credits)); checkCreditCeiling(spent, maxCredits);
       }
       process.stdout.write('.');
     } catch (e) {
       const msg = (e as Error).message;
-      if (/credit ceiling|unknown credits/.test(msg)) { checkpoint(); throw e; }
+      if (paid) { calls.push({ key: k, ok: false, error: msg.slice(0, 300), ms: Date.now() - t0, cells: [] }); checkpoint(); throw e; } // a paid failure stops the run
       calls.push({ key: k, ok: false, error: msg.slice(0, 300), ms: Date.now() - t0, cells: [] });
       process.stdout.write('x');
     }
