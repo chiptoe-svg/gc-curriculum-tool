@@ -5,15 +5,14 @@
  *   tsx scripts/bench/tally-blind.ts --pairs <blind-pairs.json> --key <blind-key.json> \
  *     --verdicts <verdicts.json> [--second <verdicts-2.json>] [--summary <summary.json>]
  *
+ * Stability for an agent arm is compared with the same model's single arm (ruling R8).
  * --summary defaults to summary.json beside --pairs (written by agent-judge.ts).
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { tallyBlind, type ArmTally, type SummaryRow, type Verdict } from './lib/blind';
+import { renderTally, tallyBlind, type ArmTally, type SummaryRow, type Verdict } from './lib/blind';
 
 const readJson = <T>(p: string): T => JSON.parse(readFileSync(p, 'utf8')) as T;
-const pct = (x: number | null) => (x === null ? 'n/a' : `${(x * 100).toFixed(1)}%`);
-const num = (x: number | null, d = 2) => (x === null ? 'n/a' : x.toFixed(d));
 
 function main() {
   const argv = process.argv.slice(2);
@@ -28,17 +27,7 @@ function main() {
   const summary = readJson<{ rows: SummaryRow[] }>(summaryPath).rows;
 
   const tallies: ArmTally[] = tallyBlind({ key, verdicts, summary, second });
-  const lines = [
-    `# Blind tally`, '',
-    `Verdicts: ${verdicts.length}${second ? `; second judge: ${second.length}` : ''}.`,
-    `A-position win rate (non-tie): ${pct(tallies[0]?.aPositionRate ?? null)} (bias check: near 50% is expected).`, '',
-    '| arm / model | wins | losses | ties | pref ex-ties | agreement w/ 2nd judge | breaks (baseline) | stability (baseline) | decision |',
-    '|---|---|---|---|---|---|---|---|---|',
-    ...tallies.filter(t => t.label !== 'baseline').map(t =>
-      `| ${t.label} | ${t.wins} | ${t.losses} | ${t.ties} | ${pct(t.prefExTies)} | ${pct(t.agreement)} | ${t.breaks ?? 'n/a'} (${t.baselineBreaks ?? 'n/a'}) | ${num(t.stability)} (${num(t.baselineStability)}) | ${t.adopt ? 'ADOPT' : 'NOT ADOPTED'}: ${t.reasons.join('; ')} |`),
-    '',
-  ];
-  console.log(lines.join('\n'));
+  console.log(renderTally(tallies, { verdictCount: verdicts.length, aPositionRate: tallies.length ? tallies[0]!.aPositionRate : null, secondCount: second?.length }));
 }
 
 if (process.argv[1]?.endsWith('tally-blind.ts')) {

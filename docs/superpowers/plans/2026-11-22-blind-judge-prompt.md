@@ -41,7 +41,7 @@ Give one sentence of reason.
 
 ## Output
 
-Write one JSON array to the verdicts file you are given, one entry per pair you judged:
+Write one JSON array to `<out>/verdicts.json` (where `<out>` is the harness output directory that holds `blind-pairs.json`), one entry per pair you judged:
 
 ```json
 [
@@ -61,9 +61,9 @@ Rules for the output:
 
 A second judge runs on a sample of 20% of the pairs, drawn by `secondJudgeIds` in
 `scripts/bench/lib/blind.ts` with its own seed. The second judge follows these same instructions
-and writes its own verdicts file. Judge independently: do not look at another judge's verdicts.
+and writes its verdicts to `<out>/verdicts-second.json`. Judge independently: do not look at another judge's verdicts.
 
 ## After judging
 
-The verdicts file goes to `scripts/bench/tally-blind.ts`, which unblinds it with the key and applies
+Run `scripts/bench/tally-blind.ts --pairs <out>/blind-pairs.json --key <out>/blind-key.json --verdicts <out>/verdicts.json --second <out>/verdicts-second.json`. It unblinds the verdicts with the key and applies
 the pre-committed decision rule. The judge does not see that output.

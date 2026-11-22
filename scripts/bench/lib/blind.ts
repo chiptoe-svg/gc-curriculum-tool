@@ -63,17 +63,23 @@ export function secondJudgeIds(pairs: BlindPair[], seed: number, fraction = 0.2)
 /** Per-arm row from summary.json (label 'baseline' or '<arm> / <model>'). null = not measurable. */
 export interface SummaryRow { label: string; cells: number; breaks: number | null; stability: number | null }
 
+export const PROVISIONAL_NOTE = '(provisional vs live: Terra single not yet run)';
+
 export interface ArmTally {
   label: string;
   wins: number; losses: number; ties: number;
   /** wins / (wins + losses); null when there are no non-tie verdicts. */
   prefExTies: number | null;
-  /** Share of non-tie verdicts won by the A position, over all pairs (bias check). */
+  /** Share of non-tie verdicts won by the A position, over all verdicts (bias check: should sit near 50%). */
   aPositionRate: number | null;
   /** Agreement with the second judge on overlapping pairs for this label; null if no overlap. */
   agreement: number | null;
   breaks: number | null; baselineBreaks: number | null;
-  stability: number | null; baselineStability: number | null;
+  stability: number | null;
+  /** Stability of the same model's single arm (null for the single arm itself, which is not stability-judged). */
+  baselineStability: number | null;
+  /** Summary label the stability comparison used, e.g. 'single / qwen3.8-27b-fp8:off'. */
+  stabilityRef: string | null;
   adopt: boolean;
   reasons: string[];
 }
@@ -86,8 +92,15 @@ export interface TallyInput {
 }
 
 const pct = (x: number | null) => (x === null ? 'n/a' : `${(x * 100).toFixed(1)}%`);
+/** '<arm> / <model>' → arm and model parts. */
+const armOf = (label: string) => label.slice(0, Math.max(0, label.indexOf(' / ')));
+const modelOf = (label: string) => (label.includes(' / ') ? label.slice(label.indexOf(' / ') + 3) : label);
 
-/** Apply the pre-committed rule: adopt only if breaks < baseline AND pref >= 50% ex-ties AND stability >= baseline. */
+/**
+ * Apply the pre-committed rule (ruling R8). Agent arms: adopt only if breaks < stored Sol baseline,
+ * blind preference >= 50% ex-ties vs the stored Sol cells, AND stability >= the same model's single arm.
+ * The single arm is the stability reference, so it is judged on breaks and preference only.
+ */
 export function tallyBlind({ key, verdicts, summary, second }: TallyInput): ArmTally[] {
   const base = summary.find(r => r.label === 'baseline');
   if (!base) throw new Error('summary has no baseline row');
@@ -118,20 +131,45 @@ export function tallyBlind({ key, verdicts, summary, second }: TallyInput): ArmT
       if (overlap.length) agreement = overlap.filter(id => primary.get(id) === secondary.get(id)).length / overlap.length;
     }
 
+    const isSingle = armOf(label) === 'single';
     const row = summary.find(r => r.label === label);
     const breaks = row?.breaks ?? null, baselineBreaks = base.breaks;
-    const stability = row?.stability ?? null, baselineStability = base.stability;
+    const stability = row?.stability ?? null;
+    const stabilityRef = isSingle ? null : `single / ${modelOf(label)}`;
+    const refRow = stabilityRef ? summary.find(r => r.label === stabilityRef) : undefined;
+    const baselineStability = stabilityRef ? (refRow?.stability ?? null) : null;
 
     const reasons: string[] = [];
     if (breaks === null || baselineBreaks === null) reasons.push('breaks not measurable');
     else if (!(breaks < baselineBreaks)) reasons.push(`breaks ${breaks} not fewer than baseline ${baselineBreaks}`);
     if (prefExTies === null) reasons.push('no non-tie verdicts');
     else if (!(prefExTies >= 0.5)) reasons.push(`preference ${pct(prefExTies)} below 50% ex-ties`);
-    if (stability === null) reasons.push('stability not measurable (needs 2+ runs)');
-    if (baselineStability === null) reasons.push('baseline stability undefined (single stored run)');
-    else if (stability !== null && !(stability >= baselineStability)) reasons.push(`stability ${stability.toFixed(2)} below baseline ${baselineStability.toFixed(2)}`);
+    if (!isSingle) {
+      if (!refRow) reasons.push(`no ${stabilityRef} row to compare stability with`);
+      else if (baselineStability === null) reasons.push(`${stabilityRef} stability undefined`);
+      else if (stability === null) reasons.push('stability not measurable (needs 2+ runs)');
+      else if (!(stability >= baselineStability)) reasons.push(`stability ${stability.toFixed(2)} below ${stabilityRef} ${baselineStability.toFixed(2)}`);
+    }
     const adopt = reasons.length === 0;
+    const okText = isSingle ? 'adopt: breaks and preference met (single arm is the stability reference, not judged on stability)' : 'adopt: all three conditions met';
 
-    return { label, wins, losses, ties, prefExTies, aPositionRate: aPos, agreement, breaks, baselineBreaks, stability, baselineStability, adopt, reasons: adopt ? ['adopt: all three conditions met'] : reasons };
+    return { label, wins, losses, ties, prefExTies, aPositionRate: aPos, agreement, breaks, baselineBreaks, stability, baselineStability, stabilityRef, adopt, reasons: adopt ? [okText] : reasons };
   });
+}
+
+/** Markdown tally. Every verdict line carries PROVISIONAL_NOTE until the Terra single arm has run. */
+export function renderTally(tallies: ArmTally[], meta: { verdictCount: number; aPositionRate: number | null; secondCount?: number }): string {
+  const num = (x: number | null, d = 2) => (x === null ? 'n/a' : x.toFixed(d));
+  return [
+    '# Blind tally', '',
+    `Verdicts: ${meta.verdictCount}${meta.secondCount !== undefined ? `; second judge: ${meta.secondCount}` : ''}.`,
+    `A-position win rate (non-tie): ${pct(meta.aPositionRate)} (bias check: near 50% is expected).`, '',
+    '| arm / model | wins | losses | ties | pref ex-ties | agreement w/ 2nd judge | breaks (baseline) | stability (reference) | decision |',
+    '|---|---|---|---|---|---|---|---|---|',
+    ...tallies.map(t => {
+      const stab = t.stabilityRef ? `${num(t.stability)} (${t.stabilityRef}: ${num(t.baselineStability)})` : 'not judged';
+      return `| ${t.label} | ${t.wins} | ${t.losses} | ${t.ties} | ${pct(t.prefExTies)} | ${pct(t.agreement)} | ${t.breaks ?? 'n/a'} (${t.baselineBreaks ?? 'n/a'}) | ${stab} | ${t.adopt ? 'ADOPT' : 'NOT ADOPTED'}: ${t.reasons.join('; ')} ${PROVISIONAL_NOTE} |`;
+    }),
+    '',
+  ].join('\n');
 }
