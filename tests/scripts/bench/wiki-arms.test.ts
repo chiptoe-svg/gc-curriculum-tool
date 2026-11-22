@@ -94,3 +94,14 @@ describe('checker', () => {
     expect(r.usdUnits).toBe(10);
   });
 });
+
+describe('endpoint model guard', () => {
+  it.each(['single', 'agent', 'checker'] as const)('%s throws if the endpoint model differs from the request', async arm => {
+    runPiTask.mockResolvedValue({ ...piBase, value: out('x') });
+    await expect(runWikiArm(arm, 'competencies/x', { ...model, endpoint: { ...model.endpoint, model: 'other' } })).rejects.toThrow(/requested m1.*other/);
+  });
+  it('checker reports both models', async () => {
+    runPiTask.mockResolvedValue({ ...piBase, value: out('2 contributing courses') });
+    expect((await runWikiArm('checker', 'competencies/x', model)).actualModel).toBe('m1+m1');
+  });
+});

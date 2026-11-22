@@ -26,49 +26,85 @@ const COURSE_TOKEN = /\b([a-z]{2,4})[- ](\d{4}[a-z]*)\b/gi;
 const courseTokens = (s: string): string[] => [...s.matchAll(COURSE_TOKEN)].map(m => `${m[1]}-${m[2]}`.toLowerCase());
 const ROW_ORDER = ['present', 'partial', 'absent', 'unassessed'] as const;
 
-function countErrors(md: string, facts: PageFacts): FactualError[] {
+/** Phrase-normalized text: lowercase, non-alphanumerics to single spaces. */
+const phrase = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const STATUS: Array<[typeof ROW_ORDER[number], RegExp]> = [
+  ['unassessed', /\bnot assessed\b|\bunassessed\b/], ['present', /\bpresent\b/], ['partial', /\bpartial(?:ly)?\b/], ['absent', /\babsent\b/],
+];
+
+interface CountResult { errors: FactualError[]; unverifiable: string[] }
+
+function countCheck(md: string, facts: PageFacts): CountResult {
   const errs: FactualError[] = [];
-  const values = new Set(Object.values(facts.counts));
+  const unverifiable: string[] = [];
 
-  // "X of Y" where Y is a known total: X must be a known count.
-  for (const m of md.matchAll(/\b(\d+)\s+of\s+(\d+)\b/g)) {
-    const x = Number(m[1]), y = Number(m[2]);
-    if (values.has(y) && !values.has(x)) errs.push({ kind: 'count', detail: `"${m[0]}": the facts have no count of ${x} (counts: ${[...values].sort((a, b) => a - b).join(', ')})` });
-  }
-
-  // Table rows: <group>.present/partial/absent/unassessed.
   const groups = new Map<string, Array<number | undefined>>();
+  const labels = new Map<string, number>();
   for (const [k, v] of Object.entries(facts.counts)) {
     const m = k.match(/^(.*)\.(present|partial|absent|unassessed)$/);
-    if (!m) continue;
-    const row = groups.get(m[1]!) ?? [];
+    if (!m) { labels.set(phrase(k), v); continue; }
+    const row = groups.get(phrase(m[1]!)) ?? [];
     row[ROW_ORDER.indexOf(m[2] as typeof ROW_ORDER[number])] = v;
-    groups.set(m[1]!, row);
+    groups.set(phrase(m[1]!), row);
   }
-  for (const line of md.split('\n')) {
-    if (!line.trim().startsWith('|')) continue;
-    const cells = line.split('|').slice(1, -1).map(c => c.trim());
-    for (const [group, want] of groups) {
-      if (norm(cells[0] ?? '') !== norm(group)) continue;
-      const got = cells.slice(1, 5).map(c => (/^\d+$/.test(c) ? Number(c) : undefined));
-      const bad = ROW_ORDER.some((_, i) => want[i] !== undefined && got[i] !== want[i]);
-      if (bad) errs.push({ kind: 'count', detail: `${group} row reads ${got.join('/')} but the facts are ${want.join('/')} (present/partial/absent/not assessed)` });
+  const totals = new Set<number>(labels.values());
+  for (const row of groups.values()) totals.add(row.reduce<number>((a, b) => a + (b ?? 0), 0));
+
+  // "X of Y": tie it to the group or label named in the same sentence.
+  for (const sentence of md.split(/[.;!?\n|]+/)) {
+    const text = phrase(sentence);
+    for (const m of text.matchAll(/\b(\d+) of (\d+)\b/g)) {
+      const x = Number(m[1]), y = Number(m[2]), at = m.index!;
+      const named: Array<{ name: string; at: number; kind: 'group' | 'label' }> = [];
+      for (const name of groups.keys()) { const i = text.indexOf(name); if (i >= 0) named.push({ name, at: i, kind: 'group' }); }
+      for (const name of labels.keys()) { const i = text.indexOf(name); if (i >= 0) named.push({ name, at: i, kind: 'label' }); }
+      const before = named.filter(n => n.at < at).sort((a, b) => b.at - a.at)[0];
+      const after = named.filter(n => n.at >= at).sort((a, b) => a.at - b.at)[0];
+      const hit = before ?? after;
+      if (!hit) { unverifiable.push(`"${m[0]}": no known group or label in the sentence "${sentence.trim()}"`); continue; }
+      if (hit.kind === 'label') {
+        const want = labels.get(hit.name)!;
+        if (y !== want) errs.push({ kind: 'count', detail: `"${m[0]}" of ${hit.name}: the facts say ${want} in total` });
+        continue;
+      }
+      const row = groups.get(hit.name)!;
+      const status = STATUS.find(([, re]) => re.test(text))?.[0];
+      const total = row.reduce<number>((a, b) => a + (b ?? 0), 0);
+      if (status) {
+        const want = row[ROW_ORDER.indexOf(status)];
+        if (want !== undefined && x !== want) errs.push({ kind: 'count', detail: `"${m[0]}": ${hit.name} ${status} is ${want} in the facts` });
+      } else if (!row.includes(x)) {
+        errs.push({ kind: 'count', detail: `"${m[0]}": ${hit.name} has no count of ${x} (facts: ${row.join('/')})` });
+      }
+      if (!totals.has(y)) errs.push({ kind: 'count', detail: `"${m[0]}": the facts have no total of ${y} for ${hit.name} (totals: ${[...totals].sort((a, b) => a - b).join(', ')})` });
     }
   }
 
-  // Labelled counts stated in prose.
+  // Table rows: <group>.present/partial/absent/unassessed; "(all)" style qualifiers and "11 (61%)" cells are tolerated.
+  for (const line of md.split('\n')) {
+    if (!line.trim().startsWith('|')) continue;
+    const cells = line.split('|').slice(1, -1).map(c => c.trim());
+    const name = phrase((cells[0] ?? '').replace(/\([^)]*\)/g, ''));
+    const want = groups.get(name);
+    if (!want) continue;
+    const got = cells.slice(1, 5).map(c => { const m = c.match(/^(\d+)\b/); return m ? Number(m[1]) : undefined; });
+    if (ROW_ORDER.some((_, i) => want[i] !== undefined && got[i] !== want[i])) {
+      errs.push({ kind: 'count', detail: `${name} row reads ${got.join('/')} but the facts are ${want.join('/')} (present/partial/absent/not assessed)` });
+    }
+  }
+
+  // Labelled counts stated in prose: "N label", "N of M label" (M is the count), "label (N)", "label: N".
   for (const [label, v] of Object.entries(facts.counts)) {
     if (/\.(present|partial|absent|unassessed)$/.test(label)) continue;
     const l = escapeRe(label.toLowerCase().replace(/s$/, '')).replace(/\s+/g, '\\s+') + '(?:s|\\(s\\))?';
     const found: number[] = [];
-    for (const re of [
-      new RegExp(`\\b(\\d+)\\s+(?:of\\s+\\d+\\s+)?${l}`, 'gi'),
-      new RegExp(`${l}\\W{0,4}\\((\\d+)\\)`, 'gi'),
-      new RegExp(`${l}[^|\\n\\d]{0,3}:\\s*(\\d+)`, 'gi'),
-    ]) for (const m of md.matchAll(re)) found.push(Number(m[1]));
+    for (const m of md.matchAll(new RegExp(`\\b(\\d+)\\s+(?:of\\s+(\\d+)\\s+)?${l}`, 'gi'))) found.push(Number(m[2] ?? m[1]));
+    for (const re of [new RegExp(`${l}\\W{0,4}\\((\\d+)\\)`, 'gi'), new RegExp(`${l}[^|\\n\\d]{0,3}:\\s*(\\d+)`, 'gi')]) {
+      for (const m of md.matchAll(re)) found.push(Number(m[1]));
+    }
     for (const n of found) if (n !== v) errs.push({ kind: 'count', detail: `states ${n} for "${label}" but the facts say ${v}` });
   }
-  return errs;
+  return { errors: errs, unverifiable };
 }
 
 function listRegion(lines: string[], i: number): string {
@@ -80,20 +116,19 @@ function listRegion(lines: string[], i: number): string {
 
 function courseListErrors(md: string, facts: PageFacts): FactualError[] {
   const errs: FactualError[] = [];
+  const seen = new Set<string>();
   const lines = md.split('\n');
   for (const [name, expected] of Object.entries(facts.courseLists)) {
     const key = norm(name);
-    const stated = new Set<string>();
-    let seen = false;
+    const want = new Set(expected.map(c => c.toLowerCase().replace(/\s+/g, '-')));
     lines.forEach((line, i) => {
       if (!norm(line).includes(key)) return;
-      seen = true;
-      for (const c of courseTokens(listRegion(lines, i))) stated.add(c);
+      const stated = new Set(courseTokens(listRegion(lines, i)));
+      if (stated.size === 0) return; // this line names the list but lists no courses
+      const add = (detail: string) => { if (!seen.has(detail)) { seen.add(detail); errs.push({ kind: 'course-list', detail }); } };
+      for (const c of want) if (!stated.has(c)) add(`"${name}" omits ${c}`);
+      for (const c of stated) if (!want.has(c)) add(`"${name}" lists ${c}, which is not in the facts`);
     });
-    if (!seen) continue; // the page does not state this list
-    const want = new Set(expected.map(c => c.toLowerCase().replace(/\s+/g, '-')));
-    for (const c of want) if (!stated.has(c)) errs.push({ kind: 'course-list', detail: `"${name}" omits ${c}` });
-    for (const c of stated) if (!want.has(c)) errs.push({ kind: 'course-list', detail: `"${name}" lists ${c}, which is not in the facts` });
   }
   return errs;
 }
@@ -107,8 +142,14 @@ function targetErrors(md: string, facts: PageFacts): FactualError[] {
   return [...refs].filter(r => !known.has(r)).map(r => ({ kind: 'stale-target' as const, detail: `refers to target "${r}", which is not a current career target` }));
 }
 
+/** Errors, plus the "X of Y" statements whose group could not be identified (neither passed nor failed). */
+export function factualCheck(markdown: string, facts: PageFacts): { errors: FactualError[]; unverifiable: string[] } {
+  const c = countCheck(markdown, facts);
+  return { errors: [...c.errors, ...courseListErrors(markdown, facts), ...targetErrors(markdown, facts)], unverifiable: c.unverifiable };
+}
+
 export function factualErrors(markdown: string, facts: PageFacts): FactualError[] {
-  return [...countErrors(markdown, facts), ...courseListErrors(markdown, facts), ...targetErrors(markdown, facts)];
+  return factualCheck(markdown, facts).errors;
 }
 
 export async function pageFacts(pageId: string): Promise<PageFacts> {

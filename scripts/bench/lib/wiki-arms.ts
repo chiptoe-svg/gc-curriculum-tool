@@ -24,7 +24,7 @@ import type { PiEndpoint } from '@/lib/ai/agent/pi/turn';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import type { ToolDefinition } from '@/lib/ai/tool-use-types';
 import { costCredits, type TokenCounts } from '@/lib/ai/prices';
-import { pageFacts, factualErrors, type PageFacts, type FactualError } from './wiki-facts';
+import { pageFacts, factualErrors, factualCheck, type PageFacts, type FactualError } from './wiki-facts';
 
 export type WikiArmName = 'single' | 'agent' | 'checker';
 export interface WikiArmModel { id: string; level?: string; endpoint: PiEndpoint }
@@ -34,6 +34,8 @@ export interface WikiArmResult {
   factualErrors: FactualError[];
   /** Checker only: errors in the single draft before checking ([] otherwise). */
   draftErrors: FactualError[];
+  /** "X of Y" statements in the returned page whose group could not be identified. */
+  unverifiable: string[];
   toolCalls: number; forcedSubmit: boolean;
   /** The model the writer call actually ran on (asserted equal to the request). */
   actualModel: string;
@@ -150,6 +152,7 @@ export async function runWikiArm(arm: WikiArmName, pageId: string, model: WikiAr
   const t0 = Date.now();
   const facts = await pageFacts(pageId);
   const path = `${pageId}.md`;
+  if (model.endpoint.model !== model.id) throw new Error(`${arm} arm endpoint runs the wrong model: requested ${model.id}, endpoint ${model.endpoint.model}`);
   const inner = await getProviderForFunction('wiki-update', undefined, { model: model.id, reasoningEffort: model.level });
   if (inner.model !== model.id) throw new Error(`single arm ran the wrong model: requested ${model.id}, provider used ${inner.model}`);
   const systemPrompt = await loadPrompt('wiki-update');
@@ -181,10 +184,11 @@ export async function runWikiArm(arm: WikiArmName, pageId: string, model: WikiAr
   }
 
   const markdown = await generatePage(pageId, provider, systemPrompt);
+  const final = factualCheck(markdown, facts);
   return {
     markdown, calls: acc.calls, tokens: acc.tokens, usdUnits: acc.usdUnits, credits: acc.credits, ms: Date.now() - t0,
-    factualErrors: factualErrors(markdown, facts), draftErrors: acc.draftErrors,
+    factualErrors: final.errors, unverifiable: final.unverifiable, draftErrors: acc.draftErrors,
     toolCalls: acc.toolCalls, forcedSubmit: acc.forcedSubmit,
-    actualModel: arm === 'single' || arm === 'checker' ? inner.model : model.endpoint.model,
+    actualModel: arm === 'single' ? inner.model : arm === 'checker' ? `${inner.model}+${model.endpoint.model}` : model.endpoint.model,
   };
 }
