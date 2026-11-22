@@ -46,6 +46,17 @@ describe('single', () => {
   });
 });
 
+describe('single model guard', () => {
+  it('throws if the resolved model differs from the requested one', async () => {
+    score.mockResolvedValue({ result: { snapshot_id: 's1', generated_at: '', cells: [] }, model: 'qwen3.6-35b-a3b-fp8', costUsdCents: 0, rejectedCompetencyIds: [] });
+    await expect(runScoreArm('single', case1, model)).rejects.toThrow(/requested m1.*qwen3\.6/);
+  });
+  it('reports the actual model on the result', async () => {
+    score.mockResolvedValue({ result: { snapshot_id: 's1', generated_at: '', cells: [] }, model: 'm1', costUsdCents: 0, rejectedCompetencyIds: [] });
+    expect((await runScoreArm('single', case1, model)).actualModel).toBe('m1');
+  });
+});
+
 describe('agent', () => {
   it('offers exactly search_materials, fetch_material_section, check_quote and submit', async () => {
     runPiTask.mockResolvedValue({ ...piBase, value: { snapshot_id: 's1', generated_at: '', cells: [cell('c1', 1, 0, 1, 'x')] } });

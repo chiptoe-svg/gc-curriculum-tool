@@ -71,6 +71,13 @@ export function scrubPaidKey(env: Record<string, string | undefined>, paid: bool
   delete env.OPENAI_API_KEY;
   return had;
 }
+/** Campus runs must use the requested model, so drop the env pins the provider would prefer. Returns the names removed. */
+export function scrubCampusModelEnv(env: Record<string, string | undefined>, paid: boolean): string[] {
+  if (paid) return [];
+  const removed = ['CAMPUS_LLM_DEFAULT_MODEL', 'CAMPUS_LLM_REASONING'].filter(k => env[k] !== undefined);
+  for (const k of removed) delete env[k];
+  return removed;
+}
 export function assertPaidArgs(paid: boolean, maxCredits: number | null, arms: string[]): void {
   if (!paid) return;
   if (maxCredits === null || !(maxCredits > 0)) throw new Error('--paid requires --max-credits <n> (> 0)');
@@ -131,7 +138,7 @@ export function summarizeArm(cases: SummaryCase[]) {
 type StoredCell = Cell & { grounded: boolean };
 interface CallRec {
   key: Key; ok: boolean; error?: string; calls?: number; tokens?: ArmResult['tokens']; usdUnits?: number;
-  credits?: number | null; ms?: number; retrieved?: Array<{ id: string; text: string }>; uncheckedCells?: number; forcedSubmit?: boolean; toolCalls?: number; cells: StoredCell[];
+  credits?: number | null; ms?: number; retrieved?: Array<{ id: string; text: string }>; uncheckedCells?: number; actualModel?: string; forcedSubmit?: boolean; toolCalls?: number; cells: StoredCell[];
 }
 
 async function main() {
@@ -142,6 +149,8 @@ async function main() {
   assertSafeDb(process.env.DATABASE_URL ?? '');
   if (scrubPaidKey(process.env, paid)) console.log('OpenAI key removed for campus run');
   assertNoPaidKey(process.env, paid);
+  const clearedPins = scrubCampusModelEnv(process.env, paid);
+  if (clearedPins.length) console.log(`campus run: removed ${clearedPins.join(', ')} so the requested model is used`);
   if (!paid) process.env.AI_PROVIDER = 'campus';
 
   const out = arg('--out'); if (!out) throw new Error('--out <dir> required');
@@ -218,7 +227,7 @@ async function main() {
       if (paid) assertCanSpend(spent, maxCredits!, projected.get(pk) ?? 0);
       const r = await withBackoff(() => runScoreArm(k.arm as ArmName, c.scoreCase, model), !paid); // no retries when paid: a retry may re-bill
       const cells = r.cells.map(x => ({ ...x, grounded: findQuote(x.excerpt, [{ id: 'profile', text: c.profileText }]).found }));
-      calls.push({ key: k, ok: true, calls: r.calls, tokens: r.tokens, usdUnits: r.usdUnits, credits: r.credits, ms: r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls, retrieved: r.retrieved, uncheckedCells: r.uncheckedCells, cells });
+      calls.push({ key: k, ok: true, calls: r.calls, tokens: r.tokens, usdUnits: r.usdUnits, credits: r.credits, ms: r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls, retrieved: r.retrieved, uncheckedCells: r.uncheckedCells, actualModel: r.actualModel, cells });
       if (paid) {
         if (r.credits === null) throw new Error(`arm ${k.arm} returned unknown credits in --paid mode; stopping rather than ignore spend`);
         spent += r.credits; projected.set(pk, Math.max(projected.get(pk) ?? 0, r.credits)); checkCreditCeiling(spent, maxCredits);
@@ -251,13 +260,13 @@ async function main() {
   const rows: string[] = [];
   const pairInputs: PairInput[] = [];
   const jsonRows: Array<Record<string, unknown>> = [];
-  const measure = (name: string, key: string, perCourse: (course: string) => Array<{ cells: Cell[]; retrieved: Array<{ id: string; text: string }> }>, extra: { calls: string; tokens: string; credits: string; spc: string; errors: number; unchecked: string }) => {
+  const measure = (name: string, key: string, perCourse: (course: string) => Array<{ cells: Cell[]; retrieved: Array<{ id: string; text: string }> }>, extra: { calls: string; tokens: string; credits: string; spc: string; errors: number; unchecked: string; actual: string }) => {
     const m = summarizeArm(cases.map(c => ({ course: c.course, subs: c.subs.map(x => x.id), profile: c.profileText, runs: perCourse(c.course) })));
     const share = (n: number) => (m.above ? f(n / m.above) : 'n/a');
     jsonRows.push({ label: key, cells: m.cells, breaks: m.breaks, above: m.above, groundedProfile: m.groundedProfile, groundedRetrieved: m.groundedRetrieved, stability: Number.isNaN(m.stability) ? null : m.stability });
-    rows.push(`| ${name} | ${m.cells} | ${m.breaks} | ${share(m.groundedProfile)} | ${share(m.groundedRetrieved)} | ${f(m.stability)} | ${extra.calls} | ${extra.tokens} | ${extra.credits} | ${extra.spc} | ${extra.errors} | ${extra.unchecked} |`);
+    rows.push(`| ${name} | ${m.cells} | ${m.breaks} | ${share(m.groundedProfile)} | ${share(m.groundedRetrieved)} | ${f(m.stability)} | ${extra.calls} | ${extra.tokens} | ${extra.credits} | ${extra.spc} | ${extra.errors} | ${extra.unchecked} | ${extra.actual} |`);
   };
-  measure('baseline (stored Sol, post-2026-10-19)', 'baseline', c => [{ cells: byCourse.get(c)!.baseline, retrieved: [] }], { unchecked: '-', calls: '-', tokens: '-', credits: '-', spc: '-', errors: 0 });
+  measure('baseline (stored Sol, post-2026-10-19)', 'baseline', c => [{ cells: byCourse.get(c)!.baseline, retrieved: [] }], { unchecked: '-', actual: '-', calls: '-', tokens: '-', credits: '-', spc: '-', errors: 0 });
   const candidates = new Map<string, Array<{ course: string; sub: string; cell: Cell }>>();
   for (const m of models) for (const arm of arms) {
     const label = `${m.id}:${m.level ?? ''}`;
@@ -266,6 +275,11 @@ async function main() {
     const tok = ok.reduce((s, c) => s + (c.tokens ? c.tokens.freshInput + c.tokens.cachedInput + c.tokens.output : 0), 0);
     const cr = ok.map(c => c.credits);
     measure(`${arm} / ${label}`, `${arm} / ${label}`, course => ok.filter(c => c.key.course === course).map(c => ({ cells: c.cells, retrieved: c.retrieved ?? [] })), {
+      actual: (() => {
+        const used = [...new Set(ok.map(c => c.actualModel ?? '?'))];
+        const expected = arm === 'checker' ? `${m.id}+${m.id}` : m.id;
+        return used.length && used.every(u => u === expected) ? used.join(',') : `MISMATCH: ${used.join(',') || 'none'} (requested ${m.id})`;
+      })(),
       unchecked: arm === 'checker' ? String(ok.reduce((s, c) => s + (c.uncheckedCells ?? 0), 0)) : '-',
       calls: String(ok.reduce((s, c) => s + (c.calls ?? 0), 0)), tokens: String(tok),
       credits: cr.some(x => x === null) ? 'unknown (single arm has no token telemetry)' : f(cr.reduce((s: number, x) => s + (x ?? 0), 0), 3),
@@ -293,8 +307,8 @@ async function main() {
   writeFileSync(join(out, 'summary.md'), [
     `# Scoring benchmark summary`, '',
     `Courses: ${courses.join(', ')}; runs: ${runs}; mode: ${paid ? `paid (ceiling ${maxCredits} credits, spent ${spent.toFixed(3)})` : 'campus (free)'}.`, '',
-    '| arm / model | cells | evidence breaks | grounded in profile | grounded in retrieved files | stability | calls | tokens | credits | s/course | errors | unchecked (checker) |',
-    '|---|---|---|---|---|---|---|---|---|---|---|---|', ...rows, '',
+    '| arm / model | cells | evidence breaks | grounded in profile | grounded in retrieved files | stability | calls | tokens | credits | s/course | errors | unchecked (checker) | actual model |',
+    '|---|---|---|---|---|---|---|---|---|---|---|---|---|', ...rows, '',
     '## Notes',
     '- Source rule: evidence breaks and grounding use, per arm result, the profile text PLUS every chunk/section that arm itself retrieved for that course (baseline and single: profile only). Grounding is split: found in the profile, else found in a retrieved file; shares are of above-floor cells. Each stored cell in calls.json has `grounded` (found in the profile alone).',
     '- Evidence breaks counts cells with at least one dimension above its floor and no grounded quote.',

@@ -23,6 +23,8 @@ export interface Cell { sub: string; k: number | null; u: number | null; d: numb
 export interface ArmResult {
   cells: Cell[]; calls: number; tokens: TokenCounts; usdUnits: number; credits: number | null; ms: number;
   forcedSubmit?: boolean; toolCalls?: number;
+  /** The model the call actually ran on (single: reported by the provider; asserted equal to the request). */
+  actualModel: string;
   /** Chunks/sections this arm itself retrieved ([] for single). */
   retrieved: Array<{ id: string; text: string }>;
   /** Checker only: cells with a missing verdict for a scored dim (floored). 0 otherwise. */
@@ -47,8 +49,9 @@ async function single(c: ScoreCase, model: ArmModel): Promise<ArmResult> {
     snapshotId: c.snapshotId, courseCode: c.course, snapshotProfile: c.profile as never,
     competencies: c.competencies, modelOverride: model.id, reasoningEffortOverride: model.level,
   });
+  if (r.model !== model.id) throw new Error(`single arm ran the wrong model: requested ${model.id}, provider used ${r.model}`);
   // The single call reports no token counts, only paid cost (0 on campus).
-  return { cells: r.result.cells.map(toCell), calls: 1, tokens: { ...ZERO }, usdUnits: r.costUsdCents, credits: null, ms: Date.now() - t0, retrieved: [], uncheckedCells: 0 };
+  return { cells: r.result.cells.map(toCell), calls: 1, tokens: { ...ZERO }, usdUnits: r.costUsdCents, credits: null, ms: Date.now() - t0, retrieved: [], uncheckedCells: 0, actualModel: r.model };
 }
 
 const profileText = (p: unknown) => JSON.stringify(p, null, 1);
@@ -115,7 +118,7 @@ async function agent(c: ScoreCase, model: ArmModel): Promise<ArmResult> {
     // Same rule the single path enforces: foundational competencies are D-only.
     return known.get(x.competency_id)!.foundational ? { ...cell, k: null, u: null } : cell;
   });
-  return { cells, calls: 1, tokens: r.tokens, usdUnits: r.usdUnits, credits: r.credits, ms: r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls.length, retrieved: [...seen], uncheckedCells: 0 };
+  return { cells, calls: 1, tokens: r.tokens, usdUnits: r.usdUnits, credits: r.credits, ms: r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls.length, retrieved: [...seen], uncheckedCells: 0, actualModel: model.endpoint.model };
 }
 
 // Adapted from scripts/bench/judge-factcheck.ts.
@@ -187,7 +190,7 @@ async function checker(c: ScoreCase, model: ArmModel): Promise<ArmResult> {
     cells, calls: 2, tokens: addTokens(base.tokens, r.tokens), usdUnits: base.usdUnits + r.usdUnits,
     // The single call's credits are unknown (no token telemetry), so this is the checker call's alone.
     credits: r.credits, ms: base.ms + r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls.length,
-    retrieved: [...seen], uncheckedCells,
+    retrieved: [...seen], uncheckedCells, actualModel: `${base.actualModel}+${model.endpoint.model}`,
   };
 }
 

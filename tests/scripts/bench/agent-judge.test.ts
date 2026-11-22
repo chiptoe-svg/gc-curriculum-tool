@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assertCanSpend, parseArms, parseModels, withBackoff, assertSafeDb, checkCreditCeiling, pendingKeys, assertNoPaidKey, scrubPaidKey, assertPaidArgs, makeBlindPairs, keyId } from '@/scripts/bench/agent-judge';
+import { scrubCampusModelEnv, assertCanSpend, parseArms, parseModels, withBackoff, assertSafeDb, checkCreditCeiling, pendingKeys, assertNoPaidKey, scrubPaidKey, assertPaidArgs, makeBlindPairs, keyId } from '@/scripts/bench/agent-judge';
 
 describe('assertSafeDb', () => {
   it('rejects live and accepts bench/scratch', () => {
@@ -111,5 +111,17 @@ describe('withBackoff', () => {
     let n = 0;
     await expect(withBackoff(async () => { n++; throw new Error('ECONNRESET'); }, false)).rejects.toThrow();
     expect(n).toBe(1);
+  });
+});
+
+describe('scrubCampusModelEnv', () => {
+  it('campus mode clears the pinned model and reasoning before imports', () => {
+    const env: Record<string, string | undefined> = { CAMPUS_LLM_DEFAULT_MODEL: 'qwen3.6', CAMPUS_LLM_REASONING: 'low', OTHER: 'x' };
+    expect(scrubCampusModelEnv(env, false)).toEqual(['CAMPUS_LLM_DEFAULT_MODEL', 'CAMPUS_LLM_REASONING']);
+    expect(env.CAMPUS_LLM_DEFAULT_MODEL).toBeUndefined(); expect(env.CAMPUS_LLM_REASONING).toBeUndefined(); expect(env.OTHER).toBe('x');
+  });
+  it('leaves paid mode alone', () => {
+    const env: Record<string, string | undefined> = { CAMPUS_LLM_DEFAULT_MODEL: 'q' };
+    expect(scrubCampusModelEnv(env, true)).toEqual([]); expect(env.CAMPUS_LLM_DEFAULT_MODEL).toBe('q');
   });
 });
