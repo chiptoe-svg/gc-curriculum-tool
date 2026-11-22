@@ -68,6 +68,14 @@ describe('runPiTask', () => {
     expect(r.value).toEqual({ score: 1 });
   });
 
+  it('stops a submit that keeps failing its schema (it never reaches the tool-call count)', async () => {
+    const bad = (id: string) => () => call('submit', { score: 'x' }, id);
+    script = [bad('a'), bad('b'), bad('c'), bad('d'), bad('e'), bad('f'), bad('g')];
+    await expect(runPiTask<{ score: number }>(input({ maxToolCalls: 2 }))).rejects.toThrow(/no submit after \d+ request/);
+    expect(bodies.length).toBeLessThanOrEqual(6);
+    expect(bodies[bodies.length - 1]!.tool_choice).toEqual({ type: 'function', function: { name: 'submit' } });
+  });
+
   it('counts tokens from every assistant message into TokenCounts exactly as turn.ts now feeds costUsdCents', async () => {
     script = [() => call('lookup', { q: 'a' }), () => call('submit', { score: 3 })];
     const r = await runPiTask(input({ endpoint: { baseUrl: 'http://gateway.test/v1', apiKey: 'k', model: 'claude-sonnet-4-6', api: 'openai-completions', reasoning: undefined } }));

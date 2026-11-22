@@ -114,7 +114,8 @@ export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>>
     toolExecution: 'sequential',
     streamFn: (m, ctx, opts) => {
       requests++;
-      if (toolCalls.length >= maxToolCalls) forceSubmit = true;
+      // Requests also bound the loop: calls that fail validation (or a submit that fails its schema) never reach toolCalls.
+      if (toolCalls.length >= maxToolCalls || requests > maxToolCalls + 2) forceSubmit = true;
       lastRequestForced = forceSubmit;
       const samplingParams = {
         ...(opts?.samplingParams ?? {}),
