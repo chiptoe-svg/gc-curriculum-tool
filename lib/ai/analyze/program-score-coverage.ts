@@ -31,7 +31,7 @@ const coverageResultSchema = z.object({
 export type ProgramCoverageResult = z.infer<typeof coverageResultSchema>;
 export type CompetencyCoverageCell = z.infer<typeof coverageCellSchema>;
 
-const coverageJsonSchema = {
+export const coverageJsonSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['snapshot_id', 'generated_at', 'cells'],
