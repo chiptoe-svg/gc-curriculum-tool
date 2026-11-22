@@ -17,12 +17,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { CampusProvider, type CampusReasoning } from '@/lib/ai/campus';
 import { OpenAIProvider } from '@/lib/ai/openai';
 import { loadPrompt } from '@/lib/ai/prompts/load';
+import { costUsdCents } from '@/lib/ai/prices';
 
 const PAID = process.env.PROVIDER === 'openai';
 const MAX_USD = Number(process.env.MAX_USD ?? 0);
 if (PAID ? !(MAX_USD > 0) : !!process.env.OPENAI_API_KEY) throw new Error(PAID ? 'A paid run needs MAX_USD (a hard spend ceiling)' : 'Unset OPENAI_API_KEY: a campus run must not reach a paid model');
-// gpt-5.4-mini list price per million tokens (lib/ai/models.ts); cached input is charged at full price here, so spend is overestimated.
-const PRICE = { input: 0.75, output: 4.5 };
 if (process.env.DATABASE_URL) throw new Error('Unset DATABASE_URL: this benchmark reads only its input file');
 const MODEL = process.env.MODEL!, REASONING = (process.env.REASONING ?? 'off') as CampusReasoning;
 if (!MODEL) throw new Error('Set MODEL');
@@ -55,7 +54,8 @@ async function main() {
           validate: raw => { const t = (raw as { tier?: unknown }).tier; if (t !== 'high' && t !== 'middle' && t !== 'background') throw new Error(`bad tier ${String(t)}`); return { tier: t }; },
         });
         const t = res as { cachedTokens?: number; uncachedPromptTokens?: number; completionTokens?: number };
-        spentUsd += (((t.cachedTokens ?? 0) + (t.uncachedPromptTokens ?? 0)) * PRICE.input + (t.completionTokens ?? 0) * PRICE.output) / 1e6;
+        // Priced from lib/ai/prices.ts for the model being run (cached input now at its cached rate).
+        spentUsd += costUsdCents(MODEL, { freshInput: t.uncachedPromptTokens ?? 0, cachedInput: t.cachedTokens ?? 0, output: t.completionTokens ?? 0 }) / 10_000;
         out[f.id] = { tier: res.data.tier, ms: Date.now() - t0 };
         process.stdout.write('.');
       } catch (e) {

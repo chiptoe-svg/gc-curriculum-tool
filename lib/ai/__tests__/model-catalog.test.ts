@@ -14,7 +14,9 @@ describe('model catalog', () => {
     const byId = Object.fromEntries(VETTED_MODELS.map(m => [m.id, m])) as Record<string, (typeof VETTED_MODELS)[number]>;
     expect(byId['gpt-6.1-terra']!.price).toBe('$1.00 / $5.00 per M tokens');
     expect(byId['glm-5.3']!.price).toBe('free');
-    expect(byId['gpt-6.2-sol']!.price).toBe('price not on file');
+    // 6.2 prices came with the Clemson reference (2026-11-21), via lib/ai/prices.ts.
+    expect(byId['gpt-6.2-sol']!.price).toBe('$2.00 / $10.00 per M tokens');
+    expect(byId['gpt-6.2-astra']!.price).toBe('$8.00 / $40.00 per M tokens');
     expect(byId['gpt-6.2-sol']!.note).toBe('not tested here');
     const text = pickerGroups([], false, null)[1]!.models[0]!.text;
     expect(text).toContain('free');

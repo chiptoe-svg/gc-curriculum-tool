@@ -4,7 +4,7 @@
  * - ROLE_SETTINGS: which model and effort each role (judge / converse / write / extract) runs.
  *   Per-function roles and custom models live in `ai_function_settings`
  *   (lib/ai/function-settings.ts, edited on /settings).
- * - MODEL_PRICING: per-model prices for the daily-cost ledger.
+ * - Prices live in lib/ai/prices.ts (one dated price list).
  * - DEFAULT_REASONING_EFFORT: effort a model runs at when the caller sets none.
  * - usesResponsesApi: which models take tool calls through the Responses API.
  *
@@ -70,33 +70,6 @@ export const ROLE_SETTINGS: Record<ModelRole, RoleSetting> = {
   write: { provider: 'openai', model: 'gpt-6.1-sol', effort: 'low', label: 'Write', purpose: 'Prose or proposals a person reads or approves' },
   extract: { provider: 'openai', model: 'gpt-5.4-mini', effort: undefined, label: 'Extract', purpose: 'Bounded extraction, classification or summary, often in bulk' },
 };
-
-// Per-model pricing in USD per 1M tokens. Update from
-// https://developers.openai.com/api/docs/pricing when adding models.
-export const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-  // GPT-6 / 5.6 families, published standard rates as of 2026-10-05 (gateway
-  // markup, if any, unverified). Without these, unpriced models fell back to
-  // gpt-5.4 rates and the daily-cost ledger under-counted (Astra ~4×).
-  'gpt-6-astra': { input: 10.0, output: 50.0 },
-  'gpt-6.1-sol': { input: 2.0, output: 10.0 },
-  // Released 2026-10-26; standard rate as reported by third-party trackers
-  // quoting OpenAI's launch post (2026-10-27).
-  'gpt-6.1-terra': { input: 1.0, output: 5.0 },
-  'gpt-6-sol': { input: 2.0, output: 10.0 },
-  'gpt-6-luna': { input: 0.1, output: 0.5 },
-  'gpt-5.6-sol': { input: 4.0, output: 20.0 },
-  'gpt-5.6-terra': { input: 2.0, output: 12.0 },
-  'gpt-5.6-luna': { input: 0.2, output: 1.2 },
-  'gpt-5.5': { input: 5.0, output: 30.0 },
-  'gpt-5.4': { input: 2.5, output: 15.0 },
-  'gpt-5.4-mini': { input: 0.75, output: 4.5 },
-  'gpt-5.4-nano': { input: 0.2, output: 1.25 },
-  // Legacy fallbacks if these names still resolve on the API:
-  'gpt-4.1': { input: 2.5, output: 10.0 },
-  'gpt-4o': { input: 2.5, output: 10.0 },
-};
-
-export const FALLBACK_PRICING = { input: 2.5, output: 15.0 };  // assume workhorse
 
 /**
  * Reasoning effort a model runs at when the caller sets none. Owner decision

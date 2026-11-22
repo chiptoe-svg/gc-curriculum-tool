@@ -28,7 +28,8 @@ import { AuditResponseJsonSchema, AuditResponseSchema, type AuditResponse } from
 import { renderToolDescription, type Message, type StreamEvent, type ToolCall, type ToolDefinition } from '@/lib/ai/tool-use-types';
 import type { CompletionTelemetry } from '@/lib/ai/provider';
 import { campusReasoningParams, type CampusReasoning } from '@/lib/ai/campus';
-import { FALLBACK_PRICING, MODEL_PRICING, isCampusModel } from '@/lib/ai/models';
+import { isCampusModel } from '@/lib/ai/models';
+import { costUsdCents as priceUsdCents } from '@/lib/ai/prices';
 import {
   MATERIAL_TOOLS, MAX_CITATION_RETRIES, checkCitations, chunkIdsInToolResult, citableFromHistory,
   citationFollowUp, keepValidCitations, needsMaterialSearch, previousQuestion, repairCitations,
@@ -100,7 +101,6 @@ export function submitTurnSchema(): Record<string, unknown> {
 }
 
 const ZERO_USAGE = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } };
-const toCents = (usd: number) => Math.ceil(usd * 100 * 100); // 1/100 of a cent, as OpenAIProvider
 
 export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
   const started = Date.now();
@@ -276,8 +276,8 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
     // Cache writes are new input: counted once, inside uncached.
     uncached += u.input + u.cacheWrite; cached += u.cacheRead; out += u.output; writes += u.cacheWrite;
   }
-  const pricing = isCampusModel(ep.model) ? { input: 0, output: 0 } : MODEL_PRICING[ep.model] ?? FALLBACK_PRICING;
-  const costUsdCents = toCents((uncached / 1e6) * pricing.input) + toCents((cached / 1e6) * pricing.input * 0.1) + toCents((out / 1e6) * pricing.output);
+  // uncached already includes the cache writes (counted once), so no separate cacheWrite term.
+  const costUsdCents = priceUsdCents(ep.model, { freshInput: uncached, cachedInput: cached, output: out });
   return {
     value: final,
     toolCallsUsed,

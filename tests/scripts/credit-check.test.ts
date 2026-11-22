@@ -87,7 +87,7 @@ describe('probe model', () => {
   // monitor blind from 2026-10-23; the probe must name a model we price.
   it('is a current model from the registry', async () => {
     const { DEFAULT_PROBE_MODEL } = await import('../../scripts/ai/credit-check-lib.mjs');
-    const { MODEL_PRICING } = await import('@/lib/ai/models');
-    expect(MODEL_PRICING[DEFAULT_PROBE_MODEL]).toBeDefined();
+    const { hasPrice } = await import('@/lib/ai/prices');
+    expect(hasPrice(DEFAULT_PROBE_MODEL)).toBe(true);
   });
 });

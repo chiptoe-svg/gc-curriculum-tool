@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { openAIBaseURL } from './openai-base-url';
-import { MODEL_PRICING, FALLBACK_PRICING, DEFAULT_REASONING_EFFORT, usesResponsesApi } from './models';
+import { DEFAULT_REASONING_EFFORT, usesResponsesApi } from './models';
+import { costUsdCents as priceUsdCents } from './prices';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
@@ -12,15 +13,10 @@ import { renderToolDescription } from './tool-use-types';
 import { AiCreditsExhaustedError, isCreditsExhaustedError, markCreditsExhausted, markCreditsOk } from './credit-status';
 import { requireToolFirstStep } from './require-tool-first';
 
-function toCents(usd: number): number {
-  return Math.ceil(usd * 100 * 100); // 1/100 of a cent
-}
-
 /** Pre-call cost estimate (dry runs, --max-cost guards). Same table and
  * rounding as complete(); no prefix-cache discount, so it errs high. */
 export function estimateCostCents(model: string, promptTokens: number, completionTokens: number): number {
-  const pricing = MODEL_PRICING[model] ?? FALLBACK_PRICING;
-  return toCents((promptTokens / 1_000_000) * pricing.input) + toCents((completionTokens / 1_000_000) * pricing.output);
+  return priceUsdCents(model, { freshInput: promptTokens, cachedInput: 0, output: completionTokens });
 }
 
 /**
@@ -176,11 +172,8 @@ export class OpenAIProvider implements AIProvider {
       (response.usage as { prompt_tokens_details?: { cached_tokens?: number } } | undefined)
         ?.prompt_tokens_details?.cached_tokens ?? 0;
     const uncachedPromptTokens = Math.max(0, promptTokens - cachedTokens);
-    const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
-    const costUsdCents =
-      toCents((uncachedPromptTokens / 1_000_000) * pricing.input) +
-      toCents((cachedTokens / 1_000_000) * pricing.input * 0.1) +
-      toCents((completionTokens / 1_000_000) * pricing.output);
+    // Prompt tokens include the cached ones (subtracted above), so fresh = prompt - cached.
+    const costUsdCents = priceUsdCents(this.model, { freshInput: uncachedPromptTokens, cachedInput: cachedTokens, output: completionTokens });
 
     return { data, costUsdCents, durationMs, cachedTokens, uncachedPromptTokens, completionTokens };
   }
@@ -221,11 +214,8 @@ export class OpenAIProvider implements AIProvider {
       (response.usage as { prompt_tokens_details?: { cached_tokens?: number } } | undefined)
         ?.prompt_tokens_details?.cached_tokens ?? 0;
     const uncachedPromptTokens = Math.max(0, promptTokens - cachedTokens);
-    const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
-    const costUsdCents =
-      toCents((uncachedPromptTokens / 1_000_000) * pricing.input) +
-      toCents((cachedTokens / 1_000_000) * pricing.input * 0.1) +
-      toCents((completionTokens / 1_000_000) * pricing.output);
+    // Prompt tokens include the cached ones (subtracted above), so fresh = prompt - cached.
+    const costUsdCents = priceUsdCents(this.model, { freshInput: uncachedPromptTokens, cachedInput: cachedTokens, output: completionTokens });
 
     const estimatedPages = Math.ceil(fileBytes.length / 75_000);
     const truncated = estimatedPages > maxPages;
@@ -341,11 +331,8 @@ export class OpenAIProvider implements AIProvider {
     // tool path previously reported 0, so any tool-using OpenAI call (e.g. the
     // partner position interview via position-capture/run.ts) recorded no spend
     // and under-counted the daily cap. Compute it for real.
-    const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
-    const costUsdCents =
-      toCents((uncachedPromptTokens / 1_000_000) * pricing.input) +
-      toCents((cachedTokens / 1_000_000) * pricing.input * 0.1) +
-      toCents((outputTokens / 1_000_000) * pricing.output);
+    // Prompt tokens include the cached ones (subtracted above), so fresh = prompt - cached.
+    const costUsdCents = priceUsdCents(this.model, { freshInput: uncachedPromptTokens, cachedInput: cachedTokens, output: outputTokens });
 
     return {
       kind: 'response',
@@ -472,11 +459,8 @@ export class OpenAIProvider implements AIProvider {
       const outputTokens = totalUsage?.outputTokens ?? 0;
       const cachedTokens = totalUsage?.inputTokenDetails?.cacheReadTokens ?? 0;
       const uncachedPromptTokens = Math.max(0, inputTokens - cachedTokens);
-      const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
-      const costUsdCents =
-        toCents((uncachedPromptTokens / 1_000_000) * pricing.input) +
-        toCents((cachedTokens / 1_000_000) * pricing.input * 0.1) +
-        toCents((outputTokens / 1_000_000) * pricing.output);
+      // Prompt tokens include the cached ones (subtracted above), so fresh = prompt - cached.
+      const costUsdCents = priceUsdCents(this.model, { freshInput: uncachedPromptTokens, cachedInput: cachedTokens, output: outputTokens });
 
       yield {
         kind: 'final',

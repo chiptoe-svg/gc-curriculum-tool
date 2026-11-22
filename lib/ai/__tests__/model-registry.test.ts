@@ -7,7 +7,8 @@ import { AI_FUNCTION_IDS, DEFAULT_ROLES } from '@/lib/ai/function-settings';
 const ROOT = join(__dirname, '../../..');
 const REGISTRY = 'lib/ai/models.ts';
 // Historical measurements keyed by the model that was measured; not a model choice.
-const ALLOWED = new Set([REGISTRY, 'lib/program/reliability-summary.ts']);
+// lib/ai/prices.ts keys its dated price entries by model id (a price list, not a model choice).
+const ALLOWED = new Set([REGISTRY, 'lib/ai/prices.ts', 'lib/program/reliability-summary.ts']);
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap(name => {

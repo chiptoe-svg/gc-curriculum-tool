@@ -4,6 +4,7 @@ import * as childProcess from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { whisperCostUnits } from './prices';
 
 /**
  * Audio transcription.
@@ -27,7 +28,7 @@ import path from 'node:path';
  *
  *   3. **OpenAI Whisper API** (`whisper-1`). Last resort: only when
  *      env `WHISPER_BACKEND=openai` is set OR when the CLI binary is
- *      missing (e.g., dev machine without mlx-whisper). Costs ~$0.006/min.
+ *      missing (e.g., dev machine without mlx-whisper). Priced in lib/ai/prices.ts.
  *
  * Accepts the raw audio bytes plus the MIME type the browser reported.
  * All backends accept mp3, mp4, m4a, wav, webm, ogg. The browser
@@ -72,13 +73,13 @@ export interface TranscribeResult {
 }
 
 /**
- * Estimate paid Whisper cost from audio byte size. OpenAI Whisper is ~$0.006/min
- * and ~1 MB of opus voice ≈ 1 min. Returned in 1/100-of-a-cent units to match
- * recordSpend ($0.006/min = 0.6 cents/min = 60 units/min).
+ * Estimate paid Whisper cost from audio byte size: ~1 MB of opus voice ≈ 1 min,
+ * priced per minute in lib/ai/prices.ts. Returned in 1/100-of-a-cent units to
+ * match recordSpend.
  */
 export function estimateWhisperCostCents(bytes: number): number {
   const minutes = bytes / (1024 * 1024);
-  return Math.ceil(minutes * 60);
+  return whisperCostUnits(minutes);
 }
 
 function fileNameForMime(mime: string): string {

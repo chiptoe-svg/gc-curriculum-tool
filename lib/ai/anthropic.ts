@@ -8,18 +8,7 @@ import { generateText, tool as aiTool, Output, stepCountIs, jsonSchema as aiJson
 import { anthropic as aiAnthropic } from '@ai-sdk/anthropic';
 import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall, StreamEvent } from './tool-use-types';
 import { renderToolDescription } from './tool-use-types';
-
-// USD per 1M tokens. Update from https://docs.anthropic.com/en/docs/about-claude/models
-const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-  'claude-opus-4-7':           { input: 15.0, output: 75.0 },
-  'claude-sonnet-4-6':         { input:  3.0, output: 15.0 },
-  'claude-haiku-4-5-20251001': { input:  0.80, output: 4.0 },
-};
-const FALLBACK_PRICING = { input: 3.0, output: 15.0 };
-
-function toCents(usd: number): number {
-  return Math.ceil(usd * 100 * 100);
-}
+import { costUsdCents as priceUsdCents } from './prices';
 
 export class AnthropicProvider implements AIProvider {
   readonly name = 'anthropic';
@@ -85,12 +74,9 @@ export class AnthropicProvider implements AIProvider {
       ?.cache_creation_input_tokens ?? 0;
     const uncachedInputTokens = Math.max(0, inputTokens - cacheReadTokens - cacheWriteTokens);
 
-    const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
-    const costUsdCents =
-      toCents((uncachedInputTokens / 1_000_000) * pricing.input) +
-      toCents((cacheWriteTokens / 1_000_000) * pricing.input * 1.25) +
-      toCents((cacheReadTokens / 1_000_000) * pricing.input * 0.1) +
-      toCents((outputTokens / 1_000_000) * pricing.output);
+    const costUsdCents = priceUsdCents(this.model, {
+      freshInput: uncachedInputTokens, cachedInput: cacheReadTokens, output: outputTokens, cacheWrite: cacheWriteTokens,
+    });
 
     return {
       data,
@@ -134,10 +120,7 @@ export class AnthropicProvider implements AIProvider {
 
     const inputTokens = response.usage?.input_tokens ?? 0;
     const outputTokens = response.usage?.output_tokens ?? 0;
-    const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
-    const costUsdCents =
-      toCents((inputTokens / 1_000_000) * pricing.input) +
-      toCents((outputTokens / 1_000_000) * pricing.output);
+    const costUsdCents = priceUsdCents(this.model, { freshInput: inputTokens, cachedInput: 0, output: outputTokens });
 
     return { text, costUsdCents, truncated: false };
   }

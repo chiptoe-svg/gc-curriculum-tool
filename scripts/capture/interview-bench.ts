@@ -39,6 +39,7 @@ import path from 'node:path';
 import { and, asc, eq, inArray, like, lt, sql } from 'drizzle-orm';
 import type { AuditResponse } from '@/lib/ai/agent/audit-response-schema';
 import { loadAppEnv, isMainModule } from '@/scripts/catalog/catalog-source';
+import { costCredits, hasCreditRate } from '@/lib/ai/prices';
 // App modules are imported inside main(), AFTER loadAppEnv(): @ai-sdk/openai's
 // default provider reads OPENAI_BASE_URL when it is first imported, so a static
 // import sent every call to api.openai.com instead of the campus gateway.
@@ -55,22 +56,16 @@ export interface BenchCase {
 
 export interface BenchConfig { model?: string; effort?: string; label: string }
 
-/** RCD credits per million tokens, measured 2026-10-28 (docs/STATE.md, "RCD credit
- *  rates"): new input (including what the gateway reports as cache writes, with no
- *  premium), cache reads, output (output and Terra estimated as list × 1.25). */
-const CREDIT_RATES: Record<string, { input: number; cachedRead: number; output: number }> = {
-  'gpt-6.1-sol': { input: 2.5, cachedRead: 0.08, output: 12.5 },
-  'gpt-6.1-terra': { input: 1.25, cachedRead: 0.04, output: 6.25 },
-};
-
+/** RCD credits for a run's token counts; rates live in lib/ai/prices.ts (measured 2026-10-28, STATE.md
+ *  "RCD credit rates"). Throws when no rate is known for the model. */
 export function estimateCredits(
   model: string,
   t: { uncachedPromptTokens: number; cachedTokens: number; completionTokens: number; cacheWriteTokens?: number },
 ): number {
-  const r = CREDIT_RATES[model];
-  if (!r) throw new Error(`no credit rate for ${model}: add a measured rate before spending credits on it`);
   // uncachedPromptTokens already includes cache writes (cacheWriteTokens is a breakdown).
-  return (t.uncachedPromptTokens * r.input + t.cachedTokens * r.cachedRead + t.completionTokens * r.output) / 1_000_000;
+  const credits = costCredits(model, { freshInput: t.uncachedPromptTokens, cachedInput: t.cachedTokens, output: t.completionTokens });
+  if (credits === null) throw new Error(`no credit rate for ${model}: add a measured rate before spending credits on it`);
+  return credits;
 }
 
 /** Owner rule (2026-11-08): a paid run names its models and carries a hard
@@ -80,7 +75,7 @@ export function spendGuardError(o: { paid: boolean; models: Array<string | undef
   if (o.maxCredits === undefined || !(o.maxCredits > 0)) return 'a paid run needs --max-credits <n> (RCD credits); it stops itself at that ceiling';
   for (const m of o.models) {
     if (!m) return 'a paid run must name each model with --configs model:effort';
-    if (!CREDIT_RATES[m]) return `no credit rate for ${m}: add a measured rate before spending credits on it`;
+    if (!hasCreditRate(m)) return `no credit rate for ${m}: add a measured rate before spending credits on it`;
   }
   return null;
 }

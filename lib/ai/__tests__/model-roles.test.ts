@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { MODEL_PRICING, MODEL_ROLES, ROLE_SETTINGS } from '@/lib/ai/models';
+import { MODEL_ROLES, ROLE_SETTINGS } from '@/lib/ai/models';
+import { hasPrice } from '@/lib/ai/prices';
 
 describe('model roles', () => {
   it('Judge and Write run gpt-6.1-sol at low effort', () => {
@@ -22,6 +23,6 @@ describe('model roles', () => {
 
   it('every role names a priced model, in a fixed order', () => {
     expect(MODEL_ROLES).toEqual(['judge', 'converse', 'write', 'extract']);
-    for (const role of MODEL_ROLES) expect(MODEL_PRICING[ROLE_SETTINGS[role].model]).toBeDefined();
+    for (const role of MODEL_ROLES) expect(hasPrice(ROLE_SETTINGS[role].model)).toBe(true);
   });
 });

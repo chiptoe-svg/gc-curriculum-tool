@@ -3,7 +3,8 @@
  * newest OpenAI models marked untested. The gateway lists ~100 more (gpt-4o, gpt-4.1, o3, …); those stay
  * behind a "show everything" switch because nobody has tried them on our prompts.
  */
-import { CAMPUS_MODELS, MODEL_PRICING, VETTED_OPENAI_MODELS } from '@/lib/ai/models';
+import { CAMPUS_MODELS, VETTED_OPENAI_MODELS } from '@/lib/ai/models';
+import { hasPrice, priceFor } from '@/lib/ai/prices';
 
 export interface CatalogModel {
   id: string;
@@ -13,8 +14,9 @@ export interface CatalogModel {
 }
 
 function priceOf(id: string): string {
-  const p = MODEL_PRICING[id];
-  return p ? `$${p.input.toFixed(2)} / $${p.output.toFixed(2)} per M tokens` : 'price not on file';
+  if (!hasPrice(id)) return 'price not on file';
+  const p = priceFor(id);
+  return `$${p.input.toFixed(2)} / $${p.output.toFixed(2)} per M tokens`;
 }
 
 export const VETTED_MODELS: CatalogModel[] = [
