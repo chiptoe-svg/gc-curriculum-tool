@@ -14,6 +14,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { depthBand } from '@/lib/program/depth-band';
 import { evidenceBreaks, findQuote, stability } from './lib/evidence';
+import { makePairs, type PairInput } from './lib/blind';
 import type { ArmName, ArmResult, Cell } from './lib/score-arms';
 
 export interface Key { model: string; arm: string; course: string; run: number }
@@ -77,32 +78,7 @@ export function assertPaidArgs(paid: boolean, maxCredits: number | null, arms: s
   if (bad.length) throw new Error(`--paid cannot run ${bad.join(', ')}: the single call has no token telemetry, so its credits are unknown (ledger note: add telemetry first)`);
 }
 
-export function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-export interface PairInput { course: string; sub: string; name?: string; baseline: Cell; candidates: Array<{ label: string; cell: Cell }> }
-export interface BlindPair { id: string; course: string; competency: string; A: Cell; B: Cell }
-export function makeBlindPairs(inputs: PairInput[], seed: number): { pairs: BlindPair[]; key: Record<string, { A: string; B: string }>; seed: number } {
-  const rnd = mulberry32(seed);
-  const pairs: BlindPair[] = [];
-  const key: Record<string, { A: string; B: string }> = {};
-  let n = 0;
-  for (const p of inputs) for (const c of p.candidates) {
-    const id = `pair-${String(++n).padStart(4, '0')}`;
-    const flip = rnd() < 0.5;
-    pairs.push({ id, course: p.course, competency: p.name ?? p.sub, A: flip ? c.cell : p.baseline, B: flip ? p.baseline : c.cell });
-    key[id] = flip ? { A: c.label, B: 'baseline' } : { A: 'baseline', B: c.label };
-  }
-  return { pairs, key, seed };
-}
+export { makePairs as makeBlindPairs } from './lib/blind';
 
 const band = (v: number | null) => depthBand(v)?.key ?? 'none';
 const tripleKey = (c: Cell) => `${band(c.k)}/${band(c.u)}/${band(c.d)}`;
@@ -274,12 +250,14 @@ async function main() {
   const f = (x: number, d = 2) => (Number.isNaN(x) ? 'n/a' : x.toFixed(d));
   const rows: string[] = [];
   const pairInputs: PairInput[] = [];
-  const measure = (name: string, perCourse: (course: string) => Array<{ cells: Cell[]; retrieved: Array<{ id: string; text: string }> }>, extra: { calls: string; tokens: string; credits: string; spc: string; errors: number; unchecked: string }) => {
+  const jsonRows: Array<Record<string, unknown>> = [];
+  const measure = (name: string, key: string, perCourse: (course: string) => Array<{ cells: Cell[]; retrieved: Array<{ id: string; text: string }> }>, extra: { calls: string; tokens: string; credits: string; spc: string; errors: number; unchecked: string }) => {
     const m = summarizeArm(cases.map(c => ({ course: c.course, subs: c.subs.map(x => x.id), profile: c.profileText, runs: perCourse(c.course) })));
     const share = (n: number) => (m.above ? f(n / m.above) : 'n/a');
+    jsonRows.push({ label: key, cells: m.cells, breaks: m.breaks, above: m.above, groundedProfile: m.groundedProfile, groundedRetrieved: m.groundedRetrieved, stability: Number.isNaN(m.stability) ? null : m.stability });
     rows.push(`| ${name} | ${m.cells} | ${m.breaks} | ${share(m.groundedProfile)} | ${share(m.groundedRetrieved)} | ${f(m.stability)} | ${extra.calls} | ${extra.tokens} | ${extra.credits} | ${extra.spc} | ${extra.errors} | ${extra.unchecked} |`);
   };
-  measure('baseline (stored Sol, post-2026-10-19)', c => [{ cells: byCourse.get(c)!.baseline, retrieved: [] }], { unchecked: '-', calls: '-', tokens: '-', credits: '-', spc: '-', errors: 0 });
+  measure('baseline (stored Sol, post-2026-10-19)', 'baseline', c => [{ cells: byCourse.get(c)!.baseline, retrieved: [] }], { unchecked: '-', calls: '-', tokens: '-', credits: '-', spc: '-', errors: 0 });
   const candidates = new Map<string, Array<{ course: string; sub: string; cell: Cell }>>();
   for (const m of models) for (const arm of arms) {
     const label = `${m.id}:${m.level ?? ''}`;
@@ -287,7 +265,7 @@ async function main() {
     const ok = mine.filter(c => c.ok);
     const tok = ok.reduce((s, c) => s + (c.tokens ? c.tokens.freshInput + c.tokens.cachedInput + c.tokens.output : 0), 0);
     const cr = ok.map(c => c.credits);
-    measure(`${arm} / ${label}`, course => ok.filter(c => c.key.course === course).map(c => ({ cells: c.cells, retrieved: c.retrieved ?? [] })), {
+    measure(`${arm} / ${label}`, `${arm} / ${label}`, course => ok.filter(c => c.key.course === course).map(c => ({ cells: c.cells, retrieved: c.retrieved ?? [] })), {
       unchecked: arm === 'checker' ? String(ok.reduce((s, c) => s + (c.uncheckedCells ?? 0), 0)) : '-',
       calls: String(ok.reduce((s, c) => s + (c.calls ?? 0), 0)), tokens: String(tok),
       credits: cr.some(x => x === null) ? 'unknown (single arm has no token telemetry)' : f(cr.reduce((s: number, x) => s + (x ?? 0), 0), 3),
@@ -304,9 +282,10 @@ async function main() {
     if (cs.length) pairInputs.push({ course: c.course, sub: sub.id, name: sub.name, baseline: b, candidates: cs });
   }
   const seed = Number(arg('--seed') ?? 20261122);
-  const { pairs, key } = makeBlindPairs(pairInputs, seed);
+  const { pairs, key } = makePairs(pairInputs, seed);
   writeFileSync(join(out, 'blind-pairs.json'), JSON.stringify({ seed, pairs }, null, 1));
   writeFileSync(join(out, 'blind-key.json'), JSON.stringify({ seed, key }, null, 1));
+  writeFileSync(join(out, 'summary.json'), JSON.stringify({ rows: jsonRows }, null, 1));
 
   const ng = calls.filter(c => c.ok && c.forcedSubmit).length;
   writeFileSync(join(out, 'summary.md'), [
