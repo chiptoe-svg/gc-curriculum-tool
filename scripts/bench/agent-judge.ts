@@ -284,8 +284,8 @@ async function main() {
   writeFileSync(join(out, 'summary.md'), [
     `# Scoring benchmark summary`, '',
     `Courses: ${courses.join(', ')}; runs: ${runs}; mode: ${paid ? `paid (ceiling ${maxCredits} credits, spent ${spent.toFixed(3)})` : 'campus (free)'}.`, '',
-    '| arm / model | cells | evidence breaks | grounded in profile | grounded in retrieved files | stability | calls | tokens | credits | s/course | errors |',
-    '|---|---|---|---|---|---|---|---|---|---|', ...rows, '',
+    '| arm / model | cells | evidence breaks | grounded in profile | grounded in retrieved files | stability | calls | tokens | credits | s/course | errors | unchecked (checker) |',
+    '|---|---|---|---|---|---|---|---|---|---|---|---|', ...rows, '',
     '## Notes',
     '- Source rule: evidence breaks and grounding use, per arm result, the profile text PLUS every chunk/section that arm itself retrieved for that course (baseline and single: profile only). Grounding is split: found in the profile, else found in a retrieved file; shares are of above-floor cells. Each stored cell in calls.json has `grounded` (found in the profile alone).',
     '- Evidence breaks counts cells with at least one dimension above its floor and no grounded quote.',
