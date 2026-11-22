@@ -50,7 +50,7 @@
   ```
   The `submit` tool is named `submit`; its parameters are `submitSchema`; `value` is its parsed arguments.
 
-- [ ] **Step 1: Write failing tests** — `returns the submit arguments as value`; `forces submit after maxToolCalls tool calls and sets forcedSubmit=true`; `counts tokens from every assistant message (cache writes inside freshInput, as turn.ts does)`; `prices campus models at 0 usd and 0 credits`; `throws when the model never calls submit even after forcing`.
+- [ ] **Step 1: Write failing tests** — `returns the submit arguments as value`; `forces submit after maxToolCalls tool calls and sets forcedSubmit=true`; `counts tokens from every assistant message into TokenCounts exactly as turn.ts now feeds costUsdCents (read turn.ts on dev after the central-prices merge; cacheWrite semantics per lib/ai/prices.ts)`; `prices campus models at 0 usd and 0 credits`; `throws when the model never calls submit even after forcing`.
 - [ ] **Step 2: Run** `pnpm vitest run tests/lib/ai/agent/pi/task.test.ts` — Expected: FAIL (module not found).
 - [ ] **Step 3: Implement `runPiTask`** — follow `runPiTurn`'s Pi agent setup, streaming and token accounting, minus everything interview-specific (citations, search-first controls, `AuditResponse`). Do **not** modify `turn.ts` or `stream.ts` (live interview path).
 - [ ] **Step 4: Run** the test file — Expected: PASS; also `pnpm vitest run tests/lib/ai/agent` still green; `pnpm tsc --noEmit` clean.
