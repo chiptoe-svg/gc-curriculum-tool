@@ -173,7 +173,8 @@ async function checker(c: ScoreCase, model: ArmModel): Promise<ArmResult> {
   const byId = new Map(r.value.competencies.map(x => [x.competency_id, x]));
   const cap = (score: number | null, v: Verdict | undefined, floor: number): number | null => {
     if (score == null) return null;
-    if (!v?.quote || !findQuote(v.quote, sources()).found) return Math.min(score, floor);
+    if (!v) return score; // no verdict: keep the score, as judge-factcheck does (counted in uncheckedCells)
+    if (!v.quote || !findQuote(v.quote, sources()).found) return Math.min(score, floor);
     return Math.min(score, Number(v.level ?? 0));
   };
   let uncheckedCells = 0;

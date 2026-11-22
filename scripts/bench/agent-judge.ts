@@ -290,7 +290,7 @@ async function main() {
     '- Source rule: evidence breaks and grounding use, per arm result, the profile text PLUS every chunk/section that arm itself retrieved for that course (baseline and single: profile only). Grounding is split: found in the profile, else found in a retrieved file; shares are of above-floor cells. Each stored cell in calls.json has `grounded` (found in the profile alone).',
     '- Evidence breaks counts cells with at least one dimension above its floor and no grounded quote.',
     '- Stability: per cell, share of K/U/D whose depth band matches in every run, averaged over cells (needs 2+ runs).',
-    '- Unchecked (checker): cells whose checker verdict was missing for a scored dimension; those scores are floored (K1/U0/D0).',
+    '- Unchecked (checker): cells whose checker verdict was missing for a scored dimension; the single arm score is kept.',
     `- Agent/checker tasks that hit the forced-submit path: ${ng}.`,
     '- Blind pairs: baseline vs each arm x model modal cell (A/B by seeded RNG; seed in blind-pairs.json; key in blind-key.json).', '',
   ].join('\n'));

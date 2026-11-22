@@ -111,13 +111,14 @@ describe('checker', () => {
     expect(r.usdUnits).toBe(3);
   });
 
-  it('uncheckedCells counts a cell whose verdict for a scored dim is missing', async () => {
+  it('a missing checker verdict keeps the original score and counts as unchecked', async () => {
     runPiTask.mockResolvedValue({ ...piBase, value: { competencies: [
       { competency_id: 'c1', know: { quote: null, level: 0 }, understand: { quote: null, level: 0 }, do: { quote: null, level: 0 } },
       // c2 has no verdict for its scored D dim
     ] } });
     const r = await runScoreArm('checker', case1, model);
     expect(r.uncheckedCells).toBe(1);
+    expect(r.cells.find(c => c.sub === 'c2')!.d).toBe(2); // no verdict: single arm's D2 kept
   });
 
   it('exposes the chunks the checker retrieved', async () => {
