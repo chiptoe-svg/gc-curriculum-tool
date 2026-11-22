@@ -370,6 +370,10 @@
       "ref-soderstrom-bjork-2015": {
         "file": "pdfs:soderstrom-2015-learning-versus-performance.pdf",
         "note": "printed page 176 = PDF p. 1 (abstract) read"
+      },
+      "ref-star-griesemer-1989": {
+        "file": "pdfs:star-1989-boundary-objects.pdf",
+        "note": "scan with no text layer; OCR sidecar star-1989-boundary-objects.md (docling, not hand-corrected); PDF page N = printed page N+385; p. 393 quote verified against the page image"
       }
     },
     "measurement-hypotheses-deep-dive.html": {

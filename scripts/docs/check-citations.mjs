@@ -119,8 +119,14 @@ export function resolveHeldFile(spec, roots) {
 
 function cacheKeyFor(absPath) {
   const st = statSync(absPath);
-  const h = crypto.createHash('sha1').update(absPath).update(String(st.size)).update(String(st.mtimeMs)).digest('hex');
-  return h;
+  const hash = crypto.createHash('sha1').update(absPath).update(String(st.size)).update(String(st.mtimeMs));
+  // An OCR sidecar (<stem>.md) added or edited after the PDF was first read must refresh the cache.
+  const sidecar = absPath.slice(0, -path.extname(absPath).length) + '.md';
+  if (existsSync(sidecar)) {
+    const sc = statSync(sidecar);
+    hash.update('sidecar').update(String(sc.size)).update(String(sc.mtimeMs));
+  }
+  return hash.digest('hex');
 }
 
 function stripHtmlTags(html) {

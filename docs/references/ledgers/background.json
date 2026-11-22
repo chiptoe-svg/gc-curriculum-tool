@@ -1817,6 +1817,22 @@
       "held_file": "pdfs:bastani-2025-genai-without-guardrails.pdf",
       "quote": "students’ own self-reported perceptions of the effects of GPT tutors on their exam performance and learning are overly optimistic",
       "page": "p. 4"
+    },
+    {
+      "id": "bg-star-1",
+      "location": "§10 boundary-object analogy",
+      "claim_text": "Boundary objects are plastic enough to adapt to local needs yet robust enough to keep a common identity; they have different meanings in different social worlds",
+      "held_file": "pdfs:star-1989-boundary-objects.pdf",
+      "quote": "Boundary objects are objects which are both plastic enough to adapt to local needs and the constraints of the several parties employing them, yet robust enough to maintain a common identity across sites. ... They have different meanings in different social worlds",
+      "page": "p. 393 (PDF p. 8; verified against the page image)"
+    },
+    {
+      "id": "bg-primer-boundary",
+      "location": "§10 boundary-object analogy",
+      "claim_text": "Primer treats its design document as a boundary object",
+      "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
+      "quote": "The design document functions as a boundary object (Star & Griesemer, 1989) and retains a common identity while different groups use and interpret it differently",
+      "page": "p. 7"
     }
   ]
 }
