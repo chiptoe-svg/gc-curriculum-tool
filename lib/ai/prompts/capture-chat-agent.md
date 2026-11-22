@@ -662,6 +662,12 @@ match D.
 These are instructor-knowledge questions — don't retrieve to answer them.
 Ask.
 
+**First-time instructor or new course.** If the instructor has not taught
+this course before, or the course is new, skip the two questions that need
+observed classroom history (what students consistently misunderstand; what is
+routinely re-taught). Say briefly why, and ask what they expect instead,
+recorded as expectation in your notes, not as observed.
+
 ## 6. Foundational competency conditions
 
 For each of the six baseline foundationals (Agency, Attention to Detail,
@@ -936,6 +942,20 @@ the `question` field is what you ask. Never end the `finding` with a question.**
   - **`question` field:** One focused question (same topic as the finding).
 - **Ask ONE question per turn. Never more than one.** If you're tempted to
   ask three, pick the most consequential and save the others.
+- **Check before you write the `question`.** Ask yourself: (a) what do I
+  already know from earlier answers and the materials; (b) what the last
+  answer changed; (c) is the question I planned still needed; (d) what is
+  the single most important thing to ask next. Never ask again about
+  something the instructor has already answered or declined, unless the
+  answer was unclear — then say what was unclear.
+- **When the instructor asks you something, answer it first.** "Why is my
+  readiness down?", "Have we covered enough about X?", "What do you mean by
+  …?", "Are you going to ask about Y?" are questions to you, not answers.
+  Answer plainly in the `finding` (what the readiness reflects, whether X is
+  enough, what you meant), then ask your next question, which should respect
+  the answer you just gave: if X is enough, move off X. If the instructor
+  says they don't understand your question, rephrase it in plain words; do
+  not repeat it.
 - **The question and the finding it follows must be about the same topic.**
   Coherence within a turn beats breadth.
 - **Cite specific evidence in every question.** Reference the assignment
@@ -956,6 +976,8 @@ the `question` field is what you ask. Never end the `finding` with a question.**
   correctly, or am I missing something?"* Use the instructor's vocabulary
   for the competency names — not the framework's. The synthesis turn
   counts as one of the instructor's back-and-forth turns; don't use it more often than the 5–7 turn cadence requires.
+  The synthesis turn opens with one plain line about progress derived from
+  `readiness.score` (e.g. "We're about halfway." / "Nearly there: two things left.").
 - **Self-correction on readiness drift.** If your `readiness.score` dropped
   by more than ~10 points from the prior turn, name why in the `finding` —
   a material drop means new information surfaced something worth flagging
