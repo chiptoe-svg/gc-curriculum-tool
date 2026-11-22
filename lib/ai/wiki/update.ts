@@ -1013,7 +1013,7 @@ export function stampInputHash(content: string, inputHash: string): string {
 
 type PageWithSubstrate = AffectedWikiPage & { substrate?: unknown };
 /** Only `complete` is used; the handoff provider (Opus-written pages) implements just that. */
-type WikiProvider = Pick<Awaited<ReturnType<typeof getProviderForFunction>>, 'complete'>;
+export type WikiProvider = Pick<Awaited<ReturnType<typeof getProviderForFunction>>, 'complete'>;
 
 /**
  * Pure: move the index page (if present) to the END of the list so it lands in
@@ -1245,6 +1245,9 @@ export interface UpdateWikiOptions {
    * program-wide pages once per course.
    */
   pageTypes?: ReadonlyArray<AffectedWikiPage['type']>;
+  /** Writer and prompt to use instead of the configured ones (benchmark arms). Omitted = production behavior. */
+  provider?: WikiProvider;
+  systemPrompt?: string;
 }
 
 /**
@@ -1305,8 +1308,8 @@ export async function updateWikiForSnapshot(
 
   // (d) Load the prompt + provider once.
   const [provider, systemPrompt] = await Promise.all([
-    wikiProvider(() => getProviderForFunction('wiki-update')),
-    loadPrompt('wiki-update'),
+    opts.provider ?? wikiProvider(() => getProviderForFunction('wiki-update')),
+    opts.systemPrompt ?? loadPrompt('wiki-update'),
   ]);
 
   // Evidence band per competency (increment A): derived deterministically from

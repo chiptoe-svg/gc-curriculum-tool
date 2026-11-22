@@ -1,0 +1,324 @@
+#!/usr/bin/env tsx
+/**
+ * Scoring benchmark harness for the agents-vs-single-calls study. Runs the three
+ * scoring arms (single, agent, checker) across models x courses x runs, computes
+ * code-checked measures, and writes blinded A/B pairs for a judge. Never writes
+ * to any database. Campus runs scrub OPENAI_API_KEY at startup so a paid call is
+ * impossible; a paid run needs --paid AND --max-credits.
+ *
+ *   node --import <env preload> tsx scripts/bench/agent-judge.ts --courses "GC 3460" \
+ *     --arms single,agent,checker --models qwen3.8-27b-fp8:off --runs 3 --out <dir> [--paid --max-credits 5]
+ * with DATABASE_URL pointing at a database whose name contains bench or scratch.
+ */
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { depthBand } from '@/lib/program/depth-band';
+import { evidenceBreaks, findQuote, stability } from './lib/evidence';
+import { judgeFolderFiles, makePairs, type PairInput } from './lib/blind';
+import type { ArmName, ArmResult, Cell } from './lib/score-arms';
+
+export interface Key { model: string; arm: string; course: string; run: number }
+export const keyId = (k: Key) => `${k.model}|${k.arm}|${k.course}|${k.run}`;
+
+/** Refuse any database whose name lacks bench or scratch (so never gc_curriculum). */
+export function assertSafeDb(url: string): void {
+  let name = '';
+  try { name = decodeURIComponent(new URL(url).pathname.replace(/^\//, '')); } catch { /* fall through */ }
+  if (!name || !/bench|scratch/.test(name)) throw new Error('refusing: DATABASE_URL must name a bench or scratch database');
+}
+
+/** Throw once spending reaches the ceiling. A null ceiling means unpaid: nothing to enforce. */
+export function checkCreditCeiling(spent: number, max: number | null): void {
+  if (max !== null && spent >= max) throw new Error(`credit ceiling exceeded: spent ${spent.toFixed(3)} > max ${max}`);
+}
+
+/** Run before EVERY paid call: refuse at the ceiling, or if the largest call seen so far would cross it. */
+export function assertCanSpend(spent: number, max: number, projected: number): void {
+  if (spent >= max) throw new Error(`credit ceiling reached before call: spent ${spent.toFixed(3)} >= max ${max}`);
+  if (spent + projected > max) throw new Error(`credit ceiling: spent ${spent.toFixed(3)} + projected ${projected.toFixed(3)} would exceed max ${max}`);
+}
+
+const ARMS: ArmName[] = ['single', 'agent', 'checker'];
+export function parseArms(s: string): ArmName[] {
+  const arms = s.split(',').map(x => x.trim()).filter(Boolean);
+  if (!arms.length) throw new Error('--arms is empty');
+  for (const a of arms) if (!ARMS.includes(a as ArmName)) throw new Error(`unknown arm "${a}" (use single, agent, checker)`);
+  return arms as ArmName[];
+}
+export function parseModels(s: string): Array<{ id: string; level?: string }> {
+  const out = s.split(',').map(x => x.trim()).filter(Boolean).map(x => {
+    const [id, level, ...rest] = x.split(':');
+    if (!id || rest.length || level === '') throw new Error(`bad model "${x}" (use id or id:level)`);
+    return { id, level };
+  });
+  if (!out.length) throw new Error('--models required, e.g. qwen3.8-27b-fp8:off');
+  return out;
+}
+
+export function pendingKeys(all: Key[], done: Iterable<Key | string>): Key[] {
+  const d = new Set([...done].map(x => (typeof x === 'string' ? x : keyId(x))));
+  return all.filter(k => !d.has(keyId(k)));
+}
+
+/** Strict form: without --paid a set OPENAI_API_KEY is an error. */
+export function assertNoPaidKey(env: Record<string, string | undefined>, paid: boolean): void {
+  if (!paid && env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is set: refusing a free run (use --paid --max-credits, or unset it)');
+}
+/** What main() does: remove the key for a campus run; returns whether it was present. */
+export function scrubPaidKey(env: Record<string, string | undefined>, paid: boolean): boolean {
+  if (paid) return false;
+  const had = !!env.OPENAI_API_KEY;
+  delete env.OPENAI_API_KEY;
+  return had;
+}
+/** Campus runs must use the requested model, so drop the env pins the provider would prefer. Returns the names removed. */
+export function scrubCampusModelEnv(env: Record<string, string | undefined>, paid: boolean): string[] {
+  if (paid) return [];
+  const removed = ['CAMPUS_LLM_DEFAULT_MODEL', 'CAMPUS_LLM_REASONING'].filter(k => env[k] !== undefined);
+  for (const k of removed) delete env[k];
+  return removed;
+}
+export function assertPaidArgs(paid: boolean, maxCredits: number | null, arms: string[]): void {
+  if (!paid) return;
+  if (maxCredits === null || !(maxCredits > 0)) throw new Error('--paid requires --max-credits <n> (> 0)');
+  const bad = arms.filter(a => a === 'single' || a === 'checker');
+  if (bad.length) throw new Error(`--paid cannot run ${bad.join(', ')}: the single call has no token telemetry, so its credits are unknown (ledger note: add telemetry first)`);
+}
+
+export { makePairs as makeBlindPairs } from './lib/blind';
+
+const band = (v: number | null) => depthBand(v)?.key ?? 'none';
+const tripleKey = (c: Cell) => `${band(c.k)}/${band(c.u)}/${band(c.d)}`;
+/** The cell from the run whose band triple is most common across runs (first on ties). */
+export function modalCell(cells: Cell[]): Cell | undefined {
+  const counts = new Map<string, number>();
+  for (const c of cells) counts.set(tripleKey(c), (counts.get(tripleKey(c)) ?? 0) + 1);
+  const best = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  return cells.find(c => tripleKey(c) === best);
+}
+
+/** Retry gateway errors (5xx, connection) twice with a pause. Copied from role-judge. */
+export async function withBackoff<T>(fn: () => Promise<T>, retry = true): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try { return await fn(); } catch (e) {
+      const status = (e as { status?: number }).status;
+      const gateway = (typeof status === 'number' && status >= 500) || /ECONNRESET|ETIMEDOUT|ECONNREFUSED|fetch failed|Connection error|timed out/i.test((e as Error).message);
+      if (!retry || !gateway || attempt >= 2) throw e;
+      await new Promise(r => setTimeout(r, 30_000 * (attempt + 1)));
+    }
+  }
+}
+
+export interface SummaryCase { course: string; subs: string[]; profile: string; runs: Array<{ cells: Cell[]; retrieved: Array<{ id: string; text: string }> }> }
+/** Evidence measures. Sources per run = the profile plus the chunks that run itself retrieved. */
+export function summarizeArm(cases: SummaryCase[]) {
+  let cells = 0, above = 0, breaks = 0, groundedProfile = 0, groundedRetrieved = 0; const stab: number[] = [];
+  for (const c of cases) {
+    for (const r of c.runs) {
+      const profileSrc = [{ id: 'profile', text: c.profile }];
+      const sources = [...profileSrc, ...r.retrieved];
+      for (const cell of r.cells) {
+        cells++;
+        if ((cell.k ?? 0) > 1 || (cell.u ?? 0) > 0 || cell.d > 0) {
+          above++;
+          if (findQuote(cell.excerpt, profileSrc).found) groundedProfile++;
+          else if (findQuote(cell.excerpt, sources).found) groundedRetrieved++;
+        }
+        if (evidenceBreaks(cell, sources).length) breaks++;
+      }
+    }
+    for (const sub of c.subs) {
+      const v = c.runs.map(r => r.cells.find(x => x.sub === sub)).filter((x): x is Cell => !!x);
+      if (v.length >= 2) stab.push(stability(v));
+    }
+  }
+  return { cells, above, breaks, groundedProfile, groundedRetrieved, stability: stab.length ? stab.reduce((a, b) => a + b, 0) / stab.length : NaN };
+}
+
+type StoredCell = Cell & { grounded: boolean };
+interface CallRec {
+  key: Key; ok: boolean; error?: string; calls?: number; tokens?: ArmResult['tokens']; usdUnits?: number;
+  credits?: number | null; ms?: number; retrieved?: Array<{ id: string; text: string }>; uncheckedCells?: number; actualModel?: string; forcedSubmit?: boolean; toolCalls?: number; cells: StoredCell[];
+}
+
+async function main() {
+  const argv = process.argv.slice(2);
+  const arg = (n: string) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : undefined; };
+  const paid = argv.includes('--paid');
+  const maxCredits = arg('--max-credits') !== undefined ? Number(arg('--max-credits')) : null;
+  assertSafeDb(process.env.DATABASE_URL ?? '');
+  if (scrubPaidKey(process.env, paid)) console.log('OpenAI key removed for campus run');
+  assertNoPaidKey(process.env, paid);
+  const clearedPins = scrubCampusModelEnv(process.env, paid);
+  if (clearedPins.length) console.log(`campus run: removed ${clearedPins.join(', ')} so the requested model is used`);
+  if (!paid) process.env.AI_PROVIDER = 'campus';
+
+  const out = arg('--out'); if (!out) throw new Error('--out <dir> required');
+  const arms = parseArms(arg('--arms') ?? 'single,agent,checker');
+  const models = parseModels(arg('--models') ?? '');
+  assertPaidArgs(paid, maxCredits, arms);
+  let courses = (arg('--courses') ?? '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!courses.length) throw new Error('--courses required');
+  const probe = arg('--cases-probe'); if (probe) courses = courses.slice(0, Number(probe));
+  const runs = Number(arg('--runs') ?? 3);
+  mkdirSync(out, { recursive: true });
+
+  const [{ and, eq, gte, inArray }, { db }, schema, { getScoringFlags, flagsFor }, { runScoreArm }, { costCredits }] = await Promise.all([
+    import('drizzle-orm'), import('@/lib/db/client'), import('@/lib/db/schema'), import('@/lib/db/scoring-flags'),
+    import('./lib/score-arms'), import('@/lib/ai/prices'),
+  ]);
+  void costCredits; // credits come from runPiTask (computed with costCredits); null means unknown.
+  const { courseCaptureSnapshots, snapshotCompetencyCoverage, subCompetencies } = schema;
+  const SINCE = new Date('2026-10-19T16:33:55Z'); // scorer fix; Sol re-scored after it (as role-judge)
+
+  const cases: Array<{ course: string; snap: { id: string; profile: unknown }; subs: Array<{ id: string; name: string }>; scoreCase: import('./lib/score-arms').ScoreCase; profileText: string; baseline: Cell[] }> = [];
+  for (const course of courses) {
+    const base = await db.select({ c: snapshotCompetencyCoverage, s: courseCaptureSnapshots }).from(snapshotCompetencyCoverage)
+      .innerJoin(courseCaptureSnapshots, eq(courseCaptureSnapshots.id, snapshotCompetencyCoverage.snapshotId))
+      .where(and(eq(courseCaptureSnapshots.courseCode, course), gte(snapshotCompetencyCoverage.generatedAt, SINCE)));
+    if (!base.length) throw new Error(`no post-fix Sol cells for ${course}`);
+    const snap = base.map(b => b.s).sort((a, b) => +b.createdAt - +a.createdAt)[0]!;
+    const own = base.filter(b => b.s.id === snap.id);
+    const ids = own.map(b => b.c.competencyId);
+    const subs = await db.select().from(subCompetencies).where(inArray(subCompetencies.id, ids));
+    const flags = await getScoringFlags(ids);
+    cases.push({
+      course, snap, subs,
+      scoreCase: {
+        course, snapshotId: snap.id, profile: snap.profile,
+        competencies: subs.map(x => ({ id: x.id, name: x.name, knowDescriptor: x.knowDescriptor, understandDescriptor: x.understandDescriptor, doDescriptor: x.doDescriptor, ...flagsFor(flags, x.id) })),
+      },
+      profileText: JSON.stringify(snap.profile, null, 1),
+      baseline: own.map(b => ({ sub: b.c.competencyId, k: b.c.kDepth, u: b.c.uDepth, d: b.c.dDepth, excerpt: b.c.evidenceExcerpt ?? '' } as Cell)),
+    });
+  }
+  const byCourse = new Map(cases.map(c => [c.course, c]));
+
+  const callsPath = join(out, 'calls.json');
+  const calls: CallRec[] = existsSync(callsPath) ? JSON.parse(readFileSync(callsPath, 'utf8')).calls : [];
+  const checkpoint = () => writeFileSync(callsPath, JSON.stringify({ models, arms, courses, runs, calls }, null, 1));
+
+  const endpointFor = async (m: { id: string; level?: string }) => {
+    if (!paid) {
+      const baseUrl = process.env.CAMPUS_LLM_BASE_URL?.trim(), apiKey = process.env.CAMPUS_LLM_API_KEY?.trim();
+      if (!baseUrl || !apiKey) throw new Error('CAMPUS_LLM_BASE_URL / CAMPUS_LLM_API_KEY not set');
+      return { baseUrl, apiKey, model: m.id, api: 'openai-completions' as const, campusReasoning: m.level as import('@/lib/ai/campus').CampusReasoning | undefined };
+    }
+    const { usesResponsesApi } = await import('@/lib/ai/models');
+    const { openAIBaseURL } = await import('@/lib/ai/openai-base-url');
+    const apiKey = process.env.OPENAI_API_KEY?.trim(); if (!apiKey) throw new Error('OPENAI_API_KEY not set for --paid');
+    return { baseUrl: openAIBaseURL() ?? 'https://api.openai.com/v1', apiKey, model: m.id,
+      api: (usesResponsesApi(m.id) ? 'openai-responses' : 'openai-completions') as 'openai-responses' | 'openai-completions',
+      reasoning: m.level as 'low' | 'medium' | 'high' | undefined };
+  };
+
+  let spent = calls.reduce((s, c) => s + (c.credits ?? 0), 0);
+  const all: Key[] = [];
+  for (const m of models) for (const arm of arms) for (let run = 1; run <= runs; run++) for (const course of courses) all.push({ model: `${m.id}:${m.level ?? ''}`, arm, course, run });
+  const todo = pendingKeys(all, calls.map(c => c.key));
+  console.log(`harness: ${all.length} keys, ${todo.length} pending; models ${models.map(m => m.id).join(',')}; ${paid ? 'PAID' : 'campus (free)'}`);
+
+  const projected = new Map<string, number>(); // largest per-call credits seen, per model|arm
+  const execKey = async (k: Key, model: { id: string; level?: string; endpoint: Awaited<ReturnType<typeof endpointFor>> }) => {
+    const c = byCourse.get(k.course)!;
+    const t0 = Date.now();
+    const pk = `${k.model}|${k.arm}`;
+    try {
+      if (paid) assertCanSpend(spent, maxCredits!, projected.get(pk) ?? 0);
+      const r = await withBackoff(() => runScoreArm(k.arm as ArmName, c.scoreCase, model), !paid); // no retries when paid: a retry may re-bill
+      const cells = r.cells.map(x => ({ ...x, grounded: findQuote(x.excerpt, [{ id: 'profile', text: c.profileText }]).found }));
+      calls.push({ key: k, ok: true, calls: r.calls, tokens: r.tokens, usdUnits: r.usdUnits, credits: r.credits, ms: r.ms, forcedSubmit: r.forcedSubmit, toolCalls: r.toolCalls, retrieved: r.retrieved, uncheckedCells: r.uncheckedCells, actualModel: r.actualModel, cells });
+      if (paid) {
+        if (r.credits === null) throw new Error(`arm ${k.arm} returned unknown credits in --paid mode; stopping rather than ignore spend`);
+        spent += r.credits; projected.set(pk, Math.max(projected.get(pk) ?? 0, r.credits)); checkCreditCeiling(spent, maxCredits);
+      }
+      process.stdout.write('.');
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (paid) { calls.push({ key: k, ok: false, error: msg.slice(0, 300), ms: Date.now() - t0, cells: [] }); checkpoint(); throw e; } // a paid failure stops the run
+      calls.push({ key: k, ok: false, error: msg.slice(0, 300), ms: Date.now() - t0, cells: [] });
+      process.stdout.write('x');
+    }
+  };
+
+  // Models outer (never interleaved), then arm, run, courses. Only the single arm runs courses in parallel.
+  for (const m of models) {
+    const model = { ...m, endpoint: await endpointFor(m) };
+    const label = `${m.id}:${m.level ?? ''}`;
+    for (const arm of arms) for (let run = 1; run <= runs; run++) {
+      const batch = todo.filter(k => k.model === label && k.arm === arm && k.run === run);
+      if (arm === 'single') await Promise.all(batch.map(k => execKey(k, model)));
+      else for (const k of batch) await execKey(k, model);
+      checkpoint();
+    }
+    console.log(` ${label} done`);
+  }
+
+  // ---- measures ----
+  const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
+  const f = (x: number, d = 2) => (Number.isNaN(x) ? 'n/a' : x.toFixed(d));
+  const rows: string[] = [];
+  const pairInputs: PairInput[] = [];
+  const jsonRows: Array<Record<string, unknown>> = [];
+  const measure = (name: string, key: string, perCourse: (course: string) => Array<{ cells: Cell[]; retrieved: Array<{ id: string; text: string }> }>, extra: { calls: string; tokens: string; credits: string; spc: string; errors: number; unchecked: string; actual: string }) => {
+    const m = summarizeArm(cases.map(c => ({ course: c.course, subs: c.subs.map(x => x.id), profile: c.profileText, runs: perCourse(c.course) })));
+    const share = (n: number) => (m.above ? f(n / m.above) : 'n/a');
+    jsonRows.push({ label: key, cells: m.cells, breaks: m.breaks, above: m.above, groundedProfile: m.groundedProfile, groundedRetrieved: m.groundedRetrieved, stability: Number.isNaN(m.stability) ? null : m.stability });
+    rows.push(`| ${name} | ${m.cells} | ${m.breaks} | ${share(m.groundedProfile)} | ${share(m.groundedRetrieved)} | ${f(m.stability)} | ${extra.calls} | ${extra.tokens} | ${extra.credits} | ${extra.spc} | ${extra.errors} | ${extra.unchecked} | ${extra.actual} |`);
+  };
+  measure('baseline (stored Sol, post-2026-10-19)', 'baseline', c => [{ cells: byCourse.get(c)!.baseline, retrieved: [] }], { unchecked: '-', actual: '-', calls: '-', tokens: '-', credits: '-', spc: '-', errors: 0 });
+  const candidates = new Map<string, Array<{ course: string; sub: string; cell: Cell }>>();
+  for (const m of models) for (const arm of arms) {
+    const label = `${m.id}:${m.level ?? ''}`;
+    const mine = calls.filter(c => c.key.model === label && c.key.arm === arm);
+    const ok = mine.filter(c => c.ok);
+    const tok = ok.reduce((s, c) => s + (c.tokens ? c.tokens.freshInput + c.tokens.cachedInput + c.tokens.output : 0), 0);
+    const cr = ok.map(c => c.credits);
+    measure(`${arm} / ${label}`, `${arm} / ${label}`, course => ok.filter(c => c.key.course === course).map(c => ({ cells: c.cells, retrieved: c.retrieved ?? [] })), {
+      actual: (() => {
+        const used = [...new Set(ok.map(c => c.actualModel ?? '?'))];
+        const expected = arm === 'checker' ? `${m.id}+${m.id}` : m.id;
+        return used.length && used.every(u => u === expected) ? used.join(',') : `MISMATCH: ${used.join(',') || 'none'} (requested ${m.id})`;
+      })(),
+      unchecked: arm === 'checker' ? String(ok.reduce((s, c) => s + (c.uncheckedCells ?? 0), 0)) : '-',
+      calls: String(ok.reduce((s, c) => s + (c.calls ?? 0), 0)), tokens: String(tok),
+      credits: cr.some(x => x === null) ? 'unknown (single arm has no token telemetry)' : f(cr.reduce((s: number, x) => s + (x ?? 0), 0), 3),
+      spc: f(avg(ok.map(c => (c.ms ?? 0) / 1000)), 1), errors: mine.length - ok.length,
+    });
+    for (const c of cases) for (const sub of c.subs) {
+      const cell = modalCell(ok.filter(x => x.key.course === c.course).map(x => x.cells.find(y => y.sub === sub.id)).filter((x): x is StoredCell => !!x));
+      if (cell) { const l = `${arm} / ${label}`; (candidates.get(l) ?? candidates.set(l, []).get(l)!).push({ course: c.course, sub: sub.id, cell }); }
+    }
+  }
+  for (const c of cases) for (const sub of c.subs) {
+    const b = c.baseline.find(x => x.sub === sub.id); if (!b) continue;
+    const cs = [...candidates.entries()].flatMap(([label, xs]) => xs.filter(x => x.course === c.course && x.sub === sub.id).map(x => ({ label, cell: x.cell })));
+    if (cs.length) pairInputs.push({ course: c.course, sub: sub.id, name: sub.name, baseline: b, candidates: cs });
+  }
+  const seed = Number(arg('--seed') ?? 20261122);
+  const { pairs, key } = makePairs(pairInputs, seed);
+  // Sealed judge folder: pairs only (no seed, no labels). The key stays outside it.
+  mkdirSync(join(out, 'judge'), { recursive: true });
+  for (const [name, body] of Object.entries(judgeFolderFiles(pairs, seed))) writeFileSync(join(out, 'judge', name), JSON.stringify(body, null, 1));
+  writeFileSync(join(out, 'blind-key.json'), JSON.stringify({ seed, key }, null, 1));
+  writeFileSync(join(out, 'summary.json'), JSON.stringify({ rows: jsonRows }, null, 1));
+
+  const ng = calls.filter(c => c.ok && c.forcedSubmit).length;
+  writeFileSync(join(out, 'summary.md'), [
+    `# Scoring benchmark summary`, '',
+    `Courses: ${courses.join(', ')}; runs: ${runs}; mode: ${paid ? `paid (ceiling ${maxCredits} credits, spent ${spent.toFixed(3)})` : 'campus (free)'}.`, '',
+    '| arm / model | cells | evidence breaks | grounded in profile | grounded in retrieved files | stability | calls | tokens | credits | s/course | errors | unchecked (checker) | actual model |',
+    '|---|---|---|---|---|---|---|---|---|---|---|---|---|', ...rows, '',
+    '## Notes',
+    '- Source rule: evidence breaks and grounding use, per arm result, the profile text PLUS every chunk/section that arm itself retrieved for that course (baseline and single: profile only). Grounding is split: found in the profile, else found in a retrieved file; shares are of above-floor cells. Each stored cell in calls.json has `grounded` (found in the profile alone).',
+    '- Evidence breaks counts cells with at least one dimension above its floor and no grounded quote.',
+    '- Stability: per cell, share of K/U/D whose depth band matches in every run, averaged over cells (needs 2+ runs).',
+    '- Unchecked (checker): cells whose checker verdict was missing for a scored dimension; the single arm score is kept.',
+    `- Agent/checker tasks that hit the forced-submit path: ${ng}.`,
+    '- Blind pairs: baseline vs each arm x model modal cell, shuffled with opaque ids. judge/ holds only pairs.json and pairs-second.json (sealed); the seed and key are in blind-key.json, outside judge/.', '',
+  ].join('\n'));
+  console.log(`\nwrote ${out}/summary.md (${pairs.length} blind pairs)`);
+  process.exit(0);
+}
+
+if (process.argv[1]?.endsWith('agent-judge.ts')) main().catch(e => { console.error(e); process.exit(1); });
