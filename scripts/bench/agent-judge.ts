@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { depthBand } from '@/lib/program/depth-band';
 import { evidenceBreaks, findQuote, stability } from './lib/evidence';
-import { makePairs, type PairInput } from './lib/blind';
+import { judgeFolderFiles, makePairs, type PairInput } from './lib/blind';
 import type { ArmName, ArmResult, Cell } from './lib/score-arms';
 
 export interface Key { model: string; arm: string; course: string; run: number }
@@ -283,7 +283,9 @@ async function main() {
   }
   const seed = Number(arg('--seed') ?? 20261122);
   const { pairs, key } = makePairs(pairInputs, seed);
-  writeFileSync(join(out, 'blind-pairs.json'), JSON.stringify({ seed, pairs }, null, 1));
+  // Sealed judge folder: pairs only (no seed, no labels). The key stays outside it.
+  mkdirSync(join(out, 'judge'), { recursive: true });
+  for (const [name, body] of Object.entries(judgeFolderFiles(pairs, seed))) writeFileSync(join(out, 'judge', name), JSON.stringify(body, null, 1));
   writeFileSync(join(out, 'blind-key.json'), JSON.stringify({ seed, key }, null, 1));
   writeFileSync(join(out, 'summary.json'), JSON.stringify({ rows: jsonRows }, null, 1));
 
@@ -299,7 +301,7 @@ async function main() {
     '- Stability: per cell, share of K/U/D whose depth band matches in every run, averaged over cells (needs 2+ runs).',
     '- Unchecked (checker): cells whose checker verdict was missing for a scored dimension; the single arm score is kept.',
     `- Agent/checker tasks that hit the forced-submit path: ${ng}.`,
-    '- Blind pairs: baseline vs each arm x model modal cell (A/B by seeded RNG; seed in blind-pairs.json; key in blind-key.json).', '',
+    '- Blind pairs: baseline vs each arm x model modal cell, shuffled with opaque ids. judge/ holds only pairs.json and pairs-second.json (sealed); the seed and key are in blind-key.json, outside judge/.', '',
   ].join('\n'));
   console.log(`\nwrote ${out}/summary.md (${pairs.length} blind pairs)`);
   process.exit(0);

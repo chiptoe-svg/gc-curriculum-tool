@@ -16,24 +16,50 @@ export function mulberry32(seed: number): () => number {
 }
 
 export interface PairInput { course: string; sub: string; name?: string; baseline: Cell; candidates: Array<{ label: string; cell: Cell }> }
+/** What the judge sees. Ids are opaque and the list is shuffled; nothing here names a label. */
 export interface BlindPair { id: string; course: string; competency: string; A: Cell; B: Cell }
 export type Winner = 'A' | 'B' | 'tie';
 export interface Verdict { id: string; winner: Winner; reason?: string }
-export type BlindKey = Record<string, { A: string; B: string }>;
+/** Sealed key entry (blind-key.json, outside the judge folder). A and B are the labels shown on each side. */
+export interface KeyEntry { A: string; B: string; course: string; sub: string; label: string }
+export type BlindKey = Record<string, KeyEntry>;
 
-/** One pair per (competency, candidate). A/B is flipped by a seeded RNG; the key maps pair id to labels. */
+/** The second-judge sample uses the run seed plus this offset (documented in the judge doc). */
+export const SECOND_SEED_OFFSET = 1;
+
+/**
+ * One pair per (competency, candidate). A/B is flipped by the seeded RNG, then the whole list is
+ * shuffled by the same RNG so pair order does not group by competency or candidate.
+ */
 export function makePairs(inputs: PairInput[], seed: number): { pairs: BlindPair[]; key: BlindKey; seed: number } {
   const rnd = mulberry32(seed);
+  const built: Array<{ course: string; competency: string; sub: string; label: string; A: Cell; B: Cell; sideA: string; sideB: string }> = [];
+  for (const p of inputs) for (const c of p.candidates) {
+    const flip = rnd() < 0.5;
+    built.push({
+      course: p.course, competency: p.name ?? p.sub, sub: p.sub, label: c.label,
+      A: flip ? c.cell : p.baseline, B: flip ? p.baseline : c.cell,
+      sideA: flip ? c.label : 'baseline', sideB: flip ? 'baseline' : c.label,
+    });
+  }
+  for (let i = built.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [built[i], built[j]] = [built[j]!, built[i]!];
+  }
   const pairs: BlindPair[] = [];
   const key: BlindKey = {};
-  let n = 0;
-  for (const p of inputs) for (const c of p.candidates) {
-    const id = `pair-${String(++n).padStart(4, '0')}`;
-    const flip = rnd() < 0.5;
-    pairs.push({ id, course: p.course, competency: p.name ?? p.sub, A: flip ? c.cell : p.baseline, B: flip ? p.baseline : c.cell });
-    key[id] = flip ? { A: c.label, B: 'baseline' } : { A: 'baseline', B: c.label };
-  }
+  built.forEach((b, i) => {
+    const id = `p${String(i + 1).padStart(3, '0')}`;
+    pairs.push({ id, course: b.course, competency: b.competency, A: b.A, B: b.B });
+    key[id] = { A: b.sideA, B: b.sideB, course: b.course, sub: b.sub, label: b.label };
+  });
   return { pairs, key, seed };
+}
+
+/** Files for the sealed judge folder: the full pair set and the 20% second-judge sample. Nothing else. */
+export function judgeFolderFiles(pairs: BlindPair[], seed: number): Record<string, { pairs: BlindPair[] }> {
+  const second = new Set(secondJudgeIds(pairs, seed + SECOND_SEED_OFFSET));
+  return { 'pairs.json': { pairs }, 'pairs-second.json': { pairs: pairs.filter(p => second.has(p.id)) } };
 }
 
 /** Map a verdict's A/B winner back to its label ('baseline', an arm label, or 'tie'). */
@@ -44,7 +70,7 @@ export function unblind(key: BlindKey, id: string, winner: Winner): string {
   return k[winner];
 }
 
-/** Second-judge sample: 20% of pair ids, drawn with its own seed (reproducible). */
+/** Second-judge sample: 20% of pair ids, drawn with its own seed (reproducible, without replacement). */
 export function secondJudgeIds(pairs: BlindPair[], seed: number, fraction = 0.2): string[] {
   const rnd = mulberry32(seed);
   const ids = pairs.map(p => p.id);
@@ -70,11 +96,13 @@ export interface ArmTally {
   wins: number; losses: number; ties: number;
   /** wins / (wins + losses); null when there are no non-tie verdicts. */
   prefExTies: number | null;
-  /** Share of non-tie verdicts won by the A position, over all verdicts (bias check: should sit near 50%). */
+  /** Share of all verdicts won by the A position among non-ties (bias check: should sit near 50%). */
   aPositionRate: number | null;
   /** Agreement with the second judge on overlapping pairs for this label; null if no overlap. */
   agreement: number | null;
   breaks: number | null; baselineBreaks: number | null;
+  /** breaks / cells: the rule compares rates, so unequal cell counts are fair. */
+  breakRate: number | null; baselineBreakRate: number | null;
   stability: number | null;
   /** Stability of the same model's single arm (null for the single arm itself, which is not stability-judged). */
   baselineStability: number | null;
@@ -95,11 +123,12 @@ const pct = (x: number | null) => (x === null ? 'n/a' : `${(x * 100).toFixed(1)}
 /** '<arm> / <model>' → arm and model parts. */
 const armOf = (label: string) => label.slice(0, Math.max(0, label.indexOf(' / ')));
 const modelOf = (label: string) => (label.includes(' / ') ? label.slice(label.indexOf(' / ') + 3) : label);
+const rateOf = (r?: SummaryRow) => (r && r.breaks !== null && r.cells > 0 ? r.breaks / r.cells : null);
 
 /**
- * Apply the pre-committed rule (ruling R8). Agent arms: adopt only if breaks < stored Sol baseline,
- * blind preference >= 50% ex-ties vs the stored Sol cells, AND stability >= the same model's single arm.
- * The single arm is the stability reference, so it is judged on breaks and preference only.
+ * Apply the pre-committed rule (rulings R8, R10). Agent arms: adopt only if the break rate is below the
+ * stored Sol baseline's, blind preference >= 50% ex-ties vs the stored Sol cells, AND stability >= the same
+ * model's single arm. The single arm is the stability reference, so it is judged on breaks and preference only.
  */
 export function tallyBlind({ key, verdicts, summary, second }: TallyInput): ArmTally[] {
   const base = summary.find(r => r.label === 'baseline');
@@ -109,7 +138,6 @@ export function tallyBlind({ key, verdicts, summary, second }: TallyInput): ArmT
   const primary = winnerOf(verdicts);
   const secondary = second ? winnerOf(second) : null;
 
-  // A-position rate over all non-tie verdicts (bias check: should sit near 50%).
   const nonTie = verdicts.filter(v => v.winner !== 'tie');
   const aPos = nonTie.length ? nonTie.filter(v => v.winner === 'A').length / nonTie.length : null;
 
@@ -134,14 +162,15 @@ export function tallyBlind({ key, verdicts, summary, second }: TallyInput): ArmT
     const isSingle = armOf(label) === 'single';
     const row = summary.find(r => r.label === label);
     const breaks = row?.breaks ?? null, baselineBreaks = base.breaks;
+    const breakRate = rateOf(row), baselineBreakRate = rateOf(base);
     const stability = row?.stability ?? null;
     const stabilityRef = isSingle ? null : `single / ${modelOf(label)}`;
     const refRow = stabilityRef ? summary.find(r => r.label === stabilityRef) : undefined;
     const baselineStability = stabilityRef ? (refRow?.stability ?? null) : null;
 
     const reasons: string[] = [];
-    if (breaks === null || baselineBreaks === null) reasons.push('breaks not measurable');
-    else if (!(breaks < baselineBreaks)) reasons.push(`breaks ${breaks} not fewer than baseline ${baselineBreaks}`);
+    if (breakRate === null || baselineBreakRate === null) reasons.push('break rate not measurable');
+    else if (!(breakRate < baselineBreakRate)) reasons.push(`break rate ${pct(breakRate)} not below baseline ${pct(baselineBreakRate)}`);
     if (prefExTies === null) reasons.push('no non-tie verdicts');
     else if (!(prefExTies >= 0.5)) reasons.push(`preference ${pct(prefExTies)} below 50% ex-ties`);
     if (!isSingle) {
@@ -153,7 +182,11 @@ export function tallyBlind({ key, verdicts, summary, second }: TallyInput): ArmT
     const adopt = reasons.length === 0;
     const okText = isSingle ? 'adopt: breaks and preference met (single arm is the stability reference, not judged on stability)' : 'adopt: all three conditions met';
 
-    return { label, wins, losses, ties, prefExTies, aPositionRate: aPos, agreement, breaks, baselineBreaks, stability, baselineStability, stabilityRef, adopt, reasons: adopt ? [okText] : reasons };
+    return {
+      label, wins, losses, ties, prefExTies, aPositionRate: aPos, agreement,
+      breaks, baselineBreaks, breakRate, baselineBreakRate,
+      stability, baselineStability, stabilityRef, adopt, reasons: adopt ? [okText] : reasons,
+    };
   });
 }
 
@@ -164,11 +197,11 @@ export function renderTally(tallies: ArmTally[], meta: { verdictCount: number; a
     '# Blind tally', '',
     `Verdicts: ${meta.verdictCount}${meta.secondCount !== undefined ? `; second judge: ${meta.secondCount}` : ''}.`,
     `A-position win rate (non-tie): ${pct(meta.aPositionRate)} (bias check: near 50% is expected).`, '',
-    '| arm / model | wins | losses | ties | pref ex-ties | agreement w/ 2nd judge | breaks (baseline) | stability (reference) | decision |',
+    '| arm / model | wins | losses | ties | pref ex-ties | agreement w/ 2nd judge | break rate (baseline) | stability (reference) | decision |',
     '|---|---|---|---|---|---|---|---|---|',
     ...tallies.map(t => {
       const stab = t.stabilityRef ? `${num(t.stability)} (${t.stabilityRef}: ${num(t.baselineStability)})` : 'not judged';
-      return `| ${t.label} | ${t.wins} | ${t.losses} | ${t.ties} | ${pct(t.prefExTies)} | ${pct(t.agreement)} | ${t.breaks ?? 'n/a'} (${t.baselineBreaks ?? 'n/a'}) | ${stab} | ${t.adopt ? 'ADOPT' : 'NOT ADOPTED'}: ${t.reasons.join('; ')} ${PROVISIONAL_NOTE} |`;
+      return `| ${t.label} | ${t.wins} | ${t.losses} | ${t.ties} | ${pct(t.prefExTies)} | ${pct(t.agreement)} | ${pct(t.breakRate)} (${pct(t.baselineBreakRate)}) | ${stab} | ${t.adopt ? 'ADOPT' : 'NOT ADOPTED'}: ${t.reasons.join('; ')} ${PROVISIONAL_NOTE} |`;
     }),
     '',
   ].join('\n');

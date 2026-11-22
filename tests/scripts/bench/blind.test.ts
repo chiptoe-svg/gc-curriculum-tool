@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { makePairs, unblind, tallyBlind, secondJudgeIds, renderTally, PROVISIONAL_NOTE, type Verdict } from '@/scripts/bench/lib/blind';
+import { makePairs, unblind, tallyBlind, secondJudgeIds, judgeFolderFiles, renderTally, PROVISIONAL_NOTE, type Verdict, type SummaryRow } from '@/scripts/bench/lib/blind';
 
-const cell = (d: number, excerpt = 'x') => ({ sub: 's', k: 1, u: 0, d, excerpt });
+const cell = (d: number, excerpt = 'base-cell') => ({ sub: 's', k: 1, u: 0, d, excerpt });
 const inputs = (labels: string[]) => Array.from({ length: 6 }, (_, i) => ({
-  course: 'GC 1', sub: `s${i}`, baseline: cell(1, 'base'),
-  candidates: labels.map(l => ({ label: l, cell: cell(2, 'agent') })),
+  course: 'GC 1', sub: `s${i}`, baseline: cell(1, 'base-cell'),
+  candidates: labels.map(l => ({ label: l, cell: cell(2, 'arm-cell') })),
 }));
 
 /** Verdicts where `label` wins (or loses to baseline) on every pair it appears in. */
@@ -18,20 +18,23 @@ function verdictsFor(key: Record<string, { A: string; B: string }>, label: strin
     });
 }
 
-const rows = (o: { agentBreaks?: number; agentStab?: number | null; singleBreaks?: number; singleStab?: number | null; singleLowStab?: number | null } = {}) => [
-  { label: 'baseline', cells: 6, breaks: 3, stability: null },
-  { label: 'single / m:off', cells: 6, breaks: o.singleBreaks ?? 2, stability: o.singleStab === undefined ? 0.5 : o.singleStab },
-  { label: 'single / m:low', cells: 6, breaks: 2, stability: o.singleLowStab === undefined ? 0.9 : o.singleLowStab },
-  { label: 'agent / m:off', cells: 6, breaks: o.agentBreaks ?? 2, stability: o.agentStab === undefined ? 0.6 : o.agentStab },
-];
+const rows = (o: { agentBreaks?: number; agentStab?: number | null; singleBreaks?: number; singleStab?: number | null; singleLowStab?: number | null; cells?: number } = {}): SummaryRow[] => {
+  const n = o.cells ?? 6;
+  return [
+    { label: 'baseline', cells: n, breaks: 3, stability: null },
+    { label: 'single / m:off', cells: n, breaks: o.singleBreaks ?? 2, stability: o.singleStab === undefined ? 0.5 : o.singleStab },
+    { label: 'single / m:low', cells: n, breaks: 2, stability: o.singleLowStab === undefined ? 0.9 : o.singleLowStab },
+    { label: 'agent / m:off', cells: n, breaks: o.agentBreaks ?? 2, stability: o.agentStab === undefined ? 0.6 : o.agentStab },
+  ];
+};
 
 describe('unblind', () => {
   it('unblind maps A/B back by key', () => {
-    const key = { 'pair-0001': { A: 'agent / m:off', B: 'baseline' } };
-    expect(unblind(key, 'pair-0001', 'A')).toBe('agent / m:off');
-    expect(unblind(key, 'pair-0001', 'B')).toBe('baseline');
-    expect(unblind(key, 'pair-0001', 'tie')).toBe('tie');
-    expect(() => unblind(key, 'pair-9999', 'A')).toThrow(/pair-9999/);
+    const key = { p001: { A: 'agent / m:off', B: 'baseline', course: 'GC 1', sub: 's0', label: 'agent / m:off' } };
+    expect(unblind(key, 'p001', 'A')).toBe('agent / m:off');
+    expect(unblind(key, 'p001', 'B')).toBe('baseline');
+    expect(unblind(key, 'p001', 'tie')).toBe('tie');
+    expect(() => unblind(key, 'p999', 'A')).toThrow(/p999/);
   });
 });
 
@@ -42,12 +45,35 @@ describe('makePairs', () => {
     expect(c.key).not.toEqual(a.key);
     expect(JSON.stringify(a.pairs)).not.toContain('baseline');
   });
+  it('pair ids are opaque and order is shuffled (not grouped by competency)', () => {
+    const ins = inputs(['agent / m:off', 'single / m:off']);
+    const { pairs, key } = makePairs(ins, 7);
+    const ids = pairs.map(p => p.id);
+    expect(ids.every(id => /^p\d{3}$/.test(id))).toBe(true);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(JSON.stringify(pairs)).not.toMatch(/agent|single|pair-/);
+    const grouped = ins.flatMap(i => i.candidates.map(() => i.sub)); // what unshuffled output would look like
+    const actual = pairs.map(p => key[p.id]!.sub);
+    expect(actual).not.toEqual(grouped);
+    expect(key[pairs[0]!.id]).toMatchObject({ course: 'GC 1' });
+  });
   it('secondJudgeIds draws a seeded 20% sample of pair ids', () => {
-    const { pairs } = makePairs(Array.from({ length: 50 }, (_, i) => ({ ...inputs(['agent / m:off'])[0]!, sub: `s${i}` })), 3);
-    const x = secondJudgeIds(pairs, 99), y = secondJudgeIds(pairs, 99);
+    const { pairs } = makePairs(Array.from({ length: 200 }, (_, i) => ({ ...inputs(['agent / m:off'])[0]!, sub: `s${i}` })), 3);
+    const x = secondJudgeIds(pairs, 99), y = secondJudgeIds(pairs, 99), z = secondJudgeIds(pairs, 100);
     expect(x).toEqual(y);
-    expect(x.length).toBe(10);
+    expect(x.length).toBe(40);
+    expect(z).not.toEqual(x);
     expect(new Set(x).size).toBe(x.length);
+  });
+  it('judge folder contains only pairs.json and pairs-second.json', () => {
+    const { pairs } = makePairs(inputs(['agent / m:off', 'single / m:off']), 7);
+    const files = judgeFolderFiles(pairs, 7);
+    expect(Object.keys(files).sort()).toEqual(['pairs-second.json', 'pairs.json']);
+    const body = JSON.stringify(files['pairs.json']);
+    expect(body).not.toContain('"seed"');
+    expect(body).not.toMatch(/agent|single|baseline/);
+    const second = (files['pairs-second.json'] as { pairs: Array<{ id: string }> }).pairs.map(p => p.id);
+    expect(second).toEqual(secondJudgeIds(pairs, 7 + 1));
   });
 });
 
@@ -59,7 +85,7 @@ describe('tallyBlind', () => {
   it('tally applies the decision rule: fewer breaks + >=50% + stability >= same-model single → adopt, else not', () => {
     const v = verdictsFor(key, 'agent / m:off', 'win');
     expect(agent(tallyBlind({ key, verdicts: v, summary: rows() })).adopt).toBe(true);
-    expect(agent(tallyBlind({ key, verdicts: v, summary: rows({ agentBreaks: 3 }) })).adopt).toBe(false); // breaks not fewer than 3
+    expect(agent(tallyBlind({ key, verdicts: v, summary: rows({ agentBreaks: 3 }) })).adopt).toBe(false); // 3/6 is not below 3/6
     expect(agent(tallyBlind({ key, verdicts: v, summary: rows({ agentStab: 0.4 }) })).adopt).toBe(false); // stability below single 0.5
     expect(agent(tallyBlind({ key, verdicts: v, summary: rows({ agentStab: null }) })).adopt).toBe(false); // agent stability undefined
     expect(agent(tallyBlind({ key, verdicts: v, summary: rows({ singleStab: null }) })).adopt).toBe(false); // single stability undefined
@@ -67,6 +93,21 @@ describe('tallyBlind', () => {
     const t = agent(tallyBlind({ key, verdicts: lost, summary: rows() }));
     expect(t.prefExTies).toBe(0);
     expect(t.adopt).toBe(false);
+  });
+
+  it('break rate decides with unequal cell counts', () => {
+    const v = verdictsFor(key, 'agent / m:off', 'win');
+    // baseline 3 breaks of 10 cells = 30%; agent 3 breaks of 30 cells = 10%: fewer as a rate, though not as a count
+    const unequal = (agentBreaks: number, agentCells: number): SummaryRow[] => [
+      { label: 'baseline', cells: 10, breaks: 3, stability: null },
+      { label: 'single / m:off', cells: 30, breaks: 2, stability: 0.5 },
+      { label: 'agent / m:off', cells: agentCells, breaks: agentBreaks, stability: 0.6 },
+    ];
+    const t = agent(tallyBlind({ key, verdicts: v, summary: unequal(3, 30) }));
+    expect(t.breakRate).toBeCloseTo(0.1);
+    expect(t.baselineBreakRate).toBeCloseTo(0.3);
+    expect(t.adopt).toBe(true);
+    expect(agent(tallyBlind({ key, verdicts: v, summary: unequal(4, 10) })).adopt).toBe(false); // 40% not below 30%
   });
 
   it('stability is compared with the same model\'s single arm', () => {
@@ -86,7 +127,7 @@ describe('tallyBlind', () => {
   it('single arm verdict ignores stability', () => {
     const v = verdictsFor(key, 'single / m:off', 'win');
     const s = single(tallyBlind({ key, verdicts: v, summary: rows({ singleStab: null, singleBreaks: 2 }) }));
-    expect(s.adopt).toBe(true); // breaks 2 < 3 and 100% preference; stability unmeasured but not judged
+    expect(s.adopt).toBe(true); // 2/6 < 3/6 and 100% preference; stability unmeasured but not judged
     expect(s.stabilityRef).toBeNull();
     expect(single(tallyBlind({ key, verdicts: v, summary: rows({ singleBreaks: 3 }) })).adopt).toBe(false); // breaks still judged
   });
