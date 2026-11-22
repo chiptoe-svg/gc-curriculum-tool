@@ -8,7 +8,7 @@ const SRC = [
 
 describe('normalizeForQuote', () => {
   it('lowercases, unifies quotes and dashes, collapses whitespace', () => {
-    expect(normalizeForQuote('  “Design   Brief” – in\n studio ')).toBe('"design brief" - in studio');
+    expect(normalizeForQuote('  “Design   Brief” – in\n studio ')).toBe('design brief - in studio');
   });
 });
 
@@ -25,6 +25,10 @@ describe('findQuote', () => {
 
   it('ignores quotes under 12 characters', () => {
     expect(findQuote('studio', SRC)).toEqual({ found: false, sourceId: null });
+  });
+
+  it('matches a quoted source phrase against an unquoted excerpt', () => {
+    expect(findQuote('write a design brief for every project', SRC)).toEqual({ found: true, sourceId: 'syllabus' });
   });
 
   it('a two-fragment excerpt joined by … is found when both fragments are in the source', () => {
@@ -52,6 +56,10 @@ describe('evidenceBreaks', () => {
   it('flags K2 and U1 when their excerpt is missing, and names each dim once', () => {
     const cell = { k: 2, u: 1, d: 0, excerpt: 'students present final portfolios to clients' };
     expect(evidenceBreaks(cell, SRC)).toEqual(['k', 'u']);
+  });
+
+  it('counts an empty excerpt above the floor as a break', () => {
+    expect(evidenceBreaks({ k: null, u: null, d: 3, excerpt: '' }, SRC)).toEqual(['d']);
   });
 
   it('does not flag K1/U0/D0', () => {

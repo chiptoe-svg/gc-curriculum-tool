@@ -6,13 +6,15 @@ import { depthBand } from '@/lib/program/depth-band';
 
 export type Dim = 'k' | 'u' | 'd';
 
-/** Lowercase, unify curly quotes and dashes, collapse whitespace. */
+/**
+ * Lowercase, unify dash variants, strip quote marks (as role-judge's normText
+ * does, from both source and fragments), collapse whitespace.
+ */
 export function normalizeForQuote(s: string): string {
   return s
-    .replace(/[‘’‚‛`´]/g, "'")
-    .replace(/[“”„‟]/g, '"')
-    .replace(/[‐‑‒–—−]/g, '-')
     .toLowerCase()
+    .replace(/[‐‑‒–—−]/g, '-')
+    .replace(/[‘’“”"'`´]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -79,10 +81,10 @@ export function evidenceBreaks(
 }
 
 /**
- * Share of (cell, dim) pairs whose depth band is identical across all runs.
- * Same definition as scripts/bench/role-judge.ts: bands via depthBand (null
- * maps to 'none'), agreement 1 if every run's band matches, averaged over dims.
- * Fewer than two runs gives NaN, as role-judge's average does.
+ * Per-dim agreement share for ONE cell across runs: the fraction of its three
+ * dims (k, u, d) whose depth band is identical in every run. Same definition
+ * as scripts/bench/role-judge.ts (bands via depthBand, null maps to 'none').
+ * Callers average the result over cells. Fewer than two runs gives NaN.
  */
 export function stability(runs: Array<{ k: number | null; u: number | null; d: number }>): number {
   if (runs.length < 2) return NaN;
