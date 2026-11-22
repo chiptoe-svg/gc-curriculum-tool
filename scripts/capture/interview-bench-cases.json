@@ -1,14 +1,266 @@
 {
   "about": "Interview moments for scripts/capture/interview-bench.ts. 'files' = the instructor's question was about a requirement the course files state (how something is graded, what students submit), so a good interviewer searches and cites a passage. 'instructor' = only the instructor can answer (what students actually do), so searching is optional. Session = the first 8 characters of the capture session id. Turn = the interviewer turn to regenerate; the turn before it must be the instructor's. Chosen 2026-10-27 from the original transcripts; 'files' is a judgment from the transcript (the instructor's reply pointed at a rubric, brief or assignment), not checked against every file.",
   "cases": [
-    { "id": "2070-088", "course": "GC 2070", "session": "24cdfa56", "turn": 88,  "kind": "files", "quick": true,  "note": "file naming/organization; instructor: 'as outlined in the rubric from the assignment's direction'" },
-    { "id": "2070-104", "course": "GC 2070", "session": "24cdfa56", "turn": 104, "kind": "files", "quick": true,  "note": "B6 lab report; instructor quoted the rubric verbatim" },
-    { "id": "2070-106", "course": "GC 2070", "session": "24cdfa56", "turn": 106, "kind": "files", "quick": false, "note": "B6 grading; the original interviewer searched here" },
-    { "id": "2070-132", "course": "GC 2070", "session": "24cdfa56", "turn": 132, "kind": "files", "quick": false, "note": "hometown-company discussion deliverables" },
-    { "id": "2070-024", "course": "GC 2070", "session": "24cdfa56", "turn": 24,  "kind": "instructor", "quick": true, "note": "students' own image adjustments in B5-B6 (practice, not a requirement)" },
-    { "id": "1010-020", "course": "GC 1010", "session": "8a8c3b90", "turn": 20,  "kind": "files", "quick": false, "note": "Course Lineup resubmission policy" },
-    { "id": "1010-008", "course": "GC 1010", "session": "8a8c3b90", "turn": 8,   "kind": "instructor", "quick": false, "note": "what the instructor can verify students did themselves" },
-    { "id": "1020-012", "course": "GC 1020", "session": "b87d3b89", "turn": 12,  "kind": "files", "quick": false, "note": "project choice and parameters (project briefs)" },
-    { "id": "1020-016", "course": "GC 1020", "session": "b87d3b89", "turn": 16,  "kind": "files", "quick": true,  "note": "are written summaries graded for explanation quality (rubrics)" }
+    {
+      "id": "2070-088",
+      "course": "GC 2070",
+      "session": "24cdfa56",
+      "turn": 88,
+      "kind": "files",
+      "quick": true,
+      "note": "file naming/organization; instructor: 'as outlined in the rubric from the assignment's direction'"
+    },
+    {
+      "id": "2070-104",
+      "course": "GC 2070",
+      "session": "24cdfa56",
+      "turn": 104,
+      "kind": "files",
+      "quick": true,
+      "note": "B6 lab report; instructor quoted the rubric verbatim"
+    },
+    {
+      "id": "2070-106",
+      "course": "GC 2070",
+      "session": "24cdfa56",
+      "turn": 106,
+      "kind": "files",
+      "quick": false,
+      "note": "B6 grading; the original interviewer searched here"
+    },
+    {
+      "id": "2070-132",
+      "course": "GC 2070",
+      "session": "24cdfa56",
+      "turn": 132,
+      "kind": "files",
+      "quick": false,
+      "note": "hometown-company discussion deliverables"
+    },
+    {
+      "id": "2070-024",
+      "course": "GC 2070",
+      "session": "24cdfa56",
+      "turn": 24,
+      "kind": "instructor",
+      "quick": true,
+      "note": "students' own image adjustments in B5-B6 (practice, not a requirement)"
+    },
+    {
+      "id": "1010-020",
+      "course": "GC 1010",
+      "session": "8a8c3b90",
+      "turn": 20,
+      "kind": "files",
+      "quick": false,
+      "note": "Course Lineup resubmission policy"
+    },
+    {
+      "id": "1010-008",
+      "course": "GC 1010",
+      "session": "8a8c3b90",
+      "turn": 8,
+      "kind": "instructor",
+      "quick": false,
+      "note": "what the instructor can verify students did themselves"
+    },
+    {
+      "id": "1020-012",
+      "course": "GC 1020",
+      "session": "b87d3b89",
+      "turn": 12,
+      "kind": "files",
+      "quick": false,
+      "note": "project choice and parameters (project briefs)"
+    },
+    {
+      "id": "1020-016",
+      "course": "GC 1020",
+      "session": "b87d3b89",
+      "turn": 16,
+      "kind": "files",
+      "quick": true,
+      "note": "are written summaries graded for explanation quality (rubrics)"
+    },
+    {
+      "id": "3400-005",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 5,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-007",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 7,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-009",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 9,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-011",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 11,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-013",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 13,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-015",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 15,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-017",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 17,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-019",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 19,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-021",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 21,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-023",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 23,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-025",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 25,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-027",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 27,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "3400-029",
+      "course": "GC 3400",
+      "session": "351e6ae6",
+      "turn": 29,
+      "kind": "instructor",
+      "quick": false,
+      "note": "GC 3400 full-arc replay (owner, 2026-11-19): compare with the stored question that worked; kind not judged for files/instructor"
+    },
+    {
+      "id": "pksc2200-069",
+      "course": "PKSC 2200",
+      "session": "98485a94",
+      "turn": 69,
+      "kind": "instructor",
+      "quick": false,
+      "note": "PKSC 2200 re-ask stretch (owner, 2026-11-19): the instructor had said four times (turns 25, 27, 39, 46) that students don't explain or reflect on failures; the stored interviewer re-asked at 71, 77, 81"
+    },
+    {
+      "id": "pksc2200-071",
+      "course": "PKSC 2200",
+      "session": "98485a94",
+      "turn": 71,
+      "kind": "instructor",
+      "quick": false,
+      "note": "PKSC 2200 re-ask stretch (owner, 2026-11-19): the instructor had said four times (turns 25, 27, 39, 46) that students don't explain or reflect on failures; the stored interviewer re-asked at 71, 77, 81"
+    },
+    {
+      "id": "pksc2200-073",
+      "course": "PKSC 2200",
+      "session": "98485a94",
+      "turn": 73,
+      "kind": "instructor",
+      "quick": false,
+      "note": "PKSC 2200 re-ask stretch (owner, 2026-11-19): the instructor had said four times (turns 25, 27, 39, 46) that students don't explain or reflect on failures; the stored interviewer re-asked at 71, 77, 81"
+    },
+    {
+      "id": "pksc2200-075",
+      "course": "PKSC 2200",
+      "session": "98485a94",
+      "turn": 75,
+      "kind": "instructor",
+      "quick": false,
+      "note": "PKSC 2200 re-ask stretch (owner, 2026-11-19): the instructor had said four times (turns 25, 27, 39, 46) that students don't explain or reflect on failures; the stored interviewer re-asked at 71, 77, 81"
+    },
+    {
+      "id": "pksc2200-077",
+      "course": "PKSC 2200",
+      "session": "98485a94",
+      "turn": 77,
+      "kind": "instructor",
+      "quick": false,
+      "note": "PKSC 2200 re-ask stretch (owner, 2026-11-19): the instructor had said four times (turns 25, 27, 39, 46) that students don't explain or reflect on failures; the stored interviewer re-asked at 71, 77, 81"
+    },
+    {
+      "id": "pksc2200-079",
+      "course": "PKSC 2200",
+      "session": "98485a94",
+      "turn": 79,
+      "kind": "instructor",
+      "quick": false,
+      "note": "PKSC 2200 re-ask stretch (owner, 2026-11-19): the instructor had said four times (turns 25, 27, 39, 46) that students don't explain or reflect on failures; the stored interviewer re-asked at 71, 77, 81"
+    },
+    {
+      "id": "pksc2200-081",
+      "course": "PKSC 2200",
+      "session": "98485a94",
+      "turn": 81,
+      "kind": "instructor",
+      "quick": false,
+      "note": "PKSC 2200 re-ask stretch (owner, 2026-11-19): the instructor had said four times (turns 25, 27, 39, 46) that students don't explain or reflect on failures; the stored interviewer re-asked at 71, 77, 81"
+    }
   ]
 }
