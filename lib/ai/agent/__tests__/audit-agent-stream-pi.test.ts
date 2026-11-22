@@ -29,6 +29,8 @@ vi.mock('@/lib/ai/function-settings', async (importActual) => ({
 }));
 vi.mock('@/lib/ai/agent/pi/endpoint', () => ({ piEndpointFor: async () => ({ baseUrl: 'http://x', apiKey: 'k', model: 'qwen3.8-27b-fp8', api: 'openai-completions', campusReasoning: 'off' }) }));
 const runPiTurn = vi.hoisted(() => vi.fn());
+const recordSpend = vi.hoisted(() => vi.fn(async (_c: number) => {}));
+vi.mock('@/lib/rate-limit/daily-cap', async (importActual) => ({ ...(await importActual<typeof import('@/lib/rate-limit/daily-cap')>()), recordSpend }));
 vi.mock('@/lib/ai/agent/pi/turn', () => ({ runPiTurn }));
 vi.mock('@/lib/ai/provider', () => ({
   getProviderForFunction: async () => ({
@@ -48,11 +50,12 @@ async function run() { const ev: Array<{ kind: string }> = []; for await (const 
 beforeEach(() => {
   persisted.length = 0;
   runPiTurn.mockReset();
+  recordSpend.mockClear();
   runPiTurn.mockImplementation(async (input: { tools: Array<{ execute: (a: unknown) => Promise<unknown> }>; onEvent?: (e: unknown) => void }) => {
     await input.tools[0]!.execute({ query: 'rubric' });
     input.onEvent?.({ kind: 'tool-start', toolName: 'search_materials', args: { query: 'rubric' } });
     input.onEvent?.({ kind: 'text-delta', delta: '{"finding":' });
-    return { value: reply, toolCallsUsed, telemetry: {}, controlEvents: ['search required (x); forced on the first request'], requests: 2 };
+    return { value: reply, toolCallsUsed, telemetry: { costUsdCents: 1234 }, controlEvents: ['search required (x); forced on the first request'], requests: 2 };
   });
 });
 
@@ -112,5 +115,21 @@ describe('streamAuditAgent on Pi', () => {
     expect(err.code).toBe('ai_credits_exhausted');
     expect(err.message).not.toMatch(/req1|rcd API error/);
   });
-});
 
+  it("records the turn's cost in the daily spend log (owner 2026-11-21: Pi should record usage)", async () => {
+    loop.value = 'pi';
+    await run();
+    expect(recordSpend).toHaveBeenCalledOnce();
+    expect(recordSpend).toHaveBeenCalledWith(1234);
+  });
+
+  it('a failed cost write does not cost the instructor the turn', async () => {
+    loop.value = 'pi';
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    recordSpend.mockRejectedValueOnce(new Error('db down'));
+    const ev = await run();
+    expect(ev.at(-1)!.kind).toBe('final');
+    expect(persisted).toHaveLength(1);
+    err.mockRestore();
+  });
+});

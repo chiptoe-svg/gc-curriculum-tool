@@ -4,6 +4,7 @@
  * tool-start per tool call, text-delta while the reply streams, then final or
  * error. Stores the assistant turn exactly as the current loop does.
  */
+import { recordSpend } from '@/lib/rate-limit/daily-cap';
 import { AiCreditsExhaustedError, isCreditsExhaustedError, markCreditsExhausted } from '@/lib/ai/credit-status';
 import { captureRetrievedChunks, checkTurnCitations, persistAssistantTurn, type AuditAgentInput, type BuiltAgentCall } from '@/lib/ai/agent/audit-agent';
 import type { AuditStreamEvent } from '@/lib/ai/agent/audit-agent-stream';
@@ -55,7 +56,7 @@ export async function* streamPiInterview(input: AuditAgentInput, built: BuiltAge
   const queue: AuditStreamEvent[] = [];
   let wake: (() => void) | null = null;
   let done = false;
-  let outcome: { response: AuditResponse; toolCallsUsed: ToolCall[] } | null = null;
+  let outcome: { response: AuditResponse; toolCallsUsed: ToolCall[]; result: PiTurnResult } | null = null;
   let failure: unknown = null;
 
   void runPiInterviewTurn(input, built, e => {
@@ -77,7 +78,7 @@ export async function* streamPiInterview(input: AuditAgentInput, built: BuiltAge
     yield { kind: 'error', message: err instanceof Error ? err.message : String(err), ...(credits ? { code: 'ai_credits_exhausted' as const } : {}) };
     return;
   }
-  const { response, toolCallsUsed } = outcome as { response: AuditResponse; toolCallsUsed: ToolCall[] };
+  const { response, toolCallsUsed, result } = outcome as { response: AuditResponse; toolCallsUsed: ToolCall[]; result: PiTurnResult };
   try {
     await persistAssistantTurn({
       sessionId: input.sessionId,
@@ -92,6 +93,9 @@ export async function* streamPiInterview(input: AuditAgentInput, built: BuiltAge
     yield { kind: 'error', message: err instanceof Error ? err.message : String(err) };
     return;
   }
+  // Pi prices every turn (campus models at $0); log it so interview spend shows in daily_cost
+  // (owner 2026-11-21). A failed write is logged, never shown to the instructor.
+  await recordSpend(result.telemetry?.costUsdCents ?? 0).catch(err => console.error(`[audit-agent] ${input.courseCode}: recordSpend failed`, err));
   yield { kind: 'final', response, toolCallsUsed: toolCallsUsed.length };
 }
 
