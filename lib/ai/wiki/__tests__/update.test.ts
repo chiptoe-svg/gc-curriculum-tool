@@ -825,6 +825,8 @@ describe('per-capture path is pinned', () => {
       'slug: gc-4800',
       'input_hash: 7c834abcb4ac',
       'evidence_bands: [materials_supported]',
+      // Set in code from the data (lib/ai/wiki/course-targets.ts); the mocked DB has no targets.
+      'contributes_to_targets: []',
       'timestamp: 2026-05-25T14:00:00.000Z',
       'tags: [course]',
       'resource: https://gcworkflow.clemson.edu:8443/wiki/courses/gc-4800',
