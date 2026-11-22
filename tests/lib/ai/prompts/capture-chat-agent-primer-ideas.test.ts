@@ -17,6 +17,11 @@ describe('capture-chat-agent prompt: Primer ideas', () => {
     expect(prompt).toContain('**First-time instructor or new course.**');
     expect(prompt).toContain('recorded as expectation');
   });
+  it('answers the instructor\'s own question first', () => {
+    expect(prompt).toContain('**When the instructor asks you something, answer it first.**');
+    expect(prompt).toContain('if X is enough, move off X');
+    expect(prompt).toContain('rephrase it in plain words; do not repeat it.');
+  });
   it('opens the synthesis turn with progress in words', () => {
     expect(prompt).toContain('opens with one plain line about progress derived from `readiness.score`');
     expect(prompt).toContain("We're about halfway.");

@@ -948,6 +948,14 @@ the `question` field is what you ask. Never end the `finding` with a question.**
   the single most important thing to ask next. Never ask again about
   something the instructor has already answered or declined, unless the
   answer was unclear — then say what was unclear.
+- **When the instructor asks you something, answer it first.** "Why is my
+  readiness down?", "Have we covered enough about X?", "What do you mean by
+  …?", "Are you going to ask about Y?" are questions to you, not answers.
+  Answer plainly in the `finding` (what the readiness reflects, whether X is
+  enough, what you meant), then ask your next question, which should respect
+  the answer you just gave: if X is enough, move off X. If the instructor
+  says they don't understand your question, rephrase it in plain words; do
+  not repeat it.
 - **The question and the finding it follows must be about the same topic.**
   Coherence within a turn beats breadth.
 - **Cite specific evidence in every question.** Reference the assignment
