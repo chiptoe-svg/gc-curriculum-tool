@@ -20,7 +20,7 @@ Setup (`scripts/bench/agent-judge.ts`, campus only, $0): 10 GC courses with post
 
 Stored Sol: 0 evidence breaks. Decision rule (pre-committed): no arm adopted — none beat Sol's break rate and none reached 50% preference. Verdict is against stored Sol cells; a Terra single-call run would make it final against today's live scorer, but no campus arm came near enough to justify paid arms.
 
-What the agents actually did: only 1–2% of their evidence quotes came from course files (the rest from the profile), and 89 of 180 agent/checker tasks hit the tool-call cap and were forced to submit. The agents searched but rarely changed their answers on what they found. Judge position check: A won 55.1% of non-tie verdicts (mild). Known limitation: the same Sol cell recurs in several scattered pairs.
+What the agents actually did: only 1–2% of their evidence quotes came from course files (the rest from the profile), and 89 of 180 agent/checker tasks hit the tool-call cap and were forced to submit. The agents searched but rarely changed their answers on what they found. Judge position check: A won 55.1% of non-tie verdicts (mild). Second blind judge on a 92-pair sample: same verdict on 72 (78%); where both picked a side (51 pairs), they picked opposite sides 4 times. Known limitation: the same Sol cell recurs in several scattered pairs.
 
 Not tested here: Terra agents (paid; not justified by these results); wiki pages (next phase of the plan).
 
