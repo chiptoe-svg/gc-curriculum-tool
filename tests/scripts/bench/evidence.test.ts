@@ -26,6 +26,21 @@ describe('findQuote', () => {
   it('ignores quotes under 12 characters', () => {
     expect(findQuote('studio', SRC)).toEqual({ found: false, sourceId: null });
   });
+
+  it('a two-fragment excerpt joined by … is found when both fragments are in the source', () => {
+    expect(findQuote('Typography is assessed on kerning … Critique is held weekly', SRC))
+      .toEqual({ found: true, sourceId: 'rubric' });
+  });
+
+  it('a two-fragment excerpt with one invented fragment is not found', () => {
+    expect(findQuote('Typography is assessed on kerning … students present portfolios to clients', SRC))
+      .toEqual({ found: false, sourceId: null });
+  });
+
+  it('fragments under 12 chars are ignored but an all-short quote is not found', () => {
+    expect(findQuote('ok … Typography is assessed on kerning', SRC)).toEqual({ found: true, sourceId: 'rubric' });
+    expect(findQuote('ok … fine', SRC)).toEqual({ found: false, sourceId: null });
+  });
 });
 
 describe('evidenceBreaks', () => {
