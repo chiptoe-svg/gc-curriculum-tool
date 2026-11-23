@@ -17,6 +17,11 @@ async function loadInputs(): Promise<{ tree: Tree; membership: Membership[] }> {
   const tree = await loadTree();
   const membership = (await db.select({ targetId: careerTargetMembership.careerTargetId, competencyId: careerTargetMembership.competencyId })
     .from(careerTargetMembership));
+  // An empty tree (0074 not applied: loadTree returns EMPTY_TREE) or empty
+  // membership is "no data", not "every course feeds nothing": refuse, so the
+  // writer and backfill leave the fields alone and the page keeps its list.
+  if (tree.nodes.length === 0) throw new Error('skill tree is empty');
+  if (membership.length === 0) throw new Error('no career target membership');
   return { tree, membership };
 }
 

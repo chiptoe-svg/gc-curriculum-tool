@@ -75,3 +75,12 @@ describe('backfillCourseTargetShares', () => {
     expect(out[1]!.content).toContain('target_skill_shares: {}');
   });
 });
+
+describe('stampCourseTargetShares with dollar signs', () => {
+  it('keeps $1 and $& in front matter values intact', () => {
+    const page = PAGE.replace('title: "Intro"', () => 'title: "A $1,500 budget & $& more"');
+    const out = stampCourseTargetShares(page, shares([['T1', 50]]));
+    expect(out).toContain('title: "A $1,500 budget & $& more"');
+    expect(out.match(/^---$/gm)).toHaveLength(2);
+  });
+});

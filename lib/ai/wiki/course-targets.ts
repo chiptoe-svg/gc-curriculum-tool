@@ -21,7 +21,7 @@ const fieldRe = (key: string) => new RegExp(`^${key}:.*(?:\\n[ \\t]+.*)*$`, 'm')
 
 function setField(fm: string, key: string, line: string): string {
   const re = fieldRe(key);
-  return re.test(fm) ? fm.replace(re, line) : `${fm}\n${line}`;
+  return re.test(fm) ? fm.replace(re, () => line) : `${fm}\n${line}`;
 }
 
 /** Course page front matter for these shares (replace or append both fields). Pages without front matter are returned unchanged. */
@@ -33,7 +33,7 @@ export function stampCourseTargetShares(content: string, shares: CourseTargetSha
   const map = has ? shares.targets.map(t => `${t.targetId}: ${t.pct}`).join(', ') : '';
   let fm = setField(m[1]!, 'contributes_to_targets', `contributes_to_targets: [${targets.join(', ')}]`);
   fm = setField(fm, 'target_skill_shares', `target_skill_shares: {${map}}`);
-  return content.replace(FRONTMATTER_RE, `---\n${fm}\n---\n`);
+  return content.replace(FRONTMATTER_RE, () => `---\n${fm}\n---\n`);
 }
 
 /** Shares for a course with no skills in the tree. */
