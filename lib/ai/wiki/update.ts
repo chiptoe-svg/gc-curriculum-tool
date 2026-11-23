@@ -10,7 +10,8 @@
  */
 
 import { loadPairedSlugMap, rewritePairedLinks } from '@/lib/ai/wiki/paired-links';
-import { courseTargetMap, stampCourseTargets } from '@/lib/ai/wiki/course-targets';
+import { NO_SHARES, stampCourseTargetShares } from '@/lib/ai/wiki/course-targets';
+import { loadAllCourseTargetShares } from '@/lib/db/course-target-shares-queries';
 import { wikiProvider } from '@/lib/ai/wiki/handoff-provider';
 import { ensureCourseSkillEmbeddings, loadProjectTrail, loadBuildingProjects, type BuildingProject } from '@/lib/db/project-trail-queries';
 import type { TrailProject } from '@/lib/catalog/project-trail';
@@ -467,23 +468,6 @@ interface CoverageRollupEntry {
  * connection inside one `BEGIN … ROLLBACK` (same pattern as
  * program-coverage-queries.ts:listStaleSnapshots).
  */
-/**
- * course slug → sorted target slugs, from each career target's contributing
- * courses (the same source the target pages list). null on any read failure,
- * in which case the model's value is left as written.
- */
-export async function loadCourseTargetMap(pairedSlugs: Map<string, string>): Promise<Map<string, string[]> | null> {
-  try {
-    const ids = (await db.select({ id: careerTargets.id }).from(careerTargets)).map(r => r.id).sort();
-    const coursesByTarget: Record<string, string[]> = {};
-    for (const id of ids) coursesByTarget[id] = (await loadTargetSubstrate(id)).contributingCourses;
-    return courseTargetMap(coursesByTarget, pairedSlugs);
-  } catch (err) {
-    console.warn(`[wiki-update] course target map unavailable: ${err instanceof Error ? err.message : String(err)}`);
-    return null;
-  }
-}
-
 export async function loadTargetSubstrate(targetId: string, executor: Tx | typeof db = db): Promise<{
   targetName: string;
   shortDefinition: string;
@@ -1134,10 +1118,11 @@ async function generateStampedPages(args: {
   //   isn't in this set by design.
   const requestedPaths = new Set(pages.map(p => p.path));
   const pairedSlugs = await loadPairedSlugMap();
-  // Course pages' contributes_to_targets comes from the data, not the model
-  // (see lib/ai/wiki/course-targets.ts). Loaded only when a course page is written.
-  const targetsByCourse = generatedPages.some(p => p.path.startsWith('courses/'))
-    ? await loadCourseTargetMap(pairedSlugs) : null;
+  // Course pages' target fields come from the skill tree shares, not the model
+  // (see lib/ai/wiki/course-targets.ts). Loaded only when a course page is written;
+  // null on a read failure, which leaves the model's fields as written.
+  const sharesByCourse = generatedPages.some(p => p.path.startsWith('courses/'))
+    ? await loadAllCourseTargetShares(pairedSlugs) : null;
   // Per-page input watermark: hash of the (hash seed + page substrate) that
   // produced each requested page. Stamped into frontmatter so a later
   // reconcile pass can detect stale/missing pages deterministically.
@@ -1178,8 +1163,8 @@ async function generateStampedPages(args: {
     // never flow through this loop.
     {
       const slug = p.path.replace(/^.*\//, '').replace(/\.md$/, '');
-      if (targetsByCourse && p.path.startsWith('courses/') && slug !== 'index') {
-        content = stampCourseTargets(content, targetsByCourse.get(slug) ?? []);
+      if (sharesByCourse && p.path.startsWith('courses/') && slug !== 'index') {
+        content = stampCourseTargetShares(content, sharesByCourse.get(slug) ?? NO_SHARES);
       }
       content = stampOkfFrontmatter(content, { slug, timestamp: timestampIso });
     }

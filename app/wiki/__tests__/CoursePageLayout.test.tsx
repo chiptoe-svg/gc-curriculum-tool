@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { CoursePageLayout } from '../CoursePageLayout';
 import type { CourseViews } from '@/lib/wiki/course-views';
 import type { ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
@@ -178,5 +178,43 @@ describe('CoursePageLayout', () => {
   it('falls back to the generated competency list when the course has no captured evidence', () => {
     setup({ views: { ...VIEWS, evidence: null } as CourseViews });
     expect(document.getElementById('learn')!.textContent).toContain('Conceptual development');
+  });
+});
+
+describe('CoursePageLayout target bars', () => {
+  const SHARES = {
+    totalSkills: 13, confirmedPlacements: 0, totalPlacements: 13,
+    targets: [
+      { href: '/wiki/targets/brand-strategy', label: 'Brand strategy', pct: 100 },
+      { href: '/wiki/targets/production-operations', label: 'Production operations', pct: 38 },
+    ],
+  };
+
+  it('renders a bar per target with its percent', () => {
+    setup({ targetShares: SHARES });
+    const link = screen.getByRole('link', { name: 'Production operations' });
+    expect(link.getAttribute('href')).toBe('/wiki/targets/production-operations');
+    expect(screen.getByText('38%')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Production operations: 38% of skills' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Packaging' })).toBeNull();
+  });
+
+  it('shows the explainer and the confirmation count', () => {
+    setup({ targetShares: SHARES });
+    expect(screen.getByText("Share of this course's 13 skills that feed each target · 0 of 13 placements confirmed by faculty")).toBeTruthy();
+  });
+
+  it('drops the confirmation clause when all are confirmed', () => {
+    setup({ targetShares: { ...SHARES, confirmedPlacements: 13 } });
+    expect(screen.getByText("Share of this course's 13 skills that feed each target")).toBeTruthy();
+  });
+
+  it('page falls back when shares are null', () => {
+    setup({ targetShares: null });
+    expect(screen.getByRole('link', { name: 'Packaging' })).toBeTruthy();
+    cleanup();
+    setup({ targetShares: { ...SHARES, totalSkills: 0 } });
+    expect(screen.getByRole('link', { name: 'Packaging' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: /of skills/ })).toBeNull();
   });
 });

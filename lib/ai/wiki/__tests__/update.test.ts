@@ -35,6 +35,13 @@ vi.mock('@/lib/ai/wiki/paired-links', async (orig) => ({
   loadPairedSlugMap: async () => new Map([['gc-2071', 'gc-2070']]),
 }));
 
+// Course target shares come from the skill tree (lib/db/course-target-shares-queries.ts).
+const sharesMocks = vi.hoisted(() => ({
+  loadAllCourseTargetShares: vi.fn(async (): Promise<Map<string, unknown> | null> => new Map()),
+  loadCourseTargetShares: vi.fn(async () => null),
+}));
+vi.mock('@/lib/db/course-target-shares-queries', () => sharesMocks);
+
 vi.mock('@/lib/db/client', () => ({
   db: {
     select: vi.fn(),
@@ -825,8 +832,9 @@ describe('per-capture path is pinned', () => {
       'slug: gc-4800',
       'input_hash: 7c834abcb4ac',
       'evidence_bands: [materials_supported]',
-      // Set in code from the data (lib/ai/wiki/course-targets.ts); the mocked DB has no targets.
+      // Set in code from the skill tree shares (lib/ai/wiki/course-targets.ts); the mock has none for this course.
       'contributes_to_targets: []',
+      'target_skill_shares: {}',
       'timestamp: 2026-05-25T14:00:00.000Z',
       'tags: [course]',
       'resource: https://gcworkflow.clemson.edu:8443/wiki/courses/gc-4800',
@@ -835,6 +843,44 @@ describe('per-capture path is pinned', () => {
       '# GC 4800 — Senior Capstone',
       '',
     ].join('\n'));
+  });
+});
+
+describe('course target fields', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (getSnapshotById as ReturnType<typeof vi.fn>).mockResolvedValue(mockSnapshot);
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(makeDbChain([]));
+    (loadPrompt as ReturnType<typeof vi.fn>).mockResolvedValue('sys');
+  });
+
+  it("leaves the model's target fields when shares are unavailable", async () => {
+    sharesMocks.loadAllCourseTargetShares.mockResolvedValueOnce(null);
+    const response = {
+      ...mockLLMResponse,
+      pages: mockLLMResponse.pages.map(p => p.path === 'courses/gc-4800.md'
+        ? { ...p, content: p.content.replace('slug: gc-4800\n', 'slug: gc-4800\ncontributes_to_targets: [brand-strategy]\n') }
+        : p),
+    };
+    const complete = vi.fn().mockResolvedValue({ data: response });
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue({ model: 'm', complete });
+    const { wiki } = await updateWikiForSnapshot(SNAPSHOT_ID);
+    const page = wiki.find(p => p.path === 'courses/gc-4800.md')!.content;
+    expect(page).toContain('contributes_to_targets: [brand-strategy]');
+    expect(page).not.toContain('target_skill_shares');
+  });
+
+  it('stamps the shares for the course page', async () => {
+    sharesMocks.loadAllCourseTargetShares.mockResolvedValueOnce(new Map([['gc-4800', {
+      totalSkills: 4, confirmedPlacements: 0, totalPlacements: 4,
+      targets: [{ targetId: 'brand-strategy', skills: 3, pct: 75 }, { targetId: 'ai-workflow', skills: 0, pct: 0 }],
+    }]]));
+    const complete = vi.fn().mockResolvedValue({ data: mockLLMResponse });
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue({ model: 'm', complete });
+    const { wiki } = await updateWikiForSnapshot(SNAPSHOT_ID);
+    const page = wiki.find(p => p.path === 'courses/gc-4800.md')!.content;
+    expect(page).toContain('contributes_to_targets: [brand-strategy]\ntarget_skill_shares: {brand-strategy: 75, ai-workflow: 0}');
+    expect(page).toContain('tags: [course, brand-strategy]');
   });
 });
 

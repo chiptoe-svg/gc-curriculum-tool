@@ -17,6 +17,13 @@ import { ObjectiveGuidePanel } from './ObjectiveGuidePanel';
  */
 
 export interface PageLink { href: string; label: string }
+/** Share of the course's skill-tree skills that feed each career target (lib/skill-tree/course-target-shares.ts). */
+export interface TargetSharesView {
+  totalSkills: number;
+  confirmedPlacements: number;
+  totalPlacements: number;
+  targets: Array<PageLink & { pct: number }>;
+}
 
 const depth = (v: number | null) => (v === null ? '–' : <span className={`lv d${v}`}>{v}</span>);
 function Md({ children }: { children: string }) {
@@ -39,11 +46,13 @@ const PLACED = new Set([
   'Signature projects', 'How the projects connect', 'Syllabus', 'Source snapshots', 'Cross-references',
 ]);
 
-export function CoursePageLayout({ body, views, guide, buildsToward, develops, q }: {
+export function CoursePageLayout({ body, views, guide, buildsToward, targetShares = null, develops, q }: {
   body: string;
   views: CourseViews | null;
   guide: ObjectiveGuideSection | null;
   buildsToward: PageLink[];
+  /** Bars replace the buildsToward list when the course has skills in the tree. */
+  targetShares?: TargetSharesView | null;
   develops: PageLink[];
   q: string;
 }) {
@@ -59,11 +68,12 @@ export function CoursePageLayout({ body, views, guide, buildsToward, develops, q
   const limits = s['Limits of this capture'] ?? s['Audit notes'];
   const extra = Object.entries(s).filter(([h]) => !PLACED.has(h));
 
+  const bars = targetShares && targetShares.totalSkills > 0 ? targetShares : null;
   const has = {
     objectives: objectives.length > 0 || differences.length > 0 || !!differMd,
     learn: !!evidence || !!s['Competencies developed'],
     projects: !!s['Signature projects'] || !!projectLinks,
-    program: buildsToward.length > 0 || develops.length > 0 || predicted.length > 0,
+    program: !!bars || buildsToward.length > 0 || develops.length > 0 || predicted.length > 0,
     instructor: !!guide,
     sources: !!syllabus || !!limits || !!s['Cross-references'] || extra.length > 0,
   };
@@ -179,7 +189,26 @@ export function CoursePageLayout({ body, views, guide, buildsToward, develops, q
         <section id="program" className="wiki-course__section">
           <h2>Where it fits in the program</h2>
           <div className="wiki-course__fit">
-            {buildsToward.length > 0 && (
+            {bars ? (
+              <div>
+                <h3>Builds toward these career targets</h3>
+                <p className="wiki-course__legend">
+                  {`Share of this course's ${bars.totalSkills} skills that feed each target`}
+                  {bars.confirmedPlacements < bars.totalPlacements ? ` · ${bars.confirmedPlacements} of ${bars.totalPlacements} placements confirmed by faculty` : ''}
+                </p>
+                <ul className="wiki-bars">
+                  {bars.targets.map(t => (
+                    <li key={t.href} className="wiki-bars__row">
+                      <Link href={t.href} className="wiki-bars__label">{t.label}</Link>
+                      <span className="wiki-bars__track" role="img" aria-label={`${t.label}: ${t.pct}% of skills`}>
+                        <span className="wiki-bars__fill" style={{ width: `${t.pct}%` }} />
+                      </span>
+                      <span className="wiki-bars__pct">{t.pct}%</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : buildsToward.length > 0 && (
               <div>
                 <h3>Builds toward these career targets</h3>
                 <ul>{buildsToward.map(l => <li key={l.href}><Link href={l.href}>{l.label}</Link></li>)}</ul>

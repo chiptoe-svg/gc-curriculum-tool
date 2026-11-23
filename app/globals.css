@@ -540,6 +540,12 @@
 .wiki-course__fit { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0 2rem; }
 .wiki-course__fit ul { margin: 0; padding: 0; list-style: none; }
 .wiki-course__fit li { padding: 0.35rem 0; border-top: 1px solid var(--wiki-rule); line-height: 1.35; font-size: 0.9375rem; }
+/* Career target bars on course pages: name and percent on one line, the bar below (fits 320px). */
+.wiki-bars__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 0.75rem; row-gap: 0.3rem; }
+.wiki-bars__label { min-width: 0; }
+.wiki-bars__pct { grid-row: 1; grid-column: 2; font-variant-numeric: tabular-nums; color: var(--wiki-muted); font-size: 0.875rem; }
+.wiki-bars__track { grid-column: 1 / -1; display: block; height: 0.5rem; border-radius: 999px; background: var(--g-soft, #E6E3EC); overflow: hidden; }
+.wiki-bars__fill { display: block; height: 100%; border-radius: 999px; background: color-mix(in srgb, var(--g-purple, #522D80) 70%, transparent); }
 .wiki-course__guide > summary { cursor: pointer; font-size: 0.9375rem; line-height: 1.5; padding: 0.5rem 0; }
 .wiki-assess--embedded { margin: 0.5rem 0 0; padding-top: 0; border-top: 0; }
 

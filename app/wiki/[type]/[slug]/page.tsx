@@ -17,6 +17,8 @@ import { CoursePageLayout } from '../../CoursePageLayout';
 import { captureFact, courseLevelLabel } from '@/lib/wiki/course-page';
 import { TermsHint, CAREER_TARGETS_BETA } from '../../HowToRead';
 import { loadCourseViews, loadTargetMap, loadRetiredCompetencyIds, type CourseViews } from '@/lib/wiki/course-views';
+import { loadCourseTargetShares } from '@/lib/db/course-target-shares-queries';
+import type { CourseTargetShares } from '@/lib/skill-tree/course-target-shares';
 import { loadObjectiveGuideSection, type ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
 import { isWikiServedType, type WikiServedType } from '@/lib/ai/wiki/schema';
 
@@ -89,6 +91,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
   // DB-backed structure (best-effort; the page still renders from the wiki alone).
   let views: CourseViews | null = null;
   let guideSection: ObjectiveGuideSection | null = null;
+  let targetShares: CourseTargetShares | null = null;
   const targetMap = type === 'competencies' || type === 'targets' ? await loadTargetMap().catch(() => null) : null;
   // Retired competencies keep their wiki page as history: label the page, and
   // never list them as something a course develops or a target is made of.
@@ -112,6 +115,8 @@ export default async function WikiPage({ params, searchParams }: Props) {
     for (const c of index.competencies) if (listFromFrontmatter(await fmOf('competencies', c.slug, 'contributing_courses')).includes(pageSlug)) comps.add(c.slug);
     related.push({ heading: 'Builds toward', type: 'targets', slugs: [...targets] });
     views = await loadCourseViews(codeFromSlug(pageSlug)).catch(() => null);
+    // Live from the skill tree; null on a read failure (the page then keeps the link list).
+    targetShares = await loadCourseTargetShares(codeFromSlug(pageSlug));
     guideSection = await loadObjectiveGuideSection(codeFromSlug(pageSlug)).catch(() => null);
     related.push({ heading: 'Develops', type: 'competencies', slugs: [...comps].filter(c => !retiredComps.has(c)) });
   } else if (type === 'targets') {
@@ -185,6 +190,10 @@ export default async function WikiPage({ params, searchParams }: Props) {
           views={views}
           guide={guideSection}
           buildsToward={related.find(r => r.heading === 'Builds toward')?.slugs.map(s => ({ href: `/wiki/targets/${s}${q}`, label: titleOf.get(s) ?? s })) ?? []}
+          targetShares={targetShares && {
+            ...targetShares,
+            targets: targetShares.targets.map(t => ({ href: `/wiki/targets/${t.targetId}${q}`, label: titleOf.get(t.targetId) ?? t.targetId, pct: t.pct })),
+          }}
           develops={related.find(r => r.heading === 'Develops')?.slugs.map(s => ({ href: `/wiki/competencies/${s}${q}`, label: titleOf.get(s) ?? s })) ?? []}
           q={q}
         />
