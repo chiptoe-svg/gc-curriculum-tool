@@ -1,6 +1,8 @@
 /**
- * Backfill course pages' `contributes_to_targets` from the wiki's own target
- * pages (lib/ai/wiki/course-targets.ts). No AI, no database.
+ * Backfill course pages' `contributes_to_targets` and `target_skill_shares`
+ * from the skill tree (lib/ai/wiki/course-targets.ts,
+ * lib/db/course-target-shares-queries.ts). No AI; reads the database only
+ * (needs the app's DATABASE_URL).
  *
  *   tsx scripts/wiki/stamp-course-targets.ts --out <dir>   copy the wiki to <dir> and stamp the copy
  *   tsx scripts/wiki/stamp-course-targets.ts --in-place    stamp the wiki working tree (no commit, no push)
@@ -10,9 +12,11 @@
  */
 import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { backfillCourseTargets } from '@/lib/ai/wiki/course-targets';
+import { backfillCourseTargetShares } from '@/lib/ai/wiki/course-targets';
+import { loadPairedSlugMap } from '@/lib/ai/wiki/paired-links';
+import { loadAllCourseTargetShares } from '@/lib/db/course-target-shares-queries';
 
-function main(argv: string[]): number {
+async function main(argv: string[]): Promise<number> {
   const repo = process.env.WIKI_REPO_PATH ?? '/Users/admin/projects/gc-curriculum-wiki';
   const outIdx = argv.indexOf('--out');
   const inPlace = argv.includes('--in-place');
@@ -23,14 +27,16 @@ function main(argv: string[]): number {
     if (!argv[outIdx + 1] || existsSync(root)) { console.error(`--out needs a new directory (${root} exists or is missing)`); return 2; }
     cpSync(repo, root, { recursive: true, filter: src => !src.split(path.sep).includes('.git') });
   }
-  const files = ['targets', 'courses'].flatMap(s => {
+  const shares = await loadAllCourseTargetShares(await loadPairedSlugMap());
+  if (!shares) { console.error('could not read the skill tree shares; nothing written'); return 1; }
+  const files = ['courses'].flatMap(s => {
     const dir = path.join(root, s);
     return existsSync(dir) ? readdirSync(dir).filter(f => f.endsWith('.md')).map(f => `${s}/${f}`) : [];
   });
-  const changed = backfillCourseTargets(files.map(rel => ({ path: rel, content: readFileSync(path.join(root, rel), 'utf8') })));
+  const changed = backfillCourseTargetShares(files.map(rel => ({ path: rel, content: readFileSync(path.join(root, rel), 'utf8') })), shares);
   for (const p of changed) writeFileSync(path.join(root, p.path), p.content);
   console.log(`${changed.length} course pages changed; written under ${root}`);
   return 0;
 }
 
-process.exit(main(process.argv.slice(2)));
+main(process.argv.slice(2)).then(code => process.exit(code), err => { console.error(err); process.exit(1); });
