@@ -60,11 +60,6 @@ const PUBLIC_PREFIXES = [
   '/sme-questions.html',
   '/sme-questions-2.html',
   '/api/procurement-intake',
-  // Godfrey Hall tour sign-up (owner 2026-11-24): a static page in
-  // public/tours/ plus its endpoint storing students' names to a JSON file.
-  // No faculty data; public on purpose (campus network only, like the app).
-  '/tours',
-  '/api/tours',
 ] as const;
 
 /**
