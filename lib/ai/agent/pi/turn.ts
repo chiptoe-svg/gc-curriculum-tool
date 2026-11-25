@@ -70,10 +70,16 @@ export interface PiTurnInput {
   maxToolCalls?: number;
   /** Stream events for the chat screen: tool-start per tool call, text-delta while the reply streams. */
   onEvent?: (e: StreamEvent<AuditResponse>) => void;
+  /** A custom reply tool (still named submit_turn). Default: the AuditResponse schema, with the citation checks. */
+  submit?: { jsonSchema: Record<string, unknown>; parse: (raw: unknown) => unknown; description: string };
+  /** Checks a custom submit's parsed value; a returned message is sent back to the model. Custom submit only. */
+  checkSubmit?: (value: unknown) => string | null;
+  /** Send-backs from checkSubmit before the value is accepted anyway (default 2). */
+  maxSendBacks?: number;
 }
 
-export interface PiTurnResult {
-  value: AuditResponse;
+export interface PiTurnResult<T = AuditResponse> {
+  value: T;
   toolCallsUsed: ToolCall[];
   telemetry: CompletionTelemetry & { cacheWriteTokens: number };
   /** What the controls did this turn, in order. */
@@ -110,7 +116,7 @@ export function toolErrorEvent(toolName: string, result: unknown): string {
 
 const ZERO_USAGE = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } };
 
-export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
+export async function runPiTurn<T = AuditResponse>(input: PiTurnInput): Promise<PiTurnResult<T>> {
   const started = Date.now();
   const { Agent } = await import('@earendil-works/pi-agent-core');
   const { createModels, createProvider, envApiKeyAuth } = await import('@earendil-works/pi-ai');
@@ -150,7 +156,12 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
   // Temperature only for campus models: OpenAI's gpt-6 reasoning models reject it (review I1).
   const temperature = ep.campusReasoning !== undefined || isCampusModel(ep.model) ? PI_TEMPERATURE : undefined;
   let citeRetries = 0;
-  let final: AuditResponse | undefined;
+  let sendBacks = 0;
+  const maxSendBacks = input.maxSendBacks ?? 2;
+  const customSubmit = input.submit;
+  const submitSchema = customSubmit?.jsonSchema ?? submitTurnSchema();
+  let final: unknown;
+  let hasFinal = false;
   let requests = 0;
   let forceSubmit = false;
   const trace: string[] = [];
@@ -173,12 +184,31 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
   tools.push({
     name: 'submit_turn',
     label: 'submit_turn',
-    description: 'Deliver this turn: the finding, the one question, the citations and readiness. Call last, once.',
-    parameters: Type.Unsafe(submitTurnSchema()),
+    description: customSubmit?.description ?? 'Deliver this turn: the finding, the one question, the citations and readiness. Call last, once.',
+    parameters: Type.Unsafe(submitSchema),
     // Pi 1.6 would turn a null string into the text "null" before validation; make it "" (and a null array []).
-    prepareArguments: (args: unknown) => nullsToEmpty(args, submitTurnSchema()) as never,
+    prepareArguments: (args: unknown) => nullsToEmpty(args, submitSchema) as never,
     executionMode: 'sequential',
     async execute(_id: string, params: unknown) {
+      if (customSubmit) {
+        let parsedValue: unknown;
+        try {
+          parsedValue = customSubmit.parse(params);
+        } catch (err) {
+          controlEvents.push('reply did not match the response schema; sent back');
+          throw new Error(`submit_turn arguments are invalid: ${err instanceof Error ? err.message.slice(0, 400) : String(err)}`);
+        }
+        const problem = input.checkSubmit?.(parsedValue) ?? null;
+        if (problem && !forceSubmit && sendBacks < maxSendBacks) {
+          sendBacks++;
+          controlEvents.push(`submit check failed: ${problem.slice(0, 300)}; sent back`);
+          throw new Error(problem);
+        }
+        if (problem) controlEvents.push('repeat-accepted');
+        final = parsedValue;
+        hasFinal = true;
+        return { content: [{ type: 'text' as const, text: 'Turn delivered.' }], details: {}, terminate: true };
+      }
       const repaired = repairCitations(params, msgs);
       if (JSON.stringify(repaired) !== JSON.stringify(params)) controlEvents.push('citations repaired');
       const parsed = AuditResponseSchema.safeParse(repaired);
@@ -198,6 +228,7 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
         value = keepValidCitations(value, { retrievedThisTurn, history });
       }
       final = value;
+      hasFinal = true;
       return { content: [{ type: 'text' as const, text: 'Turn delivered.' }], details: {}, terminate: true };
     },
   });
@@ -246,8 +277,8 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
     finishTurn: async ({ message }) => {
       trace.push(`req${requests}: ${message.stopReason}${message.errorMessage ? ' ' + message.errorMessage.slice(0, 160) : ''}`);
       if (message.stopReason === 'error' || message.stopReason === 'aborted') return;
-      if (final) return { action: 'end' };
-      if (requests >= maxToolCalls + 2 + MAX_CITATION_RETRIES * 2) return { action: 'end' };
+      if (hasFinal) return { action: 'end' };
+      if (requests >= maxToolCalls + 2 + Math.max(MAX_CITATION_RETRIES, maxSendBacks) * 2) return { action: 'end' };
       // Answered in plain text instead of calling a tool: ask again and force submit_turn.
       if (!message.content.some(c => c.type === 'toolCall')) {
         controlEvents.push('replied in text; forced submit_turn');
@@ -280,7 +311,7 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
     unsubscribe();
   }
   if (agent.state.errorMessage) throw new Error(`pi: ${agent.state.errorMessage} | ${trace.join(' | ')}`);
-  if (!final) throw new Error(`pi: no submit_turn after ${requests} request(s) | ${trace.join(' | ')}`);
+  if (!hasFinal) throw new Error(`pi: no submit_turn after ${requests} request(s) | ${trace.join(' | ')}`);
 
   let uncached = 0, cached = 0, out = 0, writes = 0;
   for (const m of agent.state.messages.slice(prior.length)) {
@@ -292,7 +323,7 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
   // uncached already includes the cache writes (counted once), so no separate cacheWrite term.
   const costUsdCents = priceUsdCents(ep.model, { freshInput: uncached, cachedInput: cached, output: out });
   return {
-    value: final,
+    value: final as T,
     toolCallsUsed,
     telemetry: { costUsdCents, durationMs: Date.now() - started, cachedTokens: cached, uncachedPromptTokens: uncached, completionTokens: out, cacheWriteTokens: writes },
     controlEvents,
