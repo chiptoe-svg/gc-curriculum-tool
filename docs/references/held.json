@@ -6,6 +6,27 @@
   },
   "pages": {
     "background.html": {
+      "ref-coleman-2017": {
+        "file": "pdfs:cambridge-assessment-reliability-of-applying-taxonomies.pdf"
+      },
+      "ref-fuller-2007": {
+        "file": "pdfs:fuller-2007-cs-learning-taxonomy.pdf"
+      },
+      "ref-gosselin-2018": {
+        "file": "pdfs:gosselin-okamoto-2018-bloom-descriptive-rubrics.pdf"
+      },
+      "ref-hess-2009": {
+        "file": "pdfs:hess-2009-cognitive-rigor-bloom-webb.pdf"
+      },
+      "ref-larsen-2022": {
+        "file": "pdfs:larsen-2022-probing-assumptions-revised-bloom.pdf"
+      },
+      "ref-stanny-2016": {
+        "file": "pdfs:stanny-2016-bloom-verbs.pdf"
+      },
+      "ref-teodorescu-2013": {
+        "file": "pdfs:teodorescu-2013-taxonomy-introductory-physics-problems.pdf"
+      },
       "ref-aacu": {
         "file": "pdfs:aacu-integrative-learning-value-rubric.pdf",
         "note": "card has no Local copy line (pre-dates PDF acquisition)"

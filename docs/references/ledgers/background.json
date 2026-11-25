@@ -1833,6 +1833,150 @@
       "held_file": "pdfs:mollick-2026-primer-ssrn-7696720.pdf",
       "quote": "The design document functions as a boundary object (Star & Griesemer, 1989) and retains a common identity while different groups use and interpret it differently",
       "page": "p. 7"
+    },
+    {
+      "id": "bg-bloomx-1",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "The 19 processes receive the major emphasis in the revision",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "the 19 specific cognitive processes within the six cognitive process categories receive the major emphasis",
+      "page": "214"
+    },
+    {
+      "id": "bg-bloomx-2",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Objectives are a noun (content) plus a verb (process)",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "statements of objectives typically consist of a noun or noun phrase—the subject matter content—and a verb or verb phrase—the cognitive process(es)",
+      "page": "213"
+    },
+    {
+      "id": "bg-bloomx-3",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "The strict hierarchy is relaxed to allow overlap",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "the requirement of a strict hierarchy has been relaxed to allow the categories to overlap one another",
+      "page": "215"
+    },
+    {
+      "id": "bg-bloomx-4",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Explaining is more complex than Executing",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "some cognitive processes associated with Understand (e.g., Explaining) are more cognitively complex than at least one of the cognitive processes associated with Apply (e.g., Executing)",
+      "page": "215"
+    },
+    {
+      "id": "bg-bloomx-5",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Advanced-course objectives describe proficient use of the same higher-order skills",
+      "held_file": "pdfs:stanny-2016-bloom-verbs.pdf",
+      "quote": "SLOs written for advanced courses might describe proficient use of these higher-order skills",
+      "page": "9 (pdf)"
+    },
+    {
+      "id": "bg-bloomx-6",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Apply divides into executing (familiar task) and implementing (unfamiliar task)",
+      "held_file": "pdfs:larsen-2022-probing-assumptions-revised-bloom.pdf",
+      "quote": "apply in the revised taxonomy is subdivided into executing routine procedures in a familiar task versus choosing and then implementing a procedure in an unfamiliar task",
+      "page": "3 (pdf)"
+    },
+    {
+      "id": "bg-bloomx-7",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Affective and dispositional verbs are recorded as having no assigned level",
+      "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
+      "quote": "recorded as having no assigned level rather than forced onto the scale",
+      "page": "7 (pdf)"
+    },
+    {
+      "id": "bg-bloomx-8",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "No verb assigned consistently across 30 lists",
+      "held_file": "pdfs:stanny-2016-bloom-verbs.pdf",
+      "quote": "No verb was assigned consistently to the same category by all 30 lists in the sample.",
+      "page": "4 (pdf)"
+    },
+    {
+      "id": "bg-bloomx-9",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Context modifies meaning",
+      "held_file": "pdfs:stanny-2016-bloom-verbs.pdf",
+      "quote": "Context modifies meaning",
+      "page": "8 (pdf)"
+    },
+    {
+      "id": "bg-bloomx-10",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Prompt words do not reliably predict cognitive processes",
+      "held_file": "pdfs:larsen-2022-probing-assumptions-revised-bloom.pdf",
+      "quote": "prompt words do not reliably predict cognitive processes",
+      "page": "10 (pdf)"
+    },
+    {
+      "id": "bg-bloomx-11",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Kappa 0.68 and 0.70 with discipline rubrics",
+      "held_file": "pdfs:larsen-2022-probing-assumptions-revised-bloom.pdf",
+      "quote": "Initial interrater reliability for the knowledge-type and cognitive-process categories were κ = 0.68 and κ = 0.70, respectively",
+      "page": "6 (pdf)"
+    },
+    {
+      "id": "bg-bloomx-12",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "From experience (TIPP, Marzano-Kendall based): without training kappa can drop below 0.50",
+      "held_file": "pdfs:teodorescu-2013-taxonomy-introductory-physics-problems.pdf",
+      "quote": "Without training and a clear statement of assumptions, the Cohen's kappa coefficient can drop below 0.50.",
+      "page": "17 (pdf)"
+    },
+    {
+      "id": "bg-bloomx-13",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Reliability improved by providing examples",
+      "held_file": "pdfs:cambridge-assessment-reliability-of-applying-taxonomies.pdf",
+      "quote": "Reliability can also be improved through providing examples",
+      "page": "35"
+    },
+    {
+      "id": "bg-bloomx-14",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Hess superposes Bloom and Webb DOK",
+      "held_file": "pdfs:hess-2009-cognitive-rigor-bloom-webb.pdf",
+      "quote": "By superposing two widely accepted models for describing rigor — Bloom's Taxonomy of Educational Objectives and Webb's Depth-of-Knowledge (DOK) model",
+      "page": "1"
+    },
+    {
+      "id": "bg-bloomx-15",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Fuller splits Bloom into Producing and Interpreting",
+      "held_file": "pdfs:fuller-2007-cs-learning-taxonomy.pdf",
+      "quote": "Producing (incorporating apply and create) and Interpreting (incorporating remember, understand, analyze and evaluate)",
+      "page": "167 (printed; pdf 16)"
+    },
+    {
+      "id": "bg-bloomx-16",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Indicators rephrased for alignment with revised Bloom",
+      "held_file": "pdfs:gosselin-okamoto-2018-bloom-descriptive-rubrics.pdf",
+      "quote": "rephrased for strong alignment with the revised Bloom's Taxonomy",
+      "page": "2 (pdf)"
+    },
+    {
+      "id": "bg-bloomx-17",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "Kappa measured on the 159 items all three coders coded",
+      "held_file": "pdfs:larsen-2022-probing-assumptions-revised-bloom.pdf",
+      "quote": "17% (n = 159) were coded by all three primary researchers",
+      "page": "6 (pdf)"
+    },
+    {
+      "id": "bg-bloomx-18",
+      "location": "§5 Bloom crosswalk",
+      "claim_text": "No reviewed study tested the effect of training on reliability directly",
+      "held_file": "pdfs:cambridge-assessment-reliability-of-applying-taxonomies.pdf",
+      "quote": "none specifically examined their impact on reliability",
+      "page": "35"
     }
   ]
 }
