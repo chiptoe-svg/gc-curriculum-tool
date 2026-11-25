@@ -104,3 +104,26 @@ describe('parseModelSpec', () => {
     expect(parseModelSpec('gpt-6.1-terra')).toEqual({ model: 'gpt-6.1-terra', effort: undefined });
   });
 });
+
+describe('Task 9b fix 5: harness guard and judge sequence index', () => {
+  it('--expect-db must be exactly the scratch database', async () => {
+    const { checkExpectDb, SCRATCH_DB } = await import('@/scripts/capture/interview-sim-lib');
+    expect(SCRATCH_DB).toBe('gc_curriculum_p2_scratch');
+    expect(checkExpectDb('gc_curriculum_p2_scratch')).toBeNull();
+    for (const bad of ['gc_curriculum', 'gc_curriculum_scratch', 'my_scratch_copy', 'gc_curriculum_p2_scratch2', undefined]) {
+      expect(checkExpectDb(bad), String(bad)).toMatch(/gc_curriculum_p2_scratch/);
+    }
+  });
+
+  it('the judge transcript gives every exchange its own sequence index', async () => {
+    const { renderJudgeTranscript } = await import('@/scripts/capture/interview-sim-lib');
+    const text = renderJudgeTranscript([
+      { n: 1, kind: 'question', say: 'Hi.', question: 'What can they do?', reply: 'Mount plates.' },
+      { n: 1, kind: 'answer_only', say: 'It means the rubric.', question: '', reply: 'Ok.' },
+      { n: 2, kind: 'question', say: '', question: 'Which two?', reply: null },
+    ]);
+    expect(text).toContain('#1 Q1 — Interviewer: Hi. What can they do?\nInstructor: Mount plates.');
+    expect(text).toContain('#2 Q1 (no new question) — Interviewer: It means the rubric.\nInstructor: Ok.');
+    expect(text).toContain('#3 Q2 — Interviewer: Which two?\nInstructor: (no reply)');
+  });
+});

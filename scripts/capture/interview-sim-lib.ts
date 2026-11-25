@@ -129,3 +129,20 @@ export function parseModelSpec(spec: string): { model: string; effort: string | 
   const [model, effort] = spec.split(':');
   return { model: model!, effort: effort || undefined };
 }
+
+/** The only database the benchmark may write (Task 9b fix 5): a literal match, not "contains scratch". */
+export const SCRATCH_DB = 'gc_curriculum_p2_scratch';
+
+/** null when `name` is the scratch database; otherwise the refusal message. */
+export function checkExpectDb(name: string | undefined): string | null {
+  return name === SCRATCH_DB ? null : `refusing: --expect-db must be exactly ${SCRATCH_DB} (got "${name ?? ''}"); the benchmark writes sessions`;
+}
+
+export type JudgeExchange = { n: number; kind: string; say: string; question: string; reply: string | null };
+
+/** The run as the fact judge reads it: `#<sequence> Q<counted number>` per exchange, so turns that share a count stay apart. */
+export function renderJudgeTranscript(exchanges: JudgeExchange[]): string {
+  return exchanges
+    .map((e, i) => `#${i + 1} Q${e.n}${e.kind === 'answer_only' ? ' (no new question)' : ''} — Interviewer: ${[e.say, e.question].filter(Boolean).join(' ')}\nInstructor: ${e.reply ?? '(no reply)'}`)
+    .join('\n\n');
+}

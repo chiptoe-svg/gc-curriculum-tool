@@ -28,7 +28,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { mayCall } from '@/scripts/reliability/bloom-drift-lib';
 import {
-  PERSONAS, countedTurns, parseJudge, parseModelSpec, personaAction, repeatCount, summarize,
+  PERSONAS, checkExpectDb, countedTurns, parseJudge, renderJudgeTranscript, parseModelSpec, personaAction, repeatCount, summarize,
   type SimCase, type SimFact, type SimRun, type SimTurn,
 } from './interview-sim-lib';
 import type { PiEndpoint } from '@/lib/ai/agent/pi/turn';
@@ -64,11 +64,11 @@ type Exchange = CaseResult['exchanges'][number];
 export async function judgeFacts(
   model: string, facts: SimFact[], exchanges: Exchange[], ledgerSummaries: Record<string, string>, lastN: number,
 ): Promise<{ found: Record<string, number | null>; raw: string }> {
-  const transcript = exchanges.map(e => `Q${e.n}${e.kind === 'answer_only' ? ' (no new question)' : ''} — Interviewer: ${[e.say, e.question].filter(Boolean).join(' ')}\nInstructor: ${e.reply ?? '(no reply)'}`).join('\n\n');
+  const transcript = renderJudgeTranscript(exchanges);
   const user = [
     '# Facts',
     facts.map(f => `${f.id}: ${f.fact}`).join('\n'),
-    '# Interview (each instructor reply belongs to the question number before it)',
+    '# Interview (#N is the exchange sequence; each instructor reply belongs to the question number Q before it)',
     transcript,
     '# Interview record summaries (reference only; the turn must come from the interview)',
     Object.entries(ledgerSummaries).map(([k, v]) => `${k}: ${v}`).join('\n') || '(none)',
@@ -172,7 +172,8 @@ export async function main(argv: string[]): Promise<number> {
     console.error('usage: --expect-db <scratch db> --interviewer <model[:effort]> --instructor <campus model> --cases <ids|all> [--bloom on|off] [--max-usd N] --out <file>');
     return 2;
   }
-  if (!expectDb.includes('scratch')) { console.error('refusing: the benchmark writes sessions and runs only against a scratch database'); return 2; }
+  const dbRefusal = checkExpectDb(expectDb);
+  if (dbRefusal) { console.error(dbRefusal); return 2; }
   if (bloom !== 'on' && bloom !== 'off') { console.error('--bloom must be on or off'); return 2; }
   process.env.INTERVIEW_BLOOM = bloom;
   if (!process.env.CAMPUS_LLM_BASE_URL || !process.env.CAMPUS_LLM_API_KEY) { console.error('CAMPUS_LLM_BASE_URL / CAMPUS_LLM_API_KEY not set'); return 2; }
