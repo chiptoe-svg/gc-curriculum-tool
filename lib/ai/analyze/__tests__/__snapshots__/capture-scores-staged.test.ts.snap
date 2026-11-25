@@ -1,0 +1,57 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildV2SynthesisUserMessage > classic (no staged) message is byte-identical to the pre-staged output 1`] = `
+"**Course:** GC 9999 — Fixture Course
+**Description:** A fixture.
+**Prerequisites as written on the GC course sheet (may be out of date; the Clemson catalog is authoritative, and the prerequisite profiles below follow it):** GC 1010
+
+**Catalog learning objectives:**
+1. Do a thing
+
+**Catalog major projects:**
+1. Project A
+
+**Catalog required incoming skills:**
+1. Skill A
+
+**Course Builder profile:** (none — this course has no synthesized profile yet)
+
+**Uploaded and Canvas-imported materials:**
+(none)
+
+**Prior capture profile for this course:** (none)
+
+**Prerequisite courses with confirmed Course Outcome Profiles:** (none)
+
+No prerequisite course has been captured yet, so what students arrive
+with must be inferred from the instructor's replies and the catalog
+prereq language. Be explicit about this uncertainty in the conversation.
+
+---
+
+**Baseline foundational competencies to score in every session:**
+1. Agency
+2. Attention to Detail
+3. Resilience
+4. Curiosity
+5. Written Communication
+6. Spoken Communication
+
+---
+
+**Audit transcript:** (no v2 turns recorded — synthesizing from materials + catalog only)
+
+---
+
+Produce the Course Outcome Profile JSON now. Conform exactly to the
+schema. Score all six baseline foundational competencies (Agency,
+Attention to Detail, Resilience, Curiosity, Written Communication,
+Spoken Communication) plus any
+additional foundationals the materials evidence. Keep technical
+competencies in the 5–15 range. Above-zero scores require an evidence
+excerpt; foundationals must have null k_depth and u_depth. Populate
+citations[] verbatim from the assistant turns that established each
+finding, then derive source per the mechanical rule (instructor-only →
+'instructor', chunk-only → 'materials', mixed → 'both', empty → 'inferred').
+Emit productive_failure_conditions only if Audit Area 7 was probed."
+`;

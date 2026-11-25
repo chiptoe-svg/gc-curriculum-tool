@@ -23,6 +23,9 @@ import {
   type CaptureProfile,
   type CaptureReviewerStatus,
 } from '@/lib/ai/capture/schema';
+import { getInterviewSession } from '@/lib/db/capture-interview-sessions-queries';
+import { buildLedger } from '@/lib/capture/staged/ledger';
+import { ledgerEventsFromTranscript, leadNotesFromTranscript } from '@/lib/capture/staged/staged-turn';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 import { assessMaterialsHealth } from '@/lib/capture/materials-health';
@@ -176,10 +179,26 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // persists each turn during the chat phase; here we hand the full session
     // log + materials/digests to the synthesis prompt. (v1 retired 2026-06-11.)
     const transcript = sessionId ? await getSessionMessages(courseCode, sessionId) : [];
+    // Staged interview: hand synthesis the slot ledger, the confirmed map and the lead notes.
+    // A row for another course is not this session's record: treat as classic and log.
+    let staged: { map: Awaited<ReturnType<typeof getInterviewSession>> extends infer R ? (R extends { map: infer M } ? M : never) : never; ledger: ReturnType<typeof buildLedger>; leadNotes: string[] } | undefined;
+    if (sessionId) {
+      const interviewRow = await getInterviewSession(sessionId);
+      if (interviewRow && interviewRow.courseCode === courseCode) {
+        staged = {
+          map: interviewRow.map,
+          ledger: buildLedger(interviewRow.map, ledgerEventsFromTranscript(transcript)),
+          leadNotes: leadNotesFromTranscript(transcript),
+        };
+      } else if (interviewRow) {
+        console.warn(`[scores] ${courseCode}: interview session ${sessionId} belongs to ${interviewRow.courseCode}; synthesizing as classic`);
+      }
+    }
     const { profile: rawProfile, telemetry, model } = await generateCaptureProfileV2({
       chatContext: context,
       sessionId: sessionId ?? '',
       transcript,
+      ...(staged ? { staged } : {}),
     });
 
     // Server-stamp generated_at — the model occasionally echoes a stale

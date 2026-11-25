@@ -17,6 +17,7 @@ const h = vi.hoisted(() => ({
   sessionMode: null as null | { revisionMode: string; baselineSnapshotId: string | null },
   snapshot: null as null | { id: string; profile: unknown; retiredAt: Date | null; inputsMeta: unknown },
   scored: null as unknown,
+  interviewRow: null as null | { sessionId: string; courseCode: string; map: unknown },
   upsert: vi.fn(),
   gen: vi.fn(),
 }));
@@ -33,6 +34,7 @@ vi.mock('@/lib/db/capture-messages-queries', () => ({
   getLatestSessionId: vi.fn().mockResolvedValue('sess-1'),
   getSessionMessages: vi.fn().mockResolvedValue([]),
 }));
+vi.mock('@/lib/db/capture-interview-sessions-queries', () => ({ getInterviewSession: vi.fn(async () => h.interviewRow) }));
 vi.mock('@/lib/db/capture-sessions-queries', () => ({ getSessionMode: vi.fn(async () => h.sessionMode) }));
 vi.mock('@/lib/capture/revision-evidence', () => ({
   buildCitationClassifiers: vi.fn(async () => ({ isNewCitation: () => false, isStaleCitation: () => false })),
@@ -64,6 +66,7 @@ describe('Generate with a stored revision mode', () => {
     h.draft = { profile: DRAFT };
     h.sessionMode = null;
     h.snapshot = { id: 'snap-1', profile: SNAPSHOT_PROFILE, retiredAt: null, inputsMeta: { materials: [] } };
+    h.interviewRow = null;
     h.upsert.mockReset();
     h.gen.mockReset();
     h.gen.mockImplementation(async () => ({ profile: withComp(1), telemetry: {}, model: 'm' }));
@@ -75,6 +78,19 @@ describe('Generate with a stored revision mode', () => {
     expect(priorPassed()).toEqual(DRAFT);
     expect(upserted().revision).toBeUndefined();
     expect(upserted().adopted_from_scenario_id).toBe('scn-1');
+  });
+
+  it('passes staged to synthesis only when the interview row is for this course', async () => {
+    await generate();
+    expect((h.gen.mock.calls[0]![0] as { staged?: unknown }).staged).toBeUndefined();
+    h.gen.mockClear();
+    h.interviewRow = { sessionId: 'sess-1', courseCode: 'GC 9999', map: null };
+    await generate();
+    expect((h.gen.mock.calls[0]![0] as { staged?: unknown }).staged).toBeUndefined();
+    h.gen.mockClear();
+    h.interviewRow = { sessionId: 'sess-1', courseCode: 'GC 3460', map: null };
+    await generate();
+    expect((h.gen.mock.calls[0]![0] as { staged?: { leadNotes: string[] } }).staged?.leadNotes).toEqual([]);
   });
 
   it('fresh passes no prior profile and drops the adopt overlay', async () => {

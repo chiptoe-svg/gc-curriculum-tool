@@ -9,6 +9,10 @@ import {
 import { withDerivedCompetencySources } from '@/lib/ai/synthesis/source-derivation';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { buildCaptureChatUserMessage } from '@/lib/ai/analyze/capture-chat';
+import type { EvidenceMap } from '@/lib/capture/staged/evidence-map';
+import type { Ledger } from '@/lib/capture/staged/ledger';
+import { engineState } from '@/lib/capture/staged/engine';
+import { STAGES } from '@/lib/capture/staged/stages';
 import type { captureMessages } from '@/lib/db/schema';
 import type { InferSelectModel } from 'drizzle-orm';
 
@@ -336,6 +340,41 @@ export interface V2SynthesisContext {
   chatContext: CaptureChatContext;
   sessionId: string;
   transcript: CaptureMessageRow[];
+  /** Staged interview only: the slot ledger, the confirmed evidence map and the lead notes. Absent for classic sessions. */
+  staged?: { map: EvidenceMap | null; ledger: Ledger; leadNotes: string[] };
+}
+
+function formatStagedSections(staged: NonNullable<V2SynthesisContext['staged']>): string[] {
+  const state = engineState(staged.map, staged.ledger);
+  const stageOf = (slot: string): number =>
+    STAGES.find(st => st.slots(staged.map, staged.ledger.anchors).includes(slot))?.id ?? 0;
+  const record: string[] = [];
+  const gaps: string[] = [];
+  for (const slot of state.allSlots) {
+    const status = state.slotStatus[slot];
+    const rec = staged.ledger.slots[slot];
+    if (status === undefined || status === 'not_reached' || status === 'unknown') {
+      gaps.push(`- stage ${stageOf(slot)}, ${slot}: ${status ?? 'not_reached'}`);
+    }
+    if (status !== undefined && status !== 'not_reached') {
+      record.push(`- stage ${stageOf(slot)}, ${slot} (${status}): ${rec?.summary ?? ''}`.trimEnd());
+    }
+  }
+  return [
+    '# Interview record (staged)',
+    record.length ? record.join('\n') : '(no slots settled)',
+    '',
+    '# Evidence map (confirmed by the instructor)',
+    staged.map ? JSON.stringify(staged.map, null, 2) : '(No evidence map: the materials could not be read.)',
+    '',
+    '# Not reached or unknown',
+    'Name each of these slots in the profile as a testimony gap: the instructor did not testify to it, so it is unknown, not absent.',
+    gaps.length ? gaps.join('\n') : '(none)',
+    '',
+    '# Notes for the department lead',
+    'For reference only. Never score from these.',
+    staged.leadNotes.length ? staged.leadNotes.map(n => `- ${n}`).join('\n') : '(none)',
+  ];
 }
 
 /**
@@ -396,7 +435,7 @@ function formatV2Transcript(rows: CaptureMessageRow[]): string {
   return ['**Audit transcript (chronological; each ASSISTANT turn lists the citations it relied on):**', ...lines].join('\n\n');
 }
 
-function buildV2SynthesisUserMessage(context: V2SynthesisContext): string {
+export function buildV2SynthesisUserMessage(context: V2SynthesisContext): string {
   return [
     buildCaptureChatUserMessage(context.chatContext),
     '',
@@ -406,6 +445,7 @@ function buildV2SynthesisUserMessage(context: V2SynthesisContext): string {
     '',
     '---',
     '',
+    ...(context.staged ? [...formatStagedSections(context.staged), '', '---', ''] : []),
     'Produce the Course Outcome Profile JSON now. Conform exactly to the',
     'schema. Score all six baseline foundational competencies (Agency,',
     'Attention to Detail, Resilience, Curiosity, Written Communication,',
