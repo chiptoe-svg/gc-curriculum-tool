@@ -1977,6 +1977,142 @@
       "held_file": "pdfs:cambridge-assessment-reliability-of-applying-taxonomies.pdf",
       "quote": "none specifically examined their impact on reliability",
       "page": "35"
+    },
+    {
+      "id": "bg-stack-1",
+      "location": "§6 levels stack",
+      "claim_text": "Original Bloom cumulative hierarchy lacked strong evidence",
+      "held_file": "pdfs:larsen-2022-probing-assumptions-revised-bloom.pdf",
+      "quote": "the cumulative hierarchy model of the original taxonomy did not have a strong basis in evidence",
+      "page": "3 (pdf)"
+    },
+    {
+      "id": "bg-stack-2",
+      "location": "§6 levels stack",
+      "claim_text": "Progressions: roughly the same order, different rates",
+      "held_file": "pdfs:corcoran-mosher-rogat-2009-learning-progressions-summary.pdf",
+      "quote": "in roughly the same order, though perhaps at quite different rates",
+      "page": "11 (pdf)"
+    },
+    {
+      "id": "bg-stack-3",
+      "location": "§6 levels stack",
+      "claim_text": "Some steps can be acquired in varying orders",
+      "held_file": "pdfs:corcoran-mosher-rogat-2009-learning-progressions-summary.pdf",
+      "quote": "can be acquired in varying orders",
+      "page": "11 (pdf)"
+    },
+    {
+      "id": "bg-stack-4",
+      "location": "§6 levels stack",
+      "claim_text": "KST allows alternative prerequisite paths",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "to master item b, one must first master either item d, or items a and c, or items c and e",
+      "page": "13"
+    },
+    {
+      "id": "bg-stack-5",
+      "location": "§6 levels stack",
+      "claim_text": "SOLO sequence held within cycles in one Rasch study",
+      "held_file": "pdfs:serow-2007-rasch-solo-class-inclusion-merga.pdf",
+      "quote": "Each of the items followed the SOLO sequence of levels within cycles without exception",
+      "page": "657 (pdf 7)"
+    },
+    {
+      "id": "bg-stack-6",
+      "location": "§6 levels stack",
+      "claim_text": "Conjunctive scoring: least reliable score controls",
+      "held_file": "pdfs:zieky-perie-2006-ets-cut-scores-primer.pdf",
+      "quote": "if a student has to pass all of the content areas separately, the least reliable score controls whether a student will pass",
+      "page": "11 (pdf)"
+    },
+    {
+      "id": "bg-do-1",
+      "location": "§5 Do mapping",
+      "claim_text": "Executing: familiar routine task",
+      "held_file": "pdfs:larsen-2022-probing-assumptions-revised-bloom.pdf",
+      "quote": "carrying out previously established methods or patterns when encountering a familiar and routine task",
+      "page": "8 (pdf)"
+    },
+    {
+      "id": "bg-do-2",
+      "location": "§5 Do mapping",
+      "claim_text": "Implementing: select a method for an unfamiliar problem",
+      "held_file": "pdfs:larsen-2022-probing-assumptions-revised-bloom.pdf",
+      "quote": "working within an existing framework to select a method to solve an unfamiliar problem",
+      "page": "8 (pdf)"
+    },
+    {
+      "id": "bg-do-3",
+      "location": "§5 Do mapping",
+      "claim_text": "Simpson guided response: overt act",
+      "held_file": "pdfs:simpson-1966-classification-educational-objectives-psychomotor-eric-ed010368.pdf",
+      "quote": "the overt behavioral act of an individual",
+      "page": "37 (pdf)"
+    },
+    {
+      "id": "bg-do-4",
+      "location": "§5 Do mapping",
+      "claim_text": "Simpson guided response: under guidance of the instructor",
+      "held_file": "pdfs:simpson-1966-classification-educational-objectives-psychomotor-eric-ed010368.pdf",
+      "quote": "the guidance of the instructor",
+      "page": "37 (pdf)"
+    },
+    {
+      "id": "bg-do-5",
+      "location": "§5 Do mapping",
+      "claim_text": "Simpson asks whether adapting/originating is a sixth category",
+      "held_file": "pdfs:simpson-1966-classification-educational-objectives-psychomotor-eric-ed010368.pdf",
+      "quote": "Is there perhaps a sixth major category which might be designated as adapting and",
+      "page": "39 (pdf)"
+    },
+    {
+      "id": "bg-do-6",
+      "location": "§5 Do mapping",
+      "claim_text": "Or whether these activities take place at all levels",
+      "held_file": "pdfs:simpson-1966-classification-educational-objectives-psychomotor-eric-ed010368.pdf",
+      "quote": "take place at all levels",
+      "page": "40 (pdf)"
+    },
+    {
+      "id": "bg-do-7",
+      "location": "§5 Do mapping",
+      "claim_text": "Bloom levels not well ordered for practical subjects",
+      "held_file": "pdfs:fuller-2007-cs-learning-taxonomy.pdf",
+      "quote": "the levels do not appear to be well ordered when used to assess practical subjects such as programming",
+      "page": "167 (printed; pdf 16)"
+    },
+    {
+      "id": "bg-stack-7",
+      "location": "§6 levels stack",
+      "claim_text": "Serow: item separation reliability was low",
+      "held_file": "pdfs:serow-2007-rasch-solo-class-inclusion-merga.pdf",
+      "quote": "the item separation reliability was low",
+      "page": "654 (pdf 4)"
+    },
+    {
+      "id": "bg-stack-8",
+      "location": "§6 levels stack",
+      "claim_text": "Serow sample: 24 students, 36 response sets",
+      "held_file": "pdfs:serow-2007-rasch-solo-class-inclusion-merga.pdf",
+      "quote": "a total of 36 sets of student responses",
+      "page": "653 (pdf 3)"
+    },
+    {
+      "id": "bg-do-8",
+      "location": "§5 Do mapping",
+      "claim_text": "Create includes planning and producing",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "6.1 Generating 6.2 Planning 6.3 Producing",
+      "page": "215"
+    },
+    {
+      "id": "bg-do-9",
+      "location": "§5 Do mapping",
+      "claim_text": "Psychomotor taxonomy never published by the originating group",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "A taxonomy for the psychomotor domain was never published by the originating group, but some were published by Simpson (1966), Dave (1970), and Harrow (1972).",
+      "page": "218"
     }
   ]
 }

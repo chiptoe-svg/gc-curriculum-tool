@@ -6,6 +6,18 @@
   },
   "pages": {
     "background.html": {
+      "ref-serow-2007": {
+        "file": "pdfs:serow-2007-rasch-solo-class-inclusion-merga.pdf"
+      },
+      "ref-simpson-1966": {
+        "file": "pdfs:simpson-1966-classification-educational-objectives-psychomotor-eric-ed010368.pdf"
+      },
+      "ref-zieky-perie-2006": {
+        "file": "pdfs:zieky-perie-2006-ets-cut-scores-primer.pdf"
+      },
+      "ref-corcoran-2009": {
+        "file": "pdfs:corcoran-mosher-rogat-2009-learning-progressions-summary.pdf"
+      },
       "ref-coleman-2017": {
         "file": "pdfs:cambridge-assessment-reliability-of-applying-taxonomies.pdf"
       },
@@ -398,6 +410,12 @@
       }
     },
     "measurement-hypotheses-deep-dive.html": {
+      "ref-koopman-2021": {
+        "file": "pdfs:koopman-zijlstra-vanderark-2021-mokken-scalability-coefficients.pdf"
+      },
+      "ref-sijtsma-2011": {
+        "file": "pdfs:sijtsma-meijer-vanderark-2011-mokken-scale-analysis-update.pdf"
+      },
       "ref-javadian-sabet-2024": {
         "file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf"
       },

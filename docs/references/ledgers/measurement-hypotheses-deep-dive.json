@@ -609,6 +609,22 @@
       "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
       "quote": "we set a threshold",
       "page": "p. 6"
+    },
+    {
+      "id": "mh-stack-1",
+      "location": "§5 Hypothesis D",
+      "claim_text": "Loevinger H bands: weak, medium, strong",
+      "held_file": "pdfs:koopman-zijlstra-vanderark-2021-mokken-scalability-coefficients.pdf",
+      "quote": "0.3 ≤ H < 0.4 : weak scale, 0.4 ≤ H < 0.5 : medium scale, 0.5 ≤ H : strong scale.",
+      "page": "3 (pdf)"
+    },
+    {
+      "id": "mh-stack-2",
+      "location": "§5 Hypothesis D",
+      "claim_text": "High H does not establish a hierarchical scale",
+      "held_file": "pdfs:sijtsma-meijer-vanderark-2011-mokken-scale-analysis-update.pdf",
+      "quote": "high values of H found in real-data analysis are not adequate for assessing whether a scale is hierarchical",
+      "page": "3 (pdf)"
     }
   ]
 }

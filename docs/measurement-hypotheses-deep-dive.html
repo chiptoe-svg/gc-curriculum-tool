@@ -222,10 +222,11 @@ figure.fig figcaption b{color:var(--ink);font-weight:600}
     <a href="#durability"><span class="n">2</span><span>B: Durability &amp; bleed-off</span></a>
     <a href="#crosswalk"><span class="n">3</span><span>A: Competency&rarr;career cross-walk</span></a>
     <a href="#uncertainty"><span class="n">4</span><span>C: Uncertainty &amp; convergence</span></a>
-    <a href="#embeddings"><span class="n">5</span><span>Skill relatedness &amp; embeddings</span></a>
-    <a href="#scale"><span class="n">6</span><span>Scale representation</span></a>
-    <a href="#open-questions"><span class="n">7</span><span>Open questions</span></a>
-    <a href="#references"><span class="n">8</span><span>References</span></a>
+    <a href="#stacking"><span class="n">5</span><span>D: The levels stack</span></a>
+    <a href="#embeddings"><span class="n">6</span><span>Skill relatedness &amp; embeddings</span></a>
+    <a href="#scale"><span class="n">7</span><span>Scale representation</span></a>
+    <a href="#open-questions"><span class="n">8</span><span>Open questions</span></a>
+    <a href="#references"><span class="n">9</span><span>References</span></a>
     <span class="label">See also</span>
     <a class="out" href="./background.html">KUD+ Background (full)</a>
     <a class="out" href="./problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a>
@@ -278,21 +279,22 @@ figure.fig figcaption b{color:var(--ink);font-weight:600}
 <section id="keystone">
   <div><span class="sec-num">01</span><h2 class="sec-title">The keystone &mdash; KUD+depth as the unit of account</h2></div>
 
-  <p>The three hypotheses below are not independent ideas. They are three uses of one underlying move: <strong>KUD+depth is the unit of account the whole framework is denominated in</strong> &mdash; a shared currency on which a course&rsquo;s output, a downstream course&rsquo;s prerequisite expectation, the program&rsquo;s aggregate coverage, and a career&rsquo;s measured demand are all expressible. Because all of these entities are expressed on the same Know/Understand/Do &times; depth-0&ndash;5 axes, boundary-crossing questions become arithmetic on a shared axis rather than translation between mismatched vocabularies.</p>
+  <p>The hypotheses below are not independent ideas. They are uses of one underlying move: <strong>KUD+depth is the unit of account the whole framework is denominated in</strong> &mdash; a shared currency on which a course&rsquo;s output, a downstream course&rsquo;s prerequisite expectation, the program&rsquo;s aggregate coverage, and a career&rsquo;s measured demand are all expressible. Because all of these entities are expressed on the same Know/Understand/Do &times; depth-0&ndash;5 axes, boundary-crossing questions become arithmetic on a shared axis rather than translation between mismatched vocabularies.</p>
 
-  <p>A currency needs three properties, and KUD+depth has all three. A <strong>common denomination</strong>: every entity uses the same axes. A <strong>medium of exchange</strong>: because the units match, the questions that require crossing a boundary &mdash; prerequisite gap, curriculum roll-up, career-readiness comparison &mdash; become subtractions and aggregations rather than fuzzy title matches. An <strong>evidence-anchored store of value</strong>: the evidence-above-zero rule (see <a href="./background.html">Background</a> &sect;6) is the hard-money discipline; aspirational syllabus verbs alone cannot inflate a score.</p>
+  <p>A currency needs three properties, and KUD+depth has all three. A <strong>common denomination</strong>: every entity uses the same axes. A <strong>medium of exchange</strong>: because the units match, the questions that require crossing a boundary &mdash; prerequisite gap, curriculum roll-up, career-readiness comparison &mdash; become subtractions and aggregations rather than fuzzy title matches. An <strong>evidence-anchored store of value</strong>: the evidence-above-zero rule (see <a href="./background.html">Background</a> &sect;7) is the hard-money discipline; aspirational syllabus verbs alone cannot inflate a score.</p>
 
-  <p>No other unit does this job. Course names and titles do not translate across institutions or roles. Raw text and generic embeddings are lossy and context-free &mdash; the research makes clear why (see &sect;5). The 35 cross-occupational skills in O*NET are the context-free transferable-skill construct the framework rejects on the grounds documented in <a href="./background.html">Background</a> &sect;11. Bloom levels have no Do axis and are not written in the vocabulary careers use, so they cannot carry a program-to-career mapping. Credit hours and grades measure seat-time and relative ranking, not attained capability. KUD+depth is the only unit simultaneously fine-grained enough to be honest, universal enough to span course, program, and career, and pegged to student-side evidence rather than aspiration.</p>
+  <p>No other unit does this job. Course names and titles do not translate across institutions or roles. Raw text and generic embeddings are lossy and context-free &mdash; the research makes clear why (see &sect;6). The 35 cross-occupational skills in O*NET are the context-free transferable-skill construct the framework rejects on the grounds documented in <a href="./background.html">Background</a> &sect;11. Bloom levels have no Do axis and are not written in the vocabulary careers use, so they cannot carry a program-to-career mapping. Credit hours and grades measure seat-time and relative ranking, not attained capability. KUD+depth is the only unit simultaneously fine-grained enough to be honest, universal enough to span course, program, and career, and pegged to student-side evidence rather than aspiration.</p>
 
-  <p>Naming the unit of account does not make the currency frictionless. It locates where the friction is, and each friction corresponds to one of the three hypotheses:</p>
+  <p>Naming the unit of account does not make the currency frictionless. It locates where the friction is, and each friction corresponds to one of the hypotheses:</p>
 
   <ul>
     <li><strong>Hypothesis A (Competency&rarr;career cross-walk)</strong> &mdash; the currency converts cleanly <em>within</em> the curriculum (one authored taxonomy) but imperfectly <em>into</em> careers. That is the entire reason A is many-to-many, partially matched, match-quality-stamped, with &ldquo;no clean match&rdquo; as a first-class finding. External: pegged but imperfect.</li>
     <li><strong>Hypothesis B (Durability &amp; bleed-off)</strong> &mdash; instantaneous depth is not the same quantity as durable depth. Cross-level comparisons must spend <em>durable</em> depth, not the instantaneous end-of-course maximum. Bleed-off is the depreciation of held KUD.</li>
     <li><strong>Hypothesis C (Uncertainty &amp; convergence discipline)</strong> &mdash; rolling up ordinal KUD treats it as interval, and its sums travel with an uncertainty band, not as points. The currency is real; its arithmetic is honest only when it carries the interval.</li>
+    <li><strong>Hypothesis D (The levels stack)</strong> &mdash; the subtractions and per-dimension maxima the framework uses assume that a higher level contains the lower ones. That is a design requirement of the scales, and D is the test of whether the department&rsquo;s own evidence bears it out.</li>
   </ul>
 
-  <p>This is also why the embeddings question (&sect;5) resolves the way it does: KUD+depth is not a representation <em>competing</em> with embeddings &mdash; it is the denomination the comparisons are settled in.</p>
+  <p>This is also why the embeddings question (&sect;6) resolves the way it does: KUD+depth is not a representation <em>competing</em> with embeddings &mdash; it is the denomination the comparisons are settled in.</p>
 
 </section>
 
@@ -384,7 +386,7 @@ figure.fig figcaption b{color:var(--ink);font-weight:600}
 <section id="uncertainty">
   <div><span class="sec-num">04</span><h2 class="sec-title">Hypothesis C &mdash; Uncertainty &amp; convergence discipline</h2></div>
 
-  <p>This hypothesis governs how every claim produced by the framework should be stated and treated, which makes it in a sense the most foundational of the three. Its core &mdash; that neither models nor humans are a clean oracle, and that LLM errors are correlated &mdash; is well supported. How much of the remaining error is irreducible is not settled (see below).</p>
+  <p>This hypothesis governs how every claim produced by the framework should be stated and treated, which makes it in a sense the most foundational of these hypotheses. Its core &mdash; that neither models nor humans are a clean oracle, and that LLM errors are correlated &mdash; is well supported. How much of the remaining error is irreducible is not settled (see below).</p>
 
   <h3>No reliable oracle</h3>
 
@@ -394,7 +396,7 @@ figure.fig figcaption b{color:var(--ink);font-weight:600}
 
   <p>One hypothesis is that the remaining model error is dominated by label noise, genuine ambiguity, and under-specified inputs. That is this document&rsquo;s hypothesis, not a finding of the sources, and the closest source points the other way in part. Xu et al. (2026) trace LLM errors to the model side: &ldquo;systematic over-interpretation of instructional keywords and difficulty identifying relevant pedagogical evidence in long, unstructured texts&rdquo; (p. 22). Their reasoning-based prompting strategy gave &ldquo;modest but consistent performance improvements&rdquo; (p. 22). Both suggest that part of the gap <em>is</em> reducible.</p>
 
-  <p>Some uncertainty is irreducible, though, and the theory for that is sound. Hüllermeier and Waegeman (2021) describe <strong>aleatoric uncertainty</strong> as &ldquo;the irreducible part of the uncertainty&rdquo; (p. 8), as opposed to epistemic uncertainty, which more data or knowledge could reduce. They add that the two &ldquo;should not be seen as absolute notions&rdquo; but are &ldquo;context-dependent&rdquo; (p. 9). Where labels themselves disagree, they cap what any model can score against them. In object recognition, Tschirschwitz and Rodehorst (2024) estimate the bound as <code>mAP &asymp; 0.836&middot;&alpha; + 0.197</code>, where &alpha; is annotation agreement, and find that state-of-the-art results &ldquo;approach this upper bound for the well-studied LVIS dataset&rdquo; (p. 8). They also note that language differs from vision because &ldquo;language inherently involves ambiguities&rdquo; (p. 8). So the formula is an analogy here, not a value to borrow. One cannot exceed the reliability of one&rsquo;s own labels; how close current KUD scoring is to that ceiling is an open empirical question (&sect;7).</p>
+  <p>Some uncertainty is irreducible, though, and the theory for that is sound. Hüllermeier and Waegeman (2021) describe <strong>aleatoric uncertainty</strong> as &ldquo;the irreducible part of the uncertainty&rdquo; (p. 8), as opposed to epistemic uncertainty, which more data or knowledge could reduce. They add that the two &ldquo;should not be seen as absolute notions&rdquo; but are &ldquo;context-dependent&rdquo; (p. 9). Where labels themselves disagree, they cap what any model can score against them. In object recognition, Tschirschwitz and Rodehorst (2024) estimate the bound as <code>mAP &asymp; 0.836&middot;&alpha; + 0.197</code>, where &alpha; is annotation agreement, and find that state-of-the-art results &ldquo;approach this upper bound for the well-studied LVIS dataset&rdquo; (p. 8). They also note that language differs from vision because &ldquo;language inherently involves ambiguities&rdquo; (p. 8). So the formula is an analogy here, not a value to borrow. One cannot exceed the reliability of one&rsquo;s own labels; how close current KUD scoring is to that ceiling is an open empirical question (&sect;8).</p>
 
   <p>Where the ceiling is reached, the right response is to <em>characterize and report it</em>, not to engineer against it. The data-perspectivism program (Plank, 2022; Aroyo &amp; Welty, 2015) makes this point: the <em>distribution</em> over raters is itself a finding &mdash; disagreement signals genuine ambiguity in the underlying construct, not noise to be averaged away.</p>
 
@@ -420,8 +422,32 @@ figure.fig figcaption b{color:var(--ink);font-weight:600}
 
 </section>
 
+<section id="stacking">
+  <div><span class="sec-num">05</span><h2 class="sec-title">Hypothesis D &mdash; The levels stack</h2></div>
+
+  <p>The K, U and D depth levels are written to be cumulative within each scale: a student at U4 should also show U3 and U2, and a course credited with D4 should also develop D3. That is a key difference between the KUD+ scales and Bloom&rsquo;s categories, whose revision explicitly relaxed its hierarchy (<a href="./background.html#levels-stack">Background &sect;6</a>). The <a href="./background.html#levels-stack">Background</a> treats stacking as a design requirement because the published evidence is mixed. This hypothesis is the check: <strong>on the department&rsquo;s own evidence, the levels of each scale behave as a cumulative scale.</strong> A search for this page (November 2026) found no published study applying this kind of test to curriculum-mapping or rubric data.</p>
+
+  <h3>How it is tested</h3>
+
+  <p>The data come from the faculty pilot of the level wording. For each course and competency, the raters record, level by level, whether student work shows that level. This has to be coded <em>per level</em>. Deriving the lower levels from a single top score would make the levels nest by construction and the test would prove nothing.</p>
+
+  <p>The analysis is standard for cumulative scales. A <em>Guttman error</em> is a cell with evidence at a higher level but not at a lower one, and their count by level pair shows exactly which step fails (U3 without U2, say). Mokken scaling summarizes how well the levels hang together with Loevinger&rsquo;s H, read against the usual bands: &ldquo;0.3 &le; H &lt; 0.4 : weak scale, 0.4 &le; H &lt; 0.5 : medium scale, 0.5 &le; H : strong scale&rdquo; <a href="#ref-koopman-2021">(Koopman et al., 2021, p. 3)</a>. A high H is not enough on its own, because &ldquo;high values of H found in real-data analysis are not adequate for assessing whether a scale is hierarchical&rdquo; <a href="#ref-sijtsma-2011">(Sijtsma et al., 2011, p. 3)</a>. The analysis therefore also checks that the levels keep the same order of difficulty across courses (invariant item ordering), and that each higher level is rarer than the one below it.</p>
+
+  <h3>Pre-committed reading</h3>
+
+  <p>The pass lines below are the department&rsquo;s own choices, set before any data are seen and anchored to the conventional bands above. They also assume the usual Mokken conditions for a scale, such as each level scaling acceptably with the others.</p>
+
+  <ul>
+    <li><strong>Supported</strong> if H is at least 0.40 for a scale, the level order holds, and no adjacent step carries a concentration of Guttman errors.</li>
+    <li><strong>Weak</strong> if H is between 0.30 and 0.40: the soft rule in the Background stays, and the level wording at the failing step is revised.</li>
+    <li><strong>Not supported</strong> if H is below 0.30 or the order breaks: the scale does not stack as written, and the claim is withdrawn until the wording is rebuilt.</li>
+  </ul>
+
+  <p>Two practical notes, both our own judgment rather than sourced. The pilot should aim for about 250 rated cells per scale, with 100 as a floor, and report confidence intervals. And the Do scale needs particular attention at D4 and D5. The psychomotor taxonomy closest to it, Simpson&rsquo;s, left open whether adapting and originating form a top level or happen at every level (<a href="./background.html#bloom-crosswalk">Background &sect;5</a>).</p>
+</section>
+
 <section id="embeddings">
-  <div><span class="sec-num">05</span><h2 class="sec-title">Skill relatedness &amp; embeddings</h2></div>
+  <div><span class="sec-num">06</span><h2 class="sec-title">Skill relatedness &amp; embeddings</h2></div>
 
   <p>A recurring question in applying the framework is how it relates to the modern machinery of text embeddings and attention mechanisms, which seem to do something similar. The answer is that the distinction is informational rather than mechanistic.</p>
 
@@ -452,7 +478,7 @@ figure.fig figcaption b{color:var(--ink);font-weight:600}
 
   <h3>From resolved question to concrete proposal: the competency-graph substrate</h3>
 
-  <p><strong>An update grounds this section in measurement rather than expectation.</strong> A 2026-07 audit scored the shipped supply&rarr;canonical alignment &mdash; the step that maps a course's captured competencies onto the canonical career sub-competencies so supply and demand share a key &mdash; against a fixture of 58 real production matches, judged by a cross-family model panel. The result was stark and judge-robust: on the shipped (pre-fix) alignment, roughly <strong>80&ndash;92% of matches were not the same skill</strong> &mdash; a lenient same-family judge put it at 58%, but two stronger, independent judges (a different model family and a newer model) put it at 82&ndash;92%, and even after the deployed prompt fix and with the best available model about <strong>70&ndash;79%</strong> remain wrong. The error is not random. It concentrates where the tool <em>force-matches</em> a competency the course does not really serve, and where topical resemblance is credited as skill identity (&ldquo;deliver a presentation&rdquo; scored as &ldquo;proposal development&rdquo;; a disposition like Resilience scored as the technical skill &ldquo;timeline management&rdquo;). Neither a stronger model nor a better prompt closed it &mdash; the best model-plus-prompt combination still left about 70% wrong. This converts &sect;5's &ldquo;resolved question&rdquo; from a design expectation into a measured failure with a diagnosed cause.</p>
+  <p><strong>An update grounds this section in measurement rather than expectation.</strong> A 2026-07 audit scored the shipped supply&rarr;canonical alignment &mdash; the step that maps a course's captured competencies onto the canonical career sub-competencies so supply and demand share a key &mdash; against a fixture of 58 real production matches, judged by a cross-family model panel. The result was stark and judge-robust: on the shipped (pre-fix) alignment, roughly <strong>80&ndash;92% of matches were not the same skill</strong> &mdash; a lenient same-family judge put it at 58%, but two stronger, independent judges (a different model family and a newer model) put it at 82&ndash;92%, and even after the deployed prompt fix and with the best available model about <strong>70&ndash;79%</strong> remain wrong. The error is not random. It concentrates where the tool <em>force-matches</em> a competency the course does not really serve, and where topical resemblance is credited as skill identity (&ldquo;deliver a presentation&rdquo; scored as &ldquo;proposal development&rdquo;; a disposition like Resilience scored as the technical skill &ldquo;timeline management&rdquo;). Neither a stronger model nor a better prompt closed it &mdash; the best model-plus-prompt combination still left about 70% wrong. This converts &sect;6's &ldquo;resolved question&rdquo; from a design expectation into a measured failure with a diagnosed cause.</p>
 
   <p><strong>The diagnosis splits the problem into two operations on one object &mdash; a competency graph.</strong> <em>Identity</em> (&ldquo;is this course competency the <em>same skill</em> as this canonical node?&rdquo;) is a reject/rule/dimension judgment, not a retrieval problem: on a candidate set of five to seven per target, an embedding second-opinion rescued about one in thirty-four of the LLM's errors, because topical-proximity vectors reproduce the over-crediting that causes them &mdash; and this held for a generic embedder, a domain-instruction-framed one, and a topic-only variant alike. <em>Relatedness</em> (&ldquo;do these skills <em>relate, stack, or feed</em> each other?&rdquo;) is the embedding-native operation &mdash; but, as Liu et al. (2024) measured on sixty-five million adverts, similarity and <em>complementarity</em> diverge (strongly co-occurring skill clusters can carry low semantic similarity), and expert-authored groupings miss co-occurrence links. The unifying move: a <strong>canonical competency graph whose <em>nodes</em> carry identity and depth (an expert-and-evidence judgment) and whose <em>edges</em> carry relatedness (a data judgment)</strong>. Coverage-identity consumes the nodes; scaffolding, prerequisite, and gap reasoning consume the edges. This is the same nodes-and-connections shape as Dynamic Learning Maps and the surmise-linked items of Knowledge Space Theory, applied to career competencies. The split is a useful lens, not a clean partition: the framework's own prerequisite edges (&sect;12 of the background) are faculty-authored and depth-laden &mdash; expert identity relations that happen to live on <em>edges</em> &mdash; and disambiguating two near-identical nodes can itself require the <em>relation</em> between them. What the lens gets right is the assignment of the dominant work: bulk relatedness to data, identity-and-depth to expert judgment.</p>
 
@@ -470,7 +496,7 @@ figure.fig figcaption b{color:var(--ink);font-weight:600}
 </section>
 
 <section id="scale">
-  <div><span class="sec-num">06</span><h2 class="sec-title">Scale representation &mdash; integer judgments, continuous derivations</h2></div>
+  <div><span class="sec-num">07</span><h2 class="sec-title">Scale representation &mdash; integer judgments, continuous derivations</h2></div>
 
   <p>Hypotheses B and C both depend on a representation decision that can be stated once and applied throughout: <strong>integer at the boundary, float in the model.</strong></p>
 
@@ -491,7 +517,7 @@ figure.fig figcaption b{color:var(--ink);font-weight:600}
 </section>
 
 <section id="open-questions">
-  <div><span class="sec-num">07</span><h2 class="sec-title">Open questions</h2></div>
+  <div><span class="sec-num">08</span><h2 class="sec-title">Open questions</h2></div>
 
   <p>These are the questions that would need answers before the quantitative hypotheses above could move from plausible design directions to validated components.</p>
 
@@ -523,7 +549,7 @@ figure.fig figcaption b{color:var(--ink);font-weight:600}
   </a>
 
   <section id="references">
-    <div><span class="sec-num">08</span><h2 class="sec-title">References</h2></div>
+    <div><span class="sec-num">09</span><h2 class="sec-title">References</h2></div>
 
   <p class="dagger-legend">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
 
@@ -587,6 +613,13 @@ figure.fig figcaption b{color:var(--ink);font-weight:600}
     <li id="ref-kim-2025">Kim, E., Garg, A., Peng, K., &amp; Garg, N. (2025). Correlated Errors in Large Language Models. <em>ICML 2025</em> (arXiv:2506.07962 &mdash; on HELM, ~60% agreement when both models are wrong; larger and more accurate models more correlated). Kohli, G. (2026). Nine Judges, Two Effective Votes: Correlated Errors Undermine LLM Evaluation Panels (arXiv:2605.29800 &mdash; 9-judge panel n<sub>eff</sub> &asymp; 2.18, independence ratio 24.2%).</li>
   </ul>
 
+
+  <h3>Scaling and cumulative levels</h3>
+
+  <ul>
+    <li id="ref-koopman-2021">Koopman, L., Zijlstra, B. J. H., &amp; van der Ark, L. A. (2021). Range-preserving confidence intervals and significance tests for scalability coefficients in Mokken scale analysis. In M. Wiberg et al. (Eds.), <em>Quantitative Psychology</em> (Springer Proceedings in Mathematics &amp; Statistics, Vol. 353, pp. 175&ndash;185). Springer. Page given as the PDF page. (&sect;5.)</li>
+    <li id="ref-sijtsma-2011">Sijtsma, K., Meijer, R. R., &amp; van der Ark, L. A. (2011). Mokken scale analysis as time goes by: An update for scaling practitioners. <em>Personality and Individual Differences</em>, 50(1), 31&ndash;37. Page given as the PDF page. (&sect;5.)</li>
+  </ul>
 </section>
 
 <p class="doc-foot">Clemson Department of Graphic Communications &mdash; GC Curriculum Tool &mdash; Research companion. Forward / hypothesis register; not validated findings.</p>
