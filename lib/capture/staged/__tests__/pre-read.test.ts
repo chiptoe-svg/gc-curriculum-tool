@@ -78,4 +78,19 @@ describe('runPreRead', () => {
     expect(materialsFingerprint([mat('a'), mat('b')])).toBe(materialsFingerprint([mat('b'), mat('a')]));
     expect(materialsFingerprint([mat('a')])).not.toBe(materialsFingerprint([mat('a', { uploadedAt: new Date('2026-11-02T00:00:00Z') })]));
   });
+
+  it('records the spend of a failed read from the error usage, including on timeout', async () => {
+    h.listMaterialsByCourse.mockResolvedValue([mat('a')]);
+    h.runPiTask.mockRejectedValue(Object.assign(new Error('pi: aborted'), { usage: { tokens: {}, usdUnits: 777 } }));
+    const r = await runPreRead('GC 3460');
+    expect(r.status).toBe('failed');
+    expect(h.recordSpend).toHaveBeenCalledWith(777);
+  });
+
+  it('records no spend when the failure carries no usage', async () => {
+    h.listMaterialsByCourse.mockResolvedValue([mat('a')]);
+    h.runPiTask.mockRejectedValue(new Error('boom'));
+    await runPreRead('GC 3460');
+    expect(h.recordSpend).not.toHaveBeenCalled();
+  });
 });

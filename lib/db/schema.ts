@@ -1280,6 +1280,8 @@ export const captureInterviewSessions = pgTable('capture_interview_sessions', {
   mapStatus: text('map_status').notNull().$type<'pending' | 'ready' | 'failed' | 'none'>(),
   materialsFingerprint: text('materials_fingerprint'),
   mapEditedAt: timestamp('map_edited_at', { withTimezone: true }),
+  // When the current pre-read was claimed; a 'pending' row older than the timeout is stale and may be re-claimed.
+  mapStartedAt: timestamp('map_started_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

@@ -12,6 +12,8 @@ import { EvidenceMapJsonSchema, EvidenceMapSchema, type EvidenceMap } from './ev
 export type PreReadResult = { map: EvidenceMap | null; status: 'ready' | 'failed' | 'none'; fingerprint: string | null };
 
 export const PRE_READ_TIMEOUT_MS = 180_000;
+/** A 'pending' read older than this (timeout + 60 s) died without saving and may be claimed again. */
+export const PRE_READ_STALE_MS = PRE_READ_TIMEOUT_MS + 60_000;
 const READ_TOOLS = ['search_materials', 'fetch_material_section', 'list_materials'];
 
 /**
@@ -57,6 +59,9 @@ export async function runPreRead(courseCode: string): Promise<PreReadResult> {
     }
   } catch (err) {
     console.error(`[pre-read] ${courseCode}: failed:`, err instanceof Error ? err.message : err);
+    // A failed or timed-out read still spent tokens (runPiTask puts them on the error).
+    const spent = (err as { usage?: { usdUnits?: number } } | null)?.usage?.usdUnits;
+    if (typeof spent === 'number') await recordSpend(spent).catch(e => console.error(`[pre-read] ${courseCode}: recordSpend failed`, e));
     return { map: null, status: 'failed', fingerprint };
   }
 }

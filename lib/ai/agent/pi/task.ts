@@ -147,32 +147,45 @@ export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>>
     },
   });
 
+  // Pi's usage.input already excludes cache reads and writes, so the four counts are disjoint, as TokenCounts expects.
+  const usageSoFar = () => {
+    const tokens: TokenCounts = { freshInput: 0, cachedInput: 0, output: 0, cacheWrite: 0 };
+    for (const m of agent.state.messages) {
+      if ((m as { role: string }).role !== 'assistant') continue;
+      const u = (m as { usage?: { input: number; output: number; cacheRead: number; cacheWrite: number } }).usage;
+      if (!u) continue;
+      tokens.freshInput += u.input; tokens.cachedInput += u.cacheRead; tokens.output += u.output; tokens.cacheWrite! += u.cacheWrite;
+    }
+    return { tokens, usdUnits: costUsdCents(ep.model, tokens) };
+  };
+  // A failed run still spent tokens; the caller records them from err.usage.
+  const withUsage = (err: unknown): Error => {
+    const e = err instanceof Error ? err : new Error(String(err));
+    (e as Error & { usage?: ReturnType<typeof usageSoFar> }).usage = usageSoFar();
+    return e;
+  };
+
   const onAbort = () => agent.abort();
   if (input.signal?.aborted) onAbort(); else input.signal?.addEventListener('abort', onAbort, { once: true });
   try {
     await agent.prompt({ role: 'user', content: input.userMessage, timestamp: Date.now() } as AgentMessage);
+  } catch (err) {
+    throw withUsage(err);
   } finally {
     input.signal?.removeEventListener('abort', onAbort);
   }
-  if (input.signal?.aborted) throw new Error('pi: aborted');
-  if (agent.state.errorMessage) throw new Error(`pi: ${agent.state.errorMessage} | ${trace.join(' | ')}`);
-  if (!final) throw new Error(`pi: no submit after ${requests} request(s) | ${trace.join(' | ')}`);
+  if (input.signal?.aborted) throw withUsage(new Error('pi: aborted'));
+  if (agent.state.errorMessage) throw withUsage(new Error(`pi: ${agent.state.errorMessage} | ${trace.join(' | ')}`));
+  if (!final) throw withUsage(new Error(`pi: no submit after ${requests} request(s) | ${trace.join(' | ')}`));
 
-  // Pi's usage.input already excludes cache reads and writes, so the four counts are disjoint, as TokenCounts expects.
-  const tokens: TokenCounts = { freshInput: 0, cachedInput: 0, output: 0, cacheWrite: 0 };
-  for (const m of agent.state.messages) {
-    if ((m as { role: string }).role !== 'assistant') continue;
-    const u = (m as { usage?: { input: number; output: number; cacheRead: number; cacheWrite: number } }).usage;
-    if (!u) continue;
-    tokens.freshInput += u.input; tokens.cachedInput += u.cacheRead; tokens.output += u.output; tokens.cacheWrite! += u.cacheWrite;
-  }
+  const { tokens, usdUnits } = usageSoFar();
   return {
     value: final.value,
     toolCalls,
     forcedSubmit: forceSubmit,
     requests,
     tokens,
-    usdUnits: costUsdCents(ep.model, tokens),
+    usdUnits,
     credits: isCampusModel(ep.model) ? 0 : costCredits(ep.model, tokens),
     ms: Date.now() - started,
   };

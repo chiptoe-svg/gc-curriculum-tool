@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const h = vi.hoisted(() => ({
   auth: vi.fn(), rate: vi.fn(), cap: vi.fn(), runPreRead: vi.fn(), createSession: vi.fn(), getSession: vi.fn(),
-  saveMap: vi.fn(), saveEdited: vi.fn(), messages: vi.fn(), materials: vi.fn(),
+  saveMap: vi.fn(), claim: vi.fn(), saveEdited: vi.fn(), messages: vi.fn(), materials: vi.fn(),
 }));
 vi.mock('@/lib/sandbox/access', () => ({ authorizeCourseWrite: h.auth }));
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({ checkIpRateLimit: h.rate }));
@@ -12,7 +12,7 @@ vi.mock('@/lib/db/courses-queries', () => ({ getCourseByCode: vi.fn().mockResolv
 vi.mock('@/lib/db/capture-messages-queries', () => ({ startNewSession: () => 'sess-1', getSessionMessages: h.messages }));
 vi.mock('@/lib/db/course-materials-queries', () => ({ listMaterialsByCourse: h.materials }));
 vi.mock('@/lib/db/capture-interview-sessions-queries', () => ({
-  createInterviewSession: h.createSession, getInterviewSession: h.getSession, saveEvidenceMap: h.saveMap, saveEditedEvidenceMap: h.saveEdited,
+  createInterviewSession: h.createSession, getInterviewSession: h.getSession, saveEvidenceMap: h.saveMap, claimPreRead: h.claim, saveEditedEvidenceMap: h.saveEdited,
 }));
 vi.mock('@/lib/capture/staged/pre-read', async (orig) => ({ ...(await orig<typeof import('@/lib/capture/staged/pre-read')>()), runPreRead: h.runPreRead }));
 
@@ -24,7 +24,7 @@ const url = (q = '') => `http://x/api/capture/GC%203460/evidence-map?slug=s${q}`
 const json = (method: string, body: unknown, q = '') => new Request(url(q), { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 const MAP = { summary: 's', graded_work: [], tests: [], competencies: [], assumed_skills: [], objectives: [], conflicts: [], unreadable: [] };
 const mat = (id: string) => ({ id, fileName: `${id}.pdf`, digest: 'd', extractionStatus: 'ok', ignored: false, autoSetAside: false, retiredAt: null, ignoredItems: [], uploadedAt: new Date('2026-11-01T00:00:00Z') });
-const row = (over: Record<string, unknown> = {}) => ({ sessionId: 'sess-1', courseCode: 'GC 3460', map: MAP, mapStatus: 'ready', materialsFingerprint: 'old', mapEditedAt: null, createdAt: new Date(), ...over });
+const row = (over: Record<string, unknown> = {}) => ({ mapStartedAt: new Date(), sessionId: 'sess-1', courseCode: 'GC 3460', map: MAP, mapStatus: 'ready', materialsFingerprint: 'old', mapEditedAt: null, createdAt: new Date(), ...over });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -33,6 +33,7 @@ beforeEach(() => {
   h.cap.mockResolvedValue({ ok: true });
   h.messages.mockResolvedValue([]);
   h.materials.mockResolvedValue([mat('a')]);
+  h.claim.mockResolvedValue(true);
 });
 
 describe('POST', () => {
@@ -99,8 +100,8 @@ describe('GET', () => {
     expect(h.runPreRead).not.toHaveBeenCalled();
   });
   it('re-runs the pre-read and saves it when the materials changed before any assistant turn', async () => {
-    h.getSession.mockResolvedValue(row());
     const fresh = { ...MAP, summary: 'new' };
+    h.getSession.mockResolvedValueOnce(row()).mockResolvedValueOnce(row({ map: fresh, mapStatus: 'ready', materialsFingerprint: 'fp2' }));
     h.runPreRead.mockResolvedValue({ map: fresh, status: 'ready', fingerprint: 'fp2' });
     expect(await (await get()).json()).toEqual({ sessionId: 'sess-1', map: fresh, status: 'ready' });
     expect(h.saveMap).toHaveBeenCalledWith('sess-1', { map: fresh, status: 'ready', fingerprint: 'fp2' });
@@ -121,5 +122,57 @@ describe('GET', () => {
   it('404 for another course\'s session', async () => {
     h.getSession.mockResolvedValue(row({ courseCode: 'GC 1010' }));
     expect((await get()).status).toBe(404);
+  });
+
+  it('two concurrent GETs on a stale-fingerprint session start one read', async () => {
+    h.getSession.mockResolvedValue(row());
+    let claimed = false;
+    h.claim.mockImplementation(async () => { if (claimed) return false; claimed = true; return true; });
+    h.runPreRead.mockResolvedValue({ map: MAP, status: 'ready', fingerprint: 'fp2' });
+    const [a, b] = await Promise.all([get(), get()]);
+    expect(h.runPreRead).toHaveBeenCalledTimes(1);
+    expect(a.status).toBe(200);
+    expect(b.status).toBe(200);
+  });
+
+  it('a pending row started recently is not re-read; a stale one is, whatever the fingerprint', async () => {
+    h.getSession.mockResolvedValueOnce(row({ mapStatus: 'pending', map: null, materialsFingerprint: materialsFingerprint([mat('a')]) }));
+    await get();
+    expect(h.runPreRead).not.toHaveBeenCalled();
+    h.getSession.mockResolvedValueOnce(row({ mapStatus: 'pending', map: null, materialsFingerprint: materialsFingerprint([mat('a')]), mapStartedAt: new Date(Date.now() - 241_000) }));
+    h.runPreRead.mockResolvedValue({ map: MAP, status: 'ready', fingerprint: 'fp' });
+    await get();
+    expect(h.claim).toHaveBeenCalledWith('sess-1');
+    expect(h.runPreRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not read when the claim is refused', async () => {
+    h.getSession.mockResolvedValue(row());
+    h.claim.mockResolvedValue(false);
+    await get();
+    expect(h.runPreRead).not.toHaveBeenCalled();
+  });
+
+  it('does not re-read a failed map with a null fingerprint on every poll, but does when a stored fingerprint differs', async () => {
+    h.getSession.mockResolvedValueOnce(row({ mapStatus: 'failed', map: null, materialsFingerprint: null }));
+    await get();
+    expect(h.runPreRead).not.toHaveBeenCalled();
+    h.getSession.mockResolvedValueOnce(row({ mapStatus: 'failed', map: null, materialsFingerprint: 'old' }));
+    h.runPreRead.mockResolvedValue({ map: MAP, status: 'ready', fingerprint: 'fp' });
+    await get();
+    expect(h.runPreRead).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('PUT size', () => {
+  it('413 for a body over 256 KB', async () => {
+    const big = JSON.stringify({ sessionId: 'sess-1', map: { ...MAP, summary: 'x'.repeat(300_000) } });
+    const res = await PUT(new Request(url(), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: big }), ctx);
+    expect(res.status).toBe(413);
+    expect(h.saveEdited).not.toHaveBeenCalled();
+  });
+  it('400 for a map over the field limits', async () => {
+    const res = await PUT(json('PUT', { sessionId: 'sess-1', map: { ...MAP, summary: 'x'.repeat(2001) } }), ctx);
+    expect(res.status).toBe(400);
   });
 });

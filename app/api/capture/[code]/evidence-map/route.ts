@@ -5,11 +5,13 @@ import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 import { getSessionMessages, startNewSession } from '@/lib/db/capture-messages-queries';
-import { createInterviewSession, getInterviewSession, saveEditedEvidenceMap, saveEvidenceMap } from '@/lib/db/capture-interview-sessions-queries';
-import { runPreRead, materialsFingerprint } from '@/lib/capture/staged/pre-read';
+import { createInterviewSession, getInterviewSession, claimPreRead, saveEditedEvidenceMap, saveEvidenceMap } from '@/lib/db/capture-interview-sessions-queries';
+import { runPreRead, materialsFingerprint, PRE_READ_STALE_MS } from '@/lib/capture/staged/pre-read';
 import { EvidenceMapSchema } from '@/lib/capture/staged/evidence-map';
 import { includedMaterialsOf } from '@/lib/ai/agent/audit-agent';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
+
+const MAX_BODY_BYTES = 256 * 1024;
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -54,20 +56,23 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
   const row = sessionId ? await getInterviewSession(sessionId) : null;
   if (!row || row.courseCode !== g.courseCode) return NextResponse.json({ error: 'session not found' }, { status: 404 });
 
-  // Materials changed before the interview started: the map is stale, so read again.
-  // Not while a read is in flight (pending) and not over the instructor's own edits.
-  if (row.mapStatus !== 'pending' && !row.mapEditedAt) {
+  // Read again when the materials changed before the interview started, or a read died (pending too long).
+  // The claim is atomic, so polls and tabs during a read never start a second one; an edited map is never re-read.
+  if (!row.mapEditedAt) {
     const turns = await getSessionMessages(g.courseCode, sessionId);
     if (!turns.some(m => m.role === 'assistant')) {
       const included = includedMaterialsOf(await listMaterialsByCourse(g.courseCode));
       const current = included.length ? materialsFingerprint(included) : null;
-      if (current !== row.materialsFingerprint) {
-        const cap = await checkDailyCap();
-        if (cap.ok) {
-          const r = await runPreRead(g.courseCode);
-          await saveEvidenceMap(sessionId, r);
-          return NextResponse.json({ sessionId, map: r.map, status: r.status });
-        }
+      const stalePending = row.mapStatus === 'pending' && (!row.mapStartedAt || Date.now() - new Date(row.mapStartedAt).getTime() > PRE_READ_STALE_MS);
+      // A failed read is retried only when the materials changed since it; with no stored fingerprint it waits for a new POST.
+      const changed = row.mapStatus === 'failed'
+        ? row.materialsFingerprint !== null && current !== null && current !== row.materialsFingerprint
+        : row.mapStatus !== 'pending' && current !== row.materialsFingerprint;
+      if ((stalePending || changed) && (await checkDailyCap()).ok && (await claimPreRead(sessionId))) {
+        const r = await runPreRead(g.courseCode);
+        await saveEvidenceMap(sessionId, r);
+        const fresh = await getInterviewSession(sessionId);
+        return NextResponse.json({ sessionId, map: fresh?.map ?? r.map, status: fresh?.mapStatus ?? r.status });
       }
     }
   }
@@ -78,7 +83,10 @@ export async function PUT(req: Request, { params }: RouteContext): Promise<Respo
   const g = await gate(req, (await params).code, { cap: false });
   if (!g.ok) return g.res;
 
-  const body = await req.json().catch(() => null) as { sessionId?: unknown; map?: unknown } | null;
+  const text = await req.text();
+  if (Buffer.byteLength(text) > MAX_BODY_BYTES) return NextResponse.json({ error: 'request too large' }, { status: 413 });
+  let body: { sessionId?: unknown; map?: unknown } | null = null;
+  try { body = JSON.parse(text); } catch { /* 400 below */ }
   if (!body || typeof body.sessionId !== 'string' || !body.sessionId) return NextResponse.json({ error: 'sessionId required' }, { status: 400 });
   const parsed = EvidenceMapSchema.safeParse(body.map);
   if (!parsed.success) return NextResponse.json({ error: 'invalid map', issues: parsed.error.issues.slice(0, 5) }, { status: 400 });

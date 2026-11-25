@@ -14,6 +14,7 @@ CREATE TABLE capture_interview_sessions (
   map_status text NOT NULL,
   materials_fingerprint text,
   map_edited_at timestamptz,
+  map_started_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 COMMIT;

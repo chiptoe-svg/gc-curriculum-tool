@@ -12,25 +12,32 @@ export type EvidenceMap = {
   unreadable: Array<{ file: string; note: string }>;
 };
 
+// Size limits are zod-only (applied to the instructor's PUT and to the model's output). They are NOT in
+// EvidenceMapJsonSchema: whether OpenAI strict mode accepts maxLength/maxItems is unverified here.
+export const EVIDENCE_MAP_LIMITS = { string: 2000, list: 60, sublist: 40 } as const;
+const S = z.string().max(EVIDENCE_MAP_LIMITS.string);
+const list = <T extends z.ZodType>(t: T) => z.array(t).max(EVIDENCE_MAP_LIMITS.list);
+const sublist = <T extends z.ZodType>(t: T) => z.array(t).max(EVIDENCE_MAP_LIMITS.sublist);
+
 export const EvidenceMapSchema = z.object({
-  summary: z.string(),
-  graded_work: z.array(z.object({
-    title: z.string(),
-    weight: z.string().nullable(),
-    deliverables: z.string().nullable(),
-    rubric_criteria: z.array(z.string()),
-    source: z.string(),
+  summary: S,
+  graded_work: list(z.object({
+    title: S,
+    weight: S.nullable(),
+    deliverables: S.nullable(),
+    rubric_criteria: sublist(S),
+    source: S,
   })),
-  tests: z.array(z.object({ name: z.string(), item_types: z.array(z.string()), source: z.string() })),
-  competencies: z.array(z.object({ statement: z.string(), graded_work: z.array(z.string()) })),
-  assumed_skills: z.array(z.object({ skill: z.string(), used_in: z.string(), source: z.string() })),
-  objectives: z.array(z.object({
-    text: z.string(),
+  tests: list(z.object({ name: S, item_types: sublist(S), source: S })),
+  competencies: list(z.object({ statement: S, graded_work: sublist(S) })),
+  assumed_skills: list(z.object({ skill: S, used_in: S, source: S })),
+  objectives: list(z.object({
+    text: S,
     status: z.enum(['graded_work_found', 'not_found']),
-    graded_work: z.array(z.string()),
+    graded_work: sublist(S),
   })),
-  conflicts: z.array(z.string()),
-  unreadable: z.array(z.object({ file: z.string(), note: z.string() })),
+  conflicts: sublist(S),
+  unreadable: sublist(z.object({ file: S, note: S })),
 }) satisfies z.ZodType<EvidenceMap>;
 
 const str = { type: 'string' } as const;
