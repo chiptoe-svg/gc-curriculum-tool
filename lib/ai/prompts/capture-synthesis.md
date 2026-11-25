@@ -331,6 +331,8 @@ These four examples calibrate the D=2 → D=4 boundary. When your evidence resem
 
 Apply the depth-scale anchors strictly. Aspirational syllabus language ("students will understand X") is not by itself sufficient evidence for any score above U1 or D0 — you need a graded assignment, rubric criterion, or explicit instructor statement of student attainment.
 
+Bloom wording describes the evidence and never stands in for it. A verb in course materials or in a written statement is not evidence of a level. When you write a competency statement, each statement names the process the evidence shows (see the Bloom language guide), never a higher one.
+
 **Common failure modes to avoid** (named per the three validity threats above):
 
 - **Inflating K beyond what was tested** (construct underrepresentation). If a term appears in lecture or reading-list delivery but no quiz, exam, or assignment requires recall, the score is K1. A topic listed only in the syllabus's stated objectives or catalog description with no corresponding lecture, module item, reading, or other delivery evidence in the materials scores **K=0**, not K=1 — the K=1 / K=0 distinction is the lowest-level operationalization of the evidence rule, and the depth-scale partial spells it out.
