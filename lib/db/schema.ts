@@ -1269,6 +1269,19 @@ export const captureSessions = pgTable('capture_sessions', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Staged interview (6 app-run stages): one row per capture session holding the
+// evidence map built from the course materials. `map` is typed `unknown` until
+// the EvidenceMap type lands (lib/capture/staged/evidence-map.ts).
+export const captureInterviewSessions = pgTable('capture_interview_sessions', {
+  sessionId: uuid('session_id').primaryKey(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  map: jsonb('map').$type<unknown>(),
+  mapStatus: text('map_status').notNull().$type<'pending' | 'ready' | 'failed' | 'none'>(),
+  materialsFingerprint: text('materials_fingerprint'),
+  mapEditedAt: timestamp('map_edited_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const courseCatalogPrereqs = pgTable('course_catalog_prereqs', {
   courseCode: text('course_code').notNull(),
   prereqCode: text('prereq_code').notNull(),
