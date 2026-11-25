@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+// Classic session: no staged-interview row (the lookup fails closed, so it must not reach a DB).
+vi.mock('@/lib/db/capture-interview-sessions-queries', () => ({ getInterviewSession: vi.fn(async () => null) }));
 import type { Message, CompleteWithToolsResult } from '@/lib/ai/tool-use-types';
 import type { AuditResponse } from '@/lib/ai/agent/audit-response-schema';
 

@@ -86,12 +86,16 @@ describe('interview routing', () => {
     expect(staged.runStagedInterview).not.toHaveBeenCalled();
   });
 
-  it('a failed lookup is logged and the turn takes the classic path', async () => {
-    h.lookupError = new Error('DATABASE_URL not set');
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    expect((await run()).map(e => e.kind)).toEqual(['session', 'final']);
-    expect(buildAgentCall).toHaveBeenCalledOnce();
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
+  it('failed lookup errors, writes nothing, never calls buildAgentCall', async () => {
+    h.lookupError = new Error('connection refused');
+    const ev = await run();
+    expect(ev.map(e => e.kind)).toEqual(['session', 'error']);
+    expect((ev[1] as { message?: string }).message).toContain('connection refused');
+    await expect(runAuditAgent(input)).rejects.toThrow('connection refused');
+    expect(buildAgentCall).not.toHaveBeenCalled();
+    expect(getSessionMessages).not.toHaveBeenCalled();
+    expect(persistAssistantTurn).not.toHaveBeenCalled();
+    expect(staged.streamStagedInterview).not.toHaveBeenCalled();
+    expect(staged.runStagedInterview).not.toHaveBeenCalled();
   });
 });

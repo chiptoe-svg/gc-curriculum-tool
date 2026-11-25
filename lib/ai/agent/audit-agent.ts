@@ -394,18 +394,13 @@ export async function persistAssistantTurn(input: PersistAssistantTurnInput): Pr
 
 /**
  * The session's staged-interview row, or null for a classic session (plan 2026-11-25, Ruling P1: a session is
- * staged if and only if it has a capture_interview_sessions row). A failed lookup is logged and treated as
- * classic: the classic path is today's behavior, and its own reads fail the same way if the DB is down.
+ * staged if and only if it has a capture_interview_sessions row). Fails closed (fix round 2): a lookup error
+ * is rethrown, never treated as classic. A classic turn written under a staged session id would collide with
+ * that session's next staged turn on (session_id, turn_index), and the classic path reads the same database.
  * Throws 'session does not belong to this course' when the row is another course's.
  */
 export async function stagedSessionFor(sessionId: string, courseCode: string): Promise<InterviewSessionRow | null> {
-  let row: InterviewSessionRow | null;
-  try {
-    row = await getInterviewSession(sessionId);
-  } catch (err) {
-    console.warn(`[audit-agent] staged-session lookup failed for ${sessionId}; using the classic interview`, err instanceof Error ? err.message : err);
-    return null;
-  }
+  const row = await getInterviewSession(sessionId);
   // Another course's staged session is refused, never run as classic: a classic turn would append to it.
   if (row && row.courseCode !== courseCode) throw new Error('session does not belong to this course');
   return row;

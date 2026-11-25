@@ -1,5 +1,7 @@
 /** Pi plan Task 3: with the loop set to Pi, the interview streams the same events and stores the same rows. */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+// Classic session: no staged-interview row (the lookup fails closed, so it must not reach a DB).
+vi.mock('@/lib/db/capture-interview-sessions-queries', () => ({ getInterviewSession: vi.fn(async () => null) }));
 
 const persisted: unknown[] = [];
 const loop = vi.hoisted(() => ({ value: 'pi' as 'pi' | 'current' }));

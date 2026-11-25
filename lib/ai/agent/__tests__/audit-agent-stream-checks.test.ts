@@ -1,5 +1,7 @@
 /** The streaming interviewer (the live chat path) runs the same checks as runAuditAgent. */
 import { describe, it, expect, vi } from 'vitest';
+// Classic session: no staged-interview row (the lookup fails closed, so it must not reach a DB).
+vi.mock('@/lib/db/capture-interview-sessions-queries', () => ({ getInterviewSession: vi.fn(async () => null) }));
 
 const persisted: unknown[] = [];
 const streamArgs: Array<Record<string, unknown>> = [];

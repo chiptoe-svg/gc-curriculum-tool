@@ -1,5 +1,7 @@
 /** A forced-search stream rejected before anything was shown retries once without forcing. */
 import { describe, it, expect, vi } from 'vitest';
+// Classic session: no staged-interview row (the lookup fails closed, so it must not reach a DB).
+vi.mock('@/lib/db/capture-interview-sessions-queries', () => ({ getInterviewSession: vi.fn(async () => null) }));
 
 const calls: Array<Record<string, unknown>> = [];
 
