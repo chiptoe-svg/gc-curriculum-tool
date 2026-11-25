@@ -28,7 +28,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { mayCall } from '@/scripts/reliability/bloom-drift-lib';
 import {
-  PERSONAS, checkExpectDb, countedTurns, parseJudge, renderJudgeTranscript, parseModelSpec, personaAction, repeatCount, summarize,
+  PERSONAS, chargeFailedCall, chargeKnownCall, chargePreRead, checkExpectDb, countedTurns, parseJudge, renderJudgeTranscript, parseModelSpec, personaAction, repeatCount, summarize,
   type SimCase, type SimFact, type SimRun, type SimTurn,
 } from './interview-sim-lib';
 import type { PiEndpoint } from '@/lib/ai/agent/pi/turn';
@@ -225,8 +225,8 @@ export async function main(argv: string[]): Promise<number> {
   const { isFilled } = await import('@/lib/capture/staged/ledger');
 
   console.log(`${cases.length} case(s); interviewer ${model}${effort ? ':' + effort : ''} (${paid ? `paid, ceiling $${maxUsd}` : 'campus, free'}); instructor ${instructorModel}; Bloom ${bloom}`);
-  let spent = 0;
-  let largest = paid ? FIRST_CALL_ESTIMATE_USD : 0;
+  // spent/largest live on the tally (final-review 4: failed paid calls are counted, as bloom-drift does).
+  const tally = { spent: 0, largest: paid ? FIRST_CALL_ESTIMATE_USD : 0 };
   let stopped = false;
   const results: CaseResult[] = [];
 
@@ -246,13 +246,15 @@ export async function main(argv: string[]): Promise<number> {
     };
     results.push(r);
     console.log(`\n${c.id} (${c.courseCode}, ${c.persona}, ${mats.length} materials) session ${sessionId}`);
+    // True while a paid interviewer call is in flight: a throw there is charged at the largest known call.
+    let inPaidTurn = false;
     try {
       await createInterviewSession({ sessionId, courseCode: c.courseCode });
-      if (paid && !mayCall(spent, maxUsd, largest)) { stopped = true; break; }
+      if (paid && !mayCall(tally.spent, maxUsd, tally.largest)) { stopped = true; break; }
       const t0 = Date.now();
       const pre = await runPreRead(c.courseCode, { endpoint });
       r.preRead = { status: pre.status, ms: Date.now() - t0 };
-      if (paid) { const u = (pre.usdUnits ?? 0) / 10_000; spent += u; r.spentUsd += u; largest = Math.max(largest, u); }
+      if (paid) r.spentUsd += chargePreRead(tally, pre);
       await saveEvidenceMap(sessionId, pre);
       const session = await getInterviewSession(sessionId);
       console.log(`  pre-read ${pre.status} in ${(r.preRead.ms / 1000).toFixed(0)} s`);
@@ -260,11 +262,13 @@ export async function main(argv: string[]): Promise<number> {
       let userMessage: string | undefined;
       const convo: string[] = [];
       for (let i = 0; i < MAX_INTERVIEWER_TURNS; i++) {
-        if (paid && !mayCall(spent, maxUsd, largest)) { stopped = true; break; }
+        if (paid && !mayCall(tally.spent, maxUsd, tally.largest)) { stopped = true; break; }
         const t1 = Date.now();
+        inPaidTurn = paid;
         const o = await runStagedTurn({ sessionId, courseCode: c.courseCode, auditMode: 'full', instructorName: 'Simulated instructor', endpoint, ...(userMessage ? { userMessage } : {}) }, session!);
+        inPaidTurn = false;
         const replyMs = Date.now() - t1;
-        if (paid) { const u = (o.result.telemetry?.costUsdCents ?? 0) / 10_000; spent += u; r.spentUsd += u; largest = Math.max(largest, u); }
+        if (paid) r.spentUsd += chargeKnownCall(tally, (o.result.telemetry?.costUsdCents ?? 0) / 10_000);
         const st = o.response.staged!;
         const turn: SimTurn = { question: o.response.question, kind: st.kind, replyMs };
         r.turns.push(turn);
@@ -299,9 +303,15 @@ export async function main(argv: string[]): Promise<number> {
         convo.push(`Interviewer: ${shown}\nYou: ${userMessage}`);
         console.log(`     → ${userMessage.replace(/\s+/g, ' ').slice(0, 140)}`);
       }
-      if (stopped) console.error(`[STOP] ceiling: spent $${spent.toFixed(3)} of $${maxUsd}, largest call $${largest.toFixed(3)}`);
+      if (stopped) console.error(`[STOP] ceiling: spent $${tally.spent.toFixed(3)} of $${maxUsd}, largest call $${tally.largest.toFixed(3)}`);
     } catch (err) {
       r.error = err instanceof Error ? err.message : String(err);
+      // A thrown paid turn may still have spent money (retries, a reply that failed to parse): charge the largest known call.
+      if (inPaidTurn) {
+        const charged = chargeFailedCall(tally);
+        r.spentUsd += charged;
+        console.error(`  (charged $${charged.toFixed(3)} toward the ceiling for the failed turn)`);
+      }
       console.error(`  ERROR ${r.error.slice(0, 300)}`);
     }
 
@@ -327,10 +337,10 @@ export async function main(argv: string[]): Promise<number> {
 
   const summary = summarize(results.filter(x => !x.error));
   console.log('\nsummary', JSON.stringify(summary));
-  if (paid) console.log(`spent ≈ $${spent.toFixed(3)} (estimate from tokens; check the RCD dashboard)`);
+  if (paid) console.log(`spent ≈ $${tally.spent.toFixed(3)} (estimate from tokens; check the RCD dashboard)`);
   writeFileSync(out, JSON.stringify({
     ranAt: new Date().toISOString(), interviewer: interviewerSpec, instructor: instructorModel, bloom,
-    paid, maxUsd, spentUsd: spent, stoppedAtCeiling: stopped, errors: results.filter(x => x.error).length, summary, results,
+    paid, maxUsd, spentUsd: tally.spent, stoppedAtCeiling: stopped, errors: results.filter(x => x.error).length, summary, results,
   }, null, 2));
   return stopped ? 3 : 0;
 }

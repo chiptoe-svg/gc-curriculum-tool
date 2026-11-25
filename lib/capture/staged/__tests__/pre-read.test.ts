@@ -103,6 +103,21 @@ describe('runPreRead', () => {
     expect(h.recordSpend).toHaveBeenCalledWith(777);
   });
 
+  it('final-fix 4: a failed paid read returns its spend as usdUnits (the benchmark ceiling counts it)', async () => {
+    h.listMaterialsByCourse.mockResolvedValue([mat('a')]);
+    h.runPiTask.mockRejectedValue(Object.assign(new Error('pi: aborted'), { usage: { tokens: {}, usdUnits: 777 } }));
+    expect(await runPreRead('GC 3460')).toMatchObject({ status: 'failed', usdUnits: 777 });
+  });
+
+  it('final-fix 4: a read that returned but failed to parse still reports its spend, recorded once', async () => {
+    h.listMaterialsByCourse.mockResolvedValue([mat('a')]);
+    h.runPiTask.mockResolvedValue({ value: { not: 'a map' }, ms: 1, usdUnits: 555 });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(await runPreRead('GC 3460')).toMatchObject({ status: 'failed', usdUnits: 555 });
+    expect(h.recordSpend).toHaveBeenCalledTimes(1);
+    expect(h.recordSpend).toHaveBeenCalledWith(555);
+  });
+
   it('records no spend when the failure carries no usage', async () => {
     h.listMaterialsByCourse.mockResolvedValue([mat('a')]);
     h.runPiTask.mockRejectedValue(new Error('boom'));

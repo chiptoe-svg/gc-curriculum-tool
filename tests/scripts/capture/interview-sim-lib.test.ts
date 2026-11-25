@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   repeatCount, summarize, personaAction, parseJudge, parseModelSpec, type SimRun,
+  chargePreRead, chargeFailedCall, chargeKnownCall, type SpendTally,
 } from '@/scripts/capture/interview-sim-lib';
 
 describe('repeatCount', () => {
@@ -125,5 +126,34 @@ describe('Task 9b fix 5: harness guard and judge sequence index', () => {
     expect(text).toContain('#1 Q1 — Interviewer: Hi. What can they do?\nInstructor: Mount plates.');
     expect(text).toContain('#2 Q1 (no new question) — Interviewer: It means the rubric.\nInstructor: Ok.');
     expect(text).toContain('#3 Q2 — Interviewer: Which two?\nInstructor: (no reply)');
+  });
+});
+
+describe('final-fix 4: the paid ceiling tally', () => {
+  const tally = (): SpendTally => ({ spent: 0, largest: 0.5 });
+
+  it('a known call adds its cost and can raise the largest', () => {
+    const t = tally();
+    expect(chargeKnownCall(t, 0.8)).toBe(0.8);
+    expect(t).toEqual({ spent: 0.8, largest: 0.8 });
+  });
+
+  it('a failed pre-read that carries usdUnits is counted (daily_cost units ÷ 10,000)', () => {
+    const t = tally();
+    expect(chargePreRead(t, { status: 'failed', usdUnits: 7_000 })).toBeCloseTo(0.7);
+    expect(t.spent).toBeCloseTo(0.7);
+  });
+
+  it('a failed pre-read with no usage is charged at the largest known call; "none" costs nothing', () => {
+    const t = tally();
+    expect(chargePreRead(t, { status: 'failed' })).toBe(0.5);
+    expect(chargePreRead(t, { status: 'none' })).toBe(0);
+    expect(t.spent).toBe(0.5);
+  });
+
+  it('a thrown paid turn is charged at the largest known call (as bloom-drift does)', () => {
+    const t = { spent: 1, largest: 0.9 };
+    expect(chargeFailedCall(t)).toBe(0.9);
+    expect(t.spent).toBeCloseTo(1.9);
   });
 });

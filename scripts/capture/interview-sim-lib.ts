@@ -146,3 +146,23 @@ export function renderJudgeTranscript(exchanges: JudgeExchange[]): string {
     .map((e, i) => `#${i + 1} Q${e.n}${e.kind === 'answer_only' ? ' (no new question)' : ''} — Interviewer: ${[e.say, e.question].filter(Boolean).join(' ')}\nInstructor: ${e.reply ?? '(no reply)'}`)
     .join('\n\n');
 }
+
+/**
+ * Paid-ceiling accounting (final-review 4, bloom-drift's rule): a call with a known cost adds it; a failed call
+ * whose cost is unknown is charged at the largest known call. Each returns what it charged, in USD.
+ */
+export type SpendTally = { spent: number; largest: number };
+export function chargeKnownCall(t: SpendTally, usd: number): number {
+  t.spent += usd;
+  t.largest = Math.max(t.largest, usd);
+  return usd;
+}
+export function chargeFailedCall(t: SpendTally): number {
+  t.spent += t.largest;
+  return t.largest;
+}
+/** A pre-read: its usdUnits (daily_cost units) when known, ready or failed; a failed read without them is unknown. */
+export function chargePreRead(t: SpendTally, pre: { status: string; usdUnits?: number }): number {
+  if (typeof pre.usdUnits === 'number') return chargeKnownCall(t, pre.usdUnits / 10_000);
+  return pre.status === 'failed' ? chargeFailedCall(t) : 0;
+}

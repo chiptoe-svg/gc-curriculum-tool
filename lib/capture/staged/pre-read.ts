@@ -10,7 +10,8 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { recordSpend } from '@/lib/rate-limit/daily-cap';
 import { EvidenceMapJsonSchema, EvidenceMapSchema, clampEvidenceMap, type EvidenceMap } from './evidence-map';
 
-/** `usdUnits` (the read's spend, daily_cost units) is set on a ready read; the benchmark's spend ceiling uses it. */
+/** `usdUnits` (the read's spend, daily_cost units) is set whenever it is known, on a ready or a failed read; the
+ *  benchmark's spend ceiling uses it (final-review 4: a failed paid read used to report none). */
 export type PreReadResult = { map: EvidenceMap | null; status: 'ready' | 'failed' | 'none'; fingerprint: string | null; usdUnits?: number };
 
 export const PRE_READ_TIMEOUT_MS = 180_000;
@@ -32,6 +33,8 @@ export function materialsFingerprint(included: Array<{ id: string; uploadedAt: D
 /** `opts.endpoint` is for scripts only (the interview benchmark); the app uses the live capture-chat-agent setting. */
 export async function runPreRead(courseCode: string, opts: { endpoint?: PiEndpoint } = {}): Promise<PreReadResult> {
   let fingerprint: string | null = null;
+  /** Spend already recorded from a read that returned (a later parse failure must not record it twice). */
+  let returnedUnits: number | undefined;
   try {
     const [course, materials] = await Promise.all([getCourseByCode(courseCode), listMaterialsByCourse(courseCode)]);
     if (!course) throw new Error(`course not found: ${courseCode}`);
@@ -55,6 +58,7 @@ export async function runPreRead(courseCode: string, opts: { endpoint?: PiEndpoi
         signal: controller.signal,
       });
       console.info(`[pre-read] ${courseCode}: ${r.ms} ms, ${r.usdUnits} spend units`);
+      returnedUnits = r.usdUnits;
       await recordSpend(r.usdUnits).catch(err => console.error(`[pre-read] ${courseCode}: recordSpend failed`, err));
       const { value, clamped } = clampEvidenceMap(r.value);
       if (clamped) console.warn(`[pre-read] ${courseCode}: clamped ${clamped} over-limit string/list value(s) in the model's map`);
@@ -66,7 +70,8 @@ export async function runPreRead(courseCode: string, opts: { endpoint?: PiEndpoi
     console.error(`[pre-read] ${courseCode}: failed:`, err instanceof Error ? err.message : err);
     // A failed or timed-out read still spent tokens (runPiTask puts them on the error).
     const spent = (err as { usage?: { usdUnits?: number } } | null)?.usage?.usdUnits;
-    if (typeof spent === 'number') await recordSpend(spent).catch(e => console.error(`[pre-read] ${courseCode}: recordSpend failed`, e));
-    return { map: null, status: 'failed', fingerprint };
+    if (returnedUnits === undefined && typeof spent === 'number') await recordSpend(spent).catch(e => console.error(`[pre-read] ${courseCode}: recordSpend failed`, e));
+    const usdUnits = returnedUnits ?? spent;
+    return { map: null, status: 'failed', fingerprint, ...(typeof usdUnits === 'number' ? { usdUnits } : {}) };
   }
 }
