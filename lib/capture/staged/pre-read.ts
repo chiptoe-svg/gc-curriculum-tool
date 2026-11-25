@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { runPiTask } from '@/lib/ai/agent/pi/task';
 import { piEndpointFor } from '@/lib/ai/agent/pi/endpoint';
+import type { PiEndpoint } from '@/lib/ai/agent/pi/turn';
 import { buildAuditTools } from '@/lib/ai/agent/audit-tools';
 import { includedMaterialsOf, renderAtRestContext } from '@/lib/ai/agent/audit-agent';
 import { loadSkill } from '@/lib/ai/skills/load-skill';
@@ -9,7 +10,8 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { recordSpend } from '@/lib/rate-limit/daily-cap';
 import { EvidenceMapJsonSchema, EvidenceMapSchema, clampEvidenceMap, type EvidenceMap } from './evidence-map';
 
-export type PreReadResult = { map: EvidenceMap | null; status: 'ready' | 'failed' | 'none'; fingerprint: string | null };
+/** `usdUnits` (the read's spend, daily_cost units) is set on a ready read; the benchmark's spend ceiling uses it. */
+export type PreReadResult = { map: EvidenceMap | null; status: 'ready' | 'failed' | 'none'; fingerprint: string | null; usdUnits?: number };
 
 export const PRE_READ_TIMEOUT_MS = 180_000;
 /** A 'pending' read older than this (timeout + 60 s) died without saving and may be claimed again. */
@@ -27,7 +29,8 @@ export function materialsFingerprint(included: Array<{ id: string; uploadedAt: D
 }
 
 /** Stage 0: read the course's materials once and build the evidence map. Never throws. */
-export async function runPreRead(courseCode: string): Promise<PreReadResult> {
+/** `opts.endpoint` is for scripts only (the interview benchmark); the app uses the live capture-chat-agent setting. */
+export async function runPreRead(courseCode: string, opts: { endpoint?: PiEndpoint } = {}): Promise<PreReadResult> {
   let fingerprint: string | null = null;
   try {
     const [course, materials] = await Promise.all([getCourseByCode(courseCode), listMaterialsByCourse(courseCode)]);
@@ -37,7 +40,7 @@ export async function runPreRead(courseCode: string): Promise<PreReadResult> {
     fingerprint = materialsFingerprint(included);
 
     const tools = buildAuditTools(courseCode).filter(t => READ_TOOLS.includes(t.name));
-    const endpoint = await piEndpointFor();
+    const endpoint = opts.endpoint ?? await piEndpointFor();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), PRE_READ_TIMEOUT_MS);
     try {
@@ -55,7 +58,7 @@ export async function runPreRead(courseCode: string): Promise<PreReadResult> {
       await recordSpend(r.usdUnits).catch(err => console.error(`[pre-read] ${courseCode}: recordSpend failed`, err));
       const { value, clamped } = clampEvidenceMap(r.value);
       if (clamped) console.warn(`[pre-read] ${courseCode}: clamped ${clamped} over-limit string/list value(s) in the model's map`);
-      return { map: EvidenceMapSchema.parse(value), status: 'ready', fingerprint };
+      return { map: EvidenceMapSchema.parse(value), status: 'ready', fingerprint, usdUnits: r.usdUnits };
     } finally {
       clearTimeout(timer);
     }

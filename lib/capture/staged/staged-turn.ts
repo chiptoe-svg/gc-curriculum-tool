@@ -23,7 +23,7 @@ import type { AuditStreamEvent } from '@/lib/ai/agent/audit-agent-stream';
 import type { AuditResponse, AuditStagedBlock } from '@/lib/ai/agent/audit-response-schema';
 import { citableFromHistory, keepValidCitations, repairCitations } from '@/lib/ai/agent/interview-controls';
 import { piEndpointFor } from '@/lib/ai/agent/pi/endpoint';
-import { runPiTurn, type PiTurnResult } from '@/lib/ai/agent/pi/turn';
+import { runPiTurn, type PiEndpoint, type PiTurnResult } from '@/lib/ai/agent/pi/turn';
 import type { Message, StreamEvent, ToolCall } from '@/lib/ai/tool-use-types';
 import type { EvidenceMap } from './evidence-map';
 import { buildLedger, type AskedTurn, type Ledger, type LedgerEvent } from './ledger';
@@ -42,7 +42,9 @@ export type CaptureMessageRow = {
   toolCalls?: Array<{ id: string; toolName: string; args: Record<string, unknown> }> | null;
 };
 
-export type StagedAgentInput = AuditAgentInput & { finish?: boolean };
+/** `endpoint` is for scripts only (the interview benchmark on a campus model); the app never sets it and the
+ *  chat route builds its input field by field, so a request cannot supply one. */
+export type StagedAgentInput = AuditAgentInput & { finish?: boolean; endpoint?: PiEndpoint };
 
 const SKIP_RE = /^(skip|skip this question|move on|next question|pass)\.?$/i;
 /** The instructor's skip: typed, or sent by the Skip button (which posts one of these phrases). */
@@ -229,7 +231,7 @@ export async function runStagedTurn(
   };
   const msgsForRepair = fullTranscript as Array<{ role: string; content: string | null }>;
 
-  const endpoint = await piEndpointFor();
+  const endpoint = input.endpoint ?? await piEndpointFor();
   const call = (forceSearch: boolean) => runPiTurn<StagedSubmit>({
     systemPrompt,
     messages,

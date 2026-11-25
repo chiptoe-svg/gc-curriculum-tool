@@ -333,6 +333,21 @@ function seedAsked(events: LedgerEvent[]) {
   }
 }
 
+describe('endpoint override (Task 9 benchmark)', () => {
+  it('uses the live capture-chat-agent endpoint by default', async () => {
+    steps.push({ submit: { slot_asked: 'outcomes', kind: 'question', question: 'q?' } });
+    await turn();
+    expect((calls[0] as unknown as { endpoint: { model: string } }).endpoint.model).toBe('cub');
+  });
+
+  it('an explicit endpoint on the input replaces the live setting', async () => {
+    steps.push({ submit: { slot_asked: 'outcomes', kind: 'question', question: 'q?' } });
+    const ep = { baseUrl: 'http://campus', apiKey: 'k2', model: 'qwen3.8-27b-fp8', api: 'openai-completions' };
+    await turn(undefined, { endpoint: ep });
+    expect((calls[0] as unknown as { endpoint: unknown }).endpoint).toEqual(ep);
+  });
+});
+
 describe('fix round 1', () => {
   it("refuses a session row from another course and stores nothing", async () => {
     const other = { ...session, courseCode: 'GC 9999' };

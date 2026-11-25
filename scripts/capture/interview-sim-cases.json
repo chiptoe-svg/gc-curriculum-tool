@@ -1,0 +1,14 @@
+{
+  "about": "Cases for scripts/capture/interview-sim.ts. sourceSessionId is the live capture session whose instructor answers the simulated instructor draws on; the transcripts themselves are exported read-only to scripts/capture/.sim-data/<sourceSessionId>.json (git-ignored, never committed). The five reviewed sessions run as persona normal; four persona variants run on GC 4060 and GC 2070.",
+  "cases": [
+    { "id": "4060-normal", "courseCode": "GC 4060", "sourceSessionId": "cd307ecc-4a9f-43ad-a789-c44454afedc1", "persona": "normal" },
+    { "id": "2070-normal", "courseCode": "GC 2070", "sourceSessionId": "24cdfa56-7df9-495d-b5e8-9a8f4149fb28", "persona": "normal" },
+    { "id": "4900or-normal", "courseCode": "GC 4900or", "sourceSessionId": "e2ac3c6e-5c7c-4559-bc92-1f8513848416", "persona": "normal" },
+    { "id": "2200-normal", "courseCode": "PKSC 2200", "sourceSessionId": "98485a94-4d4e-4e8b-a52c-2e481563fd5f", "persona": "normal" },
+    { "id": "1040-normal", "courseCode": "GC 1040", "sourceSessionId": "e1c05c81-466f-48a2-87a1-0aed8cc9f8e6", "persona": "normal" },
+    { "id": "4060-terse", "courseCode": "GC 4060", "sourceSessionId": "cd307ecc-4a9f-43ad-a789-c44454afedc1", "persona": "terse" },
+    { "id": "4060-skipper", "courseCode": "GC 4060", "sourceSessionId": "cd307ecc-4a9f-43ad-a789-c44454afedc1", "persona": "skipper" },
+    { "id": "2070-asks-back", "courseCode": "GC 2070", "sourceSessionId": "24cdfa56-7df9-495d-b5e8-9a8f4149fb28", "persona": "asks-back" },
+    { "id": "2070-yes-sayer", "courseCode": "GC 2070", "sourceSessionId": "24cdfa56-7df9-495d-b5e8-9a8f4149fb28", "persona": "yes-sayer" }
+  ]
+}

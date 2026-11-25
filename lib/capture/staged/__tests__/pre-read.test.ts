@@ -74,6 +74,22 @@ describe('runPreRead', () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it('uses an explicit endpoint instead of the live setting, and reports the spend of a ready read', async () => {
+    h.listMaterialsByCourse.mockResolvedValue([mat('a')]);
+    h.runPiTask.mockResolvedValue({ value: MAP, usdUnits: 55, ms: 1 });
+    const ep = { baseUrl: 'http://campus', apiKey: 'k2', model: 'qwen3.8-27b-fp8', api: 'openai-completions' as const };
+    const r = await runPreRead('GC 3460', { endpoint: ep });
+    expect(h.runPiTask.mock.calls[0]![0].endpoint).toEqual(ep);
+    expect(r.usdUnits).toBe(55);
+  });
+
+  it('defaults to the live setting endpoint', async () => {
+    h.listMaterialsByCourse.mockResolvedValue([mat('a')]);
+    h.runPiTask.mockResolvedValue({ value: MAP, usdUnits: 1, ms: 1 });
+    await runPreRead('GC 3460');
+    expect(h.runPiTask.mock.calls[0]![0].endpoint).toMatchObject({ model: 'm' });
+  });
+
   it('fingerprint ignores order and changes when a material changes', () => {
     expect(materialsFingerprint([mat('a'), mat('b')])).toBe(materialsFingerprint([mat('b'), mat('a')]));
     expect(materialsFingerprint([mat('a')])).not.toBe(materialsFingerprint([mat('a', { uploadedAt: new Date('2026-11-02T00:00:00Z') })]));

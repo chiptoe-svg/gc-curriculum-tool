@@ -1,0 +1,73 @@
+{
+  "about": "Key facts per course for the interview benchmark's recall metric (scripts/capture/interview-sim.ts). Drafted 2026-11-25 from the five reviewed live interview transcripts: facts the course profile depended on, paraphrased, each citing the instructor turn (turnIndex in the source session) it came from. No student names, no long quotes. confirmed stays false until the owner confirms.",
+  "confirmed": false,
+  "GC 4060": [
+    { "id": "4060-01", "fact": "Students should arrive able to read L*a*b* values and take X-Rite measurements, but usually need a refresher on the X-Rite menus.", "sourceTurn": 3 },
+    { "id": "4060-02", "fact": "In the technical data report students use measurements to compare impressions, check gray balance, and check whether the numbers agree with a visual comparison to the proof.", "sourceTurn": 9 },
+    { "id": "4060-03", "fact": "Students mainly identify why a print differs from its proof; no current assignment has them make a color correction in prepress or on press.", "sourceTurn": 15 },
+    { "id": "4060-04", "fact": "The instructor plans to add fingerprinting and building/applying press profiles in ArtPro+ to address the color-correction objective.", "sourceTurn": 19 },
+    { "id": "4060-05", "fact": "For trapping in Test Target Assignment B, students follow demonstrated steps rather than explain their choices.", "sourceTurn": 21 },
+    { "id": "4060-06", "fact": "Students are expected to arrive knowing how to choose a screen ruling (LPI) but need a refresher and still need help with the decision.", "sourceTurn": 27 },
+    { "id": "4060-07", "fact": "For the paperboard package, nearly all students start from a standard structure; running and adjusting the standard in ArtiosCAD, then Illustrator and ArtPro+, is taught in GC 4060.", "sourceTurn": 41 },
+    { "id": "4060-08", "fact": "In the specialty production project students are about 90% independent on equipment such as 3D printer, laser, flatbed inkjet, DTG and embroidery, learned from demonstration videos.", "sourceTurn": 57 },
+    { "id": "4060-09", "fact": "On the label runs students do every setup task except the press run itself; they leave understanding the flexo process but not able to run the press independently.", "sourceTurn": 73 },
+    { "id": "4060-10", "fact": "The key connections for understanding flexo are anilox choice by substrate and graphics, minimum dots/bump curves, platemaking and artwork preparation.", "sourceTurn": 77 },
+    { "id": "4060-11", "fact": "The presentation is graded on topic knowledge, professional manner, eye contact, a clear technical summary and time; students discuss decisions, what went wrong and fixes.", "sourceTurn": 87 },
+    { "id": "4060-12", "fact": "The Specialty Technical Report is individual, graded on both writing and technical content, written in InDesign; spreadsheet skills are expected from GC 3460.", "sourceTurn": 113 }
+  ],
+  "GC 2070": [
+    { "id": "2070-01", "fact": "A NANO Design Challenge scaffolds press use first; by the end of B5-B6 students complete the four-color process work on their own.", "sourceTurn": 3 },
+    { "id": "2070-02", "fact": "B5-B6 lab reports include dot-gain results, which students link to poor registration, over-pressured squeegee, and coated vs uncoated substrates.", "sourceTurn": 11 },
+    { "id": "2070-03", "fact": "Because of time, students cannot rerun B5-B6 prints to correct the problems they find.", "sourceTurn": 15 },
+    { "id": "2070-04", "fact": "This is students' first RGB-to-CMYK four-color workflow; basic Photoshop (open, resize, save) is already known from earlier courses.", "sourceTurn": 99 },
+    { "id": "2070-05", "fact": "Step and Repeat imposition in InDesign is taught for the first time in DC2 (24-up business cards), and students trim on the guillotine under supervision.", "sourceTurn": 31 },
+    { "id": "2070-06", "fact": "For the inkjet tile and object projects, students measure media height with an electronic caliper and set up the flatbed inkjet themselves under supervision.", "sourceTurn": 47 },
+    { "id": "2070-07", "fact": "A wide-format inkjet video review has students judge training vs sales videos, and many explore non-imaging uses such as medical and pharmaceutical printing.", "sourceTurn": 69 },
+    { "id": "2070-08", "fact": "Networking/IT content has no project; it is lecture plus multiple-choice and fill-in-the-blank items, mostly identifying acronyms.", "sourceTurn": 79 },
+    { "id": "2070-09", "fact": "The packaging sequence goes sketch, assemble a proof, render in full color, reassemble to check fit, then print the final box on card stock.", "sourceTurn": 83 },
+    { "id": "2070-10", "fact": "File organization and naming are graded from screenshots against the assignment rubric, with penalties for not following submission requirements.", "sourceTurn": 91 },
+    { "id": "2070-11", "fact": "Most students write readable lab reports on the first submission; reports do not ask students to compare a shared principle across printing processes.", "sourceTurn": 113 },
+    { "id": "2070-12", "fact": "A first-day icebreaker has students mix CMYK inks by eye to Clemson brand colors and check the match with X-Rite readings they take themselves.", "sourceTurn": 123 }
+  ],
+  "GC 4900or": [
+    { "id": "4900or-01", "fact": "In visitor demonstrations students must explain the process with technical terms and real materials; success means the visitor completes the skill independently.", "sourceTurn": 1 },
+    { "id": "4900or-02", "fact": "When a visitor is confused, the instructor directs the redirection, though students usually already have the knowledge.", "sourceTurn": 5 },
+    { "id": "4900or-03", "fact": "Screen printing is refreshed in the course; students must explain inks, line screens and dpi and how those choices change the print.", "sourceTurn": 13 },
+    { "id": "4900or-04", "fact": "Demonstrations also cover wide-format printing, Mimaki inkjet and flexo.", "sourceTurn": 17 },
+    { "id": "4900or-05", "fact": "Safety in demos is checking visitor compliance (hair back, closed-toe shoes) rather than explaining the hazards; environmental concerns are not addressed in the course.", "sourceTurn": 27 },
+    { "id": "4900or-06", "fact": "Collateral includes items such as bottle labels, frisbees, stair-riser artwork, stickers, banners, koozies and T-shirts, made to Clemson brand guidelines.", "sourceTurn": 31 },
+    { "id": "4900or-07", "fact": "Teams choose collateral around a theme and explain their choices before producing.", "sourceTurn": 37 },
+    { "id": "4900or-08", "fact": "Brand colors must match within 3 Delta E; students correct errors before final production by troubleshooting printer, paper and ink.", "sourceTurn": 45 },
+    { "id": "4900or-09", "fact": "Students use Claude for layout, design and color samples, and must know how to direct it with brand information and design goals.", "sourceTurn": 55 },
+    { "id": "4900or-10", "fact": "Students plan from the back end first: measure, find material, test color matches, design, then print.", "sourceTurn": 79 },
+    { "id": "4900or-11", "fact": "Students run more cross-media color tests on their own than assigned, which the instructor sees as where the learning happens.", "sourceTurn": 71 },
+    { "id": "4900or-12", "fact": "Grades for collateral and demonstrations reflect participation and completion.", "sourceTurn": 87 }
+  ],
+  "PKSC 2200": [
+    { "id": "2200-01", "fact": "The DayQuil test is a three-hour SolidWorks exam with no instructor help or outside resources; students troubleshoot on their own.", "sourceTurn": 33 },
+    { "id": "2200-02", "fact": "Technical drawings are covered early in the semester; by Deliverable 2 students must interpret a dimensioned drawing.", "sourceTurn": 5 },
+    { "id": "2200-03", "fact": "Spray-nozzle dimensions are given on day one so the cap is designed large enough to hide the nozzle.", "sourceTurn": 7 },
+    { "id": "2200-04", "fact": "Reprinting a cap that does not fit is suggested, not required; most students do it, otherwise they address it on the final website.", "sourceTurn": 13 },
+    { "id": "2200-05", "fact": "The box is built in ArtiosCAD from a standard with a unique window; in critique the instructor usually explains problems (e.g. a window too large) and students make the changes.", "sourceTurn": 19 },
+    { "id": "2200-06", "fact": "Prototype failure is welcomed; revision happens when time allows, and the final website does not currently ask about prototype problems.", "sourceTurn": 27 },
+    { "id": "2200-07", "fact": "The sequence is bottle and cap design, 3D print, package structure, graphics, then box prototype.", "sourceTurn": 29 },
+    { "id": "2200-08", "fact": "Most students arrive with no CAD experience, so SolidWorks is taught from the beginning.", "sourceTurn": 31 },
+    { "id": "2200-09", "fact": "The DayQuil test is graded on submitted models, drawings, accuracy and the correct file types, with no written explanation.", "sourceTurn": 39 },
+    { "id": "2200-10", "fact": "When shelling fails, students sometimes extrude-cut the inside of the bottle instead.", "sourceTurn": 37 },
+    { "id": "2200-11", "fact": "On the Beats packaging exam students may use the Design Workflow PDF; it mostly repeats the practice with a different size, material and graphics.", "sourceTurn": 52 },
+    { "id": "2200-12", "fact": "Daily lab assessments follow pre-watched software videos; the instructor answers questions with questions and points students back to the workflow PDF.", "sourceTurn": 60 }
+  ],
+  "GC 1040": [
+    { "id": "1040-01", "fact": "Students state the calibrated or optimized tints in the booklet's choices-made section, based on the optimization project's findings.", "sourceTurn": 3 },
+    { "id": "1040-02", "fact": "The instructor reteaches Illustrator and prepress setup, including basic file setup.", "sourceTurn": 7 },
+    { "id": "1040-03", "fact": "The key shift is taking a file all the way to press and printing it.", "sourceTurn": 9 },
+    { "id": "1040-04", "fact": "Students must troubleshoot at press, but the instructor often steps in because of time.", "sourceTurn": 11 },
+    { "id": "1040-05", "fact": "Printing history is supporting foundational lecture, not a major graded strand.", "sourceTurn": 13 },
+    { "id": "1040-06", "fact": "Students write a process book covering process, tools and choices (tints, fonts, colors), fill out a job ticket, and reflect on what went wrong and well.", "sourceTurn": 15 },
+    { "id": "1040-07", "fact": "The booklet is turned in last, after production, so it is not revised.", "sourceTurn": 17 },
+    { "id": "1040-08", "fact": "There is no time to rerun a failed project; the course moves on.", "sourceTurn": 19 },
+    { "id": "1040-09", "fact": "In the choice project students choose everything; the instructor calls it the weakest project.", "sourceTurn": 21 },
+    { "id": "1040-10", "fact": "Craftsmanship is graded in the final rubric attached to the booklet.", "sourceTurn": 23 },
+    { "id": "1040-11", "fact": "Deliverables are the prints, proof, AI/TIFF/PDF files, job ticket and process booklet.", "sourceTurn": 25 }
+  ]
+}
