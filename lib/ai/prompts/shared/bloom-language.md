@@ -51,7 +51,7 @@ For making and performing, use the Apply and Create processes with a condition:
 - **implementing** or adapting under new conditions;
 - **planning** and **producing** original work.
 
-Bloom has no process for working from a reference, and none for guiding others. Say those plainly.
+Bloom has no process for working from a reference, and none for a student who guides others. Say those plainly.
 
 ## Never inflate
 
