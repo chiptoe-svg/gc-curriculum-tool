@@ -257,6 +257,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           triageEnabled={isTriageEnabled()}
           isExternalTester={isScopedForThis}
           staged={staged}
+          explicitClassic={interview === 'classic'}
           initialStaged={stagedView.staged}
         />
       </main>

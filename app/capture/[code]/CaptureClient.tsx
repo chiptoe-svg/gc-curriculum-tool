@@ -70,6 +70,8 @@ interface Props {
   isExternalTester?: boolean;
   /** A staged interview (page.tsx: ?interview=staged, INTERVIEW_STAGED_DEFAULT, or the resumed session's own row). */
   staged?: boolean;
+  /** True when the link said ?interview=classic: a session remembered in this browser must not override it. */
+  explicitClassic?: boolean;
   /** The staged block of the resumed session's latest reply, for the stage bar. */
   initialStaged?: AuditStagedBlock | null;
 }
@@ -108,6 +110,7 @@ export function CaptureClient({
   triageEnabled = false,
   isExternalTester = false,
   staged = false,
+  explicitClassic = false,
   initialStaged = null,
 }: Props) {
   const [course, setCourse] = useState<CourseCatalogView>(initialCourse);
@@ -247,6 +250,8 @@ export function CaptureClient({
   useEffect(() => {
     if (!wantsResumeCheck || resumeChecked.current) return;
     resumeChecked.current = true;
+    // An explicit ?interview=classic wins over a remembered staged session: drop it, no check.
+    if (explicitClassic) { clearStoredSession(courseCode); setResumeCheck('classic'); return; }
     const stored = readStoredSession(courseCode);
     if (!stored) { setResumeCheck('classic'); return; }
     setResumeCheck('checking');
@@ -256,7 +261,7 @@ export function CaptureClient({
         else { if (res.status === 404) clearStoredSession(courseCode); setResumeCheck('classic'); }
       })
       .catch(() => setResumeCheck('classic'));
-  }, [wantsResumeCheck, courseCode, slug]);
+  }, [wantsResumeCheck, courseCode, slug, explicitClassic]);
   const effectiveStaged = staged || resumeCheck === 'staged';
   // Once the interview has its first interviewer message the session is saved server-side; forget the stored id.
   const hasInterviewerTurn = messages.some(m => m.role === 'assistant');
@@ -588,7 +593,7 @@ export function CaptureClient({
           ) : (
           <>
           <IngestionCheckIn courseCode={courseCode} slug={slug} />
-          {wantsResumeCheck && resumeCheck !== 'classic' && resumeCheck !== 'staged' ? (
+          {resumeCheck === 'checking' ? (
             <p className="text-sm text-muted-foreground">Checking for an interview in progress…</p>
           ) : effectiveStaged && sessionId === null && messages.length === 0 ? (
             // Staged: the pre-read of the materials is confirmed before the first question. Confirming
