@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { captureInterviewSessions } from '@/lib/db/schema';
+import type { EvidenceMap } from '@/lib/capture/staged/evidence-map';
 
-// `map` is `unknown` until the EvidenceMap type exists (staged interview, Task 2).
 export type InterviewSessionRow = {
   sessionId: string;
   courseCode: string;
-  map: unknown;
+  map: EvidenceMap | null;
   mapStatus: 'pending' | 'ready' | 'failed' | 'none';
   materialsFingerprint: string | null;
   mapEditedAt: Date | null;
@@ -32,7 +32,7 @@ export async function getInterviewSession(sessionId: string): Promise<InterviewS
 
 export async function saveEvidenceMap(
   sessionId: string,
-  input: { map: unknown; status: 'ready' | 'failed' | 'none'; fingerprint: string | null },
+  input: { map: EvidenceMap | null; status: 'ready' | 'failed' | 'none'; fingerprint: string | null },
 ): Promise<void> {
   await db
     .update(captureInterviewSessions)
@@ -40,7 +40,7 @@ export async function saveEvidenceMap(
     .where(eq(captureInterviewSessions.sessionId, sessionId));
 }
 
-export async function saveEditedEvidenceMap(sessionId: string, map: unknown): Promise<void> {
+export async function saveEditedEvidenceMap(sessionId: string, map: EvidenceMap): Promise<void> {
   await db
     .update(captureInterviewSessions)
     .set({ map, mapEditedAt: new Date() })

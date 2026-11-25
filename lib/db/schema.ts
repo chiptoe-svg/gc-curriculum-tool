@@ -1,4 +1,5 @@
 import { pgTable, pgEnum, pgView, check, uuid, text, jsonb, timestamp, date, integer, smallint, bigint, real, boolean, primaryKey, index, uniqueIndex, unique, foreignKey, type AnyPgColumn } from 'drizzle-orm/pg-core';
+import type { EvidenceMap } from '@/lib/capture/staged/evidence-map';
 import { sql } from 'drizzle-orm';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
@@ -1275,7 +1276,7 @@ export const captureSessions = pgTable('capture_sessions', {
 export const captureInterviewSessions = pgTable('capture_interview_sessions', {
   sessionId: uuid('session_id').primaryKey(),
   courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
-  map: jsonb('map').$type<unknown>(),
+  map: jsonb('map').$type<EvidenceMap | null>(),
   mapStatus: text('map_status').notNull().$type<'pending' | 'ready' | 'failed' | 'none'>(),
   materialsFingerprint: text('materials_fingerprint'),
   mapEditedAt: timestamp('map_edited_at', { withTimezone: true }),
