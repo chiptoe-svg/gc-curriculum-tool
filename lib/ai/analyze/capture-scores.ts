@@ -456,7 +456,9 @@ export function buildV2SynthesisUserMessage(context: V2SynthesisContext): string
     'citations[] verbatim from the assistant turns that established each',
     "finding, then derive source per the mechanical rule (instructor-only →",
     "'instructor', chunk-only → 'materials', mixed → 'both', empty → 'inferred').",
-    'Emit productive_failure_conditions only if Audit Area 7 was probed.',
+    context.staged
+      ? 'Emit productive_failure_conditions only if Audit Area 7 was probed or stage 3 (revision, transfer, threshold) slots were filled.'
+      : 'Emit productive_failure_conditions only if Audit Area 7 was probed.',
   ].join('\n');
 }
 

@@ -1,0 +1,72 @@
+**Course:** GC 9999 — Fixture Course
+**Description:** A fixture.
+**Prerequisites as written on the GC course sheet (may be out of date; the Clemson catalog is authoritative, and the prerequisite profiles below follow it):** GC 1010
+
+**Catalog learning objectives:**
+1. Do a thing
+2. Explain a thing
+
+**Catalog major projects:**
+1. Project A
+
+**Catalog required incoming skills:**
+1. Skill A
+
+**Course Builder profile:** (none — this course has no synthesized profile yet)
+
+**Uploaded and Canvas-imported materials:**
+### syllabus.pdf [status: done]
+Week 1: ink. Week 2: press.
+
+
+**Prior capture profile for this course:** (none)
+
+**Prerequisite courses with confirmed Course Outcome Profiles:** (none)
+
+No prerequisite course has been captured yet, so what students arrive
+with must be inferred from the instructor's replies and the catalog
+prereq language. Be explicit about this uncertainty in the conversation.
+
+---
+
+**Baseline foundational competencies to score in every session:**
+1. Agency
+2. Attention to Detail
+3. Resilience
+4. Curiosity
+5. Written Communication
+6. Spoken Communication
+
+---
+
+**Audit transcript (chronological; each ASSISTANT turn lists the citations it relied on):**
+
+USER (turn 0, id=00000000): Tell me what students make.
+
+ASSISTANT (turn 1, id=00000000):
+Finding: The syllabus lists a press project.
+Question: Is it graded?
+CITATIONS: [chunk:chunk=abcdef01] "Week 2: press."
+
+USER (turn 2, id=00000000): Yes, 30% of the grade.
+
+ASSISTANT (turn 3, id=00000000):
+Finding: Press project is 30%.
+Question: Any revisions?
+CITATIONS: [instructor:msg=00000000] "30% of the grade"
+
+TOOL (turn 4): result for [call_abc] — see preceding ASSISTANT citations
+
+---
+
+Produce the Course Outcome Profile JSON now. Conform exactly to the
+schema. Score all six baseline foundational competencies (Agency,
+Attention to Detail, Resilience, Curiosity, Written Communication,
+Spoken Communication) plus any
+additional foundationals the materials evidence. Keep technical
+competencies in the 5–15 range. Above-zero scores require an evidence
+excerpt; foundationals must have null k_depth and u_depth. Populate
+citations[] verbatim from the assistant turns that established each
+finding, then derive source per the mechanical rule (instructor-only →
+'instructor', chunk-only → 'materials', mixed → 'both', empty → 'inferred').
+Emit productive_failure_conditions only if Audit Area 7 was probed.

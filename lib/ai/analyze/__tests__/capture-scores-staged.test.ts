@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { buildV2SynthesisUserMessage, type V2SynthesisContext } from '../capture-scores';
+import { richContext } from './fixtures/rich-context';
 import { buildLedger } from '@/lib/capture/staged/ledger';
 
 const base: V2SynthesisContext = {
@@ -23,6 +24,11 @@ describe('buildV2SynthesisUserMessage', () => {
     expect(buildV2SynthesisUserMessage(base)).toMatchSnapshot();
   });
 
+  it('classic message with a realistic transcript matches the pre-change output (generated from a09dd9d4)', () => {
+    const expected = readFileSync('lib/ai/analyze/__tests__/fixtures/rich-classic-message.txt', 'utf8');
+    expect(buildV2SynthesisUserMessage(richContext)).toBe(expected);
+  });
+
   const ledger = buildLedger(null, [
     { type: 'record', record: { slot: 'tests', status: 'filled_by_instructor', summary: 'Quizzes weekly', citations: [] } },
   ]);
@@ -37,6 +43,14 @@ describe('buildV2SynthesisUserMessage', () => {
     expect(m).toContain('# Not reached or unknown');
     expect(m).toContain('# Notes for the department lead');
     expect(m).toContain('Lead should know X');
+  });
+
+  it('staged closing line names the stage 3 alternative; classic keeps Audit Area 7 only', () => {
+    const staged0 = { map: null, ledger: buildLedger(null, []), leadNotes: [] };
+    const m = buildV2SynthesisUserMessage({ ...base, staged: staged0 });
+    expect(m).toContain('Emit productive_failure_conditions only if Audit Area 7 was probed or stage 3 (revision, transfer, threshold) slots were filled.');
+    expect(m).not.toContain('Audit Area 7 was probed.');
+    expect(buildV2SynthesisUserMessage(base)).toContain('Emit productive_failure_conditions only if Audit Area 7 was probed.');
   });
 
   it('lists not_reached slots as testimony gaps', () => {
