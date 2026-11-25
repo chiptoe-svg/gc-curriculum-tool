@@ -11,6 +11,7 @@ import { renderToolDescription, type ToolDefinition } from '@/lib/ai/tool-use-ty
 import { isCampusModel } from '@/lib/ai/models';
 import { costCredits, costUsdCents, type TokenCounts } from '@/lib/ai/prices';
 import { PI_MAX_TOKENS, PI_TEMPERATURE, piReasoningSetup, type PiEndpoint } from './turn';
+import { nullsToEmpty } from './controls';
 
 export interface PiTaskInput {
   systemPrompt: string;
@@ -92,6 +93,8 @@ export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>>
     label: 'submit',
     description: input.submitDescription,
     parameters: Type.Unsafe(input.submitSchema),
+    // Pi 1.6 turns a null string into the text "null" before validation; keep 1.4's "" (and [] for arrays).
+    prepareArguments: (args: unknown) => nullsToEmpty(args, input.submitSchema) as never,
     executionMode: 'sequential',
     async execute(_id: string, params: unknown) {
       final = { value: params as T };

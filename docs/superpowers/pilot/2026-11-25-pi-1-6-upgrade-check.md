@@ -25,9 +25,11 @@ Verdict: PASS. Behavior is unchanged within noise on the campus models, and one 
 
 The brief's `submit_turn` schema-valid count is not reported separately by the script; "Errors 0" and a question on every case are the evidence that every reply validated. The differences (+1 search, +8 requests, +14% tokens in) are inside campus-model run-to-run noise.
 
+Two 1.6 cases (3400-005, pksc2200-075) made one or two extra requests not explained by control events; probably model noise. Pi tool errors are now logged to controlEvents (fix M1), so future runs will show them.
+
 ## System role and `tools: []` (the specific 1.6 change)
 Pi 1.6 sends the `system` role to non-OpenAI OpenAI-compatible providers and omits `tools: []` when tools are off. The campus endpoint is such a provider. No request was rejected: 0 errors, no 400s, no schema errors, forced first-request search worked on the same cases as before, and no "forced search rejected, retrying" line appeared.
 
 ## Terra probe (case 2070-088, Pi 1.6.1)
-Schema-valid reply with a question, 1 search forced on the first request, 1 file citation, 0 bad citations, 2 requests, 91,695 tokens in (45% cached), 467 out, 12.3 s. Request telemetry records `effort: medium`. Cost about $0.05 (0.067 credits by the script's estimate), under the $0.10 cap.
+Schema-valid reply with a question, 1 search forced on the first request, 1 file citation, 0 bad citations, 2 requests, 91,695 tokens in (45% cached), 467 out, 12.3 s. The probe ran with effort medium (bench config). An offline payload capture by the final reviewer showed `reasoning: {effort: "medium", summary: "auto"}` on the wire, identical in 1.4 and 1.6. Cost about $0.05 (0.067 credits by the script's estimate), under the $0.10 cap.
 Raw outputs: `.superpowers/sdd/2026-11-25-pi-upgrade-1-6/bench-1.4.json`, `bench-1.6.json`, `probe-terra.json`.

@@ -33,6 +33,7 @@ import { costUsdCents as priceUsdCents } from '@/lib/ai/prices';
 import {
   MATERIAL_TOOLS, MAX_CITATION_RETRIES, checkCitations, chunkIdsInToolResult, citableFromHistory,
   citationFollowUp, keepValidCitations, needsMaterialSearch, previousQuestion, repairCitations,
+  nullsToEmpty,
 } from './controls';
 
 export const PI_MAX_TOKENS = 16000;
@@ -98,6 +99,13 @@ export function submitTurnSchema(): Record<string, unknown> {
   };
   delete s.properties.citations.items.properties.excerpt.maxLength;
   return s as unknown as Record<string, unknown>;
+}
+
+/** Control-event text for a failed tool execution (validation rejection, unknown tool, bad JSON, thrown error). */
+export function toolErrorEvent(toolName: string, result: unknown): string {
+  const content = (result as { content?: Array<{ type?: string; text?: string }> } | null)?.content;
+  const text = Array.isArray(content) ? content.filter(c => c?.type === 'text').map(c => c.text ?? '').join(' ') : String(result ?? '');
+  return `tool error: ${toolName}: ${text.slice(0, 120)}`;
 }
 
 const ZERO_USAGE = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } };
@@ -167,6 +175,8 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
     label: 'submit_turn',
     description: 'Deliver this turn: the finding, the one question, the citations and readiness. Call last, once.',
     parameters: Type.Unsafe(submitTurnSchema()),
+    // Pi 1.6 would turn a null string into the text "null" before validation; make it "" (and a null array []).
+    prepareArguments: (args: unknown) => nullsToEmpty(args, submitTurnSchema()) as never,
     executionMode: 'sequential',
     async execute(_id: string, params: unknown) {
       const repaired = repairCitations(params, msgs);
@@ -250,8 +260,12 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
   });
 
   // Chat-screen events: a banner per tool call; the reply's JSON as text-delta (the panel shows "Thinking…").
-  const unsubscribe = input.onEvent
-    ? agent.subscribe((e: AgentEvent) => {
+  // Always subscribed: Pi sends tool errors back to the model silently, so log them to controlEvents here.
+  const unsubscribe = agent.subscribe((e: AgentEvent) => {
+        if (e.type === 'tool_execution_end' && e.isError) {
+          controlEvents.push(toolErrorEvent(e.toolName, e.result));
+        }
+        if (!input.onEvent) return;
         if (e.type === 'tool_execution_start' && e.toolName !== 'submit_turn') {
           input.onEvent!({ kind: 'tool-start', toolName: e.toolName, args: (e.args ?? {}) as Record<string, unknown> });
         } else if (e.type === 'message_update' && e.assistantMessageEvent.type === 'toolcall_delta' && e.assistantMessageEvent.delta) {
@@ -259,12 +273,11 @@ export async function runPiTurn(input: PiTurnInput): Promise<PiTurnResult> {
           const part = (e.message as { content?: Array<{ type: string; name?: string }> }).content?.[e.assistantMessageEvent.contentIndex];
           if (part?.type === 'toolCall' && part.name === 'submit_turn') input.onEvent!({ kind: 'text-delta', delta: e.assistantMessageEvent.delta });
         }
-      })
-    : undefined;
+      });
   try {
     await agent.prompt({ role: 'user', content: last.content, timestamp: Date.now() } as AgentMessage);
   } finally {
-    unsubscribe?.();
+    unsubscribe();
   }
   if (agent.state.errorMessage) throw new Error(`pi: ${agent.state.errorMessage} | ${trace.join(' | ')}`);
   if (!final) throw new Error(`pi: no submit_turn after ${requests} request(s) | ${trace.join(' | ')}`);
