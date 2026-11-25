@@ -40,16 +40,28 @@ export function isFilled(s: SlotRecord | undefined): boolean {
 const ANCHOR_MAX = 80;
 /** Containment needs this many characters in the shorter string, so "a" or "Lab" does not match every title. */
 const MIN_MATCH = 4;
+const INDEX_PREFIX = /^\[[A-Z]?\d+\]\s*/;
+
+/** Strip a pre-read material-index prefix ("[B6] "), trim. Uncapped: for matching. */
+const stripTitle = (t: string) => t.trim().replace(INDEX_PREFIX, '').trim();
+
+/**
+ * The one title shape for anchors (Task 9b fix round 1): no "[A6]"-style prefix, trimmed, at most 80 characters.
+ * Used for matched, unmatched and fallback anchors, so graded_on slot ids stay short and the interviewer never
+ * says the prefixes.
+ */
+export function anchorTitle(t: string): string {
+  return stripTitle(t).slice(0, ANCHOR_MAX).trim();
+}
 
 /** The evidence-map graded-work title a line names (Task 9b fix 3): exact, then line ⊇ title (longest), then title ⊇ line. */
 function matchTitle(line: string, map: EvidenceMap | null): string | null {
-  const titles = (map?.graded_work ?? []).map((g) => g.title.trim()).filter((t) => t.length > 0);
-  const l = line.toLowerCase();
+  const titles = (map?.graded_work ?? []).map((g) => stripTitle(g.title)).filter((t) => t.length > 0);
+  const l = stripTitle(line).toLowerCase();
   const exact = titles.find((t) => t.toLowerCase() === l);
-  if (exact) return exact;
   const inLine = titles.filter((t) => t.length >= MIN_MATCH && l.includes(t.toLowerCase())).sort((a, b) => b.length - a.length)[0];
-  if (inLine) return inLine;
-  return l.length >= MIN_MATCH ? titles.find((t) => t.toLowerCase().includes(l)) ?? null : null;
+  const hit = exact ?? inLine ?? (l.length >= MIN_MATCH ? titles.find((t) => t.toLowerCase().includes(l)) : undefined);
+  return hit ? anchorTitle(hit) : null;
 }
 
 function parseAnchors(rec: SlotRecord | undefined, map: EvidenceMap | null): string[] {
@@ -59,22 +71,49 @@ function parseAnchors(rec: SlotRecord | undefined, map: EvidenceMap | null): str
     // Models often list the two titles; a bullet or number would leak into the graded_on slot ids.
     .map((l) => l.trim().replace(/^(?:[-*•]\s+|\d+[.)]\s*)/, '').trim())
     .filter((l) => l.length > 0)
-    .map((l) => matchTitle(l, map) ?? l.slice(0, ANCHOR_MAX).trim());
+    .map((l) => matchTitle(l, map) ?? anchorTitle(l))
+    .filter((l) => l.length > 0);
   return [...new Set(lines)].slice(0, 2);
 }
 
-/** The two graded-work titles with the highest weight (leading number of `weight`); ties and missing weights keep map order. */
+/** Within this much share (0.05 = 5 points), work with a rubric or deliverables wins: stage 2 asks what strong work looks like. */
+const NEAR_TIE = 0.05;
+
+/**
+ * The two graded works that carry the most of the grade (Task 9b fix round 1), ranked by SHARE:
+ * - a "%" weight is its own share;
+ * - a points weight (any other leading number) is its points ÷ the sum of all point weights in the map;
+ * - no weight ranks last, in map order.
+ * Each pick takes, among items within NEAR_TIE of the highest remaining share, one with rubric criteria or
+ * deliverables first, then the higher share, then map order. Exams are never dropped, only outranked.
+ */
 export function topGradedWork(map: EvidenceMap | null): string[] {
-  const num = (w: string | null) => {
+  const lead = (w: string | null) => {
     const m = /^\s*(\d+(?:\.\d+)?)/.exec(w ?? '');
-    return m ? Number(m[1]) : -Infinity;
+    return m ? Number(m[1]) : null;
   };
-  const ranked = (map?.graded_work ?? [])
-    .map((g, i) => ({ title: g.title.trim(), w: num(g.weight), i }))
-    .filter((g) => g.title.length > 0)
-    .sort((a, b) => (b.w === a.w ? a.i - b.i : b.w - a.w))
-    .map((g) => g.title);
-  return [...new Set(ranked)].slice(0, 2);
+  const items = (map?.graded_work ?? []).map((g, i) => {
+    const n = lead(g.weight);
+    const pct = n !== null && /%/.test(g.weight ?? '');
+    return { title: anchorTitle(g.title), n, pct, i, described: g.rubric_criteria.length > 0 || Boolean(g.deliverables?.trim()) };
+  }).filter((g) => g.title.length > 0);
+  const pointsTotal = items.filter((g) => g.n !== null && !g.pct).reduce((s, g) => s + g.n!, 0);
+  const ranked = items.map((g) => ({
+    ...g,
+    share: g.n === null ? null : g.pct ? g.n / 100 : pointsTotal > 0 ? g.n / pointsTotal : 0,
+  }));
+  const weighted = ranked.filter((g) => g.share !== null);
+  const out: string[] = [];
+  while (weighted.length > 0 && out.length < 2) {
+    const top = Math.max(...weighted.map((g) => g.share!));
+    const pick = weighted
+      .filter((g) => g.share! >= top - NEAR_TIE - 1e-9)
+      .sort((a, b) => Number(b.described) - Number(a.described) || b.share! - a.share! || a.i - b.i)[0]!;
+    weighted.splice(weighted.indexOf(pick), 1);
+    if (!out.includes(pick.title)) out.push(pick.title);
+  }
+  for (const g of ranked) if (g.share === null && out.length < 2 && !out.includes(g.title)) out.push(g.title);
+  return out;
 }
 
 /**

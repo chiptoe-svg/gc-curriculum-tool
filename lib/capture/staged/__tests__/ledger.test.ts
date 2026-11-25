@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { anchorFallback, buildLedger, topGradedWork, type LedgerEvent, type SlotRecord } from '../ledger';
+import { anchorFallback, anchorTitle, buildLedger, topGradedWork, type LedgerEvent, type SlotRecord } from '../ledger';
 import { play } from './helpers';
+import type { EvidenceMap } from '../evidence-map';
 
 /** Ledgers built from asked turns go through checkTurn (play throws on an illegal turn). */
 const built = (events: LedgerEvent[]) => play(null, events).ledger;
@@ -135,7 +136,7 @@ describe('buildLedger', () => {
 });
 
 const gw = (title: string, weight: string | null) => ({ title, weight, deliverables: null, rubric_criteria: [], source: 'c' });
-const mapWith = (graded: Array<ReturnType<typeof gw>>) => ({
+const mapWith = (graded: EvidenceMap['graded_work']): EvidenceMap => ({
   summary: '', graded_work: graded, tests: [], competencies: [], assumed_skills: [], objectives: [], conflicts: [], unreadable: [],
 });
 
@@ -209,5 +210,47 @@ describe('Task 9b fix 2: anchor fallback from the map', () => {
     expect(anchorFallback(mapWith([]), buildLedger(mapWith([]), closeStage1))).toBeNull();
     expect(anchorFallback(null, buildLedger(null, closeStage1))).toBeNull();
     expect(anchorFallback(m, buildLedger(m, [{ type: 'finish' }]))).toBeNull();
+  });
+});
+
+describe('Task 9b fix round 1', () => {
+  const gwr = (title: string, weight: string | null, rubric: string[] = [], deliverables: string | null = null) =>
+    ({ title, weight, deliverables, rubric_criteria: rubric, source: 'c' });
+
+  it('B: ranks by share — a % is its own share, points are a share of all point weights', () => {
+    // Points total 400: A = 25%, C = 75%. B is 30%. Before: raw numbers put C (300) and A (100) first.
+    expect(topGradedWork(mapWith([gwr('A', '100 pts'), gwr('B', '30%'), gwr('C', '300 points')]))).toEqual(['C', 'B']);
+    expect(topGradedWork(mapWith([gwr('Exam 1', '100 pts'), gwr('Lab', '40%'), gwr('Exam 2', '100 pts'), gwr('Quiz', '400 pts')]))).toEqual(['Quiz', 'Lab']);
+  });
+
+  it('B: a rubric\'d project within 5 points of share beats heavier exams; the exams are not dropped', () => {
+    const m = mapWith([gwr('Exam 1', '30%'), gwr('Exam 2', '30%'), gwr('Plate Project', '27%', ['registration'])]);
+    expect(topGradedWork(m)).toEqual(['Plate Project', 'Exam 1']);
+    const d = mapWith([gwr('Exam 1', '30%'), gwr('Report', '26%', [], 'a written report')]);
+    expect(topGradedWork(d)).toEqual(['Report', 'Exam 1']);
+    // Outside 5 points the heavier exam keeps its place.
+    expect(topGradedWork(mapWith([gwr('Exam 1', '40%'), gwr('Plate Project', '27%', ['registration'])]))).toEqual(['Exam 1', 'Plate Project']);
+  });
+
+  it('B: unweighted items rank last; all unweighted keep map order', () => {
+    expect(topGradedWork(mapWith([gwr('A', null, ['r']), gwr('B', '5%')]))).toEqual(['B', 'A']);
+    expect(topGradedWork(mapWith([gwr('A', null), gwr('B', null, ['r']), gwr('C', null)]))).toEqual(['A', 'B']);
+  });
+
+  it('C: anchorTitle strips a [A6]-style prefix, trims and caps at 80', () => {
+    expect(anchorTitle('[B6] Final 4/Color NANO Screen Printing Lab Report')).toBe('Final 4/Color NANO Screen Printing Lab Report');
+    expect(anchorTitle('  [12]  Exam 1 ')).toBe('Exam 1');
+    expect(anchorTitle('[ab] keep')).toBe('[ab] keep');
+    expect(anchorTitle('x'.repeat(100))).toHaveLength(80);
+  });
+
+  it('C: matched, unmatched and fallback anchors are clean, short titles', () => {
+    const long = '[B6] Final 4/Color NANO Screen Printing Lab Report and Final Print Submission Guidelines and Details';
+    const m = mapWith([gwr(long, '100 pts'), gwr('[A6] Final Lab Report for Cylinder production', '100 pts')]);
+    const named = buildLedger(m, [{ type: 'record', record: rec('anchors', 'final 4/color NANO screen printing lab report\n[A6] Final Lab Report for Cylinder production') }]).anchors;
+    expect(named).toEqual([anchorTitle(long), 'Final Lab Report for Cylinder production']);
+    expect(named.every((a) => a.length <= 80 && !a.startsWith('['))).toBe(true);
+    expect(topGradedWork(m)).toEqual([anchorTitle(long), 'Final Lab Report for Cylinder production']);
+    expect(buildLedger(null, [{ type: 'record', record: rec('anchors', '[C3] Poster') }]).anchors).toEqual(['Poster']);
   });
 });

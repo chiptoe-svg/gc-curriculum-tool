@@ -390,6 +390,9 @@ function storedTurn(
     if (own) return own;
   }
   if (hasQuestion) {
+    // answer_only → question trusts the model's slot_asked: checkTurn only proves the slot is open, not that the
+    // question text is about it. follow_up → question takes a follow-up that broke the five-follow-up budget and
+    // counts it as a plain question, so the budget can in effect be exceeded (0 times in the Task 9b benchmark).
     const relabel: StagedKind[] = value.kind === 'question' ? (value.slot_asked === 'recap' ? ['recap'] : []) : ['question'];
     for (const kind of relabel) {
       const t = legal(kind);
