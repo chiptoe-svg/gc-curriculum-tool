@@ -13,7 +13,7 @@
 
 **Accessibility:** Partially accessible — Wikipedia article, extensive secondary descriptions, and the 2001 revision (Anderson & Krathwohl) all document the original taxonomy fully.
 
-**What the background doc claims it says:** Bloom's 1956 taxonomy provides six cognitive levels — and, together with the 2001 Anderson & Krathwohl revision — remains the right vocabulary for analyzing the cognitive demand of an assessment task. The framework uses Bloom's verbs inside the audit conversation to probe each cell, with the discriminator between Bloom and KUD being scope: Bloom at assessment-level granularity, KUD at program-mapping granularity.
+**What the background doc claims it says:** Bloom's 1956 taxonomy provides six cognitive levels — and, together with the 2001 Anderson & Krathwohl revision — remains the right vocabulary for analyzing the cognitive demand of an assessment task. The framework uses Bloom's verbs inside the audit conversation to probe each cell, (Updated 2026-11-25: the background doc no longer argues from granularity. Its case is "Bloom's language, KUD+'s levels": Bloom names the kind of thinking, the K/U/D levels grade how far students get.)
 
 **What it actually says (synthesis):** The 1956 *Taxonomy of Educational Objectives, Handbook I: Cognitive Domain* was produced by a committee of educational psychologists led by Benjamin Bloom following a series of conferences from 1949 to 1953. The goal was to create a classification system for educational goals that would enable examiners and curriculum designers to communicate precisely about the level of cognitive demand their courses required.
 
