@@ -51,3 +51,19 @@ describe('capture-chat-agent prompt — course-context brief', () => {
     expect(norm1b).toContain('(use the courses in your brief)');
   });
 });
+
+describe('capture-chat-agent prompt — readiness line goes in the question field', () => {
+  it('tells the agent the readiness sentence is the question, and finding stays a finding', () => {
+    const rule = md.slice(md.indexOf('**Signal readiness when ready.**'), md.indexOf('**Periodic synthesis')).replace(/\s+/g, ' ');
+    expect(rule).toMatch(/`question` field/);
+    expect(rule).toMatch(/every reply[^.]*both[^.]*`finding`[^.]*`question`/i);
+  });
+});
+
+describe('capture-chat-agent prompt — original interview wording kept (owner option A)', () => {
+  it('keeps the original Bloom probe and objective verb rule', () => {
+    const norm = md.replace(/\s+/g, ' ');
+    expect(norm).toContain("Use Bloom's action verbs (analyze, evaluate, create, etc.)");
+    expect(norm).not.toMatch(/Bloom language guide/);
+  });
+});

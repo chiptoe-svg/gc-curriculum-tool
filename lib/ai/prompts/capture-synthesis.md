@@ -7,6 +7,7 @@ manning_skills:
   - Assessment Validity Checker (curriculum-assessment)
 includes:
   - shared/depth-scale.md
+  - shared/bloom-language.md
 ---
 
 # Role
@@ -329,6 +330,8 @@ These four examples calibrate the D=2 → D=4 boundary. When your evidence resem
 ## Strict anchor application
 
 Apply the depth-scale anchors strictly. Aspirational syllabus language ("students will understand X") is not by itself sufficient evidence for any score above U1 or D0 — you need a graded assignment, rubric criterion, or explicit instructor statement of student attainment.
+
+Bloom wording describes the evidence and never stands in for it. A verb in course materials or in a written statement is not evidence of a level. When you write a competency statement, each statement names the process the evidence shows (see the Bloom language guide), never a higher one.
 
 **Common failure modes to avoid** (named per the three validity threats above):
 
