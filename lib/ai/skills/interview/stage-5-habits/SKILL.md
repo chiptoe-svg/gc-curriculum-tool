@@ -33,7 +33,7 @@ One follow-up is worth it only when the instructor adds a habit without saying w
 
 ## Recording
 
-Record one `habits` slot whose summary has six lines, one per habit, each in the form `<habit>: <what students do, under what condition>` or `<habit>: no evidence`. Cite the instructor's reply and the chunks behind the drafted lines.
+Record one `habits` slot whose summary has six lines, one per habit, each in the form `<habit>: <what students do, under what condition>` or `<habit>: nothing yet`. Cite the instructor's reply and the chunks behind the drafted lines.
 
 ## Exit
 

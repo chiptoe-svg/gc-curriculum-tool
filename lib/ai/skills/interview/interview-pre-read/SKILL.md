@@ -11,7 +11,7 @@ Search and fetch the materials (`search_materials`, `fetch_material_section`) un
 
 ## Citations
 
-Every item you extract comes from a passage. Where a field is called `source`, put the `id` of that chunk, copied exactly from the tool result. Where an item has no `source` field, tie it to graded work by title or name the chunk id in its text. If you cannot point to a passage, leave the item out.
+Every item you extract comes from a passage. Every `source` is the `id` of that chunk, copied verbatim from the tool result. Competencies and objectives cite through their `graded_work` titles; only `conflicts` name chunk ids in their text. If you cannot point to a passage, leave the item out.
 
 ## Fields
 
@@ -22,12 +22,23 @@ Every item you extract comes from a passage. Where a field is called `source`, p
   - `deliverables`: what students hand in, or null;
   - `rubric_criteria`: each criterion with its points, as written. Empty when no rubric is in the files;
   - `source`.
-- **`tests`**: each test or quiz series with its `item_types` (multiple choice, fill-in, short answer, calculation, practical, open-book or closed-book) and `source`. Only types you can see.
-- **`competencies`**: 5 to 10 candidate competencies, each a plain statement of what students do, with the `graded_work` titles that show it. Only competencies some graded work demands.
-- **`assumed_skills`**: 3 to 8 skills the projects require but the course does not teach, with `used_in` (the graded work that needs it) and `source`. A skill the course teaches is not assumed.
-- **`objectives`**: every stated learning objective, word for word. `status` is `graded_work_found` when some graded work demands it (list those titles in `graded_work`), otherwise `not_found`. A topic listed in the schedule is not graded work.
+- **`tests`**: each test or quiz series. For each:
+  - `name`: the test or quiz series as the materials write it;
+  - `item_types`: multiple choice, fill-in, short answer, calculation, practical, open-book or closed-book. Only types you can see;
+  - `source`.
+- **`competencies`**: 5 to 10 candidates, only ones some graded work demands. For each:
+  - `statement`: a plain statement of what students do;
+  - `graded_work`: the titles of the graded work that shows it.
+- **`assumed_skills`**: 3 to 8 skills the projects require but the course does not teach. For each:
+  - `skill`: a short name for the skill;
+  - `used_in`: the graded work that needs it;
+  - `source`.
+- **`objectives`**: every stated learning objective. For each:
+  - `text`: the objective word for word, with no numbers or ids inside it;
+  - `status`: `graded_work_found` when some graded work demands it, otherwise `not_found`. A topic listed in the schedule is not graded work;
+  - `graded_work`: the titles of that graded work, empty when not found.
 - **`conflicts`**: places where sources disagree (a weight that differs between the syllabus and Canvas, a deliverable in one file and not another). Write each as one sentence naming both sources by chunk id. These go to the audit notes; the interview never asks about them.
-- **`unreadable`**: each file or section you could not read (scanned image, broken table, empty extraction), with a short `note`.
+- **`unreadable`**: each file or section you could not read (scanned image, broken table, empty extraction). For each, `file` is the file name as listed and `note` says briefly what could not be read.
 
 ## Rules
 

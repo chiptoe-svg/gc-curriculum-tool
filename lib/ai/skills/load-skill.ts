@@ -24,17 +24,28 @@ function field(fm: string, key: string): string | null {
   return v;
 }
 
-function parse(name: string): { name: string; description: string; raw: string } {
+function assertName(name: string): void {
   if (name.length > 64 || !NAME_RE.test(name)) throw new Error(`Invalid skill name: ${JSON.stringify(name)}`);
-  const text = readFileSync(join(SKILL_DIR, name, 'SKILL.md'), 'utf8');
+}
+
+/** Parse and validate a SKILL.md text for the skill `name`. Exported for tests. */
+export function parseSkillText(name: string, text: string): { name: string; description: string; raw: string } {
+  assertName(name);
   const m = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!m) throw new Error(`Skill ${name}: missing frontmatter`);
   const fm = m[1] ?? '';
   const fmName = field(fm, 'name');
   const description = field(fm, 'description');
+  // Only single-line scalars are supported; a YAML block scalar (`>` or `|`) would be read as its indicator.
+  if (description && /^[>|]/.test(description)) throw new Error(`Skill ${name}: multi-line description is not supported; write it on one line`);
   if (fmName !== name) throw new Error(`Skill ${name}: frontmatter name ${JSON.stringify(fmName)} must match its directory`);
   if (!description || description.length > 1024) throw new Error(`Skill ${name}: description must be 1-1024 characters`);
   return { name, description, raw: m[2] ?? '' };
+}
+
+function parse(name: string): { name: string; description: string; raw: string } {
+  assertName(name);
+  return parseSkillText(name, readFileSync(join(SKILL_DIR, name, 'SKILL.md'), 'utf8'));
 }
 
 const cache = new Map<string, Skill>();

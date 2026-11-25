@@ -27,7 +27,7 @@ Record one `objectives` slot, one line per objective: `<objective>: <status> - <
 
 ## `recap`
 
-Use `kind: recap`. In `say`, write at most 8 lines covering the course as captured: the outcomes, what the anchors are graded on and under what conditions, where students explain their reasoning, what happens when work goes wrong, incoming skills, habits and objectives. Each line says what students do, to what, under what condition, for example "students set up and run the flexo press on their own, except the press run itself, which is supervised". Use the instructor's words; claim nothing they did not say or the materials do not show. Mention slots that are `unknown` or not reached in one line at the end.
+Use `kind: recap`. In `say`, write at most 8 lines covering the course as captured: the outcomes, what the anchors are graded on and under what conditions, where students explain their reasoning, what happens when work goes wrong, incoming skills, habits and objectives. Each line says what students do, to what, under what condition, for example "students set up and run the flexo press on their own, except the press run itself, which is supervised". Use the instructor's words; claim nothing they did not say or the materials do not show. Within the 8 lines, end by naming the topics still unknown or not reached. Never say "slot" to the instructor.
 
 Then ask:
 

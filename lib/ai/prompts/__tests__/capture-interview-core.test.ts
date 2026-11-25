@@ -43,4 +43,21 @@ describe('capture-interview-core prompt', () => {
       expect(p).toContain(t);
     }
   });
+
+  it('says the Skip button marks unknown, and a typed skip is recorded unknown by the model', async () => {
+    const p = norm(await loadPrompt('capture-interview-core'));
+    expect(p).toContain('the skip button marks the slot unknown');
+    expect(p).toMatch(/if the instructor types skip, move on or not sure, call `record_answer` with status `unknown` yourself, citing their message/);
+  });
+
+  it('records later-stage slots only when fully settled, never habits or incoming from a partial answer', async () => {
+    const p = norm(await loadPrompt('capture-interview-core'));
+    expect(p).toContain('only when the answer fully settles it');
+    expect(p).toContain('never record `habits` or `incoming` from a partial answer');
+  });
+
+  it('allows a longer say for drafts, quoted objectives and the recap', async () => {
+    const p = norm(await loadPrompt('capture-interview-core'));
+    expect(p).toContain('except where the stage skill says to show a draft, quoted objectives or the recap');
+  });
 });

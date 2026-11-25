@@ -19,6 +19,8 @@ The evidence map lists the skills the projects assume but the course does not te
 
 Name the skills in the question exactly as the evidence map lists them; do not add or drop any, and never ask about one skill at a time. If the map lists no assumed skills, ask openly what students need to arrive able to do for the first project.
 
+The card's three choices are the only fixed-choice format the interview allows; every other question stays open.
+
 The answer arrives as lines like:
 
 ```

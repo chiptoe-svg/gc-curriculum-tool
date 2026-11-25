@@ -10,7 +10,7 @@ The evidence rule counts testimony about what students consistently demonstrate.
 How to adjust:
 
 - **Ask about the plan, and say so.** "What do you plan for students to do when…" instead of "what do students do". Keep the questions open.
-- **Lean on the materials.** Open each question with what the files and the previous instructor's rubrics show, and ask whether that is what they will use.
+- **Lean on the materials.** Open each question with what the files and the previous instructor's rubrics show, then ask what they will use.
 - **Record plans as plans.** Start the summary with "Planned:" for anything not yet observed, so synthesis does not read it as attainment. Cite the instructor's message.
 - **Accept "I don't know yet".** Record the slot `unknown` with the note "not yet taught". Do not follow up to get a guess.
 - **Incoming skills (stage 4).** They may not know what students arrive with. Say on the card that "don't know yet" is fine, and record what they do give.

@@ -25,7 +25,7 @@ Listen for whether quality, reasoning or completion earns the grade. If most poi
 
 > "At the point students produce this work, how much is on them?"
 
-You may illustrate the range: step by step with you, from a handout or reference, on their own on familiar work, or on a problem they have not seen. Record what they describe, per anchor if it differs. A one-word pick is recorded as that word, no more.
+Ask it open. If the answer is vague, illustrate the range only as your follow-up: step by step with you, from a handout or reference, on their own on familiar work, on a problem they have not seen. Record what they describe, per anchor if it differs. A one-word pick is recorded as that word, no more.
 
 <!-- bloom -->
 Bloom separates executing, carrying out a known procedure on familiar work, from implementing, choosing a method for an unfamiliar problem. Use that split in plain words here. Bloom has no step for working with direction or from a reference, so name those plainly too.
@@ -39,7 +39,11 @@ If the answer is "nowhere", record it; that is a finding, not a failure.
 
 ## `tests` (once)
 
-Open with the test and quiz item types from the evidence map, then ask whether that is a fair picture and what the tests ask students to do (recall a fact, work a problem, explain a result). If the map shows no tests, ask what, if anything, is tested outside the graded projects.
+Name the test item types from the evidence map, then ask:
+
+> "What do those tests ask students to do?"
+
+Listen for recalling a fact, working a problem, or explaining a result; do not offer these as choices. The formats themselves are settled by the map and never asked. If the map shows no tests, ask what is tested outside the graded projects.
 
 ## Exit
 
