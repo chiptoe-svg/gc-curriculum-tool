@@ -12,6 +12,8 @@
  *   DATABASE_URL=<scratch url> pnpm exec tsx --env-file=<main>/.env.local scripts/capture/interview-sim.ts \
  *     --expect-db gc_curriculum_p2_scratch --interviewer <model[:effort]> --instructor <campus model> \
  *     --cases <ids|all> [--bloom on|off] [--max-usd N] --out <file>
+ *   Re-score fact recall on a saved run (no interviewer calls, no database):
+ *     pnpm exec tsx --env-file=<main>/.env.local scripts/capture/interview-sim.ts --rejudge <results.json> --instructor <campus model> --out <file>
  *
  * Models: a campus model id (lib/ai/models.ts CAMPUS_MODELS, never the moving aliases tiger/cub) runs on the
  * campus endpoint at no cost. Any other interviewer is paid: it needs --max-usd, the ceiling is checked
@@ -51,8 +53,30 @@ type CaseResult = SimRun & {
   exchanges: Array<{ n: number; kind: string; slot: string; say: string; question: string; reply: string | null; replyMs: number }>;
   ledgerSummaries: Record<string, string>;
   spentUsd: number;
+  /** The judge's raw reply, to audit a recall number. */
+  judgeRaw?: string;
   error?: string;
 };
+
+type Exchange = CaseResult['exchanges'][number];
+
+/** Fact id → earliest counted question whose instructor reply states it (campus judge), plus the raw reply. */
+export async function judgeFacts(
+  model: string, facts: SimFact[], exchanges: Exchange[], ledgerSummaries: Record<string, string>, lastN: number,
+): Promise<{ found: Record<string, number | null>; raw: string }> {
+  const transcript = exchanges.map(e => `Q${e.n}${e.kind === 'answer_only' ? ' (no new question)' : ''} — Interviewer: ${[e.say, e.question].filter(Boolean).join(' ')}\nInstructor: ${e.reply ?? '(no reply)'}`).join('\n\n');
+  const user = [
+    '# Facts',
+    facts.map(f => `${f.id}: ${f.fact}`).join('\n'),
+    '# Interview (each instructor reply belongs to the question number before it)',
+    transcript,
+    '# Interview record summaries (reference only; the turn must come from the interview)',
+    Object.entries(ledgerSummaries).map(([k, v]) => `${k}: ${v}`).join('\n') || '(none)',
+    `For each fact id, give the number of the earliest question (1-${lastN}) whose instructor reply states that fact in substance (most of its content; a passing related mention does not count). Use null if it is never stated. Reply with one JSON object and nothing else, mapping every fact id to a number or null, e.g. {"${facts[0]!.id}": 3, "${facts[1]?.id ?? facts[0]!.id}": null}.`,
+  ].join('\n\n');
+  const raw = await campusChat(model, 'You check which facts an interview elicited. Be strict and literal. Reply with JSON only.', user, 'off', 4000);
+  return { found: parseJudge(raw, facts.map(f => f.id), lastN), raw };
+}
 
 function arg(argv: string[], name: string): string | undefined {
   const i = argv.indexOf(name);
@@ -79,7 +103,7 @@ export function renderSource(rows: SourceRow[]): string {
   return out.join('\n\n').slice(0, SOURCE_CHARS);
 }
 
-async function campusChat(model: string, system: string, user: string, reasoning: 'off' | 'low' = 'off'): Promise<string> {
+async function campusChat(model: string, system: string, user: string, reasoning: 'off' | 'low' = 'off', maxTokens = 2000): Promise<string> {
   const { campusReasoningParams } = await import('@/lib/ai/campus');
   const base = process.env.CAMPUS_LLM_BASE_URL!.replace(/\/$/, '');
   for (let attempt = 1; ; attempt++) {
@@ -87,7 +111,7 @@ async function campusChat(model: string, system: string, user: string, reasoning
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.CAMPUS_LLM_API_KEY}` },
       body: JSON.stringify({
-        model, temperature: 0.3, max_tokens: 2000,
+        model, temperature: 0.3, max_tokens: maxTokens,
         messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
         ...campusReasoningParams(model, reasoning),
       }),
@@ -114,6 +138,30 @@ function instructorSystem(courseCode: string, style: string): string {
 }
 
 export async function main(argv: string[]): Promise<number> {
+  // --rejudge <results.json>: re-score fact recall on saved runs (no interviewer calls, no database).
+  const rejudge = arg(argv, '--rejudge');
+  if (rejudge) {
+    const judge = arg(argv, '--instructor');
+    const outFile = arg(argv, '--out');
+    if (!judge || !outFile) { console.error('usage: --rejudge <results.json> --instructor <campus model> --out <file>'); return 2; }
+    const { isCampusModel } = await import('@/lib/ai/models');
+    if (!isCampusModel(judge)) { console.error(`refusing: the judge must be a campus model id, not "${judge}"`); return 2; }
+    const saved = JSON.parse(readFileSync(rejudge, 'utf8')) as { results: CaseResult[] } & Record<string, unknown>;
+    const factsAll = JSON.parse(readFileSync(path.join(ROOT, 'scripts/capture/interview-sim-facts.json'), 'utf8')) as Record<string, unknown>;
+    for (const r of saved.results) {
+      const facts = Array.isArray(factsAll[r.courseCode]) ? factsAll[r.courseCode] as SimFact[] : [];
+      if (!facts.length || !r.exchanges.length) continue;
+      const j = await judgeFacts(judge, facts, r.exchanges, r.ledgerSummaries, Math.max(1, r.questionsAsked));
+      r.factsFoundAt = j.found;
+      r.judgeRaw = j.raw;
+      const found = Object.values(j.found);
+      console.log(`${r.caseId}: facts by 15 ${found.filter(f => f !== null && f <= 15).length}/${found.length}, by 20 ${found.filter(f => f !== null && f <= 20).length}/${found.length}`);
+    }
+    const summary = summarize(saved.results.filter(x => !x.error));
+    console.log('summary', JSON.stringify(summary));
+    writeFileSync(outFile, JSON.stringify({ ...saved, rejudgedAt: new Date().toISOString(), judge, summary }, null, 2));
+    return 0;
+  }
   const expectDb = arg(argv, '--expect-db');
   const interviewerSpec = arg(argv, '--interviewer');
   const instructorModel = arg(argv, '--instructor');
@@ -258,21 +306,11 @@ export async function main(argv: string[]): Promise<number> {
 
     // Fact recall: the campus judge reads the run (questions numbered by count) and the ledger summaries.
     const facts = factsFor(c.courseCode);
-    const lastN = Math.max(1, r.questionsAsked);
     if (facts.length && r.exchanges.length) {
-      const transcript = r.exchanges.map(e => `Q${e.n}${e.kind === 'answer_only' ? ' (no new question)' : ''} — Interviewer: ${[e.say, e.question].filter(Boolean).join(' ')}\nInstructor: ${e.reply ?? '(no reply)'}`).join('\n\n');
-      const judgeUser = [
-        '# Facts',
-        facts.map(f => `${f.id}: ${f.fact}`).join('\n'),
-        '# Interview (each instructor reply belongs to the question number before it)',
-        transcript,
-        '# Interview record summaries (reference only; the turn must come from the interview)',
-        Object.entries(r.ledgerSummaries).map(([k, v]) => `${k}: ${v}`).join('\n') || '(none)',
-        `For each fact id, give the number of the earliest question (1-${lastN}) whose instructor reply states that fact in substance (most of its content; a passing related mention does not count). Use null if it is never stated. Reply with a JSON object only, e.g. {"${facts[0]!.id}": 3, "${facts[1]?.id ?? facts[0]!.id}": null}.`,
-      ].join('\n\n');
       try {
-        const raw = await campusChat(instructorModel, 'You check which facts an interview elicited. Be strict and literal.', judgeUser, 'low');
-        r.factsFoundAt = parseJudge(raw, facts.map(f => f.id), lastN);
+        const j = await judgeFacts(instructorModel, facts, r.exchanges, r.ledgerSummaries, Math.max(1, r.questionsAsked));
+        r.factsFoundAt = j.found;
+        r.judgeRaw = j.raw;
       } catch (err) {
         console.error(`  judge failed: ${err instanceof Error ? err.message : String(err)}`);
         r.factsFoundAt = Object.fromEntries(facts.map(f => [f.id, null]));
