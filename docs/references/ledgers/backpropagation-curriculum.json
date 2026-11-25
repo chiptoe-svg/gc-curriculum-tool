@@ -1,0 +1,336 @@
+{
+  "page": "backpropagation-curriculum.html",
+  "generated": "2026-11-25 (revised after citation audit)",
+  "claims": [
+    {
+      "id": "bp-nielsen-1",
+      "location": "§2",
+      "claim_text": "A sigmoid unit has weights for each input and an overall bias",
+      "held_file": "pdfs:web/nielsen-2015-nn-dl-ch1.html",
+      "quote": "Also just like a perceptron, the sigmoid neuron has weights for each input, $w_1, w_2, \\ldots$, and an overall bias, $b$. But the output is not $0$ or $1$. Instead, it's $\\sigma(w \\cdot x+b)$, where $\\sigma$ is called the sigmoid function",
+      "page": "Sigmoid neurons (section)"
+    },
+    {
+      "id": "bp-goodfellow-1",
+      "location": "§2",
+      "claim_text": "Feedforward networks are called networks because they compose many functions",
+      "held_file": "pdfs:web/goodfellow-2016-dl-ch6-mlp.txt",
+      "quote": "Feedforward neural networks are called networks because they are typically represented by composing together many diﬀerent functions.",
+      "page": "164"
+    },
+    {
+      "id": "bp-goodfellow-2",
+      "location": "§2",
+      "claim_text": "Chain structures are the most common structures of neural networks",
+      "held_file": "pdfs:web/goodfellow-2016-dl-ch6-mlp.txt",
+      "quote": "These chain structures are the most commonly used structures of neural networks.",
+      "page": "164"
+    },
+    {
+      "id": "bp-lecun-1",
+      "location": "§3",
+      "claim_text": "An objective function measures error between outputs and desired outputs; parameters are modified to reduce it",
+      "held_file": "pdfs:lecun-2015-deep-learning-nature.pdf",
+      "quote": "We compute an objective function that measures the error (or distance) between the output scores and the desired pattern of scores. The machine then modifies its internal adjustable parameters to reduce this error. These adjustable parameters, often called weights, are real numbers",
+      "page": "436"
+    },
+    {
+      "id": "bp-nielsen-2",
+      "location": "§3",
+      "claim_text": "The cost becomes small when outputs match desired outputs for all training inputs",
+      "held_file": "pdfs:web/nielsen-2015-nn-dl-ch1.html",
+      "quote": "Furthermore, the cost $C(w,b)$ becomes small, i.e., $C(w,b) \\approx 0$, precisely when $y(x)$ is approximately equal to the output, $a$, for all training inputs, $x$.",
+      "page": "Learning with gradient descent (section)"
+    },
+    {
+      "id": "bp-nielsen-3",
+      "location": "§4",
+      "claim_text": "Gradient descent repeatedly moves opposite the gradient, falling down the slope",
+      "held_file": "pdfs:web/nielsen-2015-nn-dl-ch1.html",
+      "quote": "Summing up, the way the gradient descent algorithm works is to repeatedly compute the gradient $\\nabla C$, and then to move in the opposite direction, \"falling down\" the slope of the valley.",
+      "page": "Learning with gradient descent (section)"
+    },
+    {
+      "id": "bp-nielsen-4",
+      "location": "§4",
+      "claim_text": "Repeating the update rule rolls down the hill toward a minimum of the cost",
+      "held_file": "pdfs:web/nielsen-2015-nn-dl-ch1.html",
+      "quote": "By repeatedly applying this update rule we can \"roll down the hill\", and hopefully find a minimum of the cost function.",
+      "page": "Learning with gradient descent (section)"
+    },
+    {
+      "id": "bp-lecun-2",
+      "location": "§4",
+      "claim_text": "The gradient indicates for each weight how the error would change if the weight increased a tiny amount",
+      "held_file": "pdfs:lecun-2015-deep-learning-nature.pdf",
+      "quote": "To properly adjust the weight vector, the learning algorithm computes a gradient vector that, for each weight, indicates by what amount the error would increase or decrease if the weight were increased by a tiny amount.",
+      "page": "436"
+    },
+    {
+      "id": "bp-minsky-1",
+      "location": "§5",
+      "claim_text": "The credit-assignment difficulty: distributing credit among the many decisions involved",
+      "held_file": "pdfs:minsky-1961-steps-toward-ai.pdf",
+      "quote": "In applying such methods to complex problems, one encounters a serious difficulty-in distributing credit for success of a complex strategy among the many decisions that were involved.",
+      "page": "17"
+    },
+    {
+      "id": "bp-rumelhart-1",
+      "location": "§5",
+      "claim_text": "The procedure repeatedly adjusts weights to minimize the difference between actual and desired output (OCR copy; page text corrected)",
+      "held_file": "pdfs:rumelhart-1986-backprop-nature-ocr.pdf",
+      "quote": "The procedure repeatedly adjusts the weights of the conmections in the metwork se as to minimize a measure of the difference hetween the actual output vector of the met and the desired output vector.",
+      "page": "533",
+      "note": "Held copy is OCR; page quotes correct single-letter OCR slips (conmections, metwork, se, hetween, met, quiput) and the page says so."
+    },
+    {
+      "id": "bp-rumelhart-2",
+      "location": "§5",
+      "claim_text": "Hidden units come to represent important features of the task domain",
+      "held_file": "pdfs:rumelhart-1986-backprop-nature-ocr.pdf",
+      "quote": "internal ‘hidden’ units which are not part of the input or quiput come to represent important features of the task domain",
+      "page": "533",
+      "note": "Held copy is OCR; page quotes correct single-letter OCR slips (conmections, metwork, se, hetween, met, quiput) and the page says so."
+    },
+    {
+      "id": "bp-rumelhart-3",
+      "location": "§5",
+      "claim_text": "The backward pass propagates derivatives from the top layer back to the bottom one",
+      "held_file": "pdfs:rumelhart-1986-backprop-nature-ocr.pdf",
+      "quote": "which propagates derivatives from the top layer back to the bottom one is more complicated.",
+      "page": "534"
+    },
+    {
+      "id": "bp-lecun-3",
+      "location": "§5",
+      "claim_text": "Backpropagation is a practical application of the chain rule for derivatives",
+      "held_file": "pdfs:lecun-2015-deep-learning-nature.pdf",
+      "quote": "The backpropagation procedure to compute the gradient of an objective function with respect to the weights of a multilayer stack of modules is nothing more than a practical application of the chain",
+      "page": "438"
+    },
+    {
+      "id": "bp-goodfellow-3",
+      "location": "§5",
+      "claim_text": "Back-propagation computes the chain rule with a highly efficient order of operations",
+      "held_file": "pdfs:web/goodfellow-2016-dl-ch6-mlp.txt",
+      "quote": "The chain rule of calculus (not to be confused with the chain rule of probability) is used to compute the derivatives of functions formed by composing other functions whose derivatives are known. Back-propagation is an algorithm that computes the chain rule, with a speciﬁc order of operations that is highly eﬃcient.",
+      "page": "201"
+    },
+    {
+      "id": "bp-baydin-1",
+      "location": "§5",
+      "claim_text": "Backpropagation is only a special case of reverse-mode AD",
+      "held_file": "pdfs:baydin-2018-automatic-differentiation-survey.pdf",
+      "quote": "the backpropagation algorithm is only a special case of AD: by applying reverse mode AD to an objective function evaluating a network’s error as a function of its weights, we can readily compute the partial derivatives needed for performing weight updates.",
+      "page": "17"
+    },
+    {
+      "id": "bp-baydin-2",
+      "location": "§5",
+      "claim_text": "Reverse mode propagates derivatives backward from a given output",
+      "held_file": "pdfs:baydin-2018-automatic-differentiation-survey.pdf",
+      "quote": "AD in the reverse accumulation mode12 corresponds to a generalized backpropagation algorithm, in that it propagates derivatives backward from a given output.",
+      "page": "12"
+    },
+    {
+      "id": "bp-baydin-3",
+      "location": "§5",
+      "claim_text": "Reverse mode is less costly than forward mode for many inputs",
+      "held_file": "pdfs:baydin-2018-automatic-differentiation-survey.pdf",
+      "quote": "An important advantage of the reverse mode is that it is significantly less costly to evaluate (in terms of operation count) than the forward mode for functions with a large number of inputs.",
+      "page": "12"
+    },
+    {
+      "id": "bp-goodfellow-4",
+      "location": "§5",
+      "claim_text": "Back-propagation refers only to computing the gradient; another algorithm performs learning",
+      "held_file": "pdfs:web/goodfellow-2016-dl-ch6-mlp.txt",
+      "quote": "The term back-propagation is often misunderstood as meaning the whole learning algorithm for multi layer neural networks. Actually, back-propagation refers only to the method for computing the gradient, while another algorithm, such as stochastic gradient descent, is used to perform learning using this gradient.",
+      "page": "200"
+    },
+    {
+      "id": "bp-wiggins-1",
+      "location": "§8",
+      "claim_text": "Backward design is a three-stage approach",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "We call this three-stage approach to planning “backward design.”",
+      "page": "17"
+    },
+    {
+      "id": "bp-wiggins-2",
+      "location": "§8",
+      "claim_text": "First think like an assessor before designing units and lessons",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "This approach encourages teachers and curriculum planners to first “think like an assessor” before designing specific units and lessons",
+      "page": "18"
+    },
+    {
+      "id": "bp-biggs-1",
+      "location": "§8",
+      "claim_text": "Constructive alignment: intended outcomes are used to systematically align teaching methods and assessment",
+      "held_file": "pdfs:biggs-1996-constructive-alignment.pdf",
+      "quote": "are thus used to systematicallyalign the teaching methods and the assessment.",
+      "page": "347"
+    },
+    {
+      "id": "bp-bijl-1",
+      "location": "§8",
+      "claim_text": "Start with the final learning outcomes",
+      "held_file": "pdfs:bijl-2025-skill-trees.pdf",
+      "quote": "(1) Start at the end: Rather than starting with theory, start by examining course exercises. And rather than starting with the basics, start with the final learning outcomes.",
+      "page": "3 (pdf-index)"
+    },
+    {
+      "id": "bp-bijl-2",
+      "location": "§8",
+      "claim_text": "Keep splitting skills until reaching skills students already have",
+      "held_file": "pdfs:bijl-2025-skill-trees.pdf",
+      "quote": "(3) Iterate until the basics: Keep splitting up skills until you end up with skills that the students should have already mastered.",
+      "page": "3 (pdf-index)"
+    },
+    {
+      "id": "bp-aldrich-1",
+      "location": "§8",
+      "claim_text": "Curriculum as a network of courses linked by prerequisites",
+      "held_file": "pdfs:aldrich-2014-curriculum-prerequisite-network.pdf",
+      "quote": "Here I treat the curriculum as a complex system with nodes representing courses and links between nodes the course prerequisites as readily obtained from a course catalogue.",
+      "page": "1 (pdf-index)"
+    },
+    {
+      "id": "bp-heileman-1",
+      "location": "§8",
+      "claim_text": "Delay factor: number of vertices in the longest path through a course",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "We define the delay factor associated with a given course vk in a curriculum c, denoted dc (vk ), as the number of vertices in the longest path in Gc that passes through vk (Slim, 2016).",
+      "page": "9 (pdf-index)"
+    },
+    {
+      "id": "bp-heileman-2",
+      "location": "§8",
+      "claim_text": "Blocking factor: a gateway course blocks students from many other courses",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "Another structural factor arises when one course serves as the gateway to many other courses in the curriculum. In this case, if a student is unable to pass the gateway course, they are blocked from attempting many of the other courses in the curriculum.",
+      "page": "11 (pdf-index)"
+    },
+    {
+      "id": "bp-heileman-3",
+      "location": "§8, §12",
+      "claim_text": "Structural and instructional complexity are independent components",
+      "held_file": "pdfs:heileman-2018-curricular-analytics.pdf",
+      "quote": "Taken together, Assumptions 2 and 3 imply that structural and instructional complexity are independent components.",
+      "page": "7 (pdf-index)"
+    },
+    {
+      "id": "bp-lecun-4",
+      "location": "§12",
+      "claim_text": "Hundreds of millions of labelled examples to train the machine",
+      "held_file": "pdfs:lecun-2015-deep-learning-nature.pdf",
+      "quote": "In a typical deep-learning system, there may be hundreds of millions of these adjustable weights, and hundreds of millions of labelled examples with which to train the machine.",
+      "page": "436"
+    },
+    {
+      "id": "bp-piech-1",
+      "location": "§12",
+      "claim_text": "DKT applies flexible recurrent neural networks to knowledge tracing",
+      "held_file": "pdfs:piech-2015-deep-knowledge-tracing.pdf",
+      "quote": "In this paper we present a formulation that we call Deep Knowledge Tracing (DKT) in which we apply flexible recurrent neural networks that are ‘deep’ in time to the task of knowledge tracing.",
+      "page": "1 (pdf-index)"
+    },
+    {
+      "id": "bp-piech-2",
+      "location": "§12",
+      "claim_text": "1.4 million exercises completed by 47,495 students",
+      "held_file": "pdfs:piech-2015-deep-knowledge-tracing.pdf",
+      "quote": "The dataset included 1.4 million exercises completed by 47,495 students across 69 different exercise types.",
+      "page": "6 (pdf-index)"
+    },
+    {
+      "id": "bp-khajah-1",
+      "location": "§12",
+      "claim_text": "Extended BKT performs indistinguishably from DKT",
+      "held_file": "pdfs:khajah-2016-how-deep-is-knowledge-tracing.pdf",
+      "quote": "We demonstrate that when BKT is extended to allow it more flexibility in modeling statistical regularities—using extensions previously proposed in the literature—BKT achieves a level of performance indistinguishable from that of DKT.",
+      "page": "1 (pdf-index)"
+    },
+    {
+      "id": "bp-ding-1",
+      "location": "§12",
+      "claim_text": "DKT is more likely to learn an ability model than track each skill",
+      "held_file": "pdfs:ding-larson-2021-dkt-general-ability.pdf",
+      "quote": "instead of tracking each skill through time, DKT is more likely to learn an ‘ability’ model",
+      "page": "1 (pdf-index)"
+    },
+    {
+      "id": "bp-perkins-1",
+      "location": "§12",
+      "claim_text": "Very often the kinds of transfer hoped for do not occur",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "As noted earlier, transfer is especially important to learning theory and educational practice because very often the kinds of transfer hoped for do not occur.",
+      "page": "4 (pdf-index)"
+    },
+    {
+      "id": "bp-perkins-2",
+      "location": "§12",
+      "claim_text": "Near transfer is between very similar contexts",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "Near transfer refers to transfer between very similar contexts",
+      "page": "4 (pdf-index)"
+    },
+    {
+      "id": "bp-perkins-3",
+      "location": "§12",
+      "claim_text": "Far transfer is between contexts that seem remote and alien",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "Far transfer refers to transfer between contexts that, on appearance, seem remote and alien to one another.",
+      "page": "4 (pdf-index)"
+    },
+    {
+      "id": "bp-arthur-1",
+      "location": "§12",
+      "claim_text": "Substantial skill loss with nonuse; d from -0.01 to -1.4 after 365+ days (abstract summary; Table 3 p. 77 gives 0.02 to -1.28)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
+      "quote": "Results indicate that there is substantial skill loss with nonpractice or nonuse, with the amount of skill loss ranging from an effect size (d) of -0.01 immediately after training to a d of -1.4 after more than 365 days of nonuse.",
+      "page": "57"
+    },
+    {
+      "id": "bp-kaur-1",
+      "location": "§12",
+      "claim_text": "The causal question: does taking course X cause doing well in later course Y",
+      "held_file": "pdfs:kaur-polyzou-2019-causal-course-effect.pdf",
+      "quote": "\"If a student takes course X , will it cause them to do well in a subsequent course Y ?\"",
+      "page": "1 (pdf-index)"
+    },
+    {
+      "id": "bp-kaur-2",
+      "location": "§12",
+      "claim_text": "Matching and regression method",
+      "held_file": "pdfs:kaur-polyzou-2019-causal-course-effect.pdf",
+      "quote": "We make use of a doubly-robust method of matching and regression in order to obtain the casual relationship between a pair of courses.",
+      "page": "1 (pdf-index)"
+    },
+    {
+      "id": "bp-kaur-3",
+      "location": "§12",
+      "claim_text": "Validated against the existing prerequisite structure",
+      "held_file": "pdfs:kaur-polyzou-2019-causal-course-effect.pdf",
+      "quote": "The results were validated by the existing prerequisite structure and by cross-validation of the regression model.",
+      "page": "1 (pdf-index)"
+    },
+    {
+      "id": "bp-kaur-4",
+      "location": "§12",
+      "claim_text": "Their method also identifies courses outside the prerequisite structure",
+      "held_file": "pdfs:kaur-polyzou-2019-causal-course-effect.pdf",
+      "quote": "identify additional courses that do not appear in the prerequisite structure.",
+      "page": "1 (pdf-index)"
+    },
+    {
+      "id": "bp-minsky-2",
+      "location": "§5",
+      "claim_text": "Minsky names the credit-assignment problem in a section heading",
+      "held_file": "pdfs:minsky-1961-steps-toward-ai.pdf",
+      "quote": "The Basic Credit-Assignment Problem for Complex",
+      "page": "20"
+    }
+  ]
+}
