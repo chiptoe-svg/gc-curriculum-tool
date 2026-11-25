@@ -29,6 +29,7 @@ type PromptName =
   | 'chunk-contextualize'
   | 'ingestion-checkin'
   | 'capture-chat-agent'
+  | 'capture-interview-core'
   | 'capture-synthesis'
   | 'capture-stress-test'
   | 'jd-extract'
