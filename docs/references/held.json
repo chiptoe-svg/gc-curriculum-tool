@@ -6,6 +6,15 @@
   },
   "pages": {
     "background.html": {
+      "ref-kropp-1966": {
+        "file": "pdfs:kropp-stoker-bashaw-1966-construction-validation-cognitive-tests-eric-ed010044.pdf"
+      },
+      "ref-anderson-1999": {
+        "file": "pdfs:anderson-1999-rethinking-blooms-taxonomy-testing-eric-ed435630.pdf"
+      },
+      "ref-ravand-2025": {
+        "file": "pdfs:ravand-2025-cdm-bloom-university-entrance-frontiers-educ.pdf"
+      },
       "ref-serow-2007": {
         "file": "pdfs:serow-2007-rasch-solo-class-inclusion-merga.pdf"
       },
