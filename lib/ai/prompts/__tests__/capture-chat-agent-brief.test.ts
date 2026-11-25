@@ -51,3 +51,23 @@ describe('capture-chat-agent prompt — course-context brief', () => {
     expect(norm1b).toContain('(use the courses in your brief)');
   });
 });
+
+describe('capture-chat-agent prompt — Bloom language', () => {
+  const sec4 = md.slice(md.indexOf("## 4. Bloom's-level"), md.indexOf('## 5.')).replace(/\s+/g, ' ');
+  const objectives = md.slice(md.indexOf('# Optional output: revised learning objectives draft')).replace(/\s+/g, ' ');
+  it('probes the 19 processes, not only the six categories', () => {
+    for (const p of ['executing', 'implementing', 'critiquing']) expect(sec4, p).toContain(p);
+    expect(sec4).toMatch(/Bloom language guide/);
+  });
+  it('drafts objectives as process + content + condition', () => {
+    expect(objectives).not.toContain("Use Bloom's action verbs (analyze, evaluate, create, etc.)");
+    expect(objectives).toMatch(/content/i);
+    expect(objectives).toMatch(/condition/i);
+  });
+  it('still grounds objectives in materials evidence', () => {
+    expect(objectives).toContain('Ground each objective in materials evidence');
+  });
+  it('asks about the process, not the level code', () => {
+    expect(sec4).not.toMatch(/ask[^.]*\b[KUD][1-5]\b/i);
+  });
+});

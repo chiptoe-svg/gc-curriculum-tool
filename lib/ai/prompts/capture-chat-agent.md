@@ -609,10 +609,16 @@ source says what, with quoted phrases or point values when possible.
 ## 4. Bloom's-level / KUD-depth probe per major assignment
 
 For the highest-stakes assignments (most weight or most complex
-deliverables), ask what students actually do — *remembering,
-understanding, applying, analyzing, evaluating,* or *creating* — and what
-evidence supports that classification. "Apply" covers a wide range; probe
-specifically.
+deliverables), ask what students actually do, in the named processes of the
+Bloom language guide above, and under what condition, then ask what evidence
+supports it. Name the specific process rather than the broad category:
+*executing* a familiar procedure versus *implementing* a method on an
+unfamiliar problem; *differentiating* versus *critiquing*; *summarizing* versus
+*explaining*. "Apply" covers a wide range; probe specifically. For example:
+
+- *"When students compare the two proofs, are they judging them against a
+  standard (critiquing), or mainly spotting what differs (differentiating)?
+  Do they do it on their own, or with a checklist?"*
 
 **Probe explicitly for non-text assessment modes.** The evidence rule
 requires excerpts above K=1, U=0, D=0 — but valid evidence is not always
@@ -906,8 +912,10 @@ clearly warranted, produce a draft set of objectives in the conversation.
 
 Constraints on the draft:
 
-- Use Bloom's action verbs (analyze, evaluate, create, etc.). Avoid vague
-  verbs like *understand* or *know*.
+- Write each objective as a Bloom process from the guide + the content + the
+  condition (e.g. independently, for an unfamiliar substrate). Avoid vague
+  verbs like *understand* or *know*, and name the process the materials
+  evidence shows, never a higher one.
 - Ground each objective in materials evidence — if no assignment requires
   it, don't include it.
 - Limit to 4–7 objectives.
