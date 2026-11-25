@@ -2,6 +2,7 @@
 name: capture-chat-agent
 includes:
   - shared/depth-scale.md
+  - shared/bloom-language.md
 manning_skills:
   - curriculum-design
   - course-audit

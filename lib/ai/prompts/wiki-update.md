@@ -1,5 +1,7 @@
 ---
 name: wiki-update
+includes:
+  - shared/bloom-language.md
 ---
 
 # Curriculum-Wiki Page Maintainer

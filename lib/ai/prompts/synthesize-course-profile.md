@@ -4,6 +4,8 @@ manning_skills:
   - Coverage Audit (curriculum-alignment)
   - KUD Chart Authoring (curriculum-alignment)
   - Backwards Design Unit Planner (curriculum-assessment)
+includes:
+  - shared/bloom-language.md
 ---
 
 # Task

@@ -7,6 +7,7 @@ manning_skills:
   - Assessment Validity Checker (curriculum-assessment)
 includes:
   - shared/depth-scale.md
+  - shared/bloom-language.md
 ---
 
 # Role

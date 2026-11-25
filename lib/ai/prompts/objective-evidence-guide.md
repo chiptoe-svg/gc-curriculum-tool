@@ -1,5 +1,7 @@
 ---
 name: objective-evidence-guide
+includes:
+  - shared/bloom-language.md
 ---
 
 # Role
