@@ -3,6 +3,7 @@ import { buildLedger, type AskedTurn, type SlotRecord } from '../ledger';
 import { engineState, checkTurn, settledCount, isFilled } from '../engine';
 import type { EvidenceMap } from '../evidence-map';
 import { STAGES } from '../stages';
+import { play, exhaust } from './helpers';
 
 type Ev = Parameters<typeof buildLedger>[1][number];
 const rec = (slot: string, summary = 'sum'): Ev => ({
@@ -17,12 +18,15 @@ const map = (notFound = false): EvidenceMap => ({
   objectives: notFound ? [{ text: 'o', status: 'not_found', graded_work: [] }] : [{ text: 'o', status: 'graded_work_found', graded_work: ['x'] }],
   conflicts: [], unreadable: [],
 });
-const st = (events: Ev[], m: EvidenceMap | null = null) => {
-  const ledger = buildLedger(m, events);
-  return { ledger, state: engineState(m, ledger) };
-};
-/** n counted questions spread so no stage cap closes early: fillers on stage 5/6 style. */
-const counted = (n: number): Ev[] => Array.from({ length: n }, (_, i) => ask(((i % 2) + 1) as 1 | 2, `x${i}`, 'follow_up'));
+/** Every asked turn goes through checkTurn (play throws on an illegal turn). */
+const st = (events: Ev[], m: EvidenceMap | null = null) => play(m, events);
+/** n legal counted questions, each re-asking the first open slot unanswered, so stage caps close stages. */
+const counted = (n: number): Ev[] => exhaust(null, n);
+/** Five legal follow-ups on distinct slots: two in stage 1, three in stage 2. */
+const fiveFollowUps: Ev[] = [
+  ask(1, 'outcomes', 'follow_up'), ask(1, 'anchors', 'follow_up'), rec('outcomes'), rec('anchors', 'A'),
+  ask(2, 'graded_on:A', 'follow_up'), ask(2, 'conditions', 'follow_up'), ask(2, 'reasoning_evidence', 'follow_up'),
+];
 
 describe('stage table', () => {
   it('has the exact titles, skills and plan/cap', () => {
@@ -60,7 +64,7 @@ describe('engineState', () => {
   it('stage cap closes stage', () => {
     const { state } = st([
       ask(1, 'outcomes'), rec('outcomes'),
-      ask(1, 'anchors'), ask(1, 'anchors', 'follow_up'), ask(1, 'anchors', 'follow_up'),
+      ask(1, 'anchors'), ask(1, 'anchors', 'follow_up'),
     ]);
     expect(state.stage).toBe(2);
     expect(state.slotStatus.anchors).toBe('not_reached');
@@ -93,7 +97,10 @@ describe('engineState', () => {
   });
 
   it('card counts once', () => {
-    const { state } = st([ask(4, 'incoming')]);
+    const { state } = st([
+      rec('outcomes'), rec('anchors', 'A'), rec('graded_on:A'), rec('conditions'), rec('reasoning_evidence'), rec('tests'),
+      rec('revision'), rec('transfer'), rec('threshold'), ask(4, 'incoming'),
+    ]);
     expect(state.questionsAsked).toBe(1);
   });
 
@@ -142,17 +149,17 @@ describe('checkTurn', () => {
   });
 
   it('follow-up on a filled slot is ok once; second is sent back', () => {
-    const { state, ledger } = st([rec('outcomes', 'x'), ask(1, 'outcomes'), ask(1, 'outcomes', 'follow_up')]);
+    const { state, ledger } = st([ask(1, 'outcomes'), rec('outcomes', 'x'), ask(1, 'outcomes', 'follow_up')]);
     expect(checkTurn(state, ledger, { stage: 1, slot: 'outcomes', kind: 'follow_up' }).ok).toBe(false);
-    const fresh = st([rec('outcomes', 'x'), ask(1, 'outcomes')]);
+    const fresh = st([ask(1, 'outcomes'), rec('outcomes', 'x')]);
     expect(checkTurn(fresh.state, fresh.ledger, { stage: 1, slot: 'outcomes', kind: 'follow_up' }).ok).toBe(true);
   });
 
   it('sixth follow-up overall is sent back', () => {
-    const evs: Ev[] = ['a', 'b', 'c', 'd', 'e'].map((s) => ask(3, s, 'follow_up'));
-    const { state, ledger } = st(evs);
+    const { state, ledger } = st(fiveFollowUps);
     expect(state.followUpsUsed).toBe(5);
-    const r = checkTurn(state, ledger, { stage: state.stage, slot: 'f', kind: 'follow_up' });
+    expect(state.stage).toBe(2);
+    const r = checkTurn(state, ledger, { stage: 2, slot: 'tests', kind: 'follow_up' });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.sendBack).toContain('follow-ups');
   });
@@ -171,15 +178,13 @@ describe('checkTurn', () => {
 
 describe('fix round 1', () => {
   it('1: re-ask of an asked-but-unrecorded slot is accepted even with 5 follow-ups used', () => {
-    const evs: Ev[] = ['a', 'b', 'c', 'd', 'e'].map((s) => ask(4, s, 'follow_up'));
-    evs.push(ask(1, 'outcomes'));
-    const { state, ledger } = st(evs);
+    const { state, ledger } = st([...fiveFollowUps, ask(2, 'tests')]);
     expect(state.followUpsUsed).toBe(5);
-    expect(checkTurn(state, ledger, { stage: 1, slot: 'outcomes', kind: 'question' })).toEqual({ ok: true });
+    expect(checkTurn(state, ledger, { stage: 2, slot: 'tests', kind: 'question' })).toEqual({ ok: true });
   });
 
   const lateAnchors = (withAnchors: boolean): Ev[] => [
-    rec('outcomes'), ask(1, 'anchors'), ask(1, 'anchors', 'follow_up'), ask(1, 'anchors', 'follow_up'),
+    rec('outcomes'), ask(1, 'anchors'), ask(1, 'anchors'), ask(1, 'anchors', 'follow_up'),
     ask(2, 'conditions'), rec('conditions'), ask(2, 'reasoning_evidence'), rec('reasoning_evidence'), ask(2, 'tests'), rec('tests'),
     ask(3, 'revision'),
     ...(withAnchors ? [rec('anchors', 'A\nB')] : []),
@@ -212,7 +217,7 @@ describe('fix round 1', () => {
     const evs: Ev[] = [
       rec('outcomes'), rec('anchors', 'A'), rec('graded_on:A'), rec('conditions'), rec('reasoning_evidence'), rec('tests'),
       rec('revision'), rec('transfer'), rec('threshold'), rec('incoming'), rec('reteach'), rec('habits'),
-      ask(6, 'objectives'), ask(6, 'objectives', 'follow_up'), ask(6, 'x', 'follow_up'),
+      ask(6, 'objectives'), ask(6, 'objectives', 'follow_up'), ask(6, 'objectives'),
     ];
     const { state, ledger } = st(evs, m);
     expect(state.mustRecap).toBe(true);
@@ -236,7 +241,7 @@ describe('fix round 1', () => {
 
 describe('fix round 2', () => {
   const closeStage2 = (fromMaterials: boolean): Ev[] => [
-    rec('outcomes'), ask(1, 'anchors'), ask(1, 'anchors', 'follow_up'), ask(1, 'anchors', 'follow_up'),
+    rec('outcomes'), ask(1, 'anchors'), ask(1, 'anchors'), ask(1, 'anchors', 'follow_up'),
     ask(2, 'conditions'), rec('conditions'), ask(2, 'reasoning_evidence'), rec('reasoning_evidence'),
     fromMaterials
       ? { type: 'record', record: { slot: 'tests', status: 'filled_from_materials', summary: 'm', citations: [] } }
@@ -281,7 +286,7 @@ describe('fix round 3', () => {
   it('D: settledCount stays monotonic when anchors are corrected in stage 1 and after they freeze', () => {
     const steps: Ev[] = [
       rec('outcomes'), ask(1, 'anchors'), rec('anchors', 'Projects'),
-      ask(1, 'anchors', 'follow_up'), rec('anchors', 'Final project\nLab reports'),
+      rec('anchors', 'Final project\nLab reports'),
       ask(2, 'graded_on:Final project'), rec('graded_on:Final project'), rec('anchors', 'Other'),
     ];
     let prev = 0;
@@ -304,7 +309,7 @@ describe('fix round 3', () => {
   });
 
   it('E1: recap follow-up is allowed once even with 5 follow-ups used, then the interview ends', () => {
-    const base: Ev[] = [...['a', 'b', 'c', 'd', 'e'].map((s) => ask(1, s, 'follow_up')), { type: 'finish' }, ask(6, 'recap', 'recap')];
+    const base: Ev[] = [...fiveFollowUps, { type: 'finish' }, ask(6, 'recap', 'recap')];
     const a = st(base);
     expect(checkTurn(a.state, a.ledger, { stage: 6, slot: 'recap', kind: 'follow_up' }).ok).toBe(true);
     const b = st([...base, ask(6, 'recap', 'follow_up')]);
@@ -339,19 +344,37 @@ describe('random legal walks', () => {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
+  const ANCHOR_SETS = ['Projects', 'Final project\nLab reports', 'Poster\nExam', 'Portfolio'];
   it('2000 seeded walks always reach done within 20 counted questions, never stuck', () => {
+    let corrections = 0;
+    let frozenChecks = 0;
     for (let seed = 1; seed <= 2000; seed++) {
       const r = rng(seed);
       const pick = <T,>(xs: T[]): T => xs[Math.floor(r() * xs.length)]!;
       const m = r() < 0.5 ? map(true) : map(false);
       const events: Ev[] = [];
       let prevPct = 0;
+      let prevStage = 1;
+      const doneStages = new Set<number>();
+      let frozen: string[] | null = null;
       for (let step = 0; step < 400; step++) {
         const ledger = buildLedger(m, events as never);
         const state = engineState(m, ledger);
         const { settled, total } = settledCount(state, ledger);
         expect(settled / total).toBeGreaterThanOrEqual(prevPct - 1e-9);
         prevPct = settled / total;
+        // No stage reopens: the active stage never moves back, and a done stage stays done.
+        expect(state.stage, `seed ${seed} step ${step} stage moved back`).toBeGreaterThanOrEqual(prevStage);
+        prevStage = state.stage;
+        for (const d of doneStages) expect(state.stageProgress[d - 1]!.status, `seed ${seed} stage ${d} reopened`).toBe('done');
+        for (const p of state.stageProgress) if (p.status === 'done') doneStages.add(p.id);
+        // Once any graded_on slot has been asked, the anchors never change again.
+        if (frozen) {
+          expect(ledger.anchors, `seed ${seed} step ${step} anchors changed after freeze`).toEqual(frozen);
+          frozenChecks++;
+        } else if (ledger.asked.some((t) => t.kind !== 'answer_only' && t.slot.startsWith('graded_on:'))) {
+          frozen = [...ledger.anchors];
+        }
         if (state.done) break;
         expect(state.questionsAsked).toBeLessThanOrEqual(20);
         const slots = [...state.allSlots, 'recap', 'bogus'];
@@ -373,14 +396,21 @@ describe('random legal walks', () => {
           events.push(rec(pick(state.allSlots.filter((s) => s !== 'recap')), 'a\nb'));
         } else if (roll < 0.85) {
           events.push(ask(state.stage, 'bogus', 'answer_only'));
-        } else if (roll < 0.9 && step < 100) {
+        } else if (roll < 0.88 && step < 100) {
           events.push({ type: 'finish' });
+        } else if (roll < 0.95) {
+          // The instructor corrects (or first names) the anchors at a random point: a volunteered record.
+          events.push(rec('anchors', pick(ANCHOR_SETS)));
+          corrections++;
         }
       }
       const final = engineState(m, buildLedger(m, events as never));
       expect(final.done, `seed ${seed} not done`).toBe(true);
       expect(final.questionsAsked).toBeLessThanOrEqual(20);
     }
+    // The walk really exercises corrections and the post-freeze check.
+    expect(corrections).toBeGreaterThan(1000);
+    expect(frozenChecks).toBeGreaterThan(1000);
   });
 });
 
@@ -392,7 +422,7 @@ describe('settledCount', () => {
       ask(1, 'anchors'), rec('anchors', 'A\nB'),
       ask(2, 'graded_on:A'), rec('graded_on:A'),
       ask(2, 'graded_on:B'), ask(2, 'graded_on:B', 'follow_up'), ask(2, 'conditions'), ask(2, 'conditions', 'follow_up'),
-      ask(2, 'reasoning_evidence'), ask(2, 'tests'), ask(2, 'tests', 'follow_up'),
+      ask(2, 'reasoning_evidence'), ask(2, 'tests'),
       rec('threshold'), ask(3, 'revision'), rec('revision'),
     ];
     let prev = -1;
@@ -414,5 +444,49 @@ describe('isFilled', () => {
     expect(isFilled(undefined)).toBe(false);
     expect(isFilled({ slot: 'a', status: 'unknown', summary: '', citations: [] })).toBe(true);
     expect(isFilled({ slot: 'a', status: 'not_reached', summary: '', citations: [] })).toBe(true);
+  });
+});
+
+describe('fix round 4', () => {
+  // Reachable order: stage 1 fills, the engine moves to stage 2, then the instructor corrects the anchors.
+  const toStage2: Ev[] = [ask(1, 'outcomes'), rec('outcomes'), ask(1, 'anchors'), rec('anchors', 'Projects')];
+
+  it('D: after stage 1 closes, a follow_up on anchors is sent back (not a stage-2 slot)', () => {
+    const { state, ledger } = play(null, toStage2);
+    expect(state.stage).toBe(2);
+    const r = checkTurn(state, ledger, { stage: 2, slot: 'anchors', kind: 'follow_up' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.sendBack).toContain('conditions');
+  });
+
+  it('D: a volunteered anchors correction at stage 2 updates the anchors', () => {
+    const { ledger, state } = play(null, [...toStage2, rec('anchors', 'Final project\nLab reports')]);
+    expect(ledger.anchors).toEqual(['Final project', 'Lab reports']);
+    expect(state.openSlots).toEqual(['graded_on:Final project', 'graded_on:Lab reports', 'conditions', 'reasoning_evidence', 'tests']);
+  });
+
+  it('D: a counted turn on conditions does not freeze the anchors', () => {
+    const { ledger } = play(null, [...toStage2, ask(2, 'conditions'), rec('anchors', 'Final project\nLab reports')]);
+    expect(ledger.anchors).toEqual(['Final project', 'Lab reports']);
+  });
+
+  it('D: once a graded_on slot is asked, the anchors freeze', () => {
+    const { ledger } = play(null, [...toStage2, ask(2, 'graded_on:Projects'), rec('anchors', 'Final project\nLab reports')]);
+    expect(ledger.anchors).toEqual(['Projects']);
+  });
+
+  it('D: once a graded_on slot is recorded, the anchors freeze', () => {
+    const { ledger } = play(null, [...toStage2, rec('graded_on:Projects'), rec('anchors', 'Final project\nLab reports')]);
+    expect(ledger.anchors).toEqual(['Projects']);
+  });
+
+  it('minor: a counted turn on a slot outside the current stage is sent back, naming the open slots', () => {
+    const { state, ledger } = play(null, []);
+    for (const kind of ['question', 'follow_up'] as const) {
+      const r = checkTurn(state, ledger, { stage: 1, slot: 'graded_on:A', kind });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.sendBack).toContain('outcomes, anchors');
+    }
+    expect(checkTurn(state, ledger, { stage: 1, slot: 'graded_on:A', kind: 'answer_only' }).ok).toBe(true);
   });
 });

@@ -62,10 +62,11 @@ function advance(map: EvidenceMap | null, ledger: Ledger): void {
   }
 }
 
+/** Anchors freeze once a graded_on slot has been asked (counted) or recorded, or stage 2 has closed. */
 function anchorsFrozen(ledger: Ledger): boolean {
   return (
     ledger.closedThrough >= 2 ||
-    ledger.asked.some((t) => t.kind !== 'answer_only' && t.stage >= 2) ||
+    ledger.asked.some((t) => t.kind !== 'answer_only' && t.slot.startsWith('graded_on:')) ||
     Object.keys(ledger.slots).some((k) => k.startsWith('graded_on:'))
   );
 }
@@ -75,8 +76,8 @@ export function buildLedger(map: EvidenceMap | null, events: LedgerEvent[]): Led
   for (const ev of events) {
     if (ev.type === 'record') {
       ledger.slots[ev.record.slot] = ev.record;
-      // Anchors follow the latest record until stage 2 begins (a counted turn in stage 2+, a stage closed
-      // past 1, or a graded_on record); then they freeze so graded_on slot ids never change.
+      // Anchors follow the latest record until a graded_on slot is asked or recorded (or stage 2 closes);
+      // then they freeze so graded_on slot ids never change. Other stage-2 questions do not freeze them.
       if (ev.record.slot === 'anchors' && (ledger.anchors.length === 0 || !anchorsFrozen(ledger))) {
         const next = parseAnchors(ev.record);
         if (next.length > 0) ledger.anchors = next;

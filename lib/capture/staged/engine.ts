@@ -8,6 +8,8 @@ export type EngineState = {
   stage: StageId;
   /** Unfilled slots of the current stage, in order. */
   openSlots: string[];
+  /** Every slot of the current stage, filled or not (empty when done). Counted turns must target one. */
+  stageSlots: string[];
   /** Counted questions: kinds question, follow_up, recap. */
   questionsAsked: number;
   followUpsUsed: number;
@@ -35,6 +37,7 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
   const slotStatus: EngineState['slotStatus'] = {};
   let current: StageId | null = null;
   let openSlots: string[] = [];
+  let stageSlots: string[] = [];
   const closed = new Map<StageId, boolean>();
   const allSlots: string[] = [];
 
@@ -58,6 +61,7 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
     }
     if (current === null && !isClosed) {
       current = stage.id;
+      stageSlots = slots;
       openSlots = mustRecap && stage.id === 6 ? ['recap'] : slots.filter((s) => !isFilled(ledger.slots[s]));
     }
   }
@@ -67,6 +71,7 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
   if (capped) {
     current = null;
     openSlots = [];
+    stageSlots = [];
     for (const s of allSlots) if (slotStatus[s] === undefined) slotStatus[s] = 'not_reached';
     for (const stg of STAGES) closed.set(stg.id, true);
   }
@@ -75,6 +80,7 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
   return {
     stage,
     openSlots,
+    stageSlots,
     questionsAsked,
     followUpsUsed,
     mustRecap,
@@ -104,6 +110,10 @@ export function checkTurn(
   }
   if (turn.stage !== state.stage) {
     return { ok: false, sendBack: `The interview is at stage ${state.stage}. Ask about stage ${state.stage}, not stage ${turn.stage}.` };
+  }
+  if (!state.stageSlots.includes(turn.slot)) {
+    const open = state.openSlots.length > 0 ? state.openSlots.join(', ') : state.stageSlots.join(', ');
+    return { ok: false, sendBack: `"${turn.slot}" is not a stage ${state.stage} slot. Open slots: ${open}.` };
   }
   if (turn.kind === 'recap' && !state.mustRecap && state.stage !== 6) {
     return { ok: false, sendBack: 'It is not time for the recap yet. Ask about an open slot.' };

@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildLedger, type SlotRecord } from '../ledger';
+import { buildLedger, type LedgerEvent, type SlotRecord } from '../ledger';
+import { play } from './helpers';
+
+/** Ledgers built from asked turns go through checkTurn (play throws on an illegal turn). */
+const built = (events: LedgerEvent[]) => play(null, events).ledger;
 
 const rec = (slot: string, summary = 's', status: SlotRecord['status'] = 'filled_by_instructor'): SlotRecord => ({
   slot, status, summary, citations: [],
@@ -7,7 +11,7 @@ const rec = (slot: string, summary = 's', status: SlotRecord['status'] = 'filled
 
 describe('buildLedger', () => {
   it('empty events give empty slots', () => {
-    const l = buildLedger(null, []);
+    const l = built([]);
     expect(l.slots).toEqual({});
     expect(l.asked).toEqual([]);
     expect(l.anchors).toEqual([]);
@@ -15,7 +19,7 @@ describe('buildLedger', () => {
   });
 
   it('a later record for the same slot replaces the earlier one', () => {
-    const l = buildLedger(null, [
+    const l = built([
       { type: 'record', record: rec('outcomes', 'first') },
       { type: 'record', record: rec('outcomes', 'second') },
     ]);
@@ -23,7 +27,7 @@ describe('buildLedger', () => {
   });
 
   it('skip sets the last-asked slot to unknown with "instructor skipped"', () => {
-    const l = buildLedger(null, [
+    const l = built([
       { type: 'asked', turn: { stage: 1, slot: 'outcomes', kind: 'question' } },
       { type: 'skip', slot: 'outcomes' },
     ]);
@@ -32,7 +36,7 @@ describe('buildLedger', () => {
   });
 
   it('skip targets the last asked slot, not the slot named in the event', () => {
-    const l = buildLedger(null, [
+    const l = built([
       { type: 'asked', turn: { stage: 1, slot: 'outcomes', kind: 'question' } },
       { type: 'asked', turn: { stage: 1, slot: 'anchors', kind: 'question' } },
       { type: 'skip', slot: 'outcomes' },
@@ -42,7 +46,7 @@ describe('buildLedger', () => {
   });
 
   it('finish marks every unfilled non-stage-6 slot not_reached', () => {
-    const l = buildLedger(null, [
+    const l = built([
       { type: 'record', record: rec('outcomes') },
       { type: 'finish' },
     ]);
@@ -56,14 +60,14 @@ describe('buildLedger', () => {
   });
 
   it('anchors are parsed from the anchors summary, at most 2', () => {
-    const l = buildLedger(null, [
+    const l = built([
       { type: 'record', record: rec('anchors', ' Poster project \n\nFinal exam\nThird thing') },
     ]);
     expect(l.anchors).toEqual(['Poster project', 'Final exam']);
   });
 
   it('a skipped anchors record yields no anchors', () => {
-    const l = buildLedger(null, [
+    const l = built([
       { type: 'asked', turn: { stage: 1, slot: 'anchors', kind: 'question' } },
       { type: 'skip', slot: 'anchors' },
     ]);
@@ -71,7 +75,7 @@ describe('buildLedger', () => {
   });
 
   it('skip after an answer_only turn marks the last counted slot', () => {
-    const l = buildLedger(null, [
+    const l = built([
       { type: 'asked', turn: { stage: 1, slot: 'outcomes', kind: 'question' } },
       { type: 'asked', turn: { stage: 1, slot: 'x', kind: 'answer_only' } },
       { type: 'skip', slot: 'x' },
@@ -81,9 +85,9 @@ describe('buildLedger', () => {
   });
 
   it('skip never erases an already recorded answer', () => {
-    const l = buildLedger(null, [
+    const l = built([
       { type: 'record', record: rec('anchors', 'A\nB') },
-      { type: 'asked', turn: { stage: 2, slot: 'anchors', kind: 'follow_up' } },
+      { type: 'asked', turn: { stage: 1, slot: 'anchors', kind: 'follow_up' } },
       { type: 'skip', slot: 'anchors' },
     ]);
     expect(l.slots.anchors?.status).toBe('filled_by_instructor');
@@ -91,7 +95,7 @@ describe('buildLedger', () => {
   });
 
   it('D: an anchors correction within stage 1 updates the anchors', () => {
-    const l = buildLedger(null, [
+    const l = built([
       { type: 'asked', turn: { stage: 1, slot: 'anchors', kind: 'question' } },
       { type: 'record', record: rec('anchors', 'Projects') },
       { type: 'asked', turn: { stage: 1, slot: 'anchors', kind: 'follow_up' } },
@@ -100,8 +104,9 @@ describe('buildLedger', () => {
     expect(l.anchors).toEqual(['Final project', 'Lab reports']);
   });
 
-  it('D: anchors freeze once stage 2 has begun', () => {
-    const l = buildLedger(null, [
+  it('D: anchors freeze once a graded_on slot has been asked', () => {
+    const l = built([
+      { type: 'record', record: rec('outcomes') },
       { type: 'record', record: rec('anchors', 'A\nB') },
       { type: 'asked', turn: { stage: 2, slot: 'graded_on:A', kind: 'question' } },
       { type: 'record', record: rec('anchors', 'C') },
@@ -110,7 +115,7 @@ describe('buildLedger', () => {
   });
 
   it('closedThrough is monotonic and event-ordered', () => {
-    const l = buildLedger(null, [
+    const l = built([
       { type: 'record', record: rec('outcomes') }, { type: 'record', record: rec('anchors', 'A') },
     ]);
     expect(l.closedThrough).toBe(1);
