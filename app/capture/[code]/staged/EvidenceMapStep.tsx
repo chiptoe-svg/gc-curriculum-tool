@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiErrorText } from '@/lib/ai/credit-client';
 import type { EvidenceMap } from '@/lib/capture/staged/evidence-map';
+import { clearStoredSession, readStoredSession, writeStoredSession } from '@/lib/capture/staged/stored-session';
 
 type MapStatus = 'ready' | 'failed' | 'none' | 'pending';
 const FAILED_COPY = "Couldn't read the materials; the interview will ask instead";
@@ -40,18 +41,28 @@ export function EvidenceMapStep({
     setLoadError(null);
     setLoaded(null);
     try {
-      const res = await fetch(base, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+      // A session read before a reload is reused: the GET validates it (404 for an unknown or another
+      // course's id), and only then is a new paid read started.
+      const stored = readStoredSession(courseCode);
+      let res: Response | null = null;
+      if (stored) {
+        const got = await fetch(`${base}&sessionId=${encodeURIComponent(stored)}`);
+        if (got.status === 404) clearStoredSession(courseCode);
+        else res = got;
+      }
+      if (!res) res = await fetch(base, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || typeof json.sessionId !== 'string') {
         setLoadError(apiErrorText(json, `Could not read the materials (${res.status})`));
         return;
       }
+      writeStoredSession(courseCode, json.sessionId);
       setLoaded({ sessionId: json.sessionId, map: json.map ?? null, status: json.status });
       setMap(json.status === 'ready' ? json.map ?? null : null);
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : 'Could not read the materials');
     }
-  }, [base]);
+  }, [base, courseCode]);
 
   useEffect(() => {
     // One read per mount (strict mode double-runs effects; a second POST would pay for a second read).

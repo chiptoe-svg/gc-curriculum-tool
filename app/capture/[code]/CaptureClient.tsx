@@ -18,6 +18,7 @@ import { CaptureHero } from './CaptureHero';
 import { CaptureMaterialsStep } from './CaptureMaterialsStep';
 import { TriageStep } from './TriageStep';
 import { EvidenceMapStep } from './staged/EvidenceMapStep';
+import { clearStoredSession, readStoredSession } from '@/lib/capture/staged/stored-session';
 import type { AuditStagedBlock } from '@/lib/ai/agent/audit-response-schema';
 import { shouldShowMaterialsStep } from '@/lib/capture/material-display';
 import { assessMaterialsHealth, assessEvidence } from '@/lib/capture/materials-health';
@@ -236,6 +237,30 @@ export function CaptureClient({
   // A new interview waits for the deliberate "Continue anyway"; a resumed one
   // shows the warning without stopping the chat.
   const interviewGated = evidence.warn && messages.length === 0 && !evidenceAck;
+
+  // A staged session already created in this browser (its map was read) continues as staged whatever the
+  // URL or INTERVIEW_STAGED_DEFAULT now say. The server validates the stored id: a 404 (unknown, or another
+  // course's session) clears it and the page keeps its own choice.
+  const [resumeCheck, setResumeCheck] = useState<'idle' | 'checking' | 'staged' | 'classic'>('idle');
+  const wantsResumeCheck = !staged && stage === 'chat' && landingStep === 'interview' && sessionId === null && messages.length === 0;
+  const resumeChecked = useRef(false);
+  useEffect(() => {
+    if (!wantsResumeCheck || resumeChecked.current) return;
+    resumeChecked.current = true;
+    const stored = readStoredSession(courseCode);
+    if (!stored) { setResumeCheck('classic'); return; }
+    setResumeCheck('checking');
+    void fetch(`/api/capture/${encodeURIComponent(courseCode)}/evidence-map?slug=${encodeURIComponent(slug)}&sessionId=${encodeURIComponent(stored)}`)
+      .then(res => {
+        if (res.ok) setResumeCheck('staged');
+        else { if (res.status === 404) clearStoredSession(courseCode); setResumeCheck('classic'); }
+      })
+      .catch(() => setResumeCheck('classic'));
+  }, [wantsResumeCheck, courseCode, slug]);
+  const effectiveStaged = staged || resumeCheck === 'staged';
+  // Once the interview has its first interviewer message the session is saved server-side; forget the stored id.
+  const hasInterviewerTurn = messages.some(m => m.role === 'assistant');
+  useEffect(() => { if (hasInterviewerTurn) clearStoredSession(courseCode); }, [hasInterviewerTurn, courseCode]);
 
   // Collapsed "Setup & history" disclosure on the interview step.
   const [setupOpen, setSetupOpen] = useState(false);
@@ -563,7 +588,9 @@ export function CaptureClient({
           ) : (
           <>
           <IngestionCheckIn courseCode={courseCode} slug={slug} />
-          {staged && sessionId === null && messages.length === 0 ? (
+          {wantsResumeCheck && resumeCheck !== 'classic' && resumeCheck !== 'staged' ? (
+            <p className="text-sm text-muted-foreground">Checking for an interview in progress…</p>
+          ) : effectiveStaged && sessionId === null && messages.length === 0 ? (
             // Staged: the pre-read of the materials is confirmed before the first question. Confirming
             // creates the server session; Reset clears it, which brings this step back.
             <EvidenceMapStep courseCode={courseCode} slug={slug} onStart={setSessionId} />
@@ -585,7 +612,7 @@ export function CaptureClient({
             onModeChange={setChooserMode}
             modeRequired={priorSnapshotInfo != null}
             priorBriefings={priorBriefings}
-            staged={staged}
+            staged={effectiveStaged}
             initialStaged={initialStaged}
           />
           )}

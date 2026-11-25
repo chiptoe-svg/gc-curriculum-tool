@@ -138,4 +138,24 @@ describe('CaptureChatPanel — staged interview', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })));
     expect(container.textContent?.toLowerCase()).not.toMatch(/\bslot\b/);
   });
+
+  const READY = { score: 40, covered: [], remaining: [], good_enough_to_generate: false };
+
+  it('staged hides the readiness strip (the stage bar replaces it); classic still shows it', () => {
+    const staged = renderPanel({ initialReadiness: READY });
+    expect(screen.queryByText('Interviewer readiness')).toBeNull();
+    staged.unmount();
+    renderPanel({ staged: false, initialStaged: null, initialReadiness: READY });
+    expect(screen.getByText('Interviewer readiness')).toBeInTheDocument();
+  });
+
+  it('staged shows one plain line instead of the old header blurb; classic keeps the old blurb', () => {
+    const staged = renderPanel();
+    expect(screen.getByText("Six short stages, about 15 questions. The interviewer starts from what your materials show and asks only what they can't.")).toBeInTheDocument();
+    expect(screen.queryByText(/prereqs, stated vs\. evidenced outcomes/)).toBeNull();
+    staged.unmount();
+    renderPanel({ staged: false, initialStaged: null });
+    expect(screen.getByText(/prereqs, stated vs\. evidenced outcomes/)).toBeInTheDocument();
+    expect(screen.queryByText(/Six short stages/)).toBeNull();
+  });
 });

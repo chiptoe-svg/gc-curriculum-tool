@@ -381,8 +381,10 @@ export function CaptureChatPanel({
           <p className="cap-eyebrow">Interview</p>
           <h2 className="cap-title text-xl">Interview conversation</h2>
           <p className="text-xs text-muted-foreground">
-            The interviewer reads everything already in the system and asks clarifying questions about
-            prereqs, stated vs. evidenced outcomes, and any contradictions across sources.
+            {staged
+              ? "Six short stages, about 15 questions. The interviewer starts from what your materials show and asks only what they can't."
+              : <>The interviewer reads everything already in the system and asks clarifying questions about
+            prereqs, stated vs. evidenced outcomes, and any contradictions across sources.</>}
           </p>
           {chooserMode && messages.length > 0 && (
             <p className="mt-1 text-xs">
@@ -657,7 +659,7 @@ export function CaptureChatPanel({
         </div>
       )}
 
-      {readiness && (
+      {readiness && !staged && (
         <ReadinessStrip
           readiness={readiness}
           peakScore={peakScore}

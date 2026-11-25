@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { EvidenceMapStep } from '../EvidenceMapStep';
 import type { EvidenceMap } from '@/lib/capture/staged/evidence-map';
@@ -18,6 +18,8 @@ const MAP: EvidenceMap = {
 };
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+const KEY = 'gc-staged-session:GC 4060';
+beforeEach(() => { try { localStorage.clear(); } catch { /* ignore */ } });
 afterEach(() => vi.unstubAllGlobals());
 
 describe('EvidenceMapStep', () => {
@@ -137,5 +139,47 @@ describe('EvidenceMapStep', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('daily cost cap reached');
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Looks right/ })).toBeNull();
+  });
+
+  it('stores the new session id per course when the read returns', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ sessionId: 's1', map: MAP, status: 'ready' })));
+    render(<EvidenceMapStep courseCode="GC 4060" slug="s" onStart={vi.fn()} />);
+    await screen.findByText('A press-operation course.');
+    expect(localStorage.getItem(KEY)).toBe('s1');
+  });
+
+  it('with a stored id, GETs that session and does not POST (no second paid read)', async () => {
+    localStorage.setItem(KEY, 'old-1');
+    const f = vi.fn(async () => json({ sessionId: 'old-1', map: MAP, status: 'ready' }));
+    vi.stubGlobal('fetch', f);
+    const onStart = vi.fn();
+    render(<EvidenceMapStep courseCode="GC 4060" slug="abc" onStart={onStart} />);
+    await screen.findByText('A press-operation course.');
+    expect(f).toHaveBeenCalledTimes(1);
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit | undefined];
+    expect(url).toBe('/api/capture/GC%204060/evidence-map?slug=abc&sessionId=old-1');
+    expect(init?.method ?? 'GET').toBe('GET');
+    fireEvent.click(screen.getByRole('button', { name: /Looks right/ }));
+    await waitFor(() => expect(onStart).toHaveBeenCalledWith('old-1'));
+  });
+
+  it('a 404 for the stored id clears it and POSTs a new read', async () => {
+    localStorage.setItem(KEY, 'gone');
+    const f = vi.fn(async (_u: string, init?: RequestInit) =>
+      init?.method === 'POST' ? json({ sessionId: 'new-2', map: MAP, status: 'ready' }) : json({ error: 'session not found' }, 404));
+    vi.stubGlobal('fetch', f);
+    render(<EvidenceMapStep courseCode="GC 4060" slug="s" onStart={vi.fn()} />);
+    await screen.findByText('A press-operation course.');
+    expect(f.mock.calls.map(c => (c[1] as RequestInit | undefined)?.method ?? 'GET')).toEqual(['GET', 'POST']);
+    expect(localStorage.getItem(KEY)).toBe('new-2');
+  });
+
+  it('still works when localStorage throws', async () => {
+    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+    const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+    vi.stubGlobal('fetch', vi.fn(async () => json({ sessionId: 's1', map: MAP, status: 'ready' })));
+    render(<EvidenceMapStep courseCode="GC 4060" slug="s" onStart={vi.fn()} />);
+    await screen.findByText('A press-operation course.');
+    spy.mockRestore(); set.mockRestore();
   });
 });
