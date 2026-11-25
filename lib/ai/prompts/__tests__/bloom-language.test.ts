@@ -28,8 +28,19 @@ describe('shared/bloom-language.md', () => {
     expect(norm).toContain('A verb in course materials or in a written statement is not evidence of a level.');
   });
   it('sets the name-clash convention', () => {
-    expect(norm).toMatch(/understand/i);
-    expect(norm).toMatch(/explaining|inferring|comparing/);
+    expect(norm).toContain("Bloom's \"understand\" is a lower category than this framework's Understand");
+    expect(norm).toMatch(/When "understand" would be ambiguous, write the specific process instead/);
+  });
+  it('does not claim the scoring rules sit above it (includes load first)', () => {
+    expect(norm).not.toMatch(/rule above/);
+    expect(norm).toMatch(/scoring rules in this prompt/);
+  });
+  it('treats producing a routine artifact as executing, not top-level work', () => {
+    expect(norm).toMatch(/routine artifact[^.]*executing/i);
+  });
+  it('foundational example avoids the word check', () => {
+    const f = norm.slice(norm.indexOf('## Foundational competencies'));
+    expect(f).not.toMatch(/\bcheck\b/);
   });
   it('forbids level codes in faculty-facing wording', () => {
     expect(norm).toMatch(/level codes/i);

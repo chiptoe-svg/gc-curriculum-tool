@@ -28,10 +28,16 @@ export const BLOOM_PROCESSES = [
   'comparing', 'explaining', 'executing', 'implementing', 'differentiating', 'organizing', 'attributing',
   'checking', 'critiquing', 'generating', 'planning', 'producing',
 ];
-// Verb stems, so "recall", "explains", "critiqued" also count.
-const STEMS = ['recogni', 'recall', 'interpret', 'exemplif', 'classif', 'summariz', 'infer', 'compar', 'explain',
-  'execut', 'implement', 'differentiat', 'organiz', 'attribut', 'check', 'critiqu', 'generat', 'plan', 'produc'];
-const BLOOM_RE = new RegExp(`\\b(${STEMS.join('|')})`, 'i');
+// Whole verb forms only, so "recall", "explains", "critiqued" count but look-alike nouns
+// ("production", "checklist", "planographic", "organization", "generation") do not.
+const VERB_FORMS = [
+  'recogni(?:ze|zes|zed|zing)', 'recall(?:s|ed|ing)?', 'interpret(?:s|ed|ing)?', 'exemplif(?:y|ies|ied|ying)',
+  'classif(?:y|ies|ied|ying)', 'summariz(?:e|es|ed|ing)', 'infer(?:s|red|ring)?', 'compar(?:e|es|ed|ing)',
+  'explain(?:s|ed|ing)?', 'execut(?:e|es|ed|ing)', 'implement(?:s|ed|ing)?', 'differentiat(?:e|es|ed|ing)',
+  'organiz(?:e|es|ed|ing)', 'attribut(?:e|es|ed|ing)', 'check(?:s|ed|ing)?', 'critiqu(?:e|es|ed|ing)',
+  'generat(?:e|es|ed|ing)', 'plan(?:s|ned|ning)?', 'produc(?:e|es|ed|ing)',
+];
+const BLOOM_RE = new RegExp(`\\b(?:${VERB_FORMS.join('|')})\\b`, 'i');
 
 const r3 = (n: number) => Math.round(n * 1000) / 1000;
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
@@ -89,6 +95,10 @@ export function compareRuns(oldRuns: DriftRun[], newRuns: DriftRun[]): DriftRepo
   return {
     withinNoise, between, meanShift,
     bloomShare: { old: r3(bloomShare(oldRuns)), new: r3(bloomShare(newRuns)) },
-    compared: { oldRuns: oldRuns.length, newRuns: newRuns.length, courses: courses.length },
+    compared: {
+      oldRuns: courses.reduce((n, c) => n + A.get(c)!.length, 0),
+      newRuns: courses.reduce((n, c) => n + B.get(c)!.length, 0),
+      courses: courses.length,
+    },
   };
 }

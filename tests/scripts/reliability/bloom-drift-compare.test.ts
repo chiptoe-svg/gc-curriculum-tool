@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compareRuns, mayCall, type DriftRun } from '@/scripts/reliability/bloom-drift-lib';
+import { compareRuns, mayCall, bloomShare, type DriftRun } from '@/scripts/reliability/bloom-drift-lib';
 
 const cell = (k: number | null, u: number | null, d: number) => ({ competency: 'x', k, u, d });
 const run = (course: string, r: number, label: string, cells: DriftRun['cells'], statements: string[] = []): DriftRun =>
@@ -43,7 +43,7 @@ describe('compareRuns', () => {
     const r = compareRuns([], []);
     expect(r.compared).toEqual({ oldRuns: 0, newRuns: 0, courses: 0 });
     const r2 = compareRuns([run('A', 1, 'old', base)], [run('A', 1, 'new', base), run('B', 1, 'new', base)]);
-    expect(r2.compared).toEqual({ oldRuns: 1, newRuns: 2, courses: 1 });
+    expect(r2.compared).toEqual({ oldRuns: 1, newRuns: 1, courses: 1 }); // course B is new-only, so it does not count
   });
 });
 
@@ -60,6 +60,25 @@ describe('mayCall (paid-run ceiling)', () => {
   });
   it('a null cap means a free run: always allowed', () => {
     expect(mayCall(99, null, 5)).toBe(true);
+  });
+});
+
+describe('bloomShare matches verb forms, not look-alike nouns', () => {
+  const r = (statements: string[]): DriftRun => ({ course: 'A', run: 1, label: 'x', cells: [], statements });
+  it('does not count production, checklist, planographic, organization, generation', () => {
+    expect(bloomShare([r(['Print production overview', 'Uses a checklist', 'Planographic printing', 'Team organization', 'Next-generation presses'])])).toBe(0);
+  });
+  it('counts real process verbs in any tense', () => {
+    expect(bloomShare([r(['Students produce labels', 'Students planned a run', 'Students check proofs', 'Students organized files', 'Students generating ideas'])])).toBe(1);
+  });
+});
+
+describe('compare counts only runs in courses on both sides', () => {
+  const cell = { competency: 'x', k: 1, u: 1, d: 1 };
+  const run = (course: string, label: string): DriftRun => ({ course, run: 1, label, cells: [cell], statements: [] });
+  it('a course present on one side only does not count toward the minimum', () => {
+    const r = compareRuns([run('A', 'old'), run('B', 'old')], [run('A', 'new')]);
+    expect(r.compared).toEqual({ oldRuns: 1, newRuns: 1, courses: 1 });
   });
 });
 

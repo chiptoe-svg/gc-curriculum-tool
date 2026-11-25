@@ -1,6 +1,6 @@
 # Bloom language for faculty-facing wording
 
-Faculty write objectives in the language of Bloom's revised taxonomy. When you write wording a faculty member will read about what students do (an observed outcome, a suggested objective, a checklist item, a course or wiki summary), use the taxonomy's named processes where one fits. This is wording only. It never changes how a level is scored; the depth scale and the evidence rule above still decide every level.
+Faculty write objectives in the language of Bloom's revised taxonomy. When you write wording a faculty member will read about what students do (an observed outcome, a suggested objective, a checklist item, a course or wiki summary), use the taxonomy's named processes where one fits. This is wording only. It never changes how a level is scored; the scoring rules in this prompt, where it has any (the depth scale and the evidence rule), still decide every level.
 
 ## When to use it
 
@@ -51,6 +51,8 @@ For making and performing, use the Apply and Create processes with a condition:
 - **implementing** or adapting under new conditions;
 - **planning** and **producing** original work.
 
+Producing a routine artifact from a template or a set procedure is executing, not original work; keep "producing" for work students design themselves.
+
 Bloom has no process for working from a reference, and none for a student who guides others. Say those plainly.
 
 ## Never inflate
@@ -66,4 +68,4 @@ Bloom wording describes the evidence and never stands in for it. A verb in cours
 
 ## Foundational competencies
 
-Agency, attention to detail, resilience, curiosity, and written and spoken communication are outside Bloom's cognitive domain. Describe the behavior plainly ("students check their own proofs against the job ticket before submitting") rather than borrowing a cognitive process name.
+Agency, attention to detail, resilience, curiosity, and written and spoken communication are outside Bloom's cognitive domain. Describe the behavior plainly ("students go over their own proofs against the job ticket before submitting") rather than borrowing a cognitive process name.

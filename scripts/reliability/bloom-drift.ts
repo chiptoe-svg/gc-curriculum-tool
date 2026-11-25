@@ -7,7 +7,8 @@
  *
  * READ-ONLY: profiles are never saved. Campus models cost nothing. A paid model needs
  * --max-usd (an owner-approved hard cap); the cap is checked before every call and the
- * spend of each call is recorded.
+ * spend of each call is recorded. --est-usd seeds the per-call estimate. A failed paid call is
+ * charged at the largest known call (its real cost is unknown). A ceiling stop exits 3.
  * Usage: pnpm exec tsx --env-file=<main>/.env.local scripts/reliability/bloom-drift.ts \
  *          --model gpt-6.1-sol --effort low --max-usd 1.75 --runs 2 --label old --out /path/out.json \
  *          [--courses "GC 3460,GC 1040"]
@@ -24,6 +25,9 @@ const model = arg('model')!;
 const effort = arg('effort');
 const maxUsdArg = arg('max-usd');
 const maxUsd = maxUsdArg ? Number(maxUsdArg) : null;
+// Expected cost of one call (e.g. from a probe). Seeds the ceiling so even the first call is bounded,
+// and is what a failed paid call is charged, since its real cost is unknown.
+const estUsd = Number(arg('est-usd', '0'));
 const runs = Number(arg('runs', '2'));
 const label = arg('label', 'run')!;
 const out = arg('out')!;
@@ -35,7 +39,7 @@ async function main() {
   const paid = !isCampusModel(model);
   if (paid && !(maxUsd !== null && maxUsd > 0)) throw new Error(`paid model "${model}" needs --max-usd (owner-approved hard cap)`);
   const cap = paid ? maxUsd : null;
-  let spent = 0, largest = 0;
+  let spent = 0, largest = paid ? estUsd : 0;
   const results: DriftRun[] = [];
   for (const course of courses) {
     const ctx = (await assembleSynthesisContext(course)).context;
@@ -43,7 +47,7 @@ async function main() {
       if (!mayCall(spent, cap, largest)) {
         console.log(`[STOP] ceiling: spent ${usd(spent)} of ${usd(cap ?? 0)}, largest call ${usd(largest)}`);
         writeFileSync(out, JSON.stringify(results, null, 1));
-        process.exit(0);
+        process.exit(3); // distinct from a complete run (0)
       }
       const t0 = Date.now();
       try {
@@ -62,7 +66,9 @@ async function main() {
         });
         console.log(`[ok] ${label} ${course} run ${run} ${((Date.now() - t0) / 1000).toFixed(0)}s, ${comps.length} competencies, ${usd(callUsd)} (total ${usd(spent)})`);
       } catch (e) {
-        console.log(`[FAIL] ${label} ${course} run ${run}: ${(e as Error).message.slice(0, 200)}`);
+        // A failed paid call may still have spent money (e.g. retries); charge the largest known call.
+        if (paid) spent += largest;
+        console.log(`[FAIL] ${label} ${course} run ${run}: ${(e as Error).message.slice(0, 200)}${paid ? ` (charged ${usd(largest)} toward the ceiling)` : ''}`);
       }
       writeFileSync(out, JSON.stringify(results, null, 1));
     }
