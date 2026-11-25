@@ -183,7 +183,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // A row for another course is not this session's record: treat as classic and log.
     let staged: { map: Awaited<ReturnType<typeof getInterviewSession>> extends infer R ? (R extends { map: infer M } ? M : never) : never; ledger: ReturnType<typeof buildLedger>; leadNotes: string[] } | undefined;
     if (sessionId) {
-      const interviewRow = await getInterviewSession(sessionId);
+      // Fails closed on a lookup error (a missing 0076 table already reads as null), but never with raw DB text
+      // in the response (final-review I2): log it here, rethrow a generic message.
+      const interviewRow = await getInterviewSession(sessionId).catch((err: unknown) => {
+        console.error(`[scores] ${courseCode}: interview session lookup failed`, err);
+        throw new Error("The interview couldn't load. Please try again.");
+      });
       if (interviewRow && interviewRow.courseCode === courseCode) {
         staged = {
           map: interviewRow.map,

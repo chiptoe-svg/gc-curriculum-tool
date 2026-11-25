@@ -2,6 +2,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { captureInterviewSessions } from '@/lib/db/schema';
 import type { EvidenceMap } from '@/lib/capture/staged/evidence-map';
+import { isUndefinedTable } from '@/lib/db/pg-errors';
 
 export type InterviewSessionRow = {
   sessionId: string;
@@ -22,12 +23,25 @@ export async function createInterviewSession(input: { sessionId: string; courseC
     .onConflictDoNothing();
 }
 
+/**
+ * The staged-session row, or null. Every staged read on the classic path (the chat stream, the capture page, the
+ * conversation GET, Generate) goes through here, so a database without migration 0076 (undefined_table, 42P01)
+ * reads as "no staged row" and classic keeps working (final-review I2). Any other error still throws: the
+ * staged lookup stays fail-closed for real DB failures.
+ */
 export async function getInterviewSession(sessionId: string): Promise<InterviewSessionRow | null> {
-  const [row] = await db
-    .select()
-    .from(captureInterviewSessions)
-    .where(eq(captureInterviewSessions.sessionId, sessionId))
-    .limit(1);
+  let rows;
+  try {
+    rows = await db
+      .select()
+      .from(captureInterviewSessions)
+      .where(eq(captureInterviewSessions.sessionId, sessionId))
+      .limit(1);
+  } catch (err) {
+    if (isUndefinedTable(err)) return null;
+    throw err;
+  }
+  const [row] = rows;
   return row ? { ...row, map: row.map ?? null } : null;
 }
 

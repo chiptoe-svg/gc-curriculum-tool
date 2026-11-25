@@ -18,6 +18,7 @@ const h = vi.hoisted(() => ({
   snapshot: null as null | { id: string; profile: unknown; retiredAt: Date | null; inputsMeta: unknown },
   scored: null as unknown,
   interviewRow: null as null | { sessionId: string; courseCode: string; map: unknown },
+  lookupError: null as Error | null,
   upsert: vi.fn(),
   gen: vi.fn(),
 }));
@@ -34,7 +35,7 @@ vi.mock('@/lib/db/capture-messages-queries', () => ({
   getLatestSessionId: vi.fn().mockResolvedValue('sess-1'),
   getSessionMessages: vi.fn().mockResolvedValue([]),
 }));
-vi.mock('@/lib/db/capture-interview-sessions-queries', () => ({ getInterviewSession: vi.fn(async () => h.interviewRow) }));
+vi.mock('@/lib/db/capture-interview-sessions-queries', () => ({ getInterviewSession: vi.fn(async () => { if (h.lookupError) throw h.lookupError; return h.interviewRow; }) }));
 vi.mock('@/lib/db/capture-sessions-queries', () => ({ getSessionMode: vi.fn(async () => h.sessionMode) }));
 vi.mock('@/lib/capture/revision-evidence', () => ({
   buildCitationClassifiers: vi.fn(async () => ({ isNewCitation: () => false, isStaleCitation: () => false })),
@@ -67,6 +68,7 @@ describe('Generate with a stored revision mode', () => {
     h.sessionMode = null;
     h.snapshot = { id: 'snap-1', profile: SNAPSHOT_PROFILE, retiredAt: null, inputsMeta: { materials: [] } };
     h.interviewRow = null;
+    h.lookupError = null;
     h.upsert.mockReset();
     h.gen.mockReset();
     h.gen.mockImplementation(async () => ({ profile: withComp(1), telemetry: {}, model: 'm' }));
@@ -91,6 +93,18 @@ describe('Generate with a stored revision mode', () => {
     h.interviewRow = { sessionId: 'sess-1', courseCode: 'GC 3460', map: null };
     await generate();
     expect((h.gen.mock.calls[0]![0] as { staged?: { leadNotes: string[] } }).staged?.leadNotes).toEqual([]);
+  });
+
+  it('final-fix I2: a staged-lookup DB error fails closed (500, no synthesis) without raw DB text', async () => {
+    h.lookupError = new Error('Failed query: select from "capture_interview_sessions" — connection to 127.0.0.1:5433 refused');
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { status, body } = await generate();
+    expect(status).toBe(500);
+    expect(h.gen).not.toHaveBeenCalled();
+    expect(JSON.stringify(body)).not.toMatch(/capture_interview_sessions|5433|Failed query/);
+    expect(body.detail).toBe("The interview couldn't load. Please try again.");
+    expect(String(errSpy.mock.calls.flat().map(String))).toMatch(/Failed query/);
+    errSpy.mockRestore();
   });
 
   it('fresh passes no prior profile and drops the adopt overlay', async () => {

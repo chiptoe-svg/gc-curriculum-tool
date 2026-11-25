@@ -90,7 +90,8 @@ describe('interview routing', () => {
     h.lookupError = new Error('connection refused');
     const ev = await run();
     expect(ev.map(e => e.kind)).toEqual(['session', 'error']);
-    expect((ev[1] as { message?: string }).message).toContain('connection refused');
+    // Final-review I2: the client gets a generic line; the raw error is logged server-side.
+    expect((ev[1] as { message?: string }).message).toBe("The interview couldn't load. Please try again.");
     await expect(runAuditAgent(input)).rejects.toThrow('connection refused');
     expect(buildAgentCall).not.toHaveBeenCalled();
     expect(getSessionMessages).not.toHaveBeenCalled();

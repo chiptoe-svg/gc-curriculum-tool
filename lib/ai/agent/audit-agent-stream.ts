@@ -27,6 +27,9 @@ export type AuditStreamEvent =
   | { kind: 'final'; response: AuditResponse; toolCallsUsed: number }
   | { kind: 'error'; message: string; code?: 'ai_credits_exhausted' };
 
+/** The client's message when the staged-session lookup fails (the raw error is logged server-side). */
+export const STAGED_LOOKUP_FAILED = "The interview couldn't load. Please try again.";
+
 export async function* streamAuditAgent(
   input: AuditAgentInput,
 ): AsyncGenerator<AuditStreamEvent, void, unknown> {
@@ -37,7 +40,11 @@ export async function* streamAuditAgent(
   try {
     staged = await stagedSessionFor(input.sessionId, input.courseCode);
   } catch (err) {
-    yield { kind: 'error', message: err instanceof Error ? err.message : String(err) };
+    // Never send raw DB text to the client (final-review I2): log it here, show a generic line.
+    console.error(`[audit-agent] ${input.courseCode}: staged session lookup failed`, err);
+    // Our own wrong-course refusal carries no DB text and tells the instructor what happened, so it is kept.
+    const wrongCourse = err instanceof Error && err.message === 'session does not belong to this course';
+    yield { kind: 'error', message: wrongCourse ? err.message : STAGED_LOOKUP_FAILED };
     return;
   }
   if (staged) {
