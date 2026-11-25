@@ -18,7 +18,8 @@ import {
 } from './audit-response-schema';
 import { AiCreditsExhaustedError } from '@/lib/ai/credit-status';
 import { parseInterviewReply } from './interview-controls';
-import { buildAgentCall, captureRetrievedChunks, checkTurnCitations, persistAssistantTurn, type AuditAgentInput } from './audit-agent';
+import { buildAgentCall, captureRetrievedChunks, checkTurnCitations, persistAssistantTurn, stagedSessionFor, type AuditAgentInput } from './audit-agent';
+import { streamStagedInterview } from '@/lib/capture/staged/staged-turn';
 
 export type AuditStreamEvent =
   | { kind: 'session'; sessionId: string }
@@ -31,6 +32,13 @@ export async function* streamAuditAgent(
   input: AuditAgentInput,
 ): AsyncGenerator<AuditStreamEvent, void, unknown> {
   yield { kind: 'session', sessionId: input.sessionId };
+
+  // Staged interviews (plan 2026-11-25) only for sessions with a capture_interview_sessions row.
+  const staged = await stagedSessionFor(input.sessionId);
+  if (staged) {
+    yield* streamStagedInterview(input, staged);
+    return;
+  }
 
   let built;
   try {

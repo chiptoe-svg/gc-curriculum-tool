@@ -41,6 +41,7 @@ import { renderPrerequisiteProfiles } from '@/lib/capture/prereq-profiles-block'
 import { isSentToAI } from '@/lib/capture/material-in-use';
 import type { RevisionMode } from '@/lib/capture/revision-copy';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
+import { getInterviewSession, type InterviewSessionRow } from '@/lib/db/capture-interview-sessions-queries';
 import {
   SEARCH_TOOLS,
   chunkIdsInToolResult,
@@ -91,6 +92,8 @@ export interface AuditAgentInput {
    * override (scripts/capture/replay-interview.ts compares the two).
    */
   materialsView?: 'digests' | 'index';
+  /** The instructor pressed Finish (staged interviews only: the next turn is the recap). The classic path ignores it. */
+  finish?: boolean;
 }
 
 export interface AuditAgentResult {
@@ -389,7 +392,26 @@ export async function persistAssistantTurn(input: PersistAssistantTurnInput): Pr
   });
 }
 
+/**
+ * The session's staged-interview row, or null for a classic session (plan 2026-11-25, Ruling P1: a session is
+ * staged if and only if it has a capture_interview_sessions row). A failed lookup is logged and treated as
+ * classic: the classic path is today's behavior, and its own reads fail the same way if the DB is down.
+ */
+export async function stagedSessionFor(sessionId: string): Promise<InterviewSessionRow | null> {
+  try {
+    return await getInterviewSession(sessionId);
+  } catch (err) {
+    console.warn(`[audit-agent] staged-session lookup failed for ${sessionId}; using the classic interview`, err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
 export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentResult> {
+  const staged = await stagedSessionFor(input.sessionId);
+  if (staged) {
+    const { runStagedInterview } = await import('@/lib/capture/staged/staged-turn');
+    return runStagedInterview(input, staged);
+  }
   const built = await buildAgentCall(input);
   if (await resolveInterviewLoop() === 'pi') {
     const { runPiInterviewTurn } = await import('./pi/stream');

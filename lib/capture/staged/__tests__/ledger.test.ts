@@ -66,6 +66,17 @@ describe('buildLedger', () => {
     expect(l.anchors).toEqual(['Poster project', 'Final exam']);
   });
 
+  it('anchor lines lose leading bullets and numbering', () => {
+    for (const [summary, want] of [
+      ['- Poster project\n* Final exam', ['Poster project', 'Final exam']],
+      ['• Poster project\n1. Final exam', ['Poster project', 'Final exam']],
+      ['1) Poster project\n2) Final exam', ['Poster project', 'Final exam']],
+      ['10. Press Run Report\n- 2024 Annual', ['Press Run Report', '2024 Annual']],
+    ] as const) {
+      expect(built([{ type: 'record', record: rec('anchors', summary) }]).anchors).toEqual(want);
+    }
+  });
+
   it('a skipped anchors record yields no anchors', () => {
     const l = built([
       { type: 'asked', turn: { stage: 1, slot: 'anchors', kind: 'question' } },

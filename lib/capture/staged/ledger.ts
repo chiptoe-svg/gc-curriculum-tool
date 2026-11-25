@@ -39,7 +39,12 @@ export function isFilled(s: SlotRecord | undefined): boolean {
 
 function parseAnchors(rec: SlotRecord | undefined): string[] {
   if (!rec || (rec.status !== 'filled_by_instructor' && rec.status !== 'filled_from_materials')) return [];
-  return rec.summary.split('\n').map((l) => l.trim()).filter((l) => l.length > 0).slice(0, 2);
+  return rec.summary
+    .split('\n')
+    // Models often list the two titles; a bullet or number would leak into the graded_on slot ids.
+    .map((l) => l.trim().replace(/^(?:[-*•]\s+|\d+[.)]\s*)/, '').trim())
+    .filter((l) => l.length > 0)
+    .slice(0, 2);
 }
 
 /** Fold stored events into a ledger. Pure; the same events always give the same ledger. */

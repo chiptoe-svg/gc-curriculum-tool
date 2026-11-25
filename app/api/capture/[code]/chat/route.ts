@@ -23,7 +23,7 @@ const savedReplyText = (r: Pick<AuditResponse, 'finding' | 'question'>) =>
   assistantTurnMessage({ finding: r.finding, question: r.question }).content;
 
 // POST /api/capture/[code]/chat?slug=...
-// Body: { message?: string, sessionId?: string, instructorName?, includePriorSessions? }
+// Body: { message?: string, sessionId?: string, instructorName?, includePriorSessions?, finish?: true }
 // (no message = the opening turn)
 //
 // The server keeps the conversation: the agent stores every turn in
@@ -143,6 +143,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     }
   }
 
+  // Finish (staged interviews): the next turn is the recap. Passed only when true; the classic path ignores it.
+  const finishArg = body.finish === true ? { finish: true } : {};
+
   const wantsStream =
     url.searchParams.get('stream') === '1' ||
     (req.headers.get('accept') ?? '').includes('text/event-stream');
@@ -161,6 +164,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
             includePriorSessions,
             revisionMode,
             baselineSnapshotId,
+            ...finishArg,
           });
           let final: AuditResponse | null = null;
           for await (const ev of gen) {
@@ -198,6 +202,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       includePriorSessions,
       revisionMode,
       baselineSnapshotId,
+      ...finishArg,
     });
     await saveTurn(response);
     return NextResponse.json({
