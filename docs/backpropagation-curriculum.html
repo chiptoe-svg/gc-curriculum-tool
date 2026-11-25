@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backpropagation and the Curriculum — Graphic Communications, Clemson</title>
+<meta name="description" content="A plain-language primer on neural networks and backpropagation, and an open hypothesis: tracing a curriculum shortfall back through the prerequisite chain.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400..700&display=swap">
+<style>
+:root{
+  --page:#FBFBFA;--panel:#FFFFFF;--inset:#F3F2F6;--rule:#DCD9E2;--rule-soft:#E6E3EC;
+  --ink:#1D1B22;--ink-2:#46424F;--muted:#5D5966;
+  --purple:#522D80;--purple-dark:#3A1F5C;--purple-soft:#ECE6F4;--orange:#C24F00;--mark:#F56600;
+  --serif:Newsreader,"Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --max:1120px;--pad:32px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--purple);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--purple-dark)}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+p{margin:0}
+
+/* ---------- Frame (both page types) ---------- */
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--pad)}
+.site-header{border-bottom:1px solid var(--rule)}
+.site-header .wrap{min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mark)}
+.nav{display:flex;flex-wrap:wrap;gap:28px;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover,.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]{font-weight:600}
+.site-footer{border-top:1px solid var(--rule)}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;padding-block:24px 32px;font:400 12px var(--mono);letter-spacing:.02em;color:var(--muted)}
+
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative;display:flex;flex-direction:column;gap:18px;padding-block:96px 64px}
+.hero--tool .wrap{padding-block:80px 48px;gap:16px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.title-paper{font-size:64px;line-height:1.04;letter-spacing:-.02em;max-width:860px}
+.title-tool{font-size:52px;line-height:1.05;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.hero--tool .lede{font-size:19px;max-width:720px}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;font-size:14px;color:var(--muted)}
+.meta-row strong{color:var(--ink);font-weight:600}
+.ring{position:absolute;border-radius:50%;pointer-events:none}
+.ring-1{right:-180px;top:-260px;width:620px;height:620px;border:1px solid var(--rule-soft)}
+.ring-2{right:-320px;top:-400px;width:900px;height:900px;border:1px solid #EEECF2}
+.ring-dot{position:absolute;right:152px;top:48px;width:10px;height:10px;border-radius:50%;background:var(--mark)}
+
+/* ---------- Paper ---------- */
+.paper{display:flex;flex-wrap:wrap;gap:48px 72px;align-items:flex-start;padding-bottom:96px}
+.toc{flex:1 1 200px;max-width:240px;border-top:1px solid var(--rule);padding-top:16px;font-size:14px}
+.toc a{display:flex;gap:12px;padding:6px 0;line-height:1.35;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc .n{font:500 13px var(--mono);color:var(--orange);width:14px;flex:none}
+.toc a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (min-width:1024px){.paper--long .toc{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}}
+.article{flex:999 1 560px;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:56px;font-size:17px;line-height:1.65}
+.article section{display:flex;flex-direction:column;gap:20px}
+.sec-num{font:500 13px var(--mono);color:var(--orange)}
+.sec-title{font-size:40px;line-height:1.1;letter-spacing:-.015em}
+.points h2{font-size:30px;margin-bottom:8px}
+.point{display:flex;gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.point .num{font:500 40px/1 var(--serif);color:var(--orange);width:28px;flex:none}
+.point strong{display:block;font-size:18px;font-weight:600;line-height:1.45}
+.point span{display:block;color:var(--muted);font-size:16px;margin-top:6px}
+.pull{margin:16px 0;display:flex;flex-direction:column;gap:12px}
+.pull::before{content:"";width:40px;height:3px;border-radius:2px;background:var(--mark)}
+.pull blockquote{margin:0;font:500 30px/1.3 var(--serif);letter-spacing:-.01em}
+
+/* ---------- Tool ---------- */
+.tool{display:flex;flex-direction:column;gap:24px;padding-bottom:96px}
+.step{background:var(--panel);border:1px solid var(--rule-soft);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
+.step-num{font:500 12px var(--mono);color:var(--orange)}
+.step h2{font-size:28px;letter-spacing:-.01em}
+.pane{background:#F7F6F9;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.split{display:flex;flex-wrap:wrap;gap:32px}
+.split > :first-child{flex:1 1 300px;max-width:380px}
+.split > :last-child{flex:999 1 420px;min-width:0}
+.label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- Controls ---------- */
+.pill{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 15px var(--sans);cursor:pointer}
+.pill:hover{border-color:#B9B4C4}
+.pill[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.seg-group{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:#ECEAF0}
+.seg{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--muted);font:500 14px var(--sans);cursor:pointer}
+.seg[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(29,27,34,.12)}
+.code-btn{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font:500 13px var(--mono);cursor:pointer}
+.code-btn[aria-pressed="true"]{border:2px solid var(--purple);padding:0 11px;background:var(--purple-soft);color:var(--purple-dark)}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:var(--purple);color:#fff;font:500 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--purple-dark);color:#fff}
+.link-arrow{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-weight:500;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:600}
+.field input,.field select,.field textarea{min-height:44px;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:#fff;font:400 15px var(--sans);color:var(--ink)}
+.field textarea{padding:10px 14px;min-height:96px}
+
+/* ---------- Status cues ---------- */
+.cue{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:999px;font:500 12.5px var(--sans);white-space:nowrap}
+.cue::before{content:"";width:8px;height:8px;flex:none}
+.cue-input{background:#FFF4DB;color:#8A5A00}.cue-input::before{background:#B57600;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.cue-read{background:#ECE6F4;color:#522D80}.cue-read::before{border:1.5px solid #522D80;border-radius:50%;width:6px;height:6px}
+.cue-draft{background:#EFEEF2;color:#5D5966}.cue-draft::before{border:1.5px dashed #5D5966;border-radius:50%;width:6px;height:6px}
+.cue-done{background:#E4F0E6;color:#2F6B3A}.cue-done::before{background:#2F6B3A;border-radius:50%}
+.cue-issue{background:#F9E3E3;color:#9B2C2C}.cue-issue::before{background:#9B2C2C;transform:rotate(45deg);width:7px;height:7px}
+
+/* ---------- Amount ramp ---------- */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:5px;font:600 11px var(--mono)}
+.d0{background:#F1EDF7;color:#522D80}.d1{background:#E0D6EE;color:#3F2470}.d2{background:#C7B5E0;color:#2B1752}
+.d3{background:#7A5BAE;color:#fff}.d4{background:#5E3F94;color:#fff}.d5{background:#3F2470;color:#fff}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 3px 0 9px;border-radius:8px;background:#fff;border:1px solid var(--rule);font:500 12px var(--mono);white-space:nowrap}
+.badge{font:500 11.5px var(--mono);color:var(--muted);background:var(--inset);border-radius:5px;padding:2px 6px}
+
+/* ---------- Boxes and cards ---------- */
+.note{display:flex;gap:16px;background:var(--purple-soft);border-radius:16px;padding:22px 24px;font-size:15.5px;color:#2E2A36}
+.note svg{flex:none;margin-top:3px}
+.note strong{color:var(--ink);font-weight:600}
+.xlink{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px 24px;text-decoration:none;color:var(--ink);transition:box-shadow .2s,transform .2s}
+.xlink:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,27,34,.08);color:var(--ink)}
+.xlink .t{display:block;font:600 22px var(--serif)}
+.xlink .d{display:block;font-size:15px;color:var(--muted)}
+
+/* ---------- Tables and lists ---------- */
+.table-box{overflow-x:auto;border-top:1px solid var(--rule)}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th{text-align:left;padding:12px 16px 12px 0;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td{padding:14px 16px 14px 0;border-top:1px solid #EEECF2;vertical-align:top}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.empty{color:#B9B4C4}
+
+/* ---------- Phone ---------- */
+@media (max-width:640px){
+  :root{--pad:20px}
+  .title-paper{font-size:40px}.title-tool{font-size:36px}.sec-title{font-size:30px}
+  .lede{font-size:18px}
+  .hero .wrap{padding-block:56px 40px}
+  .ring,.ring-dot{display:none}
+  .step{padding:22px}
+  .toc{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* ---------- Page (guide tokens only) ---------- */
+/* The hero sits inside .paper after the contents column in the DOM, so the old rail's
+   words keep their reading order; order:-1 puts it first on screen. */
+.paper > .hero{order:-1;flex:1 1 100%;margin-inline:calc(-1 * var(--pad))}
+.toc .label{display:block;margin:14px 0 2px}
+.toc a.out{padding-left:26px}
+.article section{scroll-margin-top:24px}
+.article h3{font-size:24px;line-height:1.25;margin-top:12px}
+.article ul,.article ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.part{display:flex;flex-direction:column;gap:16px;border-top:1px solid var(--rule);padding-top:24px}
+.part-title{font-size:26px;line-height:1.2;color:var(--muted)}
+.note > div{display:flex;flex-direction:column;gap:6px}
+.note ul{margin:0}
+sup.nv{font:500 .72em var(--mono);color:var(--muted);margin-left:1px;cursor:help}
+.dagger-legend{font-size:14px;color:var(--muted)}
+ol.refs{font-size:15px;overflow-wrap:anywhere}
+.doc-foot{font-size:14px;color:var(--muted)}
+.doc-foot a{color:var(--purple)}
+code,kbd{font:500 .86em var(--mono);background:var(--inset);padding:1px 6px;border-radius:5px;overflow-wrap:anywhere}
+td code{white-space:nowrap}
+.cue{vertical-align:middle;margin-left:6px;font-family:var(--sans)}
+.attribution{font-size:14px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
+/* Flow diagram (competency catalog) */
+.flow{display:grid;grid-template-columns:1fr .9fr 1fr;gap:16px}
+.lane{display:flex;flex-direction:column}
+.lane.mid{justify-content:center}
+.lane-label{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:8px}
+.box{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.45}
+.box b{display:block;font-weight:600;font-size:15px;margin-bottom:2px}
+.box small{display:block;margin-top:2px;font:400 13px var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.box.hub{background:var(--inset);border:2px solid var(--ink)}
+.box.planned{border:1.5px dashed var(--muted)}
+.arrow{text-align:center;color:var(--muted);font-size:16px;line-height:1;padding:5px 0}
+.side-arrow{font:400 13px var(--mono);color:var(--muted);text-align:center;padding:8px 0}
+.flow-legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;color:var(--muted)}
+.swatch{display:inline-block;width:16px;height:11px;vertical-align:middle;margin-right:6px;border-radius:3px}
+.swatch.solid{border:1px solid var(--rule);background:var(--panel)}
+.swatch.hub{border:2px solid var(--ink);background:var(--inset)}
+.swatch.dash{border:1.5px dashed var(--muted)}
+/* Two-stage scoring strip */
+.stages{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;counter-reset:stage}
+.stage{background:var(--panel);border:1px solid var(--rule-soft);border-radius:16px;padding:16px;font-size:15px;line-height:1.5}
+.stage::before{counter-increment:stage;content:"Step " counter(stage);display:block;font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin-bottom:6px}
+.stage b{display:block;margin-bottom:4px}
+@media (max-width:640px){.flow{grid-template-columns:1fr}.stages{grid-template-columns:1fr 1fr}}
+#example .stages{grid-template-columns:repeat(2,1fr)}
+@media (max-width:480px){.stages,#example .stages{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Graphic Communications · Clemson University</a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#papers" aria-current="page">Papers</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#reviews">Reviews</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap paper paper--long">
+  <nav class="toc" id="rail" aria-label="Contents">
+    <span class="label">Sections</span>
+    <a href="#why"><span class="n">1</span><span>Why this document exists</span></a>
+    <span class="label">Part I — How a network learns</span>
+    <a href="#network"><span class="n">2</span><span>A network is a chain of small steps</span></a>
+    <a href="#error"><span class="n">3</span><span>Measuring the error</span></a>
+    <a href="#descent"><span class="n">4</span><span>Stepping downhill</span></a>
+    <a href="#backprop"><span class="n">5</span><span>Backpropagation</span></a>
+    <a href="#example"><span class="n">6</span><span>A worked example</span></a>
+    <span class="label">Part II — The curriculum analogy</span>
+    <a href="#mapping"><span class="n">7</span><span>Matching the parts</span></a>
+    <a href="#backward"><span class="n">8</span><span>Curricula are already designed backward</span></a>
+    <a href="#trace"><span class="n">9</span><span>Tracing a shortfall</span></a>
+    <a href="#whatif"><span class="n">10</span><span>Why what-ifs, not gradients</span></a>
+    <span class="label">Part III — Accounting</span>
+    <a href="#requirements"><span class="n">11</span><span>What the method requires</span></a>
+    <a href="#shortfalls"><span class="n">12</span><span>Where the analogy falls short</span></a>
+    <a href="#test"><span class="n">13</span><span>How it will be tested</span></a>
+    <span class="label">See also</span>
+    <a class="out" href="./background.html#hypotheses">KUD+ Background &sect;15</a>
+    <a class="out" href="./curriculum-map-deep-dive.html">Curriculum maps deep dive</a>
+    <a class="out" href="./measurement-hypotheses-deep-dive.html">Measurement hypotheses</a>
+  </nav>
+
+  <section class="hero">
+    <div class="ring ring-1" aria-hidden="true"></div><div class="ring ring-2" aria-hidden="true"></div><div class="ring-dot" aria-hidden="true"></div>
+    <div class="wrap">
+      <span class="eyebrow">Research primer &amp; open hypothesis</span>
+      <h1 class="title-paper">Backpropagation and the Curriculum</h1>
+      <p class="lede">How a neural network learns from its mistakes, and whether the same idea could trace a shortfall in a program&rsquo;s stated objectives back to the course where a change would close it.</p>
+      <div class="meta-row">
+        <span><strong>Date</strong> 2026-11-25</span>
+        <span><strong>Status</strong> Hypothesis; first test being set up</span>
+        <span><strong>Audience</strong> Faculty, curriculum committee</span>
+      </div>
+    </div>
+  </section>
+
+  <article class="article">
+<section id="why">
+  <div><span class="sec-num">01</span><h2 class="sec-title">Why this document exists</h2></div>
+  <p>The curriculum tool records how deeply each course develops each competency, on the Know, Understand and Do scales from 0 to 5. It also records which courses are prerequisites for which. A career target, such as Production &amp; Operations, can state how deep each competency needs to be by graduation. When the courses on a student&rsquo;s path do not reach that depth, the program has a shortfall.</p>
+  <p>Finding a shortfall is the easy part. The harder question is <em>where to fix it</em>. The last course on the path is the obvious place to look, but it may be short because students arrive underprepared from an earlier course. Neural networks face the same problem. When a network gives a wrong answer, which of its many internal settings should change? The answer, an algorithm called backpropagation, is one of the central ideas of modern machine learning.</p>
+  <p>This page explains that idea from the ground up for readers with no machine-learning background, then asks how far it carries over to a curriculum map. Part I covers how a network learns. Part II sets out the analogy and shows, on a small made-up example, how a shortfall could be traced back. Part III is an honest accounting of what the method needs, where the analogy breaks, and how the department plans to test it. The idea is listed as an open hypothesis in the <a href="./background.html#hypotheses">KUD+ Background, &sect;15</a>. It is not part of the tool.</p>
+  <aside class="note"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#522D80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg><div><strong>How sources are handled</strong>
+    <p>Every cited claim comes from a source whose full text we hold, with the quoted passage and page recorded in the page&rsquo;s citation ledger. A work we know of but do not hold in full carries a dagger (<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>). Worked examples and statements about the tool&rsquo;s own data are ours and are marked as such.</p>
+  </div></aside>
+</section>
+
+<div class="part"><h2 class="part-title">Part I — How a neural network learns</h2></div>
+
+<section id="network">
+  <div><span class="sec-num">02</span><h2 class="sec-title">A network is a chain of small steps</h2></div>
+  <p>A neural network is built from simple units, often called neurons. Each one takes some numbers in, multiplies each by a <strong>weight</strong>, adds the results together with a constant called a <strong>bias</strong>, and passes the total through a simple function that decides what it sends on. <a href="#ref-nielsen-ch1">Nielsen (2015)</a> describes a unit that &ldquo;has weights for each input&rdquo; and &ldquo;an overall bias,&rdquo; whose output is a function of the weighted inputs plus the bias. The weights say how much each input matters. They are the network&rsquo;s adjustable settings, and learning means changing them.</p>
+  <p>Units are arranged in layers. The first layer reads the input, such as the pixels of a photo, and each later layer reads the outputs of the one before. Layers in between are called <em>hidden</em> because they are neither the input nor the answer. <a href="#ref-goodfellow-2016">Goodfellow, Bengio and Courville (2016, p. 164)</a> explain that these networks &ldquo;are called networks because they are typically represented by composing together many diﬀerent functions,&rdquo; and that &ldquo;these chain structures are the most commonly used structures of neural networks.&rdquo; A network, in other words, is a long chain of small calculations, each feeding the next.</p>
+  <figure style="margin:0">
+    <svg viewBox="0 0 640 256" width="100%" role="img" aria-labelledby="fig1t fig1d" style="max-width:640px;display:block">
+      <title id="fig1t">A small network</title>
+      <desc id="fig1d">Two inputs feed three hidden units, which feed one output. Solid arrows run forward; a dashed arrow beneath runs backward from the error to the weights.</desc>
+      <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#46424F">
+        <g stroke="#B9B4C4" stroke-width="1.2">
+          <line x1="90" y1="70" x2="290" y2="40"/><line x1="90" y1="70" x2="290" y2="100"/><line x1="90" y1="70" x2="290" y2="160"/>
+          <line x1="90" y1="140" x2="290" y2="40"/><line x1="90" y1="140" x2="290" y2="100"/><line x1="90" y1="140" x2="290" y2="160"/>
+          <line x1="290" y1="40" x2="470" y2="100"/><line x1="290" y1="100" x2="470" y2="100"/><line x1="290" y1="160" x2="470" y2="100"/>
+        </g>
+        <g fill="#fff" stroke="#522D80" stroke-width="1.8">
+          <circle cx="90" cy="70" r="16"/><circle cx="90" cy="140" r="16"/>
+          <circle cx="290" cy="40" r="16"/><circle cx="290" cy="100" r="16"/><circle cx="290" cy="160" r="16"/>
+          <circle cx="470" cy="100" r="18" fill="#ECE6F4"/>
+        </g>
+        <rect x="540" y="82" width="86" height="36" rx="8" fill="#FFF4DB" stroke="#B57600"/>
+        <text x="583" y="105" text-anchor="middle" fill="#8A5A00">error</text>
+        <line x1="488" y1="100" x2="540" y2="100" stroke="#B57600" stroke-width="1.5"/>
+        <text x="40" y="110" text-anchor="middle">inputs</text>
+        <text x="290" y="196" text-anchor="middle">hidden layer</text>
+        <text x="470" y="140" text-anchor="middle">output</text>
+        <text x="190" y="20" text-anchor="middle" font-size="12">each line is a weight</text>
+        <path d="M583 125 C 583 244, 110 244, 92 162" fill="none" stroke="#C24F00" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+        <text x="350" y="250" text-anchor="middle" fill="#C24F00" font-size="12">backpropagation: blame flows back to every weight</text>
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#C24F00"/></marker></defs>
+      </g>
+    </svg>
+    <figcaption class="dagger-legend">Figure 1. A network with two inputs, three hidden units and one output. Information flows forward along the weights. Backpropagation sends the error backward along the same lines.</figcaption>
+  </figure>
+</section>
+
+<section id="error">
+  <div><span class="sec-num">03</span><h2 class="sec-title">Measuring the error</h2></div>
+  <p>To learn, a network needs examples where the right answer is known, and a way to score how wrong it is on each. That score is called the <strong>cost</strong>, loss or objective. <a href="#ref-lecun-2015">LeCun, Bengio and Hinton (2015, p. 436)</a> put it this way: &ldquo;We compute an objective function that measures the error (or distance) between the output scores and the desired pattern of scores. The machine then modifies its internal adjustable parameters to reduce this error.&rdquo; Nielsen&rsquo;s version is a cost that &ldquo;becomes small&rdquo; precisely when the network&rsquo;s outputs match the desired ones for all the training examples (<a href="#ref-nielsen-ch1">Nielsen, 2015</a>).</p>
+  <p>Learning therefore has a precise meaning: find the weights that make the cost as small as possible.</p>
+</section>
+
+<section id="descent">
+  <div><span class="sec-num">04</span><h2 class="sec-title">Stepping downhill</h2></div>
+  <p>A network can have millions of weights, so trying combinations at random is hopeless. The standard approach, <strong>gradient descent</strong>, treats the cost as a landscape. Each weight is a direction you can move in, and the height is the error. From where you stand, you work out which way is downhill and take a small step that way, then repeat. Nielsen describes the procedure as repeatedly computing the slope &ldquo;and then to move in the opposite direction, &lsquo;falling down&rsquo; the slope of the valley,&rdquo; so that repeated steps &ldquo;roll down the hill&rdquo; and &ldquo;hopefully find a minimum of the cost function&rdquo; (<a href="#ref-nielsen-ch1">Nielsen, 2015</a>).</p>
+  <p>The slope in every direction at once is called the <strong>gradient</strong>. LeCun and colleagues give the most useful plain definition: for each weight, the gradient &ldquo;indicates by what amount the error would increase or decrease if the weight were increased by a tiny amount&rdquo; (<a href="#ref-lecun-2015">LeCun et al., 2015, p. 436</a>). In other words, the gradient is a list of <em>sensitivities</em>, one per weight, saying how much the error responds to that weight.</p>
+</section>
+
+<section id="backprop">
+  <div><span class="sec-num">05</span><h2 class="sec-title">Backpropagation: assigning the blame</h2></div>
+  <p>Knowing the sensitivity of the error to a weight deep inside the network is the hard part. A weight in the first layer affects the answer only through every later layer. This is an old problem. Writing in 1961, Marvin Minsky called it the difficulty of &ldquo;distributing credit for success of a complex strategy among the many decisions that were involved&rdquo; (<a href="#ref-minsky-1961">Minsky, 1961, p. 17</a>), and named it the <strong>credit-assignment problem</strong> in a section heading (p. 20).</p>
+  <p>Backpropagation solves it for networks. A 1986 paper by Rumelhart, Hinton and Williams describes a procedure that &ldquo;repeatedly adjusts the weights of the connections in the network so as to minimize a measure of the difference between the actual output vector of the net and the desired output vector,&rdquo; and in doing so the hidden units &ldquo;come to represent important features of the task domain&rdquo; (<a href="#ref-rumelhart-1986">Rumelhart et al., 1986, p. 533</a>; our held copy is a scan, and we have corrected its character-recognition errors in these quotations). The computation has a forward pass, which produces the answer, and a backward pass, &ldquo;which propagates derivatives from the top layer back to the bottom one&rdquo; (p. 534).</p>
+  <p>The backward pass rests on the <strong>chain rule</strong> from calculus. If the error depends on a unit&rsquo;s output, and that output depends on a weight, the sensitivity of the error to the weight is the product of the two sensitivities along the way. Backpropagation applies this rule one layer at a time, starting from the error and working back. As LeCun and colleagues put it, the method &ldquo;is nothing more than a practical application of the chain rule for derivatives&rdquo; (<a href="#ref-lecun-2015">LeCun et al., 2015, p. 438</a>). Goodfellow and colleagues add that it is &ldquo;an algorithm that computes the chain rule, with a speciﬁc order of operations that is highly eﬃcient&rdquo; (<a href="#ref-goodfellow-2016">Goodfellow et al., 2016, p. 201</a>).</p>
+  <p>That efficiency is the point. One backward sweep yields the sensitivity of the error to every weight at once, however many there are. Researchers in automatic differentiation describe backpropagation as &ldquo;only a special case&rdquo; of a general technique called reverse-mode differentiation, which &ldquo;propagates derivatives backward from a given output&rdquo; and is much cheaper than the forward-mode alternative when there are many inputs and one output to explain (<a href="#ref-baydin-2018">Baydin et al., 2018, pp. 12, 17</a>).</p>
+  <p>One common confusion is worth heading off. Backpropagation does not do the learning by itself. It only computes the sensitivities. Another procedure, such as gradient descent, uses them to change the weights. Goodfellow and colleagues are explicit: &ldquo;back-propagation refers only to the method for computing the gradient, while another algorithm, such as stochastic gradient descent, is used to perform learning using this gradient&rdquo; (<a href="#ref-goodfellow-2016">p. 200</a>). This distinction matters in Part II, because the curriculum version keeps the first idea (tracing sensitivity backward) and drops the second (automatic learning).</p>
+</section>
+
+<section id="example">
+  <div><span class="sec-num">06</span><h2 class="sec-title">A worked example</h2></div>
+  <p>Here is the whole cycle on the smallest possible network: one input, one hidden unit and one output. The numbers are ours, chosen to keep the arithmetic easy.</p>
+  <div class="stages">
+    <div class="stage"><b>Forward</b>Input <code>x = 1</code>. Hidden unit: weight <code>w1 = 2</code>, so it outputs <code>h = 2</code> (it passes positive values unchanged). Output: weight <code>w2 = 3</code>, so <code>y = 6</code>.</div>
+    <div class="stage"><b>Error</b>The right answer is 4. Using half the squared difference as the cost: <code>½ (6 &minus; 4)² = 2</code>.</div>
+    <div class="stage"><b>Backward</b>Error&rsquo;s sensitivity to <code>y</code>: <code>6 &minus; 4 = 2</code>. To <code>w2</code>: <code>2 &times; h = 4</code>. To <code>h</code>: <code>2 &times; w2 = 6</code>. To <code>w1</code>: <code>6 &times; x = 6</code>.</div>
+    <div class="stage"><b>Update</b>Step each weight against its sensitivity by 0.05 of it: <code>w2 = 3 &minus; 0.2 = 2.8</code>, <code>w1 = 2 &minus; 0.3 = 1.7</code>. Now <code>y = 4.76</code> and the cost falls from 2 to about 0.29.</div>
+  </div>
+  <p>Notice what the backward pass did. It started from a single number, how wrong the output was, and handed each weight its share of the blame, including <code>w1</code>, which never touches the output directly. Its share came through <code>w2</code>, by the chain rule. That is the whole idea. Real networks repeat it over millions of weights and many thousands of examples.</p>
+</section>
+
+<div class="part"><h2 class="part-title">Part II — The curriculum analogy</h2></div>
+
+<section id="mapping">
+  <div><span class="sec-num">07</span><h2 class="sec-title">Matching the parts</h2></div>
+  <p>A curriculum has a similar shape. Students move through a chain of courses. Each course takes what students bring in and sends them on with more. At the end, the program&rsquo;s stated objectives say where graduates should be. The table matches the parts. The right-hand column is the hypothesis, not established practice.</p>
+  <div class="table-box"><table>
+    <thead><tr><th>Neural network</th><th>Curriculum map in this tool</th></tr></thead>
+    <tbody>
+      <tr><td>Units and layers</td><td>Courses, in prerequisite order</td></tr>
+      <tr><td>Connections between units</td><td>Prerequisite links, tagged with the competency they carry</td></tr>
+      <tr><td>A unit&rsquo;s output</td><td>The depth (0&ndash;5 on Know, Understand, Do) students leave a course with</td></tr>
+      <tr><td>Desired output</td><td>The career target&rsquo;s required depth for each competency</td></tr>
+      <tr><td>Error</td><td>The shortfall: required depth minus the depth the path reaches</td></tr>
+      <tr><td>Gradient (sensitivity per weight)</td><td>For each course, how much a one-level change would shrink the shortfall</td></tr>
+      <tr><td>Backpropagation</td><td>Tracing the shortfall back through the prerequisite chain</td></tr>
+      <tr><td>Gradient descent (automatic learning)</td><td><em>No counterpart.</em> Faculty decide what to change, informed by the trace.</td></tr>
+    </tbody>
+  </table></div>
+  <p>The last row is the important one. In a network the trace drives an automatic update. In a curriculum it can only point. Changing a course is a decision for the people who teach it.</p>
+</section>
+
+<section id="backward">
+  <div><span class="sec-num">08</span><h2 class="sec-title">Curricula are already designed backward</h2></div>
+  <p>Working backward from outcomes is not new in curriculum design. Wiggins and McTighe&rsquo;s backward design asks planners to identify the desired results first, then decide what evidence would show them, and only then plan instruction. They &ldquo;call this three-stage approach to planning &lsquo;backward design&rsquo;&rdquo; and urge teachers to &ldquo;first &lsquo;think like an assessor&rsquo; before designing specific units and lessons&rdquo; (<a href="#ref-wiggins-2005">Wiggins &amp; McTighe, 2005, pp. 17&ndash;18</a>). Biggs&rsquo;s constructive alignment makes the related demand that teaching and assessment line up with the intended outcomes, which &ldquo;are thus used to systematically align the teaching methods and the assessment&rdquo; (<a href="#ref-biggs-1996">Biggs, 1996, p. 347</a>). The guidelines of a recent course-design method go further in the same direction: &ldquo;start with the final learning outcomes,&rdquo; then keep splitting skills into prerequisite skills until reaching skills &ldquo;that the students should have already mastered&rdquo; (<a href="#ref-bijl-2025">Bijl, 2025, p. 3</a>).</p>
+  <p>Treating a curriculum as a network is not new either. <a href="#ref-aldrich-2014">Aldrich (2014, p. 1)</a> treats &ldquo;the curriculum as a complex system with nodes representing courses and links between nodes the course prerequisites.&rdquo; Heileman and colleagues&rsquo; curricular analytics measures that network&rsquo;s shape. A course&rsquo;s <em>delay factor</em> is &ldquo;the number of vertices in the longest path&rdquo; through it, and its <em>blocking factor</em> reflects that a gateway course, if failed, blocks students &ldquo;from attempting many of the other courses&rdquo; (<a href="#ref-heileman-2018">Heileman et al., 2018, pp. 9, 11</a>). They keep this structural complexity separate from instructional complexity and treat the two as &ldquo;independent components&rdquo; (p. 7). In other words, these measures describe the wiring of a program, not how much skill flows along it.</p>
+  <p>What the backpropagation idea would add is the combination: a backward trace that runs over the prerequisite network and carries skill depth, not just structure. A literature search for this project in November 2026 found no published work that does this. That is our own search, not a cited finding, and absence of evidence in a search is weak evidence.</p>
+</section>
+
+<section id="trace">
+  <div><span class="sec-num">09</span><h2 class="sec-title">Tracing a shortfall: a small example</h2></div>
+  <p>The example below is made up, to show the mechanics. Three courses form a chain, A &rarr; B &rarr; C, and the career target requires students to graduate at <strong>Understand 4</strong> on one competency. Each course&rsquo;s profile says the depth students leave with, and each later course expects students to arrive at a certain depth.</p>
+  <figure style="margin:0">
+    <svg viewBox="0 0 640 150" width="100%" role="img" aria-labelledby="fig2t fig2d" style="max-width:640px;display:block">
+      <title id="fig2t">A three-course chain</title>
+      <desc id="fig2d">Course A leaves students at level 1. Course B expects arrival at 2 and leaves them at 3. Course C expects arrival at 3 and leaves them at 4. Required depth at graduation is 4.</desc>
+      <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#1D1B22">
+        <g fill="#fff" stroke="#522D80" stroke-width="1.6">
+          <rect x="20" y="40" width="130" height="64" rx="12"/><rect x="250" y="40" width="130" height="64" rx="12"/><rect x="480" y="40" width="130" height="64" rx="12"/>
+        </g>
+        <text x="85" y="66" text-anchor="middle" font-weight="600">Course A</text><text x="85" y="88" text-anchor="middle" fill="#46424F">leaves at U1</text>
+        <text x="315" y="66" text-anchor="middle" font-weight="600">Course B</text><text x="315" y="88" text-anchor="middle" fill="#46424F">leaves at U3</text>
+        <text x="545" y="66" text-anchor="middle" font-weight="600">Course C</text><text x="545" y="88" text-anchor="middle" fill="#46424F">leaves at U4</text>
+        <g stroke="#46424F" stroke-width="1.4"><line x1="150" y1="72" x2="244" y2="72"/><line x1="380" y1="72" x2="474" y2="72"/></g>
+        <path d="M244 72l-8-5v10z M474 72l-8-5v10z" fill="#46424F"/>
+        <text x="197" y="62" text-anchor="middle" font-size="12" fill="#C24F00">expects U2</text>
+        <text x="427" y="62" text-anchor="middle" font-size="12" fill="#C24F00">expects U3</text>
+        <text x="545" y="130" text-anchor="middle" font-size="12" fill="#46424F">required at graduation: U4</text>
+      </g>
+    </svg>
+    <figcaption class="dagger-legend">Figure 2. A made-up chain. Numbers are Understand levels on the 0&ndash;5 scale.</figcaption>
+  </figure>
+  <p><strong>The plain view finds no problem.</strong> The tool&rsquo;s builder combines depths along a path by taking the highest level any course reaches, and competency levels do not fade. Course C reaches U4, so the requirement looks met.</p>
+  <p><strong>The chain view does.</strong> Course A leaves students at U1, but Course B expects them at U2. If students who arrive underprepared get less out of a course, B delivers less than its profile shows, and so in turn does C. How much less is an assumption. This page calls it the <em>gate</em>, and the test tries three versions:</p>
+  <div class="table-box"><table>
+    <thead><tr><th>Gate assumption</th><th>What B delivers</th><th>What C delivers</th><th class="num">Reached</th><th class="num">Shortfall</th></tr></thead>
+    <tbody>
+      <tr><td>No effect: courses deliver their profile regardless</td><td>U3</td><td>U4</td><td class="num">U4</td><td class="num">none</td></tr>
+      <tr><td>One for one: one level less per level short on arrival</td><td>U2 (one short)</td><td>U3 (one short)</td><td class="num">U3</td><td class="num">1</td></tr>
+      <tr><td>Total: nothing above the arrival level when short</td><td>U1</td><td>U1</td><td class="num">U1</td><td class="num">3</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Tracing it back.</strong> Now ask the backpropagation question: which one-level change to a course&rsquo;s depth closes the gap? Under the one-for-one gate, raising any of the three courses by one level works. Raising A to U2 lets B and C deliver in full. Raising B or C makes up the lost level directly. Under the total gate, only raising A works, because B and C still receive underprepared students. So the one fix that holds under both assumptions is in <strong>Course A</strong>, the course with the <em>lowest</em> depth on the path. A view that looks only at which course reaches the highest level would never point there.</p>
+  <p>The example also shows the method&rsquo;s weak spot. The answer depends on the gate, and under the first assumption there is nothing to fix. That is why the planned test asks faculty to say what each course expects students to arrive with, and counts a recommendation only if it survives more than one gate assumption.</p>
+</section>
+
+<section id="whatif">
+  <div><span class="sec-num">10</span><h2 class="sec-title">Why what-ifs, not gradients</h2></div>
+  <p>Backpropagation needs smooth slopes: a tiny change to a weight must produce a tiny, measurable change in the error. A curriculum map has neither. Depths are whole levels from 0 to 5, so there is no &ldquo;tiny amount&rdquo; to change. And the builder combines a path by taking the highest level any course reaches. With the highest-level rule, raising any course that is not already the highest changes nothing, so its slope is zero. Only the top course would ever get credit. That is our reading of the rule, illustrated by the plain view in &sect;9, where Course A&rsquo;s weakness is invisible.</p>
+  <p>The way around this is simpler than calculus. A curriculum is small compared with a neural network, so a computer can try every one-level change to each course&rsquo;s depth, for every competency and dimension on a path, recompute the result, and record which changes close which shortfall. It can then list every <em>smallest set</em> of changes that closes a shortfall, rather than naming a single winner. This keeps the backward question that backpropagation answers (which upstream setting is responsible?) but answers it exactly, by trying each change, instead of with slopes.</p>
+  <p>Two checks guard against false confidence. Each proposed fix is rerun under all three gate assumptions. And each course&rsquo;s depth is moved up or down one level, one at a time, to see whether the recommendation survives scoring noise. A fix that flips under these small changes is reported as fragile, not as an answer.</p>
+</section>
+
+<div class="part"><h2 class="part-title">Part III — Requirements and shortfalls</h2></div>
+
+<section id="requirements">
+  <div><span class="sec-num">11</span><h2 class="sec-title">What the method requires</h2></div>
+  <p>The trace can only be as good as its inputs. Five are needed. The status column reflects the tool&rsquo;s own data as of 2026-11-24.</p>
+  <div class="table-box"><table>
+    <thead><tr><th>Requirement</th><th>Why it is needed</th><th>Status today</th></tr></thead>
+    <tbody>
+      <tr><td>Stated objectives as required depths</td><td>The &ldquo;desired output.&rdquo; Without a required K/U/D level per competency there is no shortfall to trace.</td><td>Not yet entered for any career target. The department has chosen to confirm career-to-occupation links before setting depths.</td></tr>
+      <tr><td>Skill-tagged prerequisite links, with the depth each later course expects on arrival</td><td>The &ldquo;connections&rdquo; the trace runs along. The course catalog lists prerequisites but not which skill each one carries or at what level.</td><td>None recorded in the tool. Catalog prerequisites (without skills) are loaded.</td></tr>
+      <tr><td>Captured depths for every course on the path</td><td>The &ldquo;unit outputs.&rdquo; An uncaptured course is a hole in the chain.</td><td>21 of 37 GC courses have a confirmed capture.</td></tr>
+      <tr><td>An agreed gate assumption</td><td>How much an underprepared arrival reduces what a course delivers. The answer depends on it (&sect;9).</td><td>No evidence either way; the test brackets it with three versions.</td></tr>
+      <tr><td>Faculty judgment</td><td>To check whether the trace points at plausible courses, and to decide what, if anything, to change.</td><td>Two faculty who teach on the test path have been asked to take part.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="shortfalls">
+  <div><span class="sec-num">12</span><h2 class="sec-title">Where the analogy falls short</h2></div>
+  <h3>There is nothing to learn from</h3>
+  <p>A neural network learns its weights from examples where the right answer is known, usually a great many. LeCun and colleagues note that a typical deep-learning system may have &ldquo;hundreds of millions of labelled examples with which to train the machine&rdquo; (<a href="#ref-lecun-2015">LeCun et al., 2015, p. 436</a>). Education models that do learn from student data use large datasets too. Deep knowledge tracing, which applies &ldquo;flexible recurrent neural networks&rdquo; to students&rsquo; exercise histories, was demonstrated on several datasets, the largest of them &ldquo;1.4 million exercises completed by 47,495 students&rdquo; (<a href="#ref-piech-2015">Piech et al., 2015, pp. 1, 6</a>). A department has a few dozen courses and no measured record of each graduate&rsquo;s depth per competency. The curriculum version is therefore a what-if calculator built on faculty judgments and capture scores, not a model that learns from outcomes.</p>
+  <h3>Learned models do not reliably reveal separate skills</h3>
+  <p>Even where enough data exists, a more complex learned model is not automatically better. When Bayesian knowledge tracing, a much simpler model, was given extra flexibility, it &ldquo;achieves a level of performance indistinguishable from that of DKT&rdquo; (<a href="#ref-khajah-2016">Khajah et al., 2016, p. 1</a>). Nor do a learned model&rsquo;s internals necessarily mean what one hopes. One study concluded that &ldquo;instead of tracking each skill through time, DKT is more likely to learn an &lsquo;ability&rsquo; model&rdquo; (<a href="#ref-ding-2021">Ding &amp; Larson, 2021, p. 1</a>). A curriculum trace that claims to say which course builds which skill should be wary of borrowing a learned model for that job.</p>
+  <h3>Links may carry less than the map assumes</h3>
+  <p>The trace assumes that what a student takes out of one course is available in the next. The research on transfer of learning warns that &ldquo;very often the kinds of transfer hoped for do not occur&rdquo; (<a href="#ref-perkins-salomon-1992">Perkins &amp; Salomon, 1992, p. 4 of 11</a>), and distinguishes near transfer, &ldquo;between very similar contexts,&rdquo; from far transfer, between contexts that &ldquo;seem remote and alien to one another.&rdquo; Skills also fade. A meta-analysis of skill retention found &ldquo;substantial skill loss with nonpractice or nonuse&rdquo;; its abstract summarizes effect sizes ranging &ldquo;from an effect size (d) of -0.01 immediately after training to a d of -1.4 after more than 365 days of nonuse&rdquo; (<a href="#ref-arthur-1998">Arthur et al., 1998, p. 57</a>). The tool&rsquo;s builder currently treats competency levels as never fading, a deliberate department choice. The first test keeps that choice, and an optional second run can apply a fading estimate.</p>
+  <h3>Grade data measures effects on grades, not skill transfer</h3>
+  <p>One could try to measure links from transcripts instead of asking faculty. Kaur, Polyzou and Karypis ask &ldquo;If a student takes course X, will it cause them to do well in a subsequent course Y?&rdquo; and estimate the answer with matching and regression on grades. They validated their results against &ldquo;the existing prerequisite structure&rdquo; and also &ldquo;identify additional courses that do not appear in the prerequisite structure&rdquo; (<a href="#ref-kaur-2019">Kaur et al., 2019, p. 1</a>). That is useful evidence about which courses matter, but it measures effects on grades, not the depth of a specific skill, which is what the trace needs.</p>
+  <h3>The inputs are soft</h3>
+  <p>Capture depths are scored from course materials and instructor interviews with AI help, and a one-level difference can be noise. Required depths and expected arrival depths will be faculty judgments. The robustness checks in &sect;10 exist for this reason. A trace built on soft numbers should be read as &ldquo;look here first,&rdquo; never as a verdict.</p>
+  <h3>Structure is not quality</h3>
+  <p>A trace can say where a chain is weakest. It cannot say why, or whether the fix is worth its cost in time, staffing or other content. Curricular analytics draws the same line between a program&rsquo;s structure and its instruction (<a href="#ref-heileman-2018">Heileman et al., 2018, p. 7</a>). Any change remains a curriculum decision.</p>
+</section>
+
+<section id="test">
+  <div><span class="sec-num">13</span><h2 class="sec-title">How it will be tested</h2></div>
+  <p>The department is setting up a small, honest test before building anything into the tool. It uses one career target, Production &amp; Operations, seven competencies, and the courses on that target&rsquo;s prerequisite path.</p>
+  <ol>
+    <li><strong>Sealed predictions.</strong> Two faculty who teach on the path each write down, on their own and before seeing any results, which competencies they expect to fall short at graduation and which course they would change first and second.</li>
+    <li><strong>Worksheet.</strong> Each supplies the required depths and, for each prerequisite link, whether it really carries that competency and at what depth students should arrive. The two are kept separate, not averaged. Nothing they enter changes the live tool.</li>
+    <li><strong>Trace.</strong> A read-only script runs the what-ifs in &sect;10 under all three gate assumptions and the one-level robustness checks.</li>
+    <li><strong>Compare.</strong> The faculty open their sealed predictions next to the results.</li>
+  </ol>
+  <p><strong>It counts as a success</strong> if the traced shortfalls largely match what faculty predicted, the leading fix holds across gate assumptions and small score changes, the gate changes the answer at least once compared with the plain highest-level view, and faculty find at least one result they did not predict but judge plausible. <strong>It counts as a failure</strong> if recommendations flip under small changes, if most shortfalls trace to uncaptured courses, or if faculty cannot tell the output from what the builder already shows. Either way, the result will be recorded and reported.</p>
+  <p>Two courses on the test path do not yet have a confirmed capture. Results that trace to them will be marked unverified.</p>
+</section>
+
+<section id="references">
+  <div><h2 class="sec-title">References</h2></div>
+  <p class="dagger-legend">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Every other entry is held, and each quotation above is recorded with its page in the page&rsquo;s citation ledger.</p>
+  <ol class="refs">
+    <li id="ref-aldrich-2014">Aldrich, P. R. (2014). The curriculum prerequisite network: A tool for visualizing and analyzing academic curricula. arXiv:1408.5340. (&sect;8.)</li>
+    <li id="ref-arthur-1998">Arthur, W., Jr., Bennett, W., Jr., Stanush, P. L., &amp; McNelly, T. L. (1998). Factors that influence skill decay and retention: A quantitative review and analysis. <em>Human Performance</em>, 11(1), 57&ndash;101. (&sect;12.)</li>
+    <li id="ref-baydin-2018">Baydin, A. G., Pearlmutter, B. A., Radul, A. A., &amp; Siskind, J. M. (2018). Automatic differentiation in machine learning: A survey. <em>Journal of Machine Learning Research</em>, 18(153), 1&ndash;43. Held as the arXiv version (arXiv:1502.05767). (&sect;5.)</li>
+    <li id="ref-biggs-1996">Biggs, J. (1996). Enhancing teaching through constructive alignment. <em>Higher Education</em>, 32(3), 347&ndash;364. (&sect;8.)</li>
+    <li id="ref-bijl-2025">Bijl, H. (2025). Structuring competency-based courses through skill trees. arXiv:2504.16966 (Koli Calling 2025). Page given as the PDF page. (&sect;8.)</li>
+    <li id="ref-ding-2021">Ding, X., &amp; Larson, E. C. (2021). On the interpretability of deep learning based models for knowledge tracing. arXiv:2101.11335. Page given as the PDF page. (&sect;12.)</li>
+    <li id="ref-goodfellow-2016">Goodfellow, I., Bengio, Y., &amp; Courville, A. (2016). Deep feedforward networks. In <em>Deep Learning</em> (ch. 6, pp. 164&ndash;223). MIT Press. Held as the authors&rsquo; web edition of the chapter. (&sect;&sect;2, 5.)</li>
+    <li id="ref-heileman-2018">Heileman, G. L., Abdallah, C. T., Slim, A., &amp; Hickman, M. (2018). Curricular analytics: A framework for quantifying the impact of curricular reforms and pedagogical innovations. arXiv:1811.09676. Pages given as PDF pages. (&sect;&sect;8, 12.)</li>
+    <li id="ref-kaur-2019">Kaur, P., Polyzou, A., &amp; Karypis, G. (2019). Causal inference in higher education: Building better curriculums. arXiv:1906.04698. (&sect;12.)</li>
+    <li id="ref-khajah-2016">Khajah, M., Lindsey, R. V., &amp; Mozer, M. C. (2016). How deep is knowledge tracing? <em>Proceedings of the 9th International Conference on Educational Data Mining</em>; arXiv:1604.02416. Held as the arXiv version; page given as the PDF page. (&sect;12.)</li>
+    <li id="ref-lecun-2015">LeCun, Y., Bengio, Y., &amp; Hinton, G. (2015). Deep learning. <em>Nature</em>, 521(7553), 436&ndash;444. (&sect;&sect;3, 4, 5, 12.)</li>
+    <li id="ref-minsky-1961">Minsky, M. (1961). Steps toward artificial intelligence. <em>Proceedings of the IRE</em>, 49(1), 8&ndash;30. (&sect;5.)</li>
+    <li id="ref-nielsen-ch1">Nielsen, M. A. (2015). <em>Neural Networks and Deep Learning</em>, ch. 1: Using neural nets to recognize handwritten digits. Determination Press. Online book without page numbers; quotations are from the sections on sigmoid neurons and on learning with gradient descent. (&sect;&sect;2&ndash;4.)</li>
+    <li id="ref-perkins-salomon-1992">Perkins, D. N., &amp; Salomon, G. (1992). Transfer of learning. In <em>International Encyclopedia of Education</em> (2nd ed.). Pergamon Press. Held as an 11-page printout dated September 2, 1992; pages refer to it. (&sect;12.)</li>
+    <li id="ref-piech-2015">Piech, C., Spencer, J., Huang, J., Ganguli, S., Sahami, M., Guibas, L., &amp; Sohl-Dickstein, J. (2015). Deep knowledge tracing. <em>Advances in Neural Information Processing Systems 28</em>; arXiv:1506.05908. Held as the arXiv version; pages given as PDF pages. (&sect;12.)</li>
+    <li id="ref-rumelhart-1986">Rumelhart, D. E., Hinton, G. E., &amp; Williams, R. J. (1986). Learning representations by back-propagating errors. <em>Nature</em>, 323(6088), 533&ndash;536. (&sect;5.)</li>
+    <li id="ref-wiggins-2005">Wiggins, G., &amp; McTighe, J. (2005). <em>Understanding by Design</em> (Expanded 2nd ed.). ASCD. (&sect;8.)</li>
+  </ol>
+</section>
+
+<div class="doc-foot">
+  GC Curriculum Tool · Backpropagation and the Curriculum · Companion to the
+  <a href="./background.html">KUD+ Background</a> (&sect;15) and the
+  <a href="./curriculum-map-deep-dive.html">Curriculum maps deep dive</a>.
+</div>
+  </article>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap"><span>Department of Graphic Communications · Clemson University</span><span>Updated Nov 2026</span></div>
+</footer>
+
+<script>
+/* Marks the contents link of the section in view. Without JS the contents column still works as plain links. */
+(() => {
+  const toc = document.querySelector('.toc');
+  const links = [...toc.querySelectorAll('a[href^="#"]')];
+  const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+  const secs = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  if (!('IntersectionObserver' in window) || !secs.length) return;
+  const inView = new Set();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+    const cur = secs.find((s) => inView.has(s.id));
+    if (!cur) return;
+    const a = byId.get(cur.id);
+    links.forEach((l) => l.removeAttribute('aria-current'));
+    a.setAttribute('aria-current', 'true');
+    // When the sticky column is taller than the screen, keep the marked link visible inside it.
+    if (toc.scrollHeight > toc.clientHeight && (a.offsetTop < toc.scrollTop || a.offsetTop + a.offsetHeight > toc.scrollTop + toc.clientHeight)) {
+      toc.scrollTop = a.offsetTop - toc.clientHeight / 2;
+    }
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  secs.forEach((s) => io.observe(s));
+})();
+</script>
+</body>
+</html>

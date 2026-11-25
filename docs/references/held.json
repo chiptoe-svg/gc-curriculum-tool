@@ -575,6 +575,59 @@
       "ref-turaev-2026": { "file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf", "note": "arXiv:2608.12356v1, acquired 2026-11-15 from arXiv" },
       "ref-veys-2026": { "file": "pdfs:veys-2026-workrb-grading-unannotated.pdf", "note": "arXiv:2611.03525v1, acquired 2026-11-15 from arXiv" },
       "ref-wiggins-2005": { "file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf" }
+    },
+    "backpropagation-curriculum.html": {
+      "ref-aldrich-2014": {
+        "file": "pdfs:aldrich-2014-curriculum-prerequisite-network.pdf"
+      },
+      "ref-arthur-1998": {
+        "file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf"
+      },
+      "ref-baydin-2018": {
+        "file": "pdfs:baydin-2018-automatic-differentiation-survey.pdf"
+      },
+      "ref-biggs-1996": {
+        "file": "pdfs:biggs-1996-constructive-alignment.pdf"
+      },
+      "ref-bijl-2025": {
+        "file": "pdfs:bijl-2025-skill-trees.pdf"
+      },
+      "ref-ding-2021": {
+        "file": "pdfs:ding-larson-2021-dkt-general-ability.pdf"
+      },
+      "ref-goodfellow-2016": {
+        "file": "pdfs:web/goodfellow-2016-dl-ch6-mlp.txt"
+      },
+      "ref-heileman-2018": {
+        "file": "pdfs:heileman-2018-curricular-analytics.pdf"
+      },
+      "ref-kaur-2019": {
+        "file": "pdfs:kaur-polyzou-2019-causal-course-effect.pdf"
+      },
+      "ref-khajah-2016": {
+        "file": "pdfs:khajah-2016-how-deep-is-knowledge-tracing.pdf"
+      },
+      "ref-lecun-2015": {
+        "file": "pdfs:lecun-2015-deep-learning-nature.pdf"
+      },
+      "ref-minsky-1961": {
+        "file": "pdfs:minsky-1961-steps-toward-ai.pdf"
+      },
+      "ref-nielsen-ch1": {
+        "file": "pdfs:web/nielsen-2015-nn-dl-ch1.html"
+      },
+      "ref-perkins-salomon-1992": {
+        "file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf"
+      },
+      "ref-piech-2015": {
+        "file": "pdfs:piech-2015-deep-knowledge-tracing.pdf"
+      },
+      "ref-rumelhart-1986": {
+        "file": "pdfs:rumelhart-1986-backprop-nature-ocr.pdf"
+      },
+      "ref-wiggins-2005": {
+        "file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf"
+      }
     }
   }
 }
