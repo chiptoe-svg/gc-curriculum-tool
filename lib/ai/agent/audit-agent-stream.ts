@@ -19,7 +19,6 @@ import {
 import { AiCreditsExhaustedError } from '@/lib/ai/credit-status';
 import { parseInterviewReply } from './interview-controls';
 import { buildAgentCall, captureRetrievedChunks, checkTurnCitations, persistAssistantTurn, stagedSessionFor, type AuditAgentInput } from './audit-agent';
-import { streamStagedInterview } from '@/lib/capture/staged/staged-turn';
 
 export type AuditStreamEvent =
   | { kind: 'session'; sessionId: string }
@@ -34,8 +33,16 @@ export async function* streamAuditAgent(
   yield { kind: 'session', sessionId: input.sessionId };
 
   // Staged interviews (plan 2026-11-25) only for sessions with a capture_interview_sessions row.
-  const staged = await stagedSessionFor(input.sessionId);
+  let staged;
+  try {
+    staged = await stagedSessionFor(input.sessionId, input.courseCode);
+  } catch (err) {
+    yield { kind: 'error', message: err instanceof Error ? err.message : String(err) };
+    return;
+  }
   if (staged) {
+    // Loaded only for staged sessions, so the classic path never loads the staged (Pi) modules.
+    const { streamStagedInterview } = await import('@/lib/capture/staged/staged-turn');
     yield* streamStagedInterview(input, staged);
     return;
   }

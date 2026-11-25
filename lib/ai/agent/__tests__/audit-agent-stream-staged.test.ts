@@ -1,7 +1,7 @@
 /** Task 6 routing: only sessions with a capture_interview_sessions row take the staged path. */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const h = vi.hoisted(() => ({ row: null as null | Record<string, unknown>, lookupError: null as Error | null }));
+const h = vi.hoisted(() => ({ row: null as null | Record<string, unknown>, lookupError: null as Error | null, stagedLoaded: false }));
 const reply = { finding: 'f', question: 'q?', citations: [], readiness: { score: 1, covered: [], remaining: [], good_enough_to_generate: false } };
 
 vi.mock('@/lib/db/capture-interview-sessions-queries', () => ({
@@ -19,7 +19,7 @@ const staged = vi.hoisted(() => ({
   streamStagedInterview: vi.fn(async function* () { yield { kind: 'final', response: { ...reply, finding: 'staged' }, toolCallsUsed: 0 }; }),
   runStagedInterview: vi.fn(async () => ({ response: { ...reply, finding: 'staged' }, toolCallsUsed: 0 })),
 }));
-vi.mock('@/lib/capture/staged/staged-turn', () => staged);
+vi.mock('@/lib/capture/staged/staged-turn', () => { h.stagedLoaded = true; return staged; });
 // runAuditAgent calls its own buildAgentCall (not the mocked export): its first read marks the classic path.
 const getSessionMessages = vi.hoisted(() => vi.fn(async () => { throw new Error('classic-path'); }));
 vi.mock('@/lib/db/capture-messages-queries', () => ({ getSessionMessages, appendMessage: vi.fn(), listPriorSessionSummaries: vi.fn() }));
@@ -46,8 +46,9 @@ beforeEach(() => {
 });
 
 describe('interview routing', () => {
-  it('classic session unchanged: no row → buildAgentCall runs, the staged path does not', async () => {
+  it('classic session unchanged: no row → buildAgentCall runs, the staged path does not (and is never loaded)', async () => {
     const ev = await run();
+    expect(h.stagedLoaded).toBe(false);
     expect(ev.map(e => e.kind)).toEqual(['session', 'final']);
     expect(ev[1]!.response!.finding).toBe('f');
     expect(buildAgentCall).toHaveBeenCalledOnce();
@@ -55,7 +56,7 @@ describe('interview routing', () => {
   });
 
   it('a staged row → the staged stream (with finish), never buildAgentCall', async () => {
-    h.row = { sessionId: 's', map: null, mapStatus: 'none' };
+    h.row = { sessionId: 's', courseCode: 'GC 4060', map: null, mapStatus: 'none' };
     const ev = await run();
     expect(ev.map(e => e.kind)).toEqual(['session', 'final']);
     expect(ev[1]!.response!.finding).toBe('staged');
@@ -66,11 +67,23 @@ describe('interview routing', () => {
   it('runAuditAgent routes the same way', async () => {
     await expect(runAuditAgent(input)).rejects.toThrow('classic-path');
     expect(staged.runStagedInterview).not.toHaveBeenCalled();
-    h.row = { sessionId: 's', map: null, mapStatus: 'none' };
+    h.row = { sessionId: 's', courseCode: 'GC 4060', map: null, mapStatus: 'none' };
     vi.clearAllMocks();
     expect((await runAuditAgent(input)).response.finding).toBe('staged');
     expect(staged.runStagedInterview).toHaveBeenCalledWith(expect.objectContaining({ finish: true }), h.row);
     expect(getSessionMessages).not.toHaveBeenCalled();
+  });
+
+  it("another course's staged session is refused on both entry points, never run as classic", async () => {
+    h.row = { sessionId: 's', courseCode: 'GC 9999', map: null, mapStatus: 'none' };
+    const ev = await run();
+    expect(ev.map(e => e.kind)).toEqual(['session', 'error']);
+    expect((ev[1] as { message?: string }).message).toBe('session does not belong to this course');
+    await expect(runAuditAgent(input)).rejects.toThrow('session does not belong to this course');
+    expect(buildAgentCall).not.toHaveBeenCalled();
+    expect(getSessionMessages).not.toHaveBeenCalled();
+    expect(staged.streamStagedInterview).not.toHaveBeenCalled();
+    expect(staged.runStagedInterview).not.toHaveBeenCalled();
   });
 
   it('a failed lookup is logged and the turn takes the classic path', async () => {

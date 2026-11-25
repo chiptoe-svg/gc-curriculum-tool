@@ -321,6 +321,86 @@ describe('runStagedTurn', () => {
   });
 });
 
+/** Seed stored assistant rows for the given asked turns (no tool calls). */
+function seedAsked(events: LedgerEvent[]) {
+  for (const ev of events) {
+    if (ev.type !== 'asked') continue;
+    const i = db.rows.length;
+    db.rows.push({
+      id: `seed${i}`, courseCode: 'GC 4060', sessionId: SID, turnIndex: i, role: 'assistant', toolCalls: null, createdAt: new Date(db.clock++),
+      content: JSON.stringify({ finding: 'f', question: 'q', citations: [], readiness: { score: 0, covered: [], remaining: [], good_enough_to_generate: false }, staged: { stage: ev.turn.stage, stageTitle: 't', stageProgress: [], questionsAsked: 0, cap: 20, slotAsked: ev.turn.slot, kind: ev.turn.kind } }),
+    });
+  }
+}
+
+describe('fix round 1', () => {
+  it("refuses a session row from another course and stores nothing", async () => {
+    const other = { ...session, courseCode: 'GC 9999' };
+    steps.push({ submit: { slot_asked: 'outcomes', kind: 'question' } });
+    await expect(runStagedTurn({ sessionId: SID, courseCode: 'GC 4060', auditMode: 'full', userMessage: 'hi' }, other)).rejects.toThrow('session does not belong to this course');
+    const ev: Array<{ kind: string; message?: string }> = [];
+    for await (const e of streamStagedInterview({ sessionId: SID, courseCode: 'GC 4060', auditMode: 'full', userMessage: 'hi' }, other)) ev.push(e);
+    expect(ev).toEqual([{ kind: 'error', message: 'session does not belong to this course' }]);
+    expect(db.rows).toHaveLength(0);
+    expect(runPiTurn).not.toHaveBeenCalled();
+  });
+
+  it('repeat-accepted at the cap: the question is emptied and not counted', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    seedAsked(exhaust(MAP, 20));
+    steps.push({ submit: { question: 'One more thing: how do they revise?', slot_asked: 'revision', kind: 'question' } });
+    const t = await turn('Done?');
+    expect(t.response.question).toBe('');
+    expect(t.response.staged).toMatchObject({ kind: 'answer_only', questionsAsked: 20 });
+    expect(JSON.parse(assistantRows().at(-1)!.content!).question).toBe('');
+  });
+
+  it("the model's answer_only with a question is sent back while the interview runs", async () => {
+    steps.push({ submit: { slot_asked: 'outcomes', kind: 'question' } });
+    await turn();
+    const v = calls[0]!.submit.parse({ say: 's', question: 'And how do they revise?', citations: [], slot_asked: 'outcomes', kind: 'answer_only' });
+    expect(calls[0]!.checkSubmit!(v)).toBe('answer_only turns carry no question; put the question in a counted turn');
+    const plain = calls[0]!.submit.parse({ say: 's', question: '', citations: [], slot_asked: 'outcomes', kind: 'answer_only' });
+    expect(calls[0]!.checkSubmit!(plain)).toBeNull();
+  });
+
+  it('after done, answer_only is accepted with the question emptied', async () => {
+    seedAsked(exhaust(MAP, 20));
+    steps.push({ submit: { say: 'Thanks!', question: 'Anything else?', slot_asked: 'recap', kind: 'answer_only' } });
+    const t = await turn('Bye.');
+    expect(calls[0]!.checkSubmit!(calls[0]!.submit.parse({ say: 's', question: 'Anything else?', citations: [], slot_asked: 'recap', kind: 'answer_only' }))).toBeNull();
+    expect(t.response.finding).toBe('Thanks!');
+    expect(t.response.question).toBe('');
+    expect(JSON.parse(assistantRows().at(-1)!.content!).question).toBe('');
+  });
+
+  it('record_answer citations are filtered with the same allowed set; the record is kept', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    steps.push({ submit: { slot_asked: 'outcomes', kind: 'question' } });
+    await turn();
+    steps.push({
+      calls: [['record_answer', {
+        slot: 'outcomes', status: 'filled_by_instructor', summary: 'Mount plates.',
+        citations: [
+          { type: 'chunk', chunkId: 'chunk-map-1', messageId: null, excerpt: 'map' },
+          { type: 'chunk', chunkId: 'chunk-invented', messageId: null, excerpt: 'invented' },
+          { type: 'instructor', chunkId: null, messageId: 'm2', excerpt: 'They mount plates' },
+          { type: 'instructor', chunkId: null, messageId: 'user_3', excerpt: 'nothing like this was said' },
+        ],
+      }]],
+      submit: { slot_asked: 'anchors', kind: 'question' },
+    });
+    const t = await turn('They mount plates every week.');
+    const want = [
+      { type: 'chunk', chunkId: 'chunk-map-1', messageId: null, excerpt: 'map' },
+      { type: 'instructor', chunkId: null, messageId: 'm2', excerpt: 'They mount plates' },
+    ];
+    expect(assistantRows().at(-1)!.toolCalls![0]!.args.citations).toEqual(want);
+    expect(t.ledger.slots.outcomes?.citations).toEqual(want);
+    expect(storedLedger()).toEqual(t.ledger);
+  });
+});
+
 describe('streamStagedInterview', () => {
   it('emits tool-start per tool call then final, and persists the turn', async () => {
     steps.push({ calls: [['search_materials', { query: 'plate' }]], submit: { slot_asked: 'outcomes', kind: 'question' } });
