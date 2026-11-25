@@ -39,4 +39,10 @@ describe('compareRuns', () => {
     expect(r.withinNoise).toEqual({ k: 2, u: 2, d: 2 });
     expect(r.meanShift).toEqual({ k: 0, u: 0, d: 0 });
   });
+  it('reports how many runs and courses were compared, so empty input cannot pass', () => {
+    const r = compareRuns([], []);
+    expect(r.compared).toEqual({ oldRuns: 0, newRuns: 0, courses: 0 });
+    const r2 = compareRuns([run('A', 1, 'old', base)], [run('A', 1, 'new', base), run('B', 1, 'new', base)]);
+    expect(r2.compared).toEqual({ oldRuns: 1, newRuns: 2, courses: 1 });
+  });
 });

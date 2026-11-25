@@ -16,6 +16,8 @@ export interface DriftReport {
   between: Record<Dim, number>;
   meanShift: Record<Dim, number>;
   bloomShare: { old: number; new: number };
+  /** How much was compared; a report over zero courses is not evidence of anything. */
+  compared: { oldRuns: number; newRuns: number; courses: number };
 }
 
 const DIMS: Dim[] = ['k', 'u', 'd'];
@@ -75,5 +77,9 @@ export function compareRuns(oldRuns: DriftRun[], newRuns: DriftRun[]): DriftRepo
     between[dim] = r3(mean(betw));
     meanShift[dim] = r3(mean(shift));
   }
-  return { withinNoise, between, meanShift, bloomShare: { old: r3(bloomShare(oldRuns)), new: r3(bloomShare(newRuns)) } };
+  return {
+    withinNoise, between, meanShift,
+    bloomShare: { old: r3(bloomShare(oldRuns)), new: r3(bloomShare(newRuns)) },
+    compared: { oldRuns: oldRuns.length, newRuns: newRuns.length, courses: courses.length },
+  };
 }
