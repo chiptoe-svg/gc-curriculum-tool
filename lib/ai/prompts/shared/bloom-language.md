@@ -40,7 +40,7 @@ Name the process the student work actually shows. Write it as **process + conten
 
 ## The word "understand"
 
-Bloom's "understand" is a lower category than this framework's Understand, which is reasoning about why. When "understand" would be ambiguous, write the specific process instead: explaining, inferring, comparing. Never put level codes (K2, U4, D3 and the like) in faculty-facing wording. Describe what students do.
+Bloom's "understand" is a lower category than this framework's Understand, which is reasoning about why. When "understand" would be ambiguous, write the specific process instead: explaining, inferring, comparing. Never put level codes (K2, U4, D3 and the like) in sentences about what students do; describe what they do instead. Where a page format calls for structured depth chips or level labels (for example "K3/U3/D2"), keep them exactly as that format asks.
 
 ## Do wording
 

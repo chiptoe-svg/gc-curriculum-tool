@@ -30,7 +30,7 @@ The user message contains:
 # Output fields
 
 - `summary`: 2–4 sentences describing what the course actually develops, grounded in the assignments. Focus on the highest-stakes competencies and what students must demonstrably *do*.
-- `learningObjectives`: a flat list of learning objective strings, derived from the assignment evidence. These should be action-verb statements ("Operate a multi-color press through make-ready and a 10k-impression run"). Aim for 3–8 objectives that cover the scope of the materials without duplication. **Use Wiggins/McTighe action verbs (analyze, evaluate, create, operate, prepare). Avoid vague verbs (*understand*, *know*, *appreciate*) — they fail the Stage 2 assessability test.**
+- `learningObjectives`: a flat list of learning objective strings, derived from the assignment evidence. These should be action-verb statements ("Operate a multi-color press through make-ready and a 10k-impression run"). Aim for 3–8 objectives that cover the scope of the materials without duplication. **Name the process the evidence shows, using the Bloom language guide (process + content + condition), never a higher one. Avoid vague verbs (*understand*, *know*, *appreciate*) — they fail the Stage 2 assessability test.**
 - `skills`: a deduplicated flat list of specific technical or professional skills evidenced across all materials. Normalize variants ("color mgmt" → "Color management").
 - `competencies`: an array of competency objects with evidence chains. Merge competencies that appear across multiple files under a single name (match on normalized `name`). For each merged competency:
   - `name`: the normalized short label.
