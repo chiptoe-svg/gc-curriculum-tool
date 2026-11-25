@@ -1220,7 +1220,7 @@
     },
     {
       "id": "bg-turaev-1",
-      "location": "§5",
+      "location": "§5 Bloom's language, KUD+'s levels",
       "claim_text": "two faculty raters, working blind, each assigned a Bloom level ... agreed at a Cohen's κ of 0.86",
       "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
       "quote": "The extraction is validated blind by two independent faculty raters (domain κ = 0.91, Bloom level κ = 0.86)",
@@ -1228,7 +1228,7 @@
     },
     {
       "id": "bg-turaev-2",
-      "location": "§5",
+      "location": "§5 Bloom's language, KUD+'s levels",
       "claim_text": "the same 300 competency statements drawn from course outcomes and job postings",
       "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
       "quote": "Two faculty raters independently coded a stratified sample of three hundred competencies",
@@ -1236,7 +1236,7 @@
     },
     {
       "id": "bg-turaev-3",
-      "location": "§5",
+      "location": "§5 Bloom's language, KUD+'s levels",
       "claim_text": "statements with more than one verb, where leveling by the leading verb \"parts company with leveling by the highest-order verb\"",
       "held_file": "pdfs:turaev-2026-curriculum-labor-market-alignment.pdf",
       "quote": "On the cognitive level, the few large gaps arose on multi-verb outcomes, where leveling by the leading verb, the convention the extraction adopts, parts company with leveling by the highest-order verb",
@@ -1244,7 +1244,7 @@
     },
     {
       "id": "bg-krathwohl2002-3",
-      "location": "§5",
+      "location": "§5 Bloom's language, KUD+'s levels",
       "claim_text": "Apply is \"carrying out or using a procedure in a given situation\"",
       "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
       "quote": "Apply – Carrying out or using a procedure in a given situation.",
@@ -1852,7 +1852,7 @@
     },
     {
       "id": "bg-bloomx-3",
-      "location": "§5 Bloom crosswalk",
+      "location": "§5 Bloom's language, KUD+'s levels; §6 levels stack",
       "claim_text": "The strict hierarchy is relaxed to allow overlap",
       "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
       "quote": "the requirement of a strict hierarchy has been relaxed to allow the categories to overlap one another",
@@ -1860,7 +1860,7 @@
     },
     {
       "id": "bg-bloomx-4",
-      "location": "§5 Bloom crosswalk",
+      "location": "§5 Bloom's language, KUD+'s levels",
       "claim_text": "Explaining is more complex than Executing",
       "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
       "quote": "some cognitive processes associated with Understand (e.g., Explaining) are more cognitively complex than at least one of the cognitive processes associated with Apply (e.g., Executing)",
@@ -1868,7 +1868,7 @@
     },
     {
       "id": "bg-bloomx-5",
-      "location": "§5 Bloom crosswalk",
+      "location": "§5 Bloom's language, KUD+'s levels",
       "claim_text": "Advanced-course objectives describe proficient use of the same higher-order skills",
       "held_file": "pdfs:stanny-2016-bloom-verbs.pdf",
       "quote": "SLOs written for advanced courses might describe proficient use of these higher-order skills",
@@ -1892,7 +1892,7 @@
     },
     {
       "id": "bg-bloomx-8",
-      "location": "§5 Bloom crosswalk",
+      "location": "§5 Bloom's language, KUD+'s levels",
       "claim_text": "No verb assigned consistently across 30 lists",
       "held_file": "pdfs:stanny-2016-bloom-verbs.pdf",
       "quote": "No verb was assigned consistently to the same category by all 30 lists in the sample.",
@@ -1908,7 +1908,7 @@
     },
     {
       "id": "bg-bloomx-10",
-      "location": "§5 Bloom crosswalk",
+      "location": "§5 Bloom's language, KUD+'s levels",
       "claim_text": "Prompt words do not reliably predict cognitive processes",
       "held_file": "pdfs:larsen-2022-probing-assumptions-revised-bloom.pdf",
       "quote": "prompt words do not reliably predict cognitive processes",
@@ -2076,7 +2076,7 @@
     },
     {
       "id": "bg-do-7",
-      "location": "§5 Do mapping",
+      "location": "§5 Bloom's language, KUD+'s levels",
       "claim_text": "Bloom levels not well ordered for practical subjects",
       "held_file": "pdfs:fuller-2007-cs-learning-taxonomy.pdf",
       "quote": "the levels do not appear to be well ordered when used to assess practical subjects such as programming",
@@ -2108,11 +2108,75 @@
     },
     {
       "id": "bg-do-9",
-      "location": "§5 Do mapping",
+      "location": "§5 Bloom's language, KUD+'s levels; §5 Do mapping",
       "claim_text": "Psychomotor taxonomy never published by the originating group",
       "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
       "quote": "A taxonomy for the psychomotor domain was never published by the originating group, but some were published by Simpson (1966), Dave (1970), and Harrow (1972).",
       "page": "218"
+    },
+    {
+      "id": "bg-bloomlang-1",
+      "location": "§5 Bloom's language, KUD+'s levels",
+      "claim_text": "Bloom's authors intend it for alignment within a unit, course or curriculum, not only single assessments",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "means for determining the congruence of educational objectives, activities, and assessments in a unit, course, or curriculum",
+      "page": "212"
+    },
+    {
+      "id": "bg-bloomlang-2",
+      "location": "§5 Bloom's language, KUD+'s levels",
+      "claim_text": "The strict ladder of the original taxonomy fared poorly when it was tested",
+      "held_file": "pdfs:larsen-2022-probing-assumptions-revised-bloom.pdf",
+      "quote": "the cumulative hierarchy model of the original taxonomy did not have a strong basis in evidence",
+      "page": "3 (pdf)"
+    },
+    {
+      "id": "bg-bloomlang-3",
+      "location": "§5 Bloom's language, KUD+'s levels",
+      "claim_text": "Simpson, in her 1966 report, left open whether adapting and originating form a further level",
+      "held_file": "pdfs:simpson-1966-classification-educational-objectives-psychomotor-eric-ed010368.pdf",
+      "quote": "Is there perhaps a sixth major category which might be designated as adapting and",
+      "page": "39 (pdf)"
+    },
+    {
+      "id": "bg-stack-9",
+      "location": "§6 levels stack",
+      "claim_text": "Kropp: evidence more confirming than disconfirming",
+      "held_file": "pdfs:kropp-stoker-bashaw-1966-construction-validation-cognitive-tests-eric-ed010044.pdf",
+      "quote": "more confirming than disconfirming of the hypothesis",
+      "page": "93 (pdf)"
+    },
+    {
+      "id": "bg-stack-10",
+      "location": "§6 levels stack",
+      "claim_text": "Kropp: no definite assertion about hierarchical order",
+      "held_file": "pdfs:kropp-stoker-bashaw-1966-construction-validation-cognitive-tests-eric-ed010044.pdf",
+      "quote": "no definite assertion can be made about whether or not the taxonomic processes are arranged in hierarchical order",
+      "page": "93 (pdf)"
+    },
+    {
+      "id": "bg-stack-11",
+      "location": "§6 levels stack",
+      "claim_text": "Anderson reserved judgment on cumulative hierarchy",
+      "held_file": "pdfs:anderson-1999-rethinking-blooms-taxonomy-testing-eric-ed435630.pdf",
+      "quote": "to reserve judgment on the cumulative hierarchical structure",
+      "page": "9 (pdf)"
+    },
+    {
+      "id": "bg-stack-12",
+      "location": "§6 levels stack",
+      "claim_text": "Ravand: higher without lower almost improbable",
+      "held_file": "pdfs:ravand-2025-cdm-bloom-university-entrance-frontiers-educ.pdf",
+      "quote": "is almost improbable",
+      "page": "7 (pdf)"
+    },
+    {
+      "id": "bg-stack-13",
+      "location": "§6 levels stack",
+      "claim_text": "Ravand: hierarchy not independently tested",
+      "held_file": "pdfs:ravand-2025-cdm-bloom-university-entrance-frontiers-educ.pdf",
+      "quote": "was not independently tested",
+      "page": "11 (pdf)"
     }
   ]
 }
