@@ -79,4 +79,29 @@ describe('buildLedger', () => {
     expect(l.slots.outcomes?.status).toBe('unknown');
     expect(l.slots.x).toBeUndefined();
   });
+
+  it('skip never erases an already recorded answer', () => {
+    const l = buildLedger(null, [
+      { type: 'record', record: rec('anchors', 'A\nB') },
+      { type: 'asked', turn: { stage: 2, slot: 'anchors', kind: 'follow_up' } },
+      { type: 'skip', slot: 'anchors' },
+    ]);
+    expect(l.slots.anchors?.status).toBe('filled_by_instructor');
+    expect(l.anchors).toEqual(['A', 'B']);
+  });
+
+  it('the first anchors fix the ids; a later edit does not change them', () => {
+    const l = buildLedger(null, [
+      { type: 'record', record: rec('anchors', 'A\nB') },
+      { type: 'record', record: rec('anchors', 'C') },
+    ]);
+    expect(l.anchors).toEqual(['A', 'B']);
+  });
+
+  it('closedThrough is monotonic and event-ordered', () => {
+    const l = buildLedger(null, [
+      { type: 'record', record: rec('outcomes') }, { type: 'record', record: rec('anchors', 'A') },
+    ]);
+    expect(l.closedThrough).toBe(1);
+  });
 });

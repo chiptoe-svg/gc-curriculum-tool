@@ -31,8 +31,6 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
   const followUpsUsed = ledger.asked.filter((t) => t.kind === 'follow_up').length;
   const stage6Spent = counted.filter((t) => t.stage === 6).length >= STAGES[5]!.cap;
   const mustRecap = ledger.finished || questionsAsked >= RECAP_AT || stage6Spent;
-  // The active stage never moves backwards: a stage at or before the latest one asked in stays closed.
-  const floor = counted.reduce((m, t) => Math.max(m, t.stage), 1);
 
   const slotStatus: EngineState['slotStatus'] = {};
   let current: StageId | null = null;
@@ -42,14 +40,13 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
 
   for (const stage of STAGES) {
     const slots = stage.slots(map, ledger.anchors);
-    const stageCounted = counted.filter((t) => t.stage === stage.id).length;
-    const allFilled = slots.every((s) => isFilled(ledger.slots[s]));
     let isClosed: boolean;
     if (stage.id === 6) {
       // The close needs the recap answered; a spent stage cap alone does not skip it.
       isClosed = isFilled(ledger.slots['recap']);
     } else {
-      isClosed = allFilled || stageCounted >= stage.cap || mustRecap || stage.id < floor;
+      // Closure is event-ordered in the ledger and never reopens.
+      isClosed = stage.id <= ledger.closedThrough || mustRecap;
     }
     closed.set(stage.id, isClosed);
     allSlots.push(...slots);
@@ -96,6 +93,19 @@ export function checkTurn(
   }
   if (state.done) {
     return { ok: false, sendBack: 'The interview is finished. Do not ask anything more.' };
+  }
+  if (turn.stage !== state.stage) {
+    return { ok: false, sendBack: `The interview is at stage ${state.stage}. Ask about stage ${state.stage}, not stage ${turn.stage}.` };
+  }
+  if (turn.kind === 'recap' && !state.mustRecap && state.stage !== 6) {
+    return { ok: false, sendBack: 'It is not time for the recap yet. Ask about an open slot.' };
+  }
+  if (turn.kind === 'recap' && turn.slot !== 'recap') {
+    return { ok: false, sendBack: 'The recap turn is about the "recap" slot only.' };
+  }
+  const recapAsked = ledger.asked.some((t) => t.kind === 'recap');
+  if (turn.kind === 'follow_up' && turn.slot === 'recap' && !recapAsked) {
+    return { ok: false, sendBack: 'Ask the recap before following up on it.' };
   }
   const recapFollowUp = turn.kind === 'follow_up' && turn.slot === 'recap';
   if (state.mustRecap && turn.kind !== 'recap' && !recapFollowUp) {

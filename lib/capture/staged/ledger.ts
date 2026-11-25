@@ -22,6 +22,8 @@ export type Ledger = {
   asked: AskedTurn[];
   /** True once a `finish` event was seen (the instructor chose Finish). */
   finished: boolean;
+  /** Highest stage (1-5) closed so far, 0 if none. Event-ordered and monotonic: a closed stage never reopens. */
+  closedThrough: StageId | 0;
 };
 
 export type LedgerEvent =
@@ -41,19 +43,40 @@ function parseAnchors(rec: SlotRecord | undefined): string[] {
 }
 
 /** Fold stored events into a ledger. Pure; the same events always give the same ledger. */
+const RECAP_AT = 19;
+
+/** Close the lowest open stage while it is complete (all slots filled, or counted at cap). Monotonic. */
+function advance(map: EvidenceMap | null, ledger: Ledger): void {
+  const counted = ledger.asked.filter((t) => t.kind !== 'answer_only');
+  if (ledger.finished || counted.length >= RECAP_AT) {
+    ledger.closedThrough = 5;
+    return;
+  }
+  while (ledger.closedThrough < 5) {
+    const stage = STAGES[ledger.closedThrough]!;
+    const slots = stage.slots(map, ledger.anchors);
+    const full = slots.every((s) => isFilled(ledger.slots[s]));
+    const atCap = counted.filter((t) => t.stage === stage.id).length >= stage.cap;
+    if (!full && !atCap) return;
+    ledger.closedThrough = stage.id as StageId;
+  }
+}
+
 export function buildLedger(map: EvidenceMap | null, events: LedgerEvent[]): Ledger {
-  const ledger: Ledger = { anchors: [], slots: {}, asked: [], finished: false };
+  const ledger: Ledger = { anchors: [], slots: {}, asked: [], finished: false, closedThrough: 0 };
   for (const ev of events) {
     if (ev.type === 'record') {
       ledger.slots[ev.record.slot] = ev.record;
-      if (ev.record.slot === 'anchors') ledger.anchors = parseAnchors(ev.record);
+      // The first usable anchors fix the graded_on slot ids; a later edit must not change them.
+      if (ev.record.slot === 'anchors' && ledger.anchors.length === 0) ledger.anchors = parseAnchors(ev.record);
     } else if (ev.type === 'asked') {
       ledger.asked.push(ev.turn);
     } else if (ev.type === 'skip') {
       const last = [...ledger.asked].reverse().find((t) => t.kind !== 'answer_only');
       if (!last) continue;
+      // Skipping never erases an answer already recorded.
+      if (isFilled(ledger.slots[last.slot])) continue;
       ledger.slots[last.slot] = { slot: last.slot, status: 'unknown', summary: 'instructor skipped', citations: [] };
-      if (last.slot === 'anchors') ledger.anchors = [];
     } else if (ev.type === 'finish') {
       ledger.finished = true;
       for (const stage of STAGES) {
@@ -65,6 +88,7 @@ export function buildLedger(map: EvidenceMap | null, events: LedgerEvent[]): Led
         }
       }
     }
+    advance(map, ledger);
   }
   return ledger;
 }

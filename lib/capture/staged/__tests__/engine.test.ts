@@ -152,7 +152,9 @@ describe('checkTurn', () => {
     const evs: Ev[] = ['a', 'b', 'c', 'd', 'e'].map((s) => ask(3, s, 'follow_up'));
     const { state, ledger } = st(evs);
     expect(state.followUpsUsed).toBe(5);
-    expect(checkTurn(state, ledger, { stage: 3, slot: 'f', kind: 'follow_up' }).ok).toBe(false);
+    const r = checkTurn(state, ledger, { stage: state.stage, slot: 'f', kind: 'follow_up' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.sendBack).toContain('follow-ups');
   });
 
   it('answer_only is always ok', () => {
@@ -170,9 +172,10 @@ describe('checkTurn', () => {
 describe('fix round 1', () => {
   it('1: re-ask of an asked-but-unrecorded slot is accepted even with 5 follow-ups used', () => {
     const evs: Ev[] = ['a', 'b', 'c', 'd', 'e'].map((s) => ask(4, s, 'follow_up'));
-    evs.push(ask(5, 'habits'));
+    evs.push(ask(1, 'outcomes'));
     const { state, ledger } = st(evs);
-    expect(checkTurn(state, ledger, { stage: 5, slot: 'habits', kind: 'question' })).toEqual({ ok: true });
+    expect(state.followUpsUsed).toBe(5);
+    expect(checkTurn(state, ledger, { stage: 1, slot: 'outcomes', kind: 'question' })).toEqual({ ok: true });
   });
 
   const lateAnchors = (withAnchors: boolean): Ev[] => [
@@ -216,14 +219,124 @@ describe('fix round 1', () => {
     expect(state.openSlots).toEqual(['recap']);
     expect(checkTurn(state, ledger, { stage: 6, slot: 'objectives', kind: 'question' }).ok).toBe(false);
     expect(checkTurn(state, ledger, { stage: 6, slot: 'recap', kind: 'recap' }).ok).toBe(true);
-    expect(checkTurn(state, ledger, { stage: 6, slot: 'recap', kind: 'follow_up' }).ok).toBe(true);
+    expect(checkTurn(state, ledger, { stage: 6, slot: 'recap', kind: 'follow_up' }).ok).toBe(false); // no recap asked yet
+    const afterRecap = st([...evs, ask(6, 'recap', 'recap')], m);
+    expect(checkTurn(afterRecap.state, afterRecap.ledger, { stage: 6, slot: 'recap', kind: 'follow_up' }).ok).toBe(true);
     const after = st([...evs, ask(6, 'recap', 'recap'), ask(6, 'recap', 'follow_up')], m);
     expect(checkTurn(after.state, after.ledger, { stage: 6, slot: 'recap', kind: 'follow_up' }).ok).toBe(false);
     // post-Finish path agrees
     const fin = st([{ type: 'finish' }], null);
-    expect(checkTurn(fin.state, fin.ledger, { stage: 6, slot: 'recap', kind: 'follow_up' }).ok).toBe(true);
+    expect(checkTurn(fin.state, fin.ledger, { stage: 6, slot: 'recap', kind: 'follow_up' }).ok).toBe(false);
+    const fin1 = st([{ type: 'finish' }, ask(6, 'recap', 'recap')], null);
+    expect(checkTurn(fin1.state, fin1.ledger, { stage: 6, slot: 'recap', kind: 'follow_up' }).ok).toBe(true);
     const fin2 = st([{ type: 'finish' }, ask(6, 'recap', 'recap'), ask(6, 'recap', 'follow_up')], null);
     expect(checkTurn(fin2.state, fin2.ledger, { stage: 6, slot: 'recap', kind: 'follow_up' }).ok).toBe(false);
+  });
+});
+
+describe('fix round 2', () => {
+  const closeStage2 = (fromMaterials: boolean): Ev[] => [
+    rec('outcomes'), ask(1, 'anchors'), ask(1, 'anchors', 'follow_up'), ask(1, 'anchors', 'follow_up'),
+    ask(2, 'conditions'), rec('conditions'), ask(2, 'reasoning_evidence'), rec('reasoning_evidence'),
+    fromMaterials
+      ? { type: 'record', record: { slot: 'tests', status: 'filled_from_materials', summary: 'm', citations: [] } }
+      : rec('tests'),
+  ];
+  for (const fromMaterials of [false, true]) {
+    it(`A: anchors recorded before any stage-3 question do not reopen stage 2 (materials=${fromMaterials})`, () => {
+      const before = st(closeStage2(fromMaterials));
+      expect(before.state.stage).toBe(3);
+      const after = st([...closeStage2(fromMaterials), rec('anchors', 'A\nB')]);
+      expect(after.state.stage).toBe(3);
+      expect(after.state.openSlots).toEqual(['revision', 'transfer', 'threshold']);
+      expect(after.state.slotStatus['graded_on:A']).toBe('not_reached');
+      const b = settledCount(before.state, before.ledger);
+      const a = settledCount(after.state, after.ledger);
+      expect(a.settled / a.total).toBeGreaterThanOrEqual(b.settled / b.total);
+    });
+  }
+
+  it('B: a turn tagged with another stage is sent back; answer_only is exempt', () => {
+    const { state, ledger } = st([]);
+    expect(checkTurn(state, ledger, { stage: 6, slot: 'recap', kind: 'recap' }).ok).toBe(false);
+    expect(checkTurn(state, ledger, { stage: 3, slot: 'revision', kind: 'question' }).ok).toBe(false);
+    expect(checkTurn(state, ledger, { stage: 3, slot: 'revision', kind: 'answer_only' }).ok).toBe(true);
+  });
+
+  it('B: recap kind is refused unless a recap is due or stage 6 is active', () => {
+    const { state, ledger } = st([]);
+    const r = checkTurn(state, ledger, { stage: 1, slot: 'recap', kind: 'recap' });
+    expect(r.ok).toBe(false);
+  });
+
+  it('C: follow_up on recap needs a prior recap turn when the 19-question limit forces the recap', () => {
+    const { state, ledger } = st(counted(19));
+    expect(state.mustRecap).toBe(true);
+    expect(checkTurn(state, ledger, { stage: state.stage, slot: 'recap', kind: 'follow_up' }).ok).toBe(false);
+    expect(checkTurn(state, ledger, { stage: state.stage, slot: 'recap', kind: 'recap' }).ok).toBe(true);
+  });
+});
+
+describe('recap slot', () => {
+  it('a recap-kind turn on another slot is sent back', () => {
+    const { state, ledger } = st([{ type: 'finish' }]);
+    expect(checkTurn(state, ledger, { stage: 6, slot: 'outcomes', kind: 'recap' }).ok).toBe(false);
+  });
+});
+
+describe('random legal walks', () => {
+  function rng(seed: number) {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  it('2000 seeded walks always reach done within 20 counted questions, never stuck', () => {
+    for (let seed = 1; seed <= 2000; seed++) {
+      const r = rng(seed);
+      const pick = <T,>(xs: T[]): T => xs[Math.floor(r() * xs.length)]!;
+      const m = r() < 0.5 ? map(true) : map(false);
+      const events: Ev[] = [];
+      let prevPct = 0;
+      for (let step = 0; step < 400; step++) {
+        const ledger = buildLedger(m, events as never);
+        const state = engineState(m, ledger);
+        const { settled, total } = settledCount(state, ledger);
+        expect(settled / total).toBeGreaterThanOrEqual(prevPct - 1e-9);
+        prevPct = settled / total;
+        if (state.done) break;
+        expect(state.questionsAsked).toBeLessThanOrEqual(20);
+        const slots = [...state.allSlots, 'recap', 'bogus'];
+        const legal: AskedTurn[] = [];
+        for (const slot of slots) {
+          for (const kind of ['question', 'follow_up', 'recap'] as const) {
+            const turn = { stage: state.stage, slot, kind };
+            if (checkTurn(state, ledger, turn).ok) legal.push(turn);
+          }
+        }
+        expect(legal.length, `seed ${seed} step ${step} stuck`).toBeGreaterThan(0);
+        const roll = r();
+        if (step > 150 || roll < 0.6) {
+          const turn = pick(legal);
+          events.push({ type: 'asked', turn });
+          if (turn.kind === 'recap' || r() < 0.7) events.push(rec(turn.slot, 'a\nb'));
+          else if (r() < 0.3) events.push({ type: 'skip', slot: turn.slot });
+        } else if (roll < 0.75) {
+          events.push(rec(pick(state.allSlots.filter((s) => s !== 'recap')), 'a\nb'));
+        } else if (roll < 0.85) {
+          events.push(ask(state.stage, 'bogus', 'answer_only'));
+        } else if (roll < 0.9 && step < 100) {
+          events.push({ type: 'finish' });
+        }
+      }
+      const final = engineState(m, buildLedger(m, events as never));
+      expect(final.done, `seed ${seed} not done`).toBe(true);
+      expect(final.questionsAsked).toBeLessThanOrEqual(20);
+    }
   });
 });
 
