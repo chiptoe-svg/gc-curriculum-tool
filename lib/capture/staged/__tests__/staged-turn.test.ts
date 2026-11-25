@@ -82,7 +82,8 @@ beforeEach(() => {
       toolCallsUsed.push({ id: `tc${toolCallsUsed.length}`, toolName: name, args });
       toolResults.push(await t.execute(args));
     }
-    const value = input.submit.parse({ say: 'ok', question: '', citations: [], ...step.submit });
+    // A counted step without question text gets one (Task 9b: a counted turn must carry its question).
+    const value = input.submit.parse({ say: 'ok', question: step.submit.kind === 'answer_only' ? '' : 'q?', citations: [], ...step.submit });
     const problem = input.checkSubmit?.(value) ?? null;
     return { value, toolCallsUsed, telemetry: { costUsdCents: 0 }, controlEvents: problem ? ['repeat-accepted'] : [], requests: 1 };
   });
@@ -159,7 +160,8 @@ describe('runStagedTurn', () => {
     expect(storedLedger().slots.outcomes?.status).toBe('unknown');
     steps.push({ submit: { slot_asked: 'graded_on:x', kind: 'answer_only' } });
     await turn('skip this question.');
-    expect(storedLedger().slots.anchors?.status).toBe('unknown');
+    // Task 9b fix 2: the skip closes stage 1 without anchors, so the app fills them from the map.
+    expect(storedLedger().slots.anchors?.status).toBe('filled_from_materials');
   });
 
   it('finish → mustRecap and the stage-6 skill; the request is stored on the row and the rebuilt ledger sees it', async () => {
@@ -370,13 +372,13 @@ describe('fix round 1', () => {
     expect(JSON.parse(assistantRows().at(-1)!.content!).question).toBe('');
   });
 
-  it("the model's answer_only with a question is sent back while the interview runs", async () => {
+  it("the model's answer_only is sent back while the interview runs, with or without a question (Task 9b)", async () => {
     steps.push({ submit: { slot_asked: 'outcomes', kind: 'question' } });
     await turn();
     const v = calls[0]!.submit.parse({ say: 's', question: 'And how do they revise?', citations: [], slot_asked: 'outcomes', kind: 'answer_only' });
-    expect(calls[0]!.checkSubmit!(v)).toBe('answer_only turns carry no question; put the question in a counted turn');
+    expect(calls[0]!.checkSubmit!(v)).toBe('Answer the instructor in `say` and ask the next open question in this same turn.');
     const plain = calls[0]!.submit.parse({ say: 's', question: '', citations: [], slot_asked: 'outcomes', kind: 'answer_only' });
-    expect(calls[0]!.checkSubmit!(plain)).toBeNull();
+    expect(calls[0]!.checkSubmit!(plain)).toBe('Answer the instructor in `say` and ask the next open question in this same turn.');
   });
 
   it('after done, answer_only is accepted with the question emptied', async () => {
@@ -436,5 +438,126 @@ describe('streamStagedInterview', () => {
     for await (const e of streamStagedInterview({ sessionId: SID, courseCode: 'GC 4060', auditMode: 'full', userMessage: 'hi' }, session)) ev.push(e);
     expect(ev.map(e => e.kind)).toEqual(['error']);
     expect(assistantRows()).toHaveLength(0);
+  });
+});
+
+const warnOff = () => vi.spyOn(console, 'warn').mockImplementation(() => {});
+const toStage1Anchors = async () => {
+  steps.push({ submit: { question: 'What can they do?', slot_asked: 'outcomes', kind: 'question' } });
+  await turn();
+  steps.push({ calls: [rec('outcomes', 'Mount plates.')], submit: { question: 'Which two carry the course?', slot_asked: 'anchors', kind: 'question' } });
+  await turn('They mount plates.');
+};
+
+describe('Task 9b fix 1: no question-less turns while open', () => {
+  it('a counted turn with an empty question is sent back', async () => {
+    steps.push({ submit: { question: 'q?', slot_asked: 'outcomes', kind: 'question' } });
+    await turn();
+    const v = calls[0]!.submit.parse({ say: 's', question: '  ', citations: [], slot_asked: 'outcomes', kind: 'question' });
+    expect(calls[0]!.checkSubmit!(v)).toMatch(/question/);
+  });
+
+  it('after the recap is asked, answer_only is accepted (the app records the reply), and a recap follow-up still is', async () => {
+    steps.push({ submit: { question: 'Here is what I heard…', slot_asked: 'recap', kind: 'recap' } });
+    await turn(undefined, { finish: true });
+    steps.push({ submit: { say: 'Thank you.', slot_asked: 'recap', kind: 'answer_only' } });
+    const t = await turn('Yes, that is right.');
+    // controlEvents is set by the mock when checkSubmit objects during the call.
+    expect(t.result.controlEvents).toEqual([]);
+    expect(t.state.done).toBe(true);
+    db.rows.length = 0;
+    steps.push({ submit: { question: 'Here is what I heard…', slot_asked: 'recap', kind: 'recap' } });
+    await turn(undefined, { finish: true });
+    steps.push({ submit: { question: 'Anything to add on the press check?', slot_asked: 'recap', kind: 'follow_up' } });
+    const f = await turn('Mostly right.');
+    expect(f.result.controlEvents).toEqual([]);
+    expect(lastStaged()).toMatchObject({ kind: 'follow_up', slotAsked: 'recap' });
+  });
+
+  it('downgrade: an answer_only that still carries a question on an open slot is stored as a counted question', async () => {
+    warnOff();
+    await toStage1Anchors();
+    steps.push({ submit: { say: 'Good question: it is the rubric.', question: 'Which two pieces of graded work carry the course?', slot_asked: 'anchors', kind: 'answer_only' } });
+    const t = await turn('What do you mean by carry?');
+    expect(lastStaged()).toMatchObject({ kind: 'question', slotAsked: 'anchors', questionsAsked: 3 });
+    expect(t.response.question).toBe('Which two pieces of graded work carry the course?');
+  });
+
+  it('downgrade: an answer_only with no question while open keeps the safety path (uncounted, empty)', async () => {
+    warnOff();
+    await toStage1Anchors();
+    steps.push({ submit: { say: 'It is the rubric.', question: '', slot_asked: 'anchors', kind: 'answer_only' } });
+    const t = await turn('What do you mean?');
+    expect(lastStaged()).toMatchObject({ kind: 'answer_only', questionsAsked: 2 });
+    expect(t.response.question).toBe('');
+  });
+
+  it('downgrade: a question on a settled slot can never be legal, so it is uncounted and emptied', async () => {
+    warnOff();
+    await toStage1Anchors();
+    steps.push({ submit: { question: 'What can students do when they leave?', slot_asked: 'outcomes', kind: 'question' } });
+    const t = await turn('Plate Project and the report.');
+    expect(lastStaged()).toMatchObject({ kind: 'answer_only', questionsAsked: 2 });
+    expect(t.response.question).toBe('');
+  });
+
+  it('downgrade: a counted turn with an empty question is uncounted', async () => {
+    warnOff();
+    steps.push({ submit: { question: '', slot_asked: 'outcomes', kind: 'question' } });
+    await turn();
+    expect(lastStaged()).toMatchObject({ kind: 'answer_only', questionsAsked: 0 });
+  });
+});
+
+describe('Task 9b fix 2: anchor fallback in the turn', () => {
+  it('the model records anchors unknown: the app fills them from the map in the same turn, tells the model, and a reload rebuilds it', async () => {
+    await toStage1Anchors();
+    steps.push({
+      calls: [rec('anchors', 'Instructor did not know.', 'unknown')],
+      submit: { question: 'When you grade the Plate Project, what separates strong work?', slot_asked: 'graded_on:Plate Project', kind: 'question' },
+    });
+    const t = await turn("I don't know.");
+    expect(String(toolResults.at(-1))).toMatch(/^recorded\..*Plate Project/s);
+    expect(assistantRows().at(-1)!.toolCalls!.map(c => [c.id, c.args.slot, c.args.status])).toEqual([
+      ['tc0', 'anchors', 'unknown'], ['app-anchors', 'anchors', 'filled_from_materials'],
+    ]);
+    expect(t.ledger.anchors).toEqual(['Plate Project']);
+    expect(lastStaged()).toMatchObject({ stage: 2, slotAsked: 'graded_on:Plate Project', kind: 'question' });
+    expect(storedLedger()).toEqual(t.ledger);
+  });
+
+  it('a skip of anchors: the next turn starts in stage 2 with the map anchors, stored first on that turn', async () => {
+    await toStage1Anchors();
+    steps.push({ submit: { question: 'When you grade the Plate Project, what separates strong work?', slot_asked: 'graded_on:Plate Project', kind: 'question' } });
+    const t = await turn('Skip');
+    expect(calls[2]!.systemPrompt).toContain('# Stage 2: Evidence walk');
+    expect(context(2)).toContain('Open in this stage: graded_on:Plate Project, conditions');
+    expect(context(2)).toContain('- anchors (filled_from_materials): Plate Project');
+    expect(assistantRows().at(-1)!.toolCalls![0]).toMatchObject({ id: 'app-anchors', args: { slot: 'anchors', status: 'filled_from_materials', summary: 'Plate Project' } });
+    expect(storedLedger()).toEqual(t.ledger);
+    expect(t.response.staged?.questionsAsked).toBe(3);
+  });
+
+  it('no graded work in the map: no fallback', async () => {
+    const bare = { ...session, map: { ...MAP, graded_work: [] } };
+    steps.push({ submit: { question: 'q?', slot_asked: 'outcomes', kind: 'question' } });
+    await runStagedTurn({ sessionId: SID, courseCode: 'GC 4060', auditMode: 'full' }, bare);
+    steps.push({ calls: [rec('outcomes', 'x'), rec('anchors', 'not sure', 'unknown')], submit: { question: 'How much is on them?', slot_asked: 'conditions', kind: 'question' } });
+    const t = await runStagedTurn({ sessionId: SID, courseCode: 'GC 4060', auditMode: 'full', userMessage: 'x. Not sure.' }, bare);
+    expect(t.ledger.anchors).toEqual([]);
+    expect(t.toolCallsUsed.some(c => c.id === 'app-anchors')).toBe(false);
+  });
+});
+
+describe('Task 9b fix 4: the recap is recorded only after it was asked', () => {
+  it('record_answer on recap before a recap turn is an error; after it, it is recorded', async () => {
+    steps.push({ calls: [rec('recap', 'Confirmed. No corrections.')], submit: { question: 'Here is what I heard…', slot_asked: 'recap', kind: 'recap' } });
+    await turn(undefined, { finish: true });
+    expect(String(toolResults.at(-1))).toMatch(/^error: .*recap/);
+    expect(assistantRows().at(-1)!.toolCalls ?? []).toEqual([]);
+    steps.push({ calls: [rec('recap', 'Confirmed.')], submit: { say: 'Thanks.', slot_asked: 'recap', kind: 'answer_only' } });
+    const t = await turn('Yes.');
+    expect(toolResults.at(-1)).toBe('recorded');
+    expect(t.ledger.slots.recap?.summary).toBe('Confirmed.');
   });
 });

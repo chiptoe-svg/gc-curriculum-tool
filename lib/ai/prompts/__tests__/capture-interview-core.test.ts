@@ -61,3 +61,16 @@ describe('capture-interview-core prompt', () => {
     expect(p).toContain('except where the stage skill says to show a draft, quoted objectives or the recap');
   });
 });
+
+describe('Task 9b', () => {
+  it('every turn asks the next question while the interview runs; answer_only only once it is complete', async () => {
+    const p = norm(await loadPrompt('capture-interview-core'));
+    expect(p).toContain('answer it in `say` and ask the next open question in the same turn');
+    expect(p).toContain('only once the interview is complete');
+    expect(p).not.toContain('if that is all the turn needs');
+  });
+
+  it('the recap is recorded only after it was shown', async () => {
+    expect(norm(await loadPrompt('capture-interview-core'))).toContain('record `recap` only after the recap was shown');
+  });
+});

@@ -16,7 +16,7 @@ import { buildAuditTools } from '@/lib/ai/agent/audit-tools';
 import { SITUATIONAL_SKILLS, loadSkill } from '@/lib/ai/skills/load-skill';
 import type { AuditCitation } from '@/lib/ai/agent/audit-response-schema';
 import type { EvidenceMap } from './evidence-map';
-import { buildLedger, type LedgerEvent, type SlotRecord } from './ledger';
+import { anchorFallback, buildLedger, type LedgerEvent, type SlotRecord } from './ledger';
 import { engineState } from './engine';
 
 export type StagedKind = 'question' | 'follow_up' | 'recap' | 'answer_only';
@@ -72,7 +72,7 @@ export const StagedSubmitJsonSchema = {
 } as const;
 
 export const STAGED_SUBMIT_DESCRIPTION =
-  'Deliver this turn: `say` (acknowledgment or finding, with citations), the one `question` (or empty for answer_only), '
+  'Deliver this turn: `say` (acknowledgment or finding, with citations), the one `question` (empty only for answer_only, once the interview is complete), '
   + 'the `slot_asked` it targets and its `kind`. Call last, once, after any record_answer calls.';
 
 /** record_answer's arguments, as stored in capture_messages.tool_calls and read back to rebuild the ledger. */
@@ -99,7 +99,26 @@ export type LiveLedger = {
   /** Args objects of accepted record_answer calls (runPiTurn passes the same object to the tool and toolCallsUsed). */
   accepted: WeakSet<object>;
   bloom: boolean;
+  /** The app's anchors record (Task 9b fix 2), and the accepted record_answer args it follows (null: start of turn). */
+  appAnchors?: { after: object | null; args: z.infer<typeof RecordAnswerArgs> } | null;
 };
+
+/**
+ * Task 9b fix 2: when stage 1 has just closed without instructor anchors, record them from the evidence map
+ * (filled_from_materials) into the live ledger. Returns a note for the model, or null when nothing was recorded.
+ * At most once per turn; once recorded the fallback no longer applies to later turns.
+ */
+export function applyAnchorFallback(live: LiveLedger, after: object | null): string | null {
+  if (live.appAnchors) return null;
+  const summary = anchorFallback(live.map, buildLedger(live.map, live.events));
+  if (!summary) return null;
+  const args = { slot: 'anchors', status: 'filled_from_materials' as const, summary, citations: [] };
+  live.events.push({ type: 'record', record: toSlotRecord(args) });
+  live.appAnchors = { after, args };
+  const state = engineState(live.map, buildLedger(live.map, live.events));
+  return `Stage 1 closed without anchors from the instructor, so the app recorded them from the materials: ${summary.split('\n').join('; ')}. `
+    + `The interview is now at stage ${state.stage}. Open: ${state.openSlots.join(', ')}. Name these anchors and ask about the first.`;
+}
 
 const STAGED_SEARCH_TOOLS = new Set(['search_materials', 'fetch_material_section']);
 
@@ -122,11 +141,16 @@ export function buildStagedTools(courseCode: string, live: LiveLedger): ToolDefi
       if (!state.allSlots.includes(args.slot)) {
         return `error: "${args.slot}" is not a slot in this interview. Slots: ${state.allSlots.join(', ')}.`;
       }
+      // Task 9b fix 4: the recap answer exists only after the recap was shown.
+      if (args.slot === 'recap' && !buildLedger(live.map, live.events).asked.some(t => t.kind === 'recap')) {
+        return 'error: the recap has not been asked yet. Ask it first (kind recap, slot recap); record the instructor\'s reply to it afterwards.';
+      }
       const parsed = RecordAnswerArgs.safeParse(raw);
       if (!parsed.success) return `error: ${parsed.error.issues.map(i => i.message).join('; ')}`;
       live.events.push({ type: 'record', record: toSlotRecord(parsed.data) });
       if (raw && typeof raw === 'object') live.accepted.add(raw);
-      return 'recorded';
+      const note = applyAnchorFallback(live, raw && typeof raw === 'object' ? raw : null);
+      return note ? `recorded. ${note}` : 'recorded';
     },
   };
 

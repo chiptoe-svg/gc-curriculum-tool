@@ -11,6 +11,8 @@ description: Stage 2 of the course interview, "Evidence walk". Finds what is act
 
 The anchor slot ids are `graded_on:` followed by an anchor line from stage 1's `anchors` summary, used verbatim: same spelling, spacing and capitals. Copy them from "Open in this stage". Read "Answered so far" first; ask only open slots.
 
+If `anchors` is `filled_from_materials`, the app chose them from the map's weights. Open the stage by naming them ("Your materials weight the Press Run Report and the Plate Project most…"), then ask the first `graded_on` question.
+
 All four kinds are judgment slots. Open each question with what the rubric or evidence map shows, then ask openly. Never a yes/no or either/or question.
 
 ## `graded_on:<anchor>` (one per anchor)

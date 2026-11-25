@@ -28,10 +28,11 @@ import type { Message, StreamEvent, ToolCall } from '@/lib/ai/tool-use-types';
 import type { EvidenceMap } from './evidence-map';
 import { buildLedger, type AskedTurn, type Ledger, type LedgerEvent } from './ledger';
 import { checkTurn, engineState, type EngineState } from './engine';
+import type { StagedKind } from './staged-tools';
 import { HARD_CAP, STAGES, type StageId } from './stages';
 import { toAuditResponse } from './adapter';
 import {
-  RecordAnswerArgs, STAGED_SUBMIT_DESCRIPTION, StagedSubmitJsonSchema, StagedSubmitSchema, buildStagedTools, toSlotRecord,
+  RecordAnswerArgs, STAGED_SUBMIT_DESCRIPTION, StagedSubmitJsonSchema, StagedSubmitSchema, applyAnchorFallback, buildStagedTools, toSlotRecord,
   type LiveLedger, type StagedSubmit,
 } from './staged-tools';
 
@@ -54,7 +55,7 @@ export function isSkipMessage(text: string | null | undefined): boolean {
 
 const MAX_TOOL_CALLS = 6;
 export const WRONG_COURSE = 'session does not belong to this course';
-export const ANSWER_ONLY_WITH_QUESTION = 'answer_only turns carry no question; put the question in a counted turn';
+export const COUNTED_WITHOUT_QUESTION = 'A counted turn needs its question in `question`. Answer in `say` and put the next open question in `question`.';
 const RECENT_MESSAGES = 6;
 const RECAP_SUMMARY_MAX = 500;
 
@@ -190,11 +191,17 @@ export async function runStagedTurn(
   // 2-3. Rebuild the ledger from stored rows; a Finish request adds one `finish` (at most once per session).
   const stored = ledgerEventsFromTranscript(rows);
   const finishRequested = input.finish === true && !buildLedger(map, stored).finished;
-  const startEvents: LedgerEvent[] = finishRequested ? [...stored, { type: 'finish' }] : stored;
+  const baseEvents: LedgerEvent[] = finishRequested ? [...stored, { type: 'finish' }] : stored;
+  const bloom = process.env.INTERVIEW_BLOOM !== 'off';
+  // Task 9b fix 2: a stage 1 that closed without instructor anchors (a skip, or the cap) gets them from the map
+  // before this turn starts, so the turn already runs stage 2 on them. Stored first in this turn's tool calls.
+  const live: LiveLedger = { map, events: [...baseEvents], accepted: new WeakSet(), bloom, appAnchors: null };
+  applyAnchorFallback(live, null);
+  const startEvents: LedgerEvent[] = [...live.events];
+  const startAnchors = live.appAnchors;
   const startState = engineState(map, buildLedger(map, startEvents));
 
   // 4. Context: core prompt + the active stage's skill (stage 6 when the recap is due).
-  const bloom = process.env.INTERVIEW_BLOOM !== 'off';
   const skillStage: StageId = startState.mustRecap ? 6 : startState.stage;
   const systemPrompt = `${await loadPrompt('capture-interview-core')}\n\n${loadSkill(STAGES[skillStage - 1]!.skill, { bloom }).body}`;
 
@@ -220,11 +227,19 @@ export async function runStagedTurn(
     (m as { addedInSession?: string | null }).addedInSession === sessionId
     && new Date((m as { uploadedAt: Date | string }).uploadedAt).getTime() > new Date(lastAssistant!.createdAt!).getTime());
 
-  const live: LiveLedger = { map, events: [...startEvents], accepted: new WeakSet(), bloom };
   const capture = captureRetrievedChunks(buildStagedTools(courseCode, live));
+  // The recap answer is recorded by the app when the model did not (decision 8). Task 9b: an answer_only turn
+  // after the recap is checked as if that record were already in, since the app adds it after the turn.
+  const prevStaged = lastAssistant ? stagedOf(lastAssistant as CaptureMessageRow) : null;
+  const appRecapDue = prevStaged?.kind === 'recap' && Boolean(userMessage) && !isSkipMessage(userMessage);
+  const appRecapArgs = { slot: 'recap', status: 'filled_by_instructor' as const, summary: (userMessage ?? '').slice(0, RECAP_SUMMARY_MAX), citations: [] };
+  const withAppRecap = (events: LedgerEvent[]): LedgerEvent[] =>
+    appRecapDue && !events.some(e => e.type === 'record' && e.record.slot === 'recap')
+      ? [...events, { type: 'record', record: toSlotRecord(appRecapArgs) }]
+      : events;
   // The stage is the app's (decision 5): the engine's stage after this turn's records so far.
-  const current = (v: StagedSubmit) => {
-    const ledger = buildLedger(map, live.events);
+  const current = (v: { slot_asked: string; kind: StagedKind }) => {
+    const ledger = buildLedger(map, v.kind === 'answer_only' ? withAppRecap(live.events) : live.events);
     const state = engineState(map, ledger);
     const turn: AskedTurn = { stage: state.stage, slot: v.slot_asked, kind: v.kind };
     return { ledger, state, turn };
@@ -248,13 +263,13 @@ export async function runStagedTurn(
       parse: raw => StagedSubmitSchema.parse(repairCitations(raw, msgsForRepair)),
       description: STAGED_SUBMIT_DESCRIPTION,
     },
-    // checkTurn (decision 6; it already enforces the recap), plus: an uncounted turn may not carry a question
-    // while the interview runs, or it would slip past the cap and the follow-up limits (fix round 1).
+    // checkTurn (decision 6; it enforces the recap and, since Task 9b, no answer_only while open), plus: a counted
+    // turn must carry its question.
     checkSubmit: v => {
       const { ledger, state, turn } = current(v as StagedSubmit);
-      if (turn.kind === 'answer_only' && (v as StagedSubmit).question.trim() !== '' && !state.done) return ANSWER_ONLY_WITH_QUESTION;
       const r = checkTurn(state, ledger, turn);
-      return r.ok ? null : r.sendBack;
+      if (!r.ok) return r.sendBack;
+      return turn.kind !== 'answer_only' && (v as StagedSubmit).question.trim() === '' ? COUNTED_WITHOUT_QUESTION : null;
     },
   });
   let result: PiTurnResult<StagedSubmit>;
@@ -268,6 +283,7 @@ export async function runStagedTurn(
     if (!requireSearchFirst || !/\b400\b/.test(String(err))) throw err;
     console.warn(`[staged-interview] ${courseCode}: forced search rejected (${String(err).slice(0, 200)}); retrying without it`);
     live.events = [...startEvents];
+    live.appAnchors = startAnchors;
     result = await call(false);
   }
   if (result.controlEvents.length) console.warn(`[staged-interview] ${courseCode}: pi controls: ${result.controlEvents.join(' | ')}`);
@@ -281,31 +297,34 @@ export async function runStagedTurn(
   const dropped = submitted.citations.length - value.citations.length;
   if (dropped > 0) console.warn(`[staged-interview] ${courseCode}: dropped ${dropped} citation(s) the interviewer never saw`);
 
-  // Re-check before storing (decision 7): a turn accepted after its send-backs ran out that still breaks the
-  // rules is stored as answer_only, so it is not counted.
-  const { ledger: atSubmit, state: stateAtSubmit, turn } = current(value);
-  const check = checkTurn(stateAtSubmit, atSubmit, turn);
-  const asked: AskedTurn = check.ok ? turn : { ...turn, kind: 'answer_only' };
-  if (!check.ok) console.warn(`[staged-interview] ${courseCode}: turn broke the stage rules after send-backs (${check.sendBack}); stored as answer_only`);
+  // Re-check before storing (decision 7, Task 9b). A turn accepted after its send-backs ran out that still breaks
+  // the rules is stored as the counted kind it can legally be, if any; otherwise as answer_only with no question.
+  const asked = storedTurn(value, current);
+  if (asked.kind !== value.kind) console.warn(`[staged-interview] ${courseCode}: turn broke the stage rules after send-backs (${value.kind} on ${value.slot_asked}); stored as ${asked.kind}`);
   // An uncounted turn never shows a question, whoever chose answer_only (fix round 1).
   const shown: StagedSubmit = asked.kind === 'answer_only' ? { ...value, kind: 'answer_only', question: '' } : { ...value, kind: asked.kind };
 
   // Stored tool calls: every call except rejected record_answer calls (the ledger is rebuilt from them).
   // A record's citations pass the same check as the turn's; bad ones are dropped, the record is kept (fix round 1).
+  // The app's anchors record (Task 9b fix 2) is stored where it entered the live ledger: first, or right after
+  // the record that closed stage 1, so a rebuild from the rows replays the same order.
   let droppedFromRecords = 0;
-  const toolCallsUsed: ToolCall[] = result.toolCallsUsed
-    .filter(tc => tc.toolName !== 'record_answer' || live.accepted.has(tc.args))
-    .map(tc => {
-      if (tc.toolName !== 'record_answer') return tc;
-      const raw = (tc.args.citations ?? []) as StagedSubmit['citations'];
-      const kept = keepValidCitations(repairCitations({ citations: raw }, msgsForRepair), allowed).citations;
-      droppedFromRecords += raw.length - kept.length;
-      return { ...tc, args: { ...tc.args, citations: kept } };
-    });
+  const appAnchors = live.appAnchors;
+  const appAnchorsCall = (args: Record<string, unknown>): ToolCall => ({ id: 'app-anchors', toolName: 'record_answer', args });
+  const toolCallsUsed: ToolCall[] = appAnchors && appAnchors.after === null ? [appAnchorsCall(appAnchors.args)] : [];
+  for (const tc of result.toolCallsUsed) {
+    if (tc.toolName === 'record_answer' && !live.accepted.has(tc.args)) continue;
+    if (tc.toolName !== 'record_answer') { toolCallsUsed.push(tc); continue; }
+    const raw = (tc.args.citations ?? []) as StagedSubmit['citations'];
+    const kept = keepValidCitations(repairCitations({ citations: raw }, msgsForRepair), allowed).citations;
+    droppedFromRecords += raw.length - kept.length;
+    toolCallsUsed.push({ ...tc, args: { ...tc.args, citations: kept } });
+    if (appAnchors && appAnchors.after === tc.args) toolCallsUsed.push(appAnchorsCall(appAnchors.args));
+  }
   if (droppedFromRecords > 0) console.warn(`[staged-interview] ${courseCode}: dropped ${droppedFromRecords} record_answer citation(s) the interviewer never saw`);
   // This turn's records, rebuilt from the stored (filtered) calls so the live ledger equals a rebuild.
   live.events = [
-    ...startEvents,
+    ...baseEvents,
     ...toolCallsUsed.flatMap((tc): LedgerEvent[] => {
       if (tc.toolName !== 'record_answer') return [];
       const parsed = RecordAnswerArgs.safeParse(tc.args);
@@ -314,12 +333,10 @@ export async function runStagedTurn(
   ];
 
   // The recap answer is recorded by the app when the model did not (decision 8).
-  const prevStaged = lastAssistant ? stagedOf(lastAssistant as CaptureMessageRow) : null;
   const modelRecordedRecap = toolCallsUsed.some(tc => tc.toolName === 'record_answer' && tc.args.slot === 'recap');
-  if (prevStaged?.kind === 'recap' && userMessage && !isSkipMessage(userMessage) && !modelRecordedRecap) {
-    const args = { slot: 'recap', status: 'filled_by_instructor' as const, summary: userMessage.slice(0, RECAP_SUMMARY_MAX), citations: [] };
-    toolCallsUsed.push({ id: 'app-recap', toolName: 'record_answer', args });
-    live.events.push({ type: 'record', record: toSlotRecord(args) });
+  if (appRecapDue && !modelRecordedRecap) {
+    toolCallsUsed.push({ id: 'app-recap', toolName: 'record_answer', args: appRecapArgs });
+    live.events.push({ type: 'record', record: toSlotRecord(appRecapArgs) });
   }
 
   // 6. Adapt, attach the staged block and store.
@@ -350,6 +367,36 @@ export async function runStagedTurn(
   // Pi prices every turn (campus at $0); a failed write is logged, never shown.
   await recordSpend(result.telemetry?.costUsdCents ?? 0).catch(err => console.error(`[staged-interview] ${courseCode}: recordSpend failed`, err));
   return { response, toolCallsUsed, ledger, state, result };
+}
+
+/**
+ * The turn to store (Task 9b). A legal turn is stored as is. A turn that still breaks the rules after its
+ * send-backs is relabeled to a counted kind when one is legal for the same slot and the turn has question text:
+ * answer_only or follow_up → question; question → recap on the recap slot. Never question → follow_up (that would
+ * let a re-ask of a settled slot through). Otherwise it is stored as answer_only, and is shown with no question.
+ * So every stored counted turn passes checkTurn, and no uncounted turn shows a question.
+ */
+function storedTurn(
+  value: StagedSubmit,
+  current: (v: { slot_asked: string; kind: StagedKind }) => { ledger: Ledger; state: EngineState; turn: AskedTurn },
+): AskedTurn {
+  const hasQuestion = value.question.trim() !== '';
+  const legal = (kind: StagedKind) => {
+    const { ledger, state, turn } = current({ slot_asked: value.slot_asked, kind });
+    return checkTurn(state, ledger, turn).ok ? turn : null;
+  };
+  if (value.kind === 'answer_only' || hasQuestion) {
+    const own = legal(value.kind);
+    if (own) return own;
+  }
+  if (hasQuestion) {
+    const relabel: StagedKind[] = value.kind === 'question' ? (value.slot_asked === 'recap' ? ['recap'] : []) : ['question'];
+    for (const kind of relabel) {
+      const t = legal(kind);
+      if (t) return t;
+    }
+  }
+  return { ...current(value).turn, kind: 'answer_only' };
 }
 
 async function sessionOrLookup(input: StagedAgentInput, session?: InterviewSessionRow | null): Promise<InterviewSessionRow> {

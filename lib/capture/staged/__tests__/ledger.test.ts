@@ -86,7 +86,8 @@ describe('buildLedger', () => {
   });
 
   it('skip after an answer_only turn marks the last counted slot', () => {
-    const l = built([
+    // answer_only is illegal while open since Task 9b, but stored rows can still hold one: built directly.
+    const l = buildLedger(null, [
       { type: 'asked', turn: { stage: 1, slot: 'outcomes', kind: 'question' } },
       { type: 'asked', turn: { stage: 1, slot: 'x', kind: 'answer_only' } },
       { type: 'skip', slot: 'x' },

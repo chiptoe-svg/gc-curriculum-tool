@@ -95,12 +95,17 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
   };
 }
 
+export const ANSWER_ONLY_WHILE_OPEN = 'Answer the instructor in `say` and ask the next open question in this same turn.';
+
 export function checkTurn(
   state: EngineState,
   ledger: Ledger,
   turn: AskedTurn,
 ): { ok: true } | { ok: false; sendBack: string } {
-  if (turn.kind === 'answer_only') return { ok: true };
+  // Task 9b: while the interview is open every turn asks the next counted question; answer_only only once done.
+  if (turn.kind === 'answer_only') {
+    return state.done ? { ok: true } : { ok: false, sendBack: ANSWER_ONLY_WHILE_OPEN };
+  }
 
   if (state.questionsAsked >= HARD_CAP) {
     return { ok: false, sendBack: 'The question limit is reached. Do not ask anything more.' };

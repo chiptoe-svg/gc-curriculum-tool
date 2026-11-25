@@ -192,3 +192,11 @@ describe('interview skills: fix round 1', () => {
     }
   });
 });
+
+describe('Task 9b', () => {
+  it('stage 2 opens by naming anchors the app took from the materials', () => {
+    const body = loadSkill('stage-2-evidence').body;
+    expect(body).toContain('filled_from_materials');
+    expect(body).toContain('Your materials weight');
+  });
+});

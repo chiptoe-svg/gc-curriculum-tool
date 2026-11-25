@@ -92,7 +92,9 @@ describe('engineState', () => {
   });
 
   it('answer_only not counted', () => {
-    const { state } = st([ask(1, 'outcomes', 'answer_only'), ask(1, 'outcomes')]);
+    // Stored rows from before Task 9b (or a downgraded turn) can hold answer_only while open: built directly, not played.
+    const ledger = buildLedger(null, [ask(1, 'outcomes', 'answer_only'), ask(1, 'outcomes')]);
+    const state = engineState(null, ledger);
     expect(state.questionsAsked).toBe(1);
   });
 
@@ -164,9 +166,19 @@ describe('checkTurn', () => {
     if (!r.ok) expect(r.sendBack).toContain('follow-ups');
   });
 
-  it('answer_only is always ok', () => {
+  it('Task 9b: answer_only is sent back while the interview is open, asking for the answer and the next question together', () => {
     const { state, ledger } = st([rec('outcomes')]);
-    expect(checkTurn(state, ledger, { stage: 1, slot: 'outcomes', kind: 'answer_only' })).toEqual({ ok: true });
+    expect(checkTurn(state, ledger, { stage: 1, slot: 'anchors', kind: 'answer_only' })).toEqual({
+      ok: false, sendBack: 'Answer the instructor in `say` and ask the next open question in this same turn.',
+    });
+  });
+
+  it('Task 9b: answer_only is sent back while the recap is due or asked but unanswered', () => {
+    for (const evs of [[{ type: 'finish' }], [{ type: 'finish' }, ask(6, 'recap', 'recap')]] as Ev[][]) {
+      const { state, ledger } = st(evs);
+      expect(state.done).toBe(false);
+      expect(checkTurn(state, ledger, { stage: 6, slot: 'recap', kind: 'answer_only' }).ok).toBe(false);
+    }
   });
 
   it('when a recap is due, a non-recap question is sent back', () => {
@@ -261,11 +273,12 @@ describe('fix round 2', () => {
     });
   }
 
-  it('B: a turn tagged with another stage is sent back; answer_only is exempt', () => {
+  it('B: a turn tagged with another stage is sent back (answer_only too, while open)', () => {
     const { state, ledger } = st([]);
     expect(checkTurn(state, ledger, { stage: 6, slot: 'recap', kind: 'recap' }).ok).toBe(false);
     expect(checkTurn(state, ledger, { stage: 3, slot: 'revision', kind: 'question' }).ok).toBe(false);
-    expect(checkTurn(state, ledger, { stage: 3, slot: 'revision', kind: 'answer_only' }).ok).toBe(true);
+    // Task 9b: answer_only is no longer exempt while the interview is open.
+    expect(checkTurn(state, ledger, { stage: 3, slot: 'revision', kind: 'answer_only' }).ok).toBe(false);
   });
 
   it('B: recap kind is refused unless a recap is due or stage 6 is active', () => {
@@ -386,6 +399,8 @@ describe('random legal walks', () => {
           }
         }
         expect(legal.length, `seed ${seed} step ${step} stuck`).toBeGreaterThan(0);
+        // Task 9b: while open, no turn may go without a counted question.
+        expect(checkTurn(state, ledger, { stage: state.stage, slot: state.openSlots[0] ?? 'recap', kind: 'answer_only' }).ok, `seed ${seed} step ${step} answer_only allowed while open`).toBe(false);
         const roll = r();
         if (step > 150 || roll < 0.6) {
           const turn = pick(legal);
@@ -406,6 +421,7 @@ describe('random legal walks', () => {
       }
       const final = engineState(m, buildLedger(m, events as never));
       expect(final.done, `seed ${seed} not done`).toBe(true);
+      expect(checkTurn(final, buildLedger(m, events as never), { stage: final.stage, slot: 'recap', kind: 'answer_only' }).ok).toBe(true);
       expect(final.questionsAsked).toBeLessThanOrEqual(20);
     }
     // The walk really exercises corrections and the post-freeze check.
@@ -487,6 +503,6 @@ describe('fix round 4', () => {
       expect(r.ok).toBe(false);
       if (!r.ok) expect(r.sendBack).toContain('outcomes, anchors');
     }
-    expect(checkTurn(state, ledger, { stage: 1, slot: 'graded_on:A', kind: 'answer_only' }).ok).toBe(true);
+    expect(checkTurn(state, ledger, { stage: 1, slot: 'graded_on:A', kind: 'answer_only' }).ok).toBe(false); // Task 9b
   });
 });
