@@ -60,6 +60,8 @@ Name the process the evidence shows, never a higher one. If the evidence is uncl
 - Wrong: the assignment asks students to list the steps of plate-making, and you write "students evaluate plate-making workflows".
 - Right: "students recall the steps of plate-making".
 
+A routine check against a standard (a proof against a printed sample, a measurement against a tolerance) is a procedure, not reasoning: describe that routine comparison in plain words ("students match the proof to the printed sample") rather than as comparing, checking or evaluating.
+
 Bloom wording describes the evidence and never stands in for it. A verb in course materials or in a written statement is not evidence of a level.
 
 ## Foundational competencies

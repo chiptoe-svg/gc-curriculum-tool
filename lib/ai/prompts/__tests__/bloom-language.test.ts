@@ -45,4 +45,8 @@ describe('shared/bloom-language.md', () => {
   it('stays short', () => {
     expect(norm.split(' ').filter(Boolean).length).toBeLessThanOrEqual(900);
   });
+  it('tells the writer to describe routine procedural checks plainly', () => {
+    expect(norm).toMatch(/routine[^.]*(check|comparison)[^.]*plain/i);
+  });
 });
+

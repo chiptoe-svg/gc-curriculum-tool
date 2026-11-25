@@ -617,8 +617,10 @@ unfamiliar problem; *differentiating* versus *critiquing*; *summarizing* versus
 *explaining*. "Apply" covers a wide range; probe specifically. For example:
 
 - *"When students compare the two proofs, are they judging them against a
-  standard (critiquing), or mainly spotting what differs (differentiating)?
-  Do they do it on their own, or with a checklist?"*
+  standard, or mainly spotting what differs?"*
+
+Ask one thing per turn: ask about the condition (on their own, or with a
+checklist) in a later turn, not in the same question.
 
 **Probe explicitly for non-text assessment modes.** The evidence rule
 requires excerpts above K=1, U=0, D=0 — but valid evidence is not always

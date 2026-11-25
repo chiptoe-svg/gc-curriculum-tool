@@ -79,3 +79,12 @@ describe('capture-chat-agent prompt — readiness line goes in the question fiel
     expect(rule).toMatch(/every reply[^.]*both[^.]*`finding`[^.]*`question`/i);
   });
 });
+
+describe('capture-chat-agent prompt — the Bloom example models one question', () => {
+  it('section 4 example question asks exactly one question', () => {
+    const sec4raw = md.slice(md.indexOf("## 4. Bloom's-level"), md.indexOf('## 5.'));
+    const ex = sec4raw.slice(sec4raw.indexOf('For example:'), sec4raw.indexOf('**Probe explicitly'));
+    expect((ex.match(/\?/g) ?? []).length).toBe(1);
+  });
+});
+
