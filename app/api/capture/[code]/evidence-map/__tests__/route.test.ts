@@ -73,6 +73,13 @@ describe('PUT', () => {
     expect(res.status).toBe(200);
     expect(h.saveEdited).toHaveBeenCalledWith('sess-1', MAP);
   });
+  it('final-fix 5: 400 on a map with more than 12 assumed skills', async () => {
+    h.getSession.mockResolvedValue(row());
+    const skills = Array.from({ length: 13 }, (_, i) => ({ skill: `S${i}`, used_in: 'u', source: 's' }));
+    const res = await PUT(json('PUT', { sessionId: 'sess-1', map: { ...MAP, assumed_skills: skills } }), ctx);
+    expect(res.status).toBe(400);
+    expect(h.saveEdited).not.toHaveBeenCalled();
+  });
   it('400 on a bad map', async () => {
     const res = await PUT(json('PUT', { sessionId: 'sess-1', map: { summary: 1 } }), ctx);
     expect(res.status).toBe(400);

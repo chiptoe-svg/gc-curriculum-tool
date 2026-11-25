@@ -203,6 +203,8 @@ export function CaptureChatPanel({
         const json = res.ok ? await res.json().catch(() => null) : null;
         const found: unknown = json?.map?.assumed_skills;
         if (Array.isArray(found)) {
+          // The map holds at most 12 assumed skills (EVIDENCE_MAP_LIMITS.assumedSkills), so the card and the
+          // stage-4 skill name the same list; the slice is only a guard for older stored maps.
           skills = [...new Set(found.map(x => (x && typeof x.skill === 'string' ? x.skill.trim() : '')).filter(Boolean))].slice(0, 12);
         }
       } catch { /* no card; the instructor types the answer instead */ }

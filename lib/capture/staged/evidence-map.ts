@@ -14,7 +14,9 @@ export type EvidenceMap = {
 
 // Size limits are zod-only (applied to the instructor's PUT and to the model's output). They are NOT in
 // EvidenceMapJsonSchema: whether OpenAI strict mode accepts maxLength/maxItems is unverified here.
-export const EVIDENCE_MAP_LIMITS = { string: 2000, list: 60, sublist: 40 } as const;
+// assumedSkills: the stage-4 card asks about every assumed skill and the stage-4 skill names every one, so the
+// map holds at most 12 (final-review 5): one limit, enforced on the model's map (clamp) and the instructor's PUT.
+export const EVIDENCE_MAP_LIMITS = { string: 2000, list: 60, sublist: 40, assumedSkills: 12 } as const;
 const S = z.string().max(EVIDENCE_MAP_LIMITS.string);
 const list = <T extends z.ZodType>(t: T) => z.array(t).max(EVIDENCE_MAP_LIMITS.list);
 const sublist = <T extends z.ZodType>(t: T) => z.array(t).max(EVIDENCE_MAP_LIMITS.sublist);
@@ -30,7 +32,7 @@ export const EvidenceMapSchema = z.object({
   })),
   tests: list(z.object({ name: S, item_types: sublist(S), source: S })),
   competencies: list(z.object({ statement: S, graded_work: sublist(S) })),
-  assumed_skills: list(z.object({ skill: S, used_in: S, source: S })),
+  assumed_skills: z.array(z.object({ skill: S, used_in: S, source: S })).max(EVIDENCE_MAP_LIMITS.assumedSkills),
   objectives: list(z.object({
     text: S,
     status: z.enum(['graded_work_found', 'not_found']),
@@ -61,8 +63,9 @@ export function clampEvidenceMap(raw: unknown): { value: unknown; clamped: numbe
     return v;
   };
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { value: raw, clamped: 0 };
-  const topList = new Set(['graded_work', 'tests', 'competencies', 'assumed_skills', 'objectives']);
-  const value = Object.fromEntries(Object.entries(raw).map(([k, x]) => [k, walk(x, topList.has(k) ? maxList : maxSub)]));
+  const topList = new Set(['graded_work', 'tests', 'competencies', 'objectives']);
+  const topMax = (k: string) => (k === 'assumed_skills' ? EVIDENCE_MAP_LIMITS.assumedSkills : topList.has(k) ? maxList : maxSub);
+  const value = Object.fromEntries(Object.entries(raw).map(([k, x]) => [k, walk(x, topMax(k))]));
   return { value, clamped };
 }
 
