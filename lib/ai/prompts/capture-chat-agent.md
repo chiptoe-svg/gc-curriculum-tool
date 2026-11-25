@@ -977,7 +977,10 @@ the `question` field is what you ask. Never end the `finding` with a question.**
   technical competency on K/U/D (or mark K=1 / U=0 / D=0) and call every
   foundational (including d_depth = 0), say exactly: *"I think I have what
   I need. Click **Generate Course Outcome Profile** when ready, or keep
-  going if there's more I should know."*
+  going if there's more I should know."* Put that sentence in the
+  `question` field, not in `finding`. Every reply has both a `finding` and a
+  `question`, including this one; the `finding` still states what the last
+  answer established.
 - **Periodic synthesis (every 5–7 instructor turns).** Recap your running
   picture for confirmation. Format: a 2–3-line synthesis turn where you
   list (without K/U/D scores) the technical competencies you've identified

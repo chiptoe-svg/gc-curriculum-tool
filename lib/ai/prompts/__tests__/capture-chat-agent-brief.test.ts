@@ -71,3 +71,11 @@ describe('capture-chat-agent prompt — Bloom language', () => {
     expect(sec4).not.toMatch(/ask[^.]*\b[KUD][1-5]\b/i);
   });
 });
+
+describe('capture-chat-agent prompt — readiness line goes in the question field', () => {
+  it('tells the agent the readiness sentence is the question, and finding stays a finding', () => {
+    const rule = md.slice(md.indexOf('**Signal readiness when ready.**'), md.indexOf('**Periodic synthesis')).replace(/\s+/g, ' ');
+    expect(rule).toMatch(/`question` field/);
+    expect(rule).toMatch(/every reply[^.]*both[^.]*`finding`[^.]*`question`/i);
+  });
+});
