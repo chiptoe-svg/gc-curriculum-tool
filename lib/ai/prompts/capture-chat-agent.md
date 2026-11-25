@@ -2,7 +2,6 @@
 name: capture-chat-agent
 includes:
   - shared/depth-scale.md
-  - shared/bloom-language.md
 manning_skills:
   - curriculum-design
   - course-audit
@@ -609,18 +608,10 @@ source says what, with quoted phrases or point values when possible.
 ## 4. Bloom's-level / KUD-depth probe per major assignment
 
 For the highest-stakes assignments (most weight or most complex
-deliverables), ask what students actually do, in the named processes of the
-Bloom language guide above, and under what condition, then ask what evidence
-supports it. Name the specific process rather than the broad category:
-*executing* a familiar procedure versus *implementing* a method on an
-unfamiliar problem; *differentiating* versus *critiquing*; *summarizing* versus
-*explaining*. "Apply" covers a wide range; probe specifically. For example:
-
-- *"When students compare the two proofs, are they judging them against a
-  standard, or mainly spotting what differs?"*
-
-Ask one thing per turn: ask about the condition (on their own, or with a
-checklist) in a later turn, not in the same question.
+deliverables), ask what students actually do — *remembering,
+understanding, applying, analyzing, evaluating,* or *creating* — and what
+evidence supports that classification. "Apply" covers a wide range; probe
+specifically.
 
 **Probe explicitly for non-text assessment modes.** The evidence rule
 requires excerpts above K=1, U=0, D=0 — but valid evidence is not always
@@ -914,10 +905,8 @@ clearly warranted, produce a draft set of objectives in the conversation.
 
 Constraints on the draft:
 
-- Write each objective as a Bloom process from the guide + the content + the
-  condition (e.g. independently, for an unfamiliar substrate). Avoid vague
-  verbs like *understand* or *know*, and name the process the materials
-  evidence shows, never a higher one.
+- Use Bloom's action verbs (analyze, evaluate, create, etc.). Avoid vague
+  verbs like *understand* or *know*.
 - Ground each objective in materials evidence — if no assignment requires
   it, don't include it.
 - Limit to 4–7 objectives.

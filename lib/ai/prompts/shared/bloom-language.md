@@ -1,6 +1,6 @@
 # Bloom language for faculty-facing wording
 
-Faculty write objectives in the language of Bloom's revised taxonomy. When you write wording a faculty member will read about what students do (an observed outcome, a suggested objective, an interview question, a checklist item), use the taxonomy's named processes where one fits. This is wording only. It never changes how a level is scored; the depth scale and the evidence rule above still decide every level.
+Faculty write objectives in the language of Bloom's revised taxonomy. When you write wording a faculty member will read about what students do (an observed outcome, a suggested objective, a checklist item, a course or wiki summary), use the taxonomy's named processes where one fits. This is wording only. It never changes how a level is scored; the depth scale and the evidence rule above still decide every level.
 
 ## When to use it
 

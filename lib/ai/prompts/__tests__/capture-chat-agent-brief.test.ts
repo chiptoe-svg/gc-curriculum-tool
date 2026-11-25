@@ -52,26 +52,6 @@ describe('capture-chat-agent prompt — course-context brief', () => {
   });
 });
 
-describe('capture-chat-agent prompt — Bloom language', () => {
-  const sec4 = md.slice(md.indexOf("## 4. Bloom's-level"), md.indexOf('## 5.')).replace(/\s+/g, ' ');
-  const objectives = md.slice(md.indexOf('# Optional output: revised learning objectives draft')).replace(/\s+/g, ' ');
-  it('probes the 19 processes, not only the six categories', () => {
-    for (const p of ['executing', 'implementing', 'critiquing']) expect(sec4, p).toContain(p);
-    expect(sec4).toMatch(/Bloom language guide/);
-  });
-  it('drafts objectives as process + content + condition', () => {
-    expect(objectives).not.toContain("Use Bloom's action verbs (analyze, evaluate, create, etc.)");
-    expect(objectives).toMatch(/content/i);
-    expect(objectives).toMatch(/condition/i);
-  });
-  it('still grounds objectives in materials evidence', () => {
-    expect(objectives).toContain('Ground each objective in materials evidence');
-  });
-  it('asks about the process, not the level code', () => {
-    expect(sec4).not.toMatch(/ask[^.]*\b[KUD][1-5]\b/i);
-  });
-});
-
 describe('capture-chat-agent prompt — readiness line goes in the question field', () => {
   it('tells the agent the readiness sentence is the question, and finding stays a finding', () => {
     const rule = md.slice(md.indexOf('**Signal readiness when ready.**'), md.indexOf('**Periodic synthesis')).replace(/\s+/g, ' ');
@@ -80,11 +60,10 @@ describe('capture-chat-agent prompt — readiness line goes in the question fiel
   });
 });
 
-describe('capture-chat-agent prompt — the Bloom example models one question', () => {
-  it('section 4 example question asks exactly one question', () => {
-    const sec4raw = md.slice(md.indexOf("## 4. Bloom's-level"), md.indexOf('## 5.'));
-    const ex = sec4raw.slice(sec4raw.indexOf('For example:'), sec4raw.indexOf('**Probe explicitly'));
-    expect((ex.match(/\?/g) ?? []).length).toBe(1);
+describe('capture-chat-agent prompt — original interview wording kept (owner option A)', () => {
+  it('keeps the original Bloom probe and objective verb rule', () => {
+    const norm = md.replace(/\s+/g, ' ');
+    expect(norm).toContain("Use Bloom's action verbs (analyze, evaluate, create, etc.)");
+    expect(norm).not.toMatch(/Bloom language guide/);
   });
 });
-
