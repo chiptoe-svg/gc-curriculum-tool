@@ -69,4 +69,14 @@ describe('buildLedger', () => {
     ]);
     expect(l.anchors).toEqual([]);
   });
+
+  it('skip after an answer_only turn marks the last counted slot', () => {
+    const l = buildLedger(null, [
+      { type: 'asked', turn: { stage: 1, slot: 'outcomes', kind: 'question' } },
+      { type: 'asked', turn: { stage: 1, slot: 'x', kind: 'answer_only' } },
+      { type: 'skip', slot: 'x' },
+    ]);
+    expect(l.slots.outcomes?.status).toBe('unknown');
+    expect(l.slots.x).toBeUndefined();
+  });
 });

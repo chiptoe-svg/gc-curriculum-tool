@@ -29,7 +29,10 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
   const counted = ledger.asked.filter(isCounted);
   const questionsAsked = counted.length;
   const followUpsUsed = ledger.asked.filter((t) => t.kind === 'follow_up').length;
-  const mustRecap = ledger.finished || questionsAsked >= RECAP_AT;
+  const stage6Spent = counted.filter((t) => t.stage === 6).length >= STAGES[5]!.cap;
+  const mustRecap = ledger.finished || questionsAsked >= RECAP_AT || stage6Spent;
+  // The active stage never moves backwards: a stage at or before the latest one asked in stays closed.
+  const floor = counted.reduce((m, t) => Math.max(m, t.stage), 1);
 
   const slotStatus: EngineState['slotStatus'] = {};
   let current: StageId | null = null;
@@ -46,7 +49,7 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
       // The close needs the recap answered; a spent stage cap alone does not skip it.
       isClosed = isFilled(ledger.slots['recap']);
     } else {
-      isClosed = allFilled || stageCounted >= stage.cap || mustRecap;
+      isClosed = allFilled || stageCounted >= stage.cap || mustRecap || stage.id < floor;
     }
     closed.set(stage.id, isClosed);
     allSlots.push(...slots);
@@ -91,7 +94,11 @@ export function checkTurn(
   if (state.questionsAsked >= HARD_CAP) {
     return { ok: false, sendBack: 'The question limit is reached. Do not ask anything more.' };
   }
-  if (state.mustRecap && turn.kind !== 'recap' && !state.done) {
+  if (state.done) {
+    return { ok: false, sendBack: 'The interview is finished. Do not ask anything more.' };
+  }
+  const recapFollowUp = turn.kind === 'follow_up' && turn.slot === 'recap';
+  if (state.mustRecap && turn.kind !== 'recap' && !recapFollowUp) {
     return { ok: false, sendBack: 'The interview is at its recap. Your next turn must be the recap, not another question.' };
   }
 
@@ -109,9 +116,6 @@ export function checkTurn(
   if (turn.kind === 'question' && existing) {
     const said = existing.summary ? ` Earlier you recorded: "${existing.summary}".` : '';
     return { ok: false, sendBack: `"${turn.slot}" is already settled (${existing.status}).${said} Do not ask it again; ask an open slot.` };
-  }
-  if (turn.kind === 'question' && ledger.asked.some((t) => t.kind === 'question' && t.slot === turn.slot)) {
-    return { ok: false, sendBack: `"${turn.slot}" was already asked. Do not ask it again; ask an open slot.` };
   }
   return { ok: true };
 }

@@ -50,7 +50,7 @@ export function buildLedger(map: EvidenceMap | null, events: LedgerEvent[]): Led
     } else if (ev.type === 'asked') {
       ledger.asked.push(ev.turn);
     } else if (ev.type === 'skip') {
-      const last = ledger.asked[ledger.asked.length - 1];
+      const last = [...ledger.asked].reverse().find((t) => t.kind !== 'answer_only');
       if (!last) continue;
       ledger.slots[last.slot] = { slot: last.slot, status: 'unknown', summary: 'instructor skipped', citations: [] };
       if (last.slot === 'anchors') ledger.anchors = [];
