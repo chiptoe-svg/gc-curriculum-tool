@@ -13,6 +13,9 @@ import { InstructorSelect } from './InstructorSelect';
 import { AddFileButton, fileMarkers, type AttachedFile, type AddFileHandle } from './AddFileButton';
 import { splitFileMarkers } from '@/lib/ai/agent/interview-controls';
 import { InterviewChecklist } from './InterviewChecklist';
+import { StageProgress } from './staged/StageProgress';
+import { IncomingSkillsCard } from './staged/IncomingSkillsCard';
+import type { AuditStagedBlock } from '@/lib/ai/agent/audit-response-schema';
 import { REVISION_MODE_COPY, type RevisionMode } from '@/lib/capture/revision-copy';
 import { EMPTY_CHECKLIST, nextChecklist, type InterviewChecklist as InterviewChecklistData } from '@/lib/capture/interview-checklist';
 
@@ -129,7 +132,14 @@ interface Props {
   modeRequired?: boolean;
   /** Distilled recap of prior sessions for the "Where we left off" card. Empty/omitted hides the card. */
   priorBriefings?: SessionBriefingView[];
+  /** A staged interview (plan 2026-11-25): the stage bar replaces the checklist, and Skip and Finish are offered. */
+  staged?: boolean;
+  /** The staged block of the latest interviewer reply, restored on reload (page.tsx). */
+  initialStaged?: AuditStagedBlock | null;
 }
+
+/** What the staged interview sends for its Skip button; the server detects a skip from this text. */
+const SKIP_MESSAGE = 'Skip this question';
 
 // The chat panel renders the full transcript, the input row with text +
 // voice + send, a "Start session" button when no messages yet, and a
@@ -150,6 +160,8 @@ export function CaptureChatPanel({
   chooserMode,
   modeRequired = false,
   priorBriefings,
+  staged = false,
+  initialStaged = null,
 }: Props) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -171,15 +183,37 @@ export function CaptureChatPanel({
   );
   const [justCovered, setJustCovered] = useState<string[]>([]);
   const [drawerTarget, setDrawerTarget] = useState<CitationTarget | null>(null);
+  // Staged interviews: where the latest reply sits in the six stages, and the skills stage 4 asks about.
+  const [stagedBlock, setStagedBlock] = useState<AuditStagedBlock | null>(initialStaged);
+  const [incomingSkills, setIncomingSkills] = useState<string[] | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
+  const askingIncoming = staged && stagedBlock?.slotAsked === 'incoming';
+  useEffect(() => {
+    if (!askingIncoming || incomingSkills !== null || !sessionId) return;
+    let cancelled = false;
+    void (async () => {
+      let skills: string[] = [];
+      try {
+        const res = await fetch(`/api/capture/${encodeURIComponent(courseCode)}/evidence-map?slug=${encodeURIComponent(slug)}&sessionId=${encodeURIComponent(sessionId)}`);
+        const json = res.ok ? await res.json().catch(() => null) : null;
+        const found: unknown = json?.map?.assumed_skills;
+        if (Array.isArray(found)) {
+          skills = [...new Set(found.map(x => (x && typeof x.skill === 'string' ? x.skill.trim() : '')).filter(Boolean))].slice(0, 12);
+        }
+      } catch { /* no card; the instructor types the answer instead */ }
+      if (!cancelled) setIncomingSkills(skills);
+    })();
+    return () => { cancelled = true; };
+  }, [askingIncoming, incomingSkills, sessionId, courseCode, slug]);
+
   // `next` is the transcript to show; `message` is the instructor's new
   // message (omitted on the opening turn). Only `message` is sent.
-  async function postChat(next: ChatMessage[], message?: string) {
+  async function postChat(next: ChatMessage[], message?: string, opts?: { finish?: boolean }) {
     setBusy(true);
     setError(null);
 
@@ -198,6 +232,7 @@ export function CaptureChatPanel({
           headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
           body: JSON.stringify({
             ...(message !== undefined ? { message } : {}),
+            ...(opts?.finish ? { finish: true } : {}),
             ...(sessionId ? { sessionId } : {}),
             instructorName: chooserInstructor,
             // Only "Start over" skips the prior-sessions block. The server
@@ -220,6 +255,7 @@ export function CaptureChatPanel({
         question?: string;
         citations?: ChatMessage['citations'];
         readiness?: CaptureReadiness;
+        staged?: AuditStagedBlock;
       };
       let finalResponse: FinalResponse | null = null;
 
@@ -258,6 +294,7 @@ export function CaptureChatPanel({
       const fr: FinalResponse = finalResponse;
       const newMessages = [...next, assistantTurnMessage(fr)];
       onMessagesChange(newMessages);
+      if (fr.staged) setStagedBlock(fr.staged);
       if (fr.readiness) {
         setReadiness(fr.readiness);
         // Track session-cumulative progress so a per-turn score drop
@@ -308,6 +345,14 @@ export function CaptureChatPanel({
   async function handleOneLastQuestion() {
     await sendText(ONE_LAST_QUESTION);
   }
+  // Staged Finish: no message, the server's next turn is the recap.
+  async function handleFinish() {
+    if (busy) return;
+    await postChat(messages, undefined, { finish: true });
+  }
+  // Staged: once the recap turn is out, the same button generates the profile.
+  const recapDone = staged && stagedBlock?.kind === 'recap';
+  const showStageBar = staged && stagedBlock != null;
 
   function appendTranscript(text: string) {
     if (!text) return;
@@ -421,7 +466,7 @@ export function CaptureChatPanel({
 
       {/* Transcript, with the interview checklist beside it once the interview
           has started (below it on narrow screens). */}
-      <div className={messages.length > 0 ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_17rem]' : undefined}>
+      <div className={messages.length > 0 && (!staged || showStageBar) ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_17rem]' : undefined}>
       <div
         ref={transcriptRef}
         className="max-h-[55vh] min-h-[280px] overflow-y-auto px-4 py-3 space-y-3"
@@ -534,13 +579,21 @@ export function CaptureChatPanel({
             );
           })
         )}
+        {askingIncoming && incomingSkills && incomingSkills.length > 0 && !busy && (
+          <IncomingSkillsCard skills={incomingSkills} onSubmit={text => void sendText(text)} disabled={busy} />
+        )}
         {busy && messages.length > 0 && messages[messages.length - 1]?.content === '' && (
           <p className="text-xs italic text-muted-foreground">Interviewer is thinking…</p>
         )}
       </div>
-      {messages.length > 0 && (
+      {messages.length > 0 && !staged && (
         <div className="border-t border-[#E4E2E8] bg-[#FAF9FB] px-4 py-3 lg:max-h-[55vh] lg:overflow-y-auto lg:border-l lg:border-t-0">
           <InterviewChecklist checklist={checklist} justCovered={justCovered} updating={busy} />
+        </div>
+      )}
+      {messages.length > 0 && staged && stagedBlock && (
+        <div className="border-t border-[#E4E2E8] bg-[#FAF9FB] px-4 py-3 lg:max-h-[55vh] lg:overflow-y-auto lg:border-l lg:border-t-0">
+          <StageProgress progress={stagedBlock.stageProgress} questionsAsked={stagedBlock.questionsAsked} cap={stagedBlock.cap} />
         </div>
       )}
       </div>
@@ -580,19 +633,26 @@ export function CaptureChatPanel({
             placeholder="Type a reply, or use voice. Enter to send, Shift+Enter for a new line."
             className="mt-1.5 w-full resize-y rounded-[10px] border border-[#D9D6DF] bg-white px-3 py-2 text-sm focus:border-[#522D80] focus:outline-none focus:ring-2 focus:ring-[#522D80]/25"
           />
-          <div className="mt-4 flex items-center justify-between gap-3">
+          <div className={'mt-4 flex items-center justify-between gap-3' + (staged ? ' flex-wrap' : '')}>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
               <AddFileButton courseCode={courseCode} slug={slug} sessionId={sessionId} disabled={busy} files={attached} onChange={setAttached} handle={addFileHandle} />
             </div>
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={(!input.trim() && fileMarkers(attached).length === 0) || busy}
-              className="cap-btn cap-btn-primary"
-            >
-              {busy ? 'Sending…' : 'Send'}
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {staged && stagedBlock && !recapDone && (
+                <button type="button" onClick={() => void sendText(SKIP_MESSAGE)} disabled={busy} className="cap-btn">
+                  Skip this question
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={(!input.trim() && fileMarkers(attached).length === 0) || busy}
+                className="cap-btn cap-btn-primary"
+              >
+                {busy ? 'Sending…' : 'Send'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -612,7 +672,7 @@ export function CaptureChatPanel({
           <div>
             <button
               type="button"
-              onClick={lastQuestionAsked ? handleGenerateClick : handleOneLastQuestion}
+              onClick={staged ? (recapDone ? handleGenerateClick : () => void handleFinish()) : lastQuestionAsked ? handleGenerateClick : handleOneLastQuestion}
               disabled={!canGenerate || busy}
               className={
                 'cap-btn w-full min-h-11 font-semibold whitespace-normal '
@@ -625,6 +685,10 @@ export function CaptureChatPanel({
               title={
                 !canGenerate
                   ? 'Send at least one reply first'
+                  : staged
+                  ? recapDone
+                    ? 'Generate the Course Outcome Profile from this conversation'
+                    : 'The interviewer wraps up with a short recap of what you have said. Then you can generate the profile.'
                   : !lastQuestionAsked
                   ? "The interviewer reviews what's been covered and asks one final, high-value question. Then you can generate the profile."
                   : readiness
@@ -632,9 +696,11 @@ export function CaptureChatPanel({
                   : 'Generate the Course Outcome Profile from this conversation'
               }
             >
-              {lastQuestionAsked ? 'Generate Profile' : <>I&rsquo;m done — give me one last question</>}
+              {staged
+                ? (recapDone ? 'Generate Profile' : 'Finish the interview')
+                : lastQuestionAsked ? 'Generate Profile' : <>I&rsquo;m done — give me one last question</>}
             </button>
-            {lastQuestionAsked && !lastQuestionAnswered && (
+            {!staged && lastQuestionAsked && !lastQuestionAnswered && (
               <p className="mt-2 text-center text-sm text-muted-foreground">
                 Answer the last question above first, then generate the profile.
               </p>

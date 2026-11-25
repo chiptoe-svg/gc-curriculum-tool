@@ -4,6 +4,8 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { getCaptureConversation, deleteCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
+import { getLatestSessionId } from '@/lib/db/capture-messages-queries';
+import { loadStagedSessionView } from '@/lib/capture/staged/session-view';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -23,18 +25,22 @@ async function authAndCourse(req: Request, codeParam: string): Promise<{ ok: tru
 
 // GET /api/capture/[code]/conversation?slug=...
 // Returns the saved conversation (messages + last readiness) for the course,
-// or { messages: [], readiness: null } if none.
+// or { messages: [], readiness: null } if none. `staged` is the latest interviewer reply's stage block and
+// `mapStatus` the session's evidence-map status (both null for a classic session), so a reload restores the stage bar.
 export async function GET(req: Request, { params }: RouteContext): Promise<Response> {
   const { code: rawCode } = await params;
   const gate = await authAndCourse(req, rawCode);
   if (!gate.ok) return gate.res;
 
   const conv = await getCaptureConversation(gate.courseCode);
-  if (!conv) return NextResponse.json({ messages: [], readiness: null, updatedAt: null });
+  if (!conv) return NextResponse.json({ messages: [], readiness: null, updatedAt: null, staged: null, mapStatus: null });
+  const view = await loadStagedSessionView(gate.courseCode, await getLatestSessionId(gate.courseCode));
   return NextResponse.json({
     messages: conv.messages,
     readiness: conv.readiness,
     updatedAt: conv.updatedAt,
+    staged: view.staged,
+    mapStatus: view.mapStatus,
   });
 }
 

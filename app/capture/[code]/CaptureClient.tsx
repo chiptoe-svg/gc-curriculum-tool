@@ -17,6 +17,8 @@ import { CanvasImportSummary } from './CanvasImportSummary';
 import { CaptureHero } from './CaptureHero';
 import { CaptureMaterialsStep } from './CaptureMaterialsStep';
 import { TriageStep } from './TriageStep';
+import { EvidenceMapStep } from './staged/EvidenceMapStep';
+import type { AuditStagedBlock } from '@/lib/ai/agent/audit-response-schema';
 import { shouldShowMaterialsStep } from '@/lib/capture/material-display';
 import { assessMaterialsHealth, assessEvidence } from '@/lib/capture/materials-health';
 import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
@@ -65,6 +67,10 @@ interface Props {
    *  don't need it; external testers without one keep it. Resolved on the
    *  SERVER (page.tsx, from the scoped session) and passed down. */
   isExternalTester?: boolean;
+  /** A staged interview (page.tsx: ?interview=staged, INTERVIEW_STAGED_DEFAULT, or the resumed session's own row). */
+  staged?: boolean;
+  /** The staged block of the resumed session's latest reply, for the stage bar. */
+  initialStaged?: AuditStagedBlock | null;
 }
 
 type Stage = 'chat' | 'generating' | 'reconcile' | 'review';
@@ -100,6 +106,8 @@ export function CaptureClient({
   approvedOn = null,
   triageEnabled = false,
   isExternalTester = false,
+  staged = false,
+  initialStaged = null,
 }: Props) {
   const [course, setCourse] = useState<CourseCatalogView>(initialCourse);
   const courseCode = course.code;
@@ -555,6 +563,11 @@ export function CaptureClient({
           ) : (
           <>
           <IngestionCheckIn courseCode={courseCode} slug={slug} />
+          {staged && sessionId === null && messages.length === 0 ? (
+            // Staged: the pre-read of the materials is confirmed before the first question. Confirming
+            // creates the server session; Reset clears it, which brings this step back.
+            <EvidenceMapStep courseCode={courseCode} slug={slug} onStart={setSessionId} />
+          ) : (
           <CaptureChatPanel
             key={chatPanelKey}
             courseCode={courseCode}
@@ -572,7 +585,10 @@ export function CaptureClient({
             onModeChange={setChooserMode}
             modeRequired={priorSnapshotInfo != null}
             priorBriefings={priorBriefings}
+            staged={staged}
+            initialStaged={initialStaged}
           />
+          )}
           </>
           )}
           <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground">

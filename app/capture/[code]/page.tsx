@@ -22,6 +22,8 @@ import { DraftStatusStrip } from './DraftStatusStrip';
 import { InputsDriftBanner } from './InputsDriftBanner';
 import { diffInputsVsSnapshot } from '@/lib/capture/inputs-drift';
 import { isTriageEnabled } from '@/lib/capture/triage-flag';
+import { chooseStaged } from '@/lib/capture/staged/ui-mode';
+import { loadStagedSessionView } from '@/lib/capture/staged/session-view';
 import { CreditsBanner } from '@/app/CreditsBanner';
 import { FeedbackLink } from '@/app/FeedbackLink';
 import '@/components/strings/strings.css';
@@ -32,14 +34,14 @@ export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ slug?: string }>;
+  searchParams: Promise<{ slug?: string; interview?: string }>;
 }
 
 // Self-standing CourseCapture entry point at /capture/[code]?slug=...
 // Single chat surface that drives the depth-rating Course Outcome Profile flow.
 export default async function CapturePage({ params, searchParams }: Props) {
   const { code: rawCode } = await params;
-  const { slug = '' } = await searchParams;
+  const { slug = '', interview } = await searchParams;
   const code = decodeURIComponent(rawCode);
 
   // External-tester access: a scoped session bound to THIS course authorizes the
@@ -116,6 +118,11 @@ export default async function CapturePage({ params, searchParams }: Props) {
           .map(m => readinessFromStoredReply(m.content)),
       )
     : null;
+  // Staged or classic. A session in progress follows its own capture_interview_sessions row; only a new
+  // interview reads ?interview= and INTERVIEW_STAGED_DEFAULT (plan 2026-11-25, Task 8).
+  const resumedSessionId = savedConversation ? currentSessionId : null;
+  const stagedView = await loadStagedSessionView(code, resumedSessionId);
+  const staged = resumedSessionId ? stagedView.isStaged : chooseStaged(interview, process.env.INTERVIEW_STAGED_DEFAULT);
   // The name on the viewer's personal link defaults the instructor box (null for the department login).
   const viewerName = personalName(await getRequestGrant(await headers()));
 
@@ -249,6 +256,8 @@ export default async function CapturePage({ params, searchParams }: Props) {
           priorBriefings={priorBriefings}
           triageEnabled={isTriageEnabled()}
           isExternalTester={isScopedForThis}
+          staged={staged}
+          initialStaged={stagedView.staged}
         />
       </main>
     </div>
