@@ -196,11 +196,10 @@ derived mechanically from the citation set you assembled in the previous step.
 The same rule is applied downstream as a verification check; if your `source`
 disagrees with the rule, the system will overwrite it.
 
-# `productive_failure_conditions` — emit only if productive-failure conditions were probed: Audit Area 7 in classic interviews, or stage 3 (revision, transfer, threshold) slots filled in staged interviews
+# `productive_failure_conditions` — emit only if Audit Area 7 was probed
 
-Emit the `productive_failure_conditions` block ONLY IF productive-failure conditions were probed: Audit Area 7 in the
-transcript of a classic interview, or stage 3 (revision, transfer, threshold)
-slots filled in the interview record of a staged interview — i.e., the transcript contains explicit discussion of
+Emit the `productive_failure_conditions` block ONLY IF Audit Area 7 was probed
+in the transcript — i.e., the transcript contains explicit discussion of
 generate-then-consolidate structure, ill-structured / open-ended problems,
 revision cycles with consequential feedback, structured post-mortem,
 abstraction-and-bridging / transfer across varied cases, or the

@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { buildV2SynthesisUserMessage, type V2SynthesisContext } from '../capture-scores';
 import { richContext } from './fixtures/rich-context';
 import { buildLedger } from '@/lib/capture/staged/ledger';
+
+/** sha256 of `git show a09dd9d4:lib/ai/prompts/capture-synthesis.md`. */
+const CAPTURE_SYNTHESIS_A09DD9D4_SHA256 = '5b1db150e3a68631cb7a6efbf39d8cad245eb02edfdab1881c8840715dea9a00';
 
 const base: V2SynthesisContext = {
   chatContext: {
@@ -62,8 +66,16 @@ describe('buildV2SynthesisUserMessage', () => {
 });
 
 describe('capture-synthesis.md', () => {
-  it('names the staged alternative for productive failure', () => {
-    const md = readFileSync('lib/ai/prompts/capture-synthesis.md', 'utf8');
-    expect(md).toContain('stage 3 (revision, transfer, threshold)');
+  // Final-review I3: the classic synthesis system prompt is unchanged by the staged interview. The stage-3 rule
+  // lives only in the staged user-message closing line (asserted above). Pinned to a09dd9d4's file.
+  it('is byte-identical to a09dd9d4 (sha256 pinned)', () => {
+    const md = readFileSync('lib/ai/prompts/capture-synthesis.md');
+    expect(createHash('sha256').update(md).digest('hex')).toBe(CAPTURE_SYNTHESIS_A09DD9D4_SHA256);
+    expect(md.toString('utf8')).not.toContain('stage 3 (revision, transfer, threshold)');
+  });
+
+  it('the staged rule is carried by the staged user message instead', () => {
+    const m = buildV2SynthesisUserMessage({ ...base, staged: { map: null, ledger: buildLedger(null, []), leadNotes: [] } });
+    expect(m).toContain('stage 3 (revision, transfer, threshold) slots were filled');
   });
 });
