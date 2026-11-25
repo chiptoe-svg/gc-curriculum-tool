@@ -37,14 +37,57 @@ export function isFilled(s: SlotRecord | undefined): boolean {
   return s !== undefined;
 }
 
-function parseAnchors(rec: SlotRecord | undefined): string[] {
+const ANCHOR_MAX = 80;
+/** Containment needs this many characters in the shorter string, so "a" or "Lab" does not match every title. */
+const MIN_MATCH = 4;
+
+/** The evidence-map graded-work title a line names (Task 9b fix 3): exact, then line ⊇ title (longest), then title ⊇ line. */
+function matchTitle(line: string, map: EvidenceMap | null): string | null {
+  const titles = (map?.graded_work ?? []).map((g) => g.title.trim()).filter((t) => t.length > 0);
+  const l = line.toLowerCase();
+  const exact = titles.find((t) => t.toLowerCase() === l);
+  if (exact) return exact;
+  const inLine = titles.filter((t) => t.length >= MIN_MATCH && l.includes(t.toLowerCase())).sort((a, b) => b.length - a.length)[0];
+  if (inLine) return inLine;
+  return l.length >= MIN_MATCH ? titles.find((t) => t.toLowerCase().includes(l)) ?? null : null;
+}
+
+function parseAnchors(rec: SlotRecord | undefined, map: EvidenceMap | null): string[] {
   if (!rec || (rec.status !== 'filled_by_instructor' && rec.status !== 'filled_from_materials')) return [];
-  return rec.summary
+  const lines = rec.summary
     .split('\n')
     // Models often list the two titles; a bullet or number would leak into the graded_on slot ids.
     .map((l) => l.trim().replace(/^(?:[-*•]\s+|\d+[.)]\s*)/, '').trim())
     .filter((l) => l.length > 0)
-    .slice(0, 2);
+    .map((l) => matchTitle(l, map) ?? l.slice(0, ANCHOR_MAX).trim());
+  return [...new Set(lines)].slice(0, 2);
+}
+
+/** The two graded-work titles with the highest weight (leading number of `weight`); ties and missing weights keep map order. */
+export function topGradedWork(map: EvidenceMap | null): string[] {
+  const num = (w: string | null) => {
+    const m = /^\s*(\d+(?:\.\d+)?)/.exec(w ?? '');
+    return m ? Number(m[1]) : -Infinity;
+  };
+  const ranked = (map?.graded_work ?? [])
+    .map((g, i) => ({ title: g.title.trim(), w: num(g.weight), i }))
+    .filter((g) => g.title.length > 0)
+    .sort((a, b) => (b.w === a.w ? a.i - b.i : b.w - a.w))
+    .map((g) => g.title);
+  return [...new Set(ranked)].slice(0, 2);
+}
+
+/**
+ * Task 9b fix 2. When stage 1 has closed (and stage 2 has not) without anchors from the instructor (unknown,
+ * skipped, or never recorded) and the map has graded work, the app fills `anchors` from the map: the summary to
+ * record as filled_from_materials, or null when the fallback does not apply.
+ */
+export function anchorFallback(map: EvidenceMap | null, ledger: Ledger): string | null {
+  if (ledger.finished || ledger.closedThrough !== 1 || ledger.anchors.length > 0) return null;
+  const rec = ledger.slots['anchors'];
+  if (rec && rec.status !== 'unknown' && rec.status !== 'not_reached') return null;
+  const top = topGradedWork(map);
+  return top.length > 0 ? top.join('\n') : null;
 }
 
 /** Fold stored events into a ledger. Pure; the same events always give the same ledger. */
@@ -84,7 +127,7 @@ export function buildLedger(map: EvidenceMap | null, events: LedgerEvent[]): Led
       // Anchors follow the latest record until a graded_on slot is asked or recorded (or stage 2 closes);
       // then they freeze so graded_on slot ids never change. Other stage-2 questions do not freeze them.
       if (ev.record.slot === 'anchors' && (ledger.anchors.length === 0 || !anchorsFrozen(ledger))) {
-        const next = parseAnchors(ev.record);
+        const next = parseAnchors(ev.record, map);
         if (next.length > 0) ledger.anchors = next;
       }
     } else if (ev.type === 'asked') {
