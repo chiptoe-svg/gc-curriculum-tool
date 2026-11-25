@@ -55,6 +55,15 @@ function pairDiffs(xs: number[], ys: number[] | null): number[] {
   return out;
 }
 
+/**
+ * Paid-run ceiling (owner rule 2026-11-08): before EVERY paid call, refuse once spend has
+ * reached the cap, or if the largest call seen so far would cross it. A null cap = free run.
+ */
+export function mayCall(spentUsd: number, maxUsd: number | null, largestCallUsd: number): boolean {
+  if (maxUsd === null) return true;
+  return spentUsd < maxUsd && spentUsd + largestCallUsd <= maxUsd;
+}
+
 export function bloomShare(runs: DriftRun[]): number {
   const s = runs.flatMap(r => r.statements);
   return s.length ? s.filter(x => BLOOM_RE.test(x)).length / s.length : 0;

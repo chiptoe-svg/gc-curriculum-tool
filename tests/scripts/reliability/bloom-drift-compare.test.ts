@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compareRuns, type DriftRun } from '@/scripts/reliability/bloom-drift-lib';
+import { compareRuns, mayCall, type DriftRun } from '@/scripts/reliability/bloom-drift-lib';
 
 const cell = (k: number | null, u: number | null, d: number) => ({ competency: 'x', k, u, d });
 const run = (course: string, r: number, label: string, cells: DriftRun['cells'], statements: string[] = []): DriftRun =>
@@ -46,3 +46,20 @@ describe('compareRuns', () => {
     expect(r2.compared).toEqual({ oldRuns: 1, newRuns: 2, courses: 1 });
   });
 });
+
+describe('mayCall (paid-run ceiling)', () => {
+  it('allows a call while spend plus the largest call so far stays under the cap', () => {
+    expect(mayCall(0, 1.75, 0)).toBe(true);
+    expect(mayCall(1.4, 1.75, 0.3)).toBe(true);
+  });
+  it('refuses once spend reaches the cap', () => {
+    expect(mayCall(1.75, 1.75, 0.1)).toBe(false);
+  });
+  it('refuses when the largest call so far would cross the cap', () => {
+    expect(mayCall(1.5, 1.75, 0.3)).toBe(false);
+  });
+  it('a null cap means a free run: always allowed', () => {
+    expect(mayCall(99, null, 5)).toBe(true);
+  });
+});
+
