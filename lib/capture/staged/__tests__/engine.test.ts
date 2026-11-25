@@ -277,6 +277,50 @@ describe('fix round 2', () => {
   });
 });
 
+describe('fix round 3', () => {
+  it('D: settledCount stays monotonic when anchors are corrected in stage 1 and after they freeze', () => {
+    const steps: Ev[] = [
+      rec('outcomes'), ask(1, 'anchors'), rec('anchors', 'Projects'),
+      ask(1, 'anchors', 'follow_up'), rec('anchors', 'Final project\nLab reports'),
+      ask(2, 'graded_on:Final project'), rec('graded_on:Final project'), rec('anchors', 'Other'),
+    ];
+    let prev = 0;
+    const evs: Ev[] = [];
+    for (const s of steps) {
+      evs.push(s);
+      const { state, ledger } = st(evs);
+      const { settled, total } = settledCount(state, ledger);
+      expect(settled / total).toBeGreaterThanOrEqual(prev - 1e-9);
+      prev = settled / total;
+    }
+    expect(st(evs).ledger.anchors).toEqual(['Final project', 'Lab reports']);
+  });
+
+  it('E1: only one recap-kind turn; a second is sent back with record-the-answer advice', () => {
+    const { state, ledger } = st([{ type: 'finish' }, ask(6, 'recap', 'recap')]);
+    const r = checkTurn(state, ledger, { stage: 6, slot: 'recap', kind: 'recap' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.sendBack).toContain('Record the recap answer');
+  });
+
+  it('E1: recap follow-up is allowed once even with 5 follow-ups used, then the interview ends', () => {
+    const base: Ev[] = [...['a', 'b', 'c', 'd', 'e'].map((s) => ask(1, s, 'follow_up')), { type: 'finish' }, ask(6, 'recap', 'recap')];
+    const a = st(base);
+    expect(checkTurn(a.state, a.ledger, { stage: 6, slot: 'recap', kind: 'follow_up' }).ok).toBe(true);
+    const b = st([...base, ask(6, 'recap', 'follow_up')]);
+    expect(b.state.done).toBe(true);
+    expect(b.state.slotStatus.recap).toBe('not_reached');
+  });
+
+  it('E2: reaching the hard cap is terminal, with the recap not_reached', () => {
+    const { state } = st(counted(20));
+    expect(state.questionsAsked).toBe(20);
+    expect(state.done).toBe(true);
+    expect(state.openSlots).toEqual([]);
+    expect(state.slotStatus.recap).toBe('not_reached');
+  });
+});
+
 describe('recap slot', () => {
   it('a recap-kind turn on another slot is sent back', () => {
     const { state, ledger } = st([{ type: 'finish' }]);
@@ -323,7 +367,7 @@ describe('random legal walks', () => {
         if (step > 150 || roll < 0.6) {
           const turn = pick(legal);
           events.push({ type: 'asked', turn });
-          if (turn.kind === 'recap' || r() < 0.7) events.push(rec(turn.slot, 'a\nb'));
+          if (r() < 0.7) events.push(rec(turn.slot, 'a\nb'));
           else if (r() < 0.3) events.push({ type: 'skip', slot: turn.slot });
         } else if (roll < 0.75) {
           events.push(rec(pick(state.allSlots.filter((s) => s !== 'recap')), 'a\nb'));

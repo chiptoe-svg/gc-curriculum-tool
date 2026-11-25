@@ -90,9 +90,20 @@ describe('buildLedger', () => {
     expect(l.anchors).toEqual(['A', 'B']);
   });
 
-  it('the first anchors fix the ids; a later edit does not change them', () => {
+  it('D: an anchors correction within stage 1 updates the anchors', () => {
+    const l = buildLedger(null, [
+      { type: 'asked', turn: { stage: 1, slot: 'anchors', kind: 'question' } },
+      { type: 'record', record: rec('anchors', 'Projects') },
+      { type: 'asked', turn: { stage: 1, slot: 'anchors', kind: 'follow_up' } },
+      { type: 'record', record: rec('anchors', 'Final project\nLab reports') },
+    ]);
+    expect(l.anchors).toEqual(['Final project', 'Lab reports']);
+  });
+
+  it('D: anchors freeze once stage 2 has begun', () => {
     const l = buildLedger(null, [
       { type: 'record', record: rec('anchors', 'A\nB') },
+      { type: 'asked', turn: { stage: 2, slot: 'graded_on:A', kind: 'question' } },
       { type: 'record', record: rec('anchors', 'C') },
     ]);
     expect(l.anchors).toEqual(['A', 'B']);

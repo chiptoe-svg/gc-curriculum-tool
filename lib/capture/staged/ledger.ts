@@ -62,13 +62,25 @@ function advance(map: EvidenceMap | null, ledger: Ledger): void {
   }
 }
 
+function anchorsFrozen(ledger: Ledger): boolean {
+  return (
+    ledger.closedThrough >= 2 ||
+    ledger.asked.some((t) => t.kind !== 'answer_only' && t.stage >= 2) ||
+    Object.keys(ledger.slots).some((k) => k.startsWith('graded_on:'))
+  );
+}
+
 export function buildLedger(map: EvidenceMap | null, events: LedgerEvent[]): Ledger {
   const ledger: Ledger = { anchors: [], slots: {}, asked: [], finished: false, closedThrough: 0 };
   for (const ev of events) {
     if (ev.type === 'record') {
       ledger.slots[ev.record.slot] = ev.record;
-      // The first usable anchors fix the graded_on slot ids; a later edit must not change them.
-      if (ev.record.slot === 'anchors' && ledger.anchors.length === 0) ledger.anchors = parseAnchors(ev.record);
+      // Anchors follow the latest record until stage 2 begins (a counted turn in stage 2+, a stage closed
+      // past 1, or a graded_on record); then they freeze so graded_on slot ids never change.
+      if (ev.record.slot === 'anchors' && (ledger.anchors.length === 0 || !anchorsFrozen(ledger))) {
+        const next = parseAnchors(ev.record);
+        if (next.length > 0) ledger.anchors = next;
+      }
     } else if (ev.type === 'asked') {
       ledger.asked.push(ev.turn);
     } else if (ev.type === 'skip') {

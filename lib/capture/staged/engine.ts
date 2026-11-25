@@ -43,7 +43,7 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
     let isClosed: boolean;
     if (stage.id === 6) {
       // The close needs the recap answered; a spent stage cap alone does not skip it.
-      isClosed = isFilled(ledger.slots['recap']);
+      isClosed = isFilled(ledger.slots['recap']) || ledger.asked.some((t) => t.kind === 'follow_up' && t.slot === 'recap');
     } else {
       // Closure is event-ordered in the ledger and never reopens.
       isClosed = stage.id <= ledger.closedThrough || mustRecap;
@@ -54,7 +54,7 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
     for (const s of slots) {
       const rec = ledger.slots[s];
       if (rec) slotStatus[s] = rec.status;
-      else if (forceClose && !(stage.id === 6 && s === 'recap')) slotStatus[s] = 'not_reached';
+      else if (forceClose && !(stage.id === 6 && s === 'recap' && !isClosed)) slotStatus[s] = 'not_reached';
     }
     if (current === null && !isClosed) {
       current = stage.id;
@@ -62,6 +62,14 @@ export function engineState(map: EvidenceMap | null, ledger: Ledger): EngineStat
     }
   }
 
+  // The hard cap is terminal: nothing more can be asked, so whatever is unsettled is not_reached.
+  const capped = questionsAsked >= HARD_CAP;
+  if (capped) {
+    current = null;
+    openSlots = [];
+    for (const s of allSlots) if (slotStatus[s] === undefined) slotStatus[s] = 'not_reached';
+    for (const stg of STAGES) closed.set(stg.id, true);
+  }
   const done = current === null;
   const stage: StageId = current ?? 6;
   return {
@@ -104,6 +112,9 @@ export function checkTurn(
     return { ok: false, sendBack: 'The recap turn is about the "recap" slot only.' };
   }
   const recapAsked = ledger.asked.some((t) => t.kind === 'recap');
+  if (turn.kind === 'recap' && recapAsked) {
+    return { ok: false, sendBack: 'The recap was already asked. Record the recap answer (or mark it unknown).' };
+  }
   if (turn.kind === 'follow_up' && turn.slot === 'recap' && !recapAsked) {
     return { ok: false, sendBack: 'Ask the recap before following up on it.' };
   }
@@ -117,7 +128,7 @@ export function checkTurn(
     if (ledger.asked.some((t) => t.kind === 'follow_up' && t.slot === turn.slot)) {
       return { ok: false, sendBack: `You already used the one follow-up allowed on "${turn.slot}". Move on to the next open slot.` };
     }
-    if (state.followUpsUsed >= MAX_FOLLOW_UPS) {
+    if (state.followUpsUsed >= MAX_FOLLOW_UPS && turn.slot !== 'recap') {
       return { ok: false, sendBack: `All ${MAX_FOLLOW_UPS} follow-ups are used. Ask the next open slot instead.` };
     }
     return { ok: true };
