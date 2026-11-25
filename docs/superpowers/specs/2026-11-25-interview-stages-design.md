@@ -205,6 +205,42 @@ No Bloom wording goes in stages 1, 3 or 5; habits are outside Bloom. The whole-i
 4. Compare the pilot's profile with the existing GC 4060 profile. Then the owner decides whether to make it the default for new sessions.
 5. The old interview code stays until the new one is the default and has run for several courses.
 
+## Calls made after the builder check (my calls; the owner can overrule any)
+
+1. **What closes on materials alone.** Factual slots can close from the evidence map without a question:
+   - weights;
+   - deliverables;
+   - test and quiz formats;
+   - whether an objective has graded work;
+   - the list of assumed skills.
+
+   They appear on the map, and the instructor's confirmation or edit there settles them. Judgment slots always need an instructor answer:
+   - outcomes in the instructor's words;
+   - what separates strong from checklist work;
+   - conditions;
+   - where students must say why;
+   - what happens when work goes wrong;
+   - the threshold idea;
+   - incoming-skill status;
+   - the habits;
+   - each unevidenced objective's status.
+
+   The question for a judgment slot opens by saying what the materials show. Scoring is unchanged: synthesis already weighs materials as evidence, as it does today.
+2. **Counting questions.**
+   - A "question" is an interviewer turn that asks something, including follow-ups and the recap.
+   - The stage 4 card counts as one question.
+   - Answering the instructor's own question without asking one does not count.
+   - Stage caps are ceilings. The global cap of 20 wins: when 19 have been asked, the app goes straight to the recap, so Finish always works.
+   - Planned total is 16 (the stage table); "about 15" in Goals means 15–16.
+3. **Which interview a session uses.** A column on the session (`capture_conversations.interview_version`, default the old interview) is set when the session is created. It goes in the same migration as `capture_evidence_maps`. The pilot turns it on per session, the setting only sets the default for new sessions, and flipping the setting off never changes a session already started.
+4. **Stage 0 operation.**
+   - It runs on the interviewer's configured model (Terra today). As normal app use, it needs no benchmark approval; cost and duration are logged like other calls.
+   - If it fails, times out, or there are no readable materials, the interview starts without a map: stages ask their questions without pre-fills and say so. It never falls back to the old interview.
+   - Files added mid-interview are searchable (forced search) but don't regenerate the map or reopen filled slots.
+5. **Readiness consumers.** The plan's first rebuild task lists everything that reads `readiness` or the checklist (generate gating, UI, routes, scoring input). New sessions supply what those consumers need from the slot ledger instead, through a small adapter if needed.
+6. **If the Pi upgrade fails its checks,** the rebuild goes ahead on 1.4.0 (option B doesn't need 1.6), and the upgrade becomes a Deferred item in STATE.md.
+7. **Benchmark sequencing.** The harness and the simulated instructor are built and run on free campus models first. The two owner steps, confirming the key facts and approving the Terra run, come after that and don't block the build.
+
 ## Left to the builder
 
 - Exact slot names and the evidence-map JSON shape.
