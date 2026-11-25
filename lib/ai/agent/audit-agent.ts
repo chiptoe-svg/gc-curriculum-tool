@@ -165,6 +165,45 @@ export function renderApprovedProfileBlock(profile: { competencies: Array<{ stat
     + lines.join('\n');
 }
 
+/** Materials the AI is sent and that were read: what the digests and the material list cover, by file name. */
+export function includedMaterialsOf<M extends { fileName: string; extractionStatus: string } & Parameters<typeof isSentToAI>[0]>(materials: M[]): M[] {
+  return materials
+    .filter(m => isSentToAI(m) && m.extractionStatus === 'ok')
+    .sort((a, b) => a.fileName.localeCompare(b.fileName));
+}
+
+/** The course catalog block plus the material digests (or the material list): the start of the interviewer's first message. */
+export function renderAtRestContext(
+  course: { code: string; title: string; description: string | null; prerequisites: string | null; learningObjectives: unknown; majorProjects: unknown; skillsRequired: unknown },
+  materials: Array<{ id: string; fileName: string; digest: string | null; extractionStatus: string } & Parameters<typeof isSentToAI>[0]>,
+  view: 'digests' | 'index',
+): string {
+  const includedMaterials = includedMaterialsOf(materials);
+  const learningObjectives = (course.learningObjectives ?? []) as string[];
+  const majorProjects = (course.majorProjects ?? []) as string[];
+  const skillsRequired = (course.skillsRequired ?? []) as string[];
+
+  const catalogBlock = [
+    `Course: ${course.code} — ${course.title}`,
+    `Description: ${course.description || '(none)'}`,
+    `Prerequisites as written on the GC course sheet (may be out of date; the Clemson catalog list in the Neighboring courses brief is authoritative): ${course.prerequisites || '(none)'}`,
+    `Learning objectives: ${learningObjectives.join('; ') || '(none)'}`,
+    `Major projects: ${majorProjects.join('; ') || '(none)'}`,
+    `Declared incoming skills: ${skillsRequired.join('; ') || '(none)'}`,
+  ].join('\n');
+
+  const digestBlock = !includedMaterials.length
+    ? '(no included materials)'
+    : view === 'index'
+      ? renderMaterialIndex(includedMaterials)
+      : includedMaterials
+          .map(m => `--- ${m.fileName} (id=${m.id}) ---\n${m.digest ?? '(no digest)'}`)
+          .join('\n\n');
+  const materialsHeading = view === 'index' ? 'Material list' : 'Material digests';
+
+  return `# Course catalog\n\n${catalogBlock}\n\n# ${materialsHeading}\n\n${digestBlock}`;
+}
+
 export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgentCall> {
   const { sessionId, courseCode, userMessage, auditMode, instructorName, includePriorSessions } = input;
 
@@ -207,31 +246,8 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
 
   const history = await getSessionMessages(courseCode, sessionId);
 
-  const includedMaterials = materials
-    .filter(m => isSentToAI(m) && m.extractionStatus === 'ok')
-    .sort((a, b) => a.fileName.localeCompare(b.fileName));
-
-  const learningObjectives = (course.learningObjectives ?? []) as string[];
-  const majorProjects = (course.majorProjects ?? []) as string[];
-  const skillsRequired = (course.skillsRequired ?? []) as string[];
-
-  const catalogBlock = [
-    `Course: ${course.code} — ${course.title}`,
-    `Description: ${course.description || '(none)'}`,
-    `Prerequisites as written on the GC course sheet (may be out of date; the Clemson catalog list in the Neighboring courses brief is authoritative): ${course.prerequisites || '(none)'}`,
-    `Learning objectives: ${learningObjectives.join('; ') || '(none)'}`,
-    `Major projects: ${majorProjects.join('; ') || '(none)'}`,
-    `Declared incoming skills: ${skillsRequired.join('; ') || '(none)'}`,
-  ].join('\n');
-
-  const digestBlock = !includedMaterials.length
-    ? '(no included materials)'
-    : materialsView === 'index'
-      ? renderMaterialIndex(includedMaterials)
-      : includedMaterials
-          .map(m => `--- ${m.fileName} (id=${m.id}) ---\n${m.digest ?? '(no digest)'}`)
-          .join('\n\n');
-  const materialsHeading = materialsView === 'index' ? 'Material list' : 'Material digests';
+  const includedMaterials = includedMaterialsOf(materials);
+  const atRestHead = renderAtRestContext(course, materials, materialsView);
 
   const priorSessionsBlock = renderBriefing(composeSessionBriefing(priorSessions));
   const revisionBlock = approvedSnapshot ? renderApprovedProfileBlock(approvedSnapshot.profile) : '';
@@ -239,7 +255,7 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
   const messages: Message[] = [
     {
       role: 'user',
-      content: `# Course catalog\n\n${catalogBlock}\n\n# ${materialsHeading}\n\n${digestBlock}\n\n# Prior audit sessions (most recent)\n\n${priorSessionsBlock}\n\n# Neighboring courses\n\n${briefBlock}${revisionBlock}`,
+      content: `${atRestHead}\n\n# Prior audit sessions (most recent)\n\n${priorSessionsBlock}\n\n# Neighboring courses\n\n${briefBlock}${revisionBlock}`,
     },
     ...history
       .filter(m => m.role === 'user' || m.role === 'assistant')

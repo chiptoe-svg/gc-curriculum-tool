@@ -22,6 +22,8 @@ export interface PiTaskInput {
   endpoint: PiEndpoint;
   /** Tool calls allowed before submit is forced (default 6). */
   maxToolCalls?: number;
+  /** Aborts the run (the agent stops; runPiTask then throws). */
+  signal?: AbortSignal;
 }
 
 export interface PiTaskResult<T> {
@@ -145,7 +147,14 @@ export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>>
     },
   });
 
-  await agent.prompt({ role: 'user', content: input.userMessage, timestamp: Date.now() } as AgentMessage);
+  const onAbort = () => agent.abort();
+  if (input.signal?.aborted) onAbort(); else input.signal?.addEventListener('abort', onAbort, { once: true });
+  try {
+    await agent.prompt({ role: 'user', content: input.userMessage, timestamp: Date.now() } as AgentMessage);
+  } finally {
+    input.signal?.removeEventListener('abort', onAbort);
+  }
+  if (input.signal?.aborted) throw new Error('pi: aborted');
   if (agent.state.errorMessage) throw new Error(`pi: ${agent.state.errorMessage} | ${trace.join(' | ')}`);
   if (!final) throw new Error(`pi: no submit after ${requests} request(s) | ${trace.join(' | ')}`);
 
