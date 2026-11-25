@@ -40,6 +40,32 @@ export const EvidenceMapSchema = z.object({
   unreadable: sublist(z.object({ file: S, note: S })),
 }) satisfies z.ZodType<EvidenceMap>;
 
+/**
+ * For the MODEL's output only (the instructor's PUT is rejected, not clamped): cut strings and lists to the
+ * limits so one long item does not discard a paid read. Returns what changed so the caller can log it.
+ */
+export function clampEvidenceMap(raw: unknown): { value: unknown; clamped: number } {
+  let clamped = 0;
+  const { string: maxStr, list: maxList, sublist: maxSub } = EVIDENCE_MAP_LIMITS;
+  const walk = (v: unknown, listMax: number): unknown => {
+    if (typeof v === 'string') {
+      if (v.length <= maxStr) return v;
+      clamped++;
+      return v.slice(0, maxStr - 1) + '…';
+    }
+    if (Array.isArray(v)) {
+      if (v.length > listMax) clamped++;
+      return v.slice(0, listMax).map(x => walk(x, maxSub));
+    }
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x, maxSub)]));
+    return v;
+  };
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { value: raw, clamped: 0 };
+  const topList = new Set(['graded_work', 'tests', 'competencies', 'assumed_skills', 'objectives']);
+  const value = Object.fromEntries(Object.entries(raw).map(([k, x]) => [k, walk(x, topList.has(k) ? maxList : maxSub)]));
+  return { value, clamped };
+}
+
 const str = { type: 'string' } as const;
 const strArr = { type: 'array', items: str } as const;
 const nullableStr = { type: ['string', 'null'] } as const;

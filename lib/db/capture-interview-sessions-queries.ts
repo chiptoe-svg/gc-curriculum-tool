@@ -67,6 +67,18 @@ export async function saveEvidenceMap(
     ));
 }
 
+/** An edited map is the instructor's final word: when its read is gone, settle the status to 'ready'. */
+export async function markEditedReady(sessionId: string): Promise<void> {
+  await db
+    .update(captureInterviewSessions)
+    .set({ mapStatus: 'ready' })
+    .where(and(
+      eq(captureInterviewSessions.sessionId, sessionId),
+      sql`${captureInterviewSessions.mapEditedAt} IS NOT NULL`,
+      sql`${captureInterviewSessions.mapStatus} <> 'ready'`,
+    ));
+}
+
 export async function saveEditedEvidenceMap(sessionId: string, map: EvidenceMap): Promise<void> {
   await db
     .update(captureInterviewSessions)

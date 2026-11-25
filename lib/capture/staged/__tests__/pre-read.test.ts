@@ -93,4 +93,17 @@ describe('runPreRead', () => {
     await runPreRead('GC 3460');
     expect(h.recordSpend).not.toHaveBeenCalled();
   });
+
+  it('clamps an over-long string from the model instead of discarding the paid read', async () => {
+    h.listMaterialsByCourse.mockResolvedValue([mat('a')]);
+    const gw = { title: 't', weight: null, deliverables: null, rubric_criteria: ['x'.repeat(5000)], source: 'c' };
+    h.runPiTask.mockResolvedValue({ value: { ...MAP, graded_work: [gw], conflicts: Array(50).fill('c') }, usdUnits: 1, ms: 1 });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const r = await runPreRead('GC 3460');
+    expect(r.status).toBe('ready');
+    expect(r.map!.graded_work[0]!.rubric_criteria[0]).toHaveLength(2000);
+    expect(r.map!.graded_work[0]!.rubric_criteria[0]!.endsWith('…')).toBe(true);
+    expect(r.map!.conflicts).toHaveLength(40);
+    expect(warn).toHaveBeenCalled();
+  });
 });

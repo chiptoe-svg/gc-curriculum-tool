@@ -5,11 +5,15 @@ import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 import { getSessionMessages, startNewSession } from '@/lib/db/capture-messages-queries';
-import { createInterviewSession, getInterviewSession, claimPreRead, saveEditedEvidenceMap, saveEvidenceMap } from '@/lib/db/capture-interview-sessions-queries';
+import { createInterviewSession, getInterviewSession, claimPreRead, markEditedReady, saveEditedEvidenceMap, saveEvidenceMap } from '@/lib/db/capture-interview-sessions-queries';
 import { runPreRead, materialsFingerprint, PRE_READ_STALE_MS } from '@/lib/capture/staged/pre-read';
 import { EvidenceMapSchema } from '@/lib/capture/staged/evidence-map';
 import { includedMaterialsOf } from '@/lib/ai/agent/audit-agent';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
+
+/** A pending read older than the timeout plus a minute died without saving. */
+const readInFlight = (row: { mapStatus: string; mapStartedAt: Date | null }) =>
+  row.mapStatus === 'pending' && !!row.mapStartedAt && Date.now() - new Date(row.mapStartedAt).getTime() <= PRE_READ_STALE_MS;
 
 const MAX_BODY_BYTES = 256 * 1024;
 
@@ -56,6 +60,12 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
   const row = sessionId ? await getInterviewSession(sessionId) : null;
   if (!row || row.courseCode !== g.courseCode) return NextResponse.json({ error: 'session not found' }, { status: 404 });
 
+  // An edited row whose read died must not stay pending: the edit is final.
+  if (row.mapEditedAt && row.mapStatus === 'pending' && !readInFlight(row)) {
+    await markEditedReady(sessionId);
+    return NextResponse.json({ sessionId, map: row.map, status: 'ready' });
+  }
+
   // Read again when the materials changed before the interview started, or a read died (pending too long).
   // The claim is atomic, so polls and tabs during a read never start a second one; an edited map is never re-read.
   if (!row.mapEditedAt) {
@@ -94,5 +104,8 @@ export async function PUT(req: Request, { params }: RouteContext): Promise<Respo
   const row = await getInterviewSession(body.sessionId);
   if (!row || row.courseCode !== g.courseCode) return NextResponse.json({ error: 'session not found' }, { status: 404 });
   await saveEditedEvidenceMap(body.sessionId, parsed.data);
-  return NextResponse.json({ sessionId: body.sessionId, map: parsed.data, status: row.mapStatus });
+  // A read still in flight settles the status when it saves; otherwise nothing will, so do it now.
+  let status = row.mapStatus;
+  if (!readInFlight(row)) { await markEditedReady(body.sessionId); status = 'ready'; }
+  return NextResponse.json({ sessionId: body.sessionId, map: parsed.data, status });
 }

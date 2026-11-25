@@ -78,4 +78,18 @@ describe.skipIf(!SCRATCH)('capture-interview-sessions-queries (scratch database)
     // an edited row is never claimed
     expect(await q.claimPreRead(id)).toBe(false);
   });
+
+  it('markEditedReady settles only edited rows', async () => {
+    const { db } = await import('@/lib/db/client');
+    const { captureInterviewSessions } = await import('@/lib/db/schema');
+    const { eq } = await import('drizzle-orm');
+    const q = await import('@/lib/db/capture-interview-sessions-queries');
+    const id = crypto.randomUUID();
+    await q.createInterviewSession({ sessionId: id, courseCode: code });
+    await q.markEditedReady(id);
+    expect((await q.getInterviewSession(id))?.mapStatus).toBe('pending'); // unedited: untouched
+    await db.update(captureInterviewSessions).set({ mapEditedAt: new Date() }).where(eq(captureInterviewSessions.sessionId, id));
+    await q.markEditedReady(id);
+    expect((await q.getInterviewSession(id))?.mapStatus).toBe('ready');
+  });
 });

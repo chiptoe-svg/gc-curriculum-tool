@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const h = vi.hoisted(() => ({
   auth: vi.fn(), rate: vi.fn(), cap: vi.fn(), runPreRead: vi.fn(), createSession: vi.fn(), getSession: vi.fn(),
-  saveMap: vi.fn(), claim: vi.fn(), saveEdited: vi.fn(), messages: vi.fn(), materials: vi.fn(),
+  saveMap: vi.fn(), claim: vi.fn(), markReady: vi.fn(), saveEdited: vi.fn(), messages: vi.fn(), materials: vi.fn(),
 }));
 vi.mock('@/lib/sandbox/access', () => ({ authorizeCourseWrite: h.auth }));
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({ checkIpRateLimit: h.rate }));
@@ -12,7 +12,7 @@ vi.mock('@/lib/db/courses-queries', () => ({ getCourseByCode: vi.fn().mockResolv
 vi.mock('@/lib/db/capture-messages-queries', () => ({ startNewSession: () => 'sess-1', getSessionMessages: h.messages }));
 vi.mock('@/lib/db/course-materials-queries', () => ({ listMaterialsByCourse: h.materials }));
 vi.mock('@/lib/db/capture-interview-sessions-queries', () => ({
-  createInterviewSession: h.createSession, getInterviewSession: h.getSession, saveEvidenceMap: h.saveMap, claimPreRead: h.claim, saveEditedEvidenceMap: h.saveEdited,
+  createInterviewSession: h.createSession, getInterviewSession: h.getSession, saveEvidenceMap: h.saveMap, claimPreRead: h.claim, markEditedReady: h.markReady, saveEditedEvidenceMap: h.saveEdited,
 }));
 vi.mock('@/lib/capture/staged/pre-read', async (orig) => ({ ...(await orig<typeof import('@/lib/capture/staged/pre-read')>()), runPreRead: h.runPreRead }));
 
@@ -161,6 +161,36 @@ describe('GET', () => {
     h.runPreRead.mockResolvedValue({ map: MAP, status: 'ready', fingerprint: 'fp' });
     await get();
     expect(h.runPreRead).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('edited rows never stay pending', () => {
+  const get = () => GET(new Request(url('&sessionId=sess-1')), ctx);
+  const old = () => new Date(Date.now() - 241_000);
+  it('GET settles an edited row whose read died (pending and stale) to ready', async () => {
+    h.getSession.mockResolvedValue(row({ mapEditedAt: new Date(), mapStatus: 'pending', mapStartedAt: old() }));
+    const res = await get();
+    expect(h.markReady).toHaveBeenCalledWith('sess-1');
+    expect((await res.json()).status).toBe('ready');
+    expect(h.runPreRead).not.toHaveBeenCalled();
+  });
+  it('GET leaves an edited row whose read is still in flight pending', async () => {
+    h.getSession.mockResolvedValue(row({ mapEditedAt: new Date(), mapStatus: 'pending' }));
+    const res = await get();
+    expect(h.markReady).not.toHaveBeenCalled();
+    expect((await res.json()).status).toBe('pending');
+  });
+  it('PUT settles the row to ready when no read is in flight (failed, or pending but stale)', async () => {
+    h.getSession.mockResolvedValueOnce(row({ mapStatus: 'failed', map: null }));
+    expect((await (await PUT(json('PUT', { sessionId: 'sess-1', map: MAP }), ctx)).json()).status).toBe('ready');
+    h.getSession.mockResolvedValueOnce(row({ mapStatus: 'pending', mapStartedAt: old() }));
+    expect((await (await PUT(json('PUT', { sessionId: 'sess-1', map: MAP }), ctx)).json()).status).toBe('ready');
+    expect(h.markReady).toHaveBeenCalledTimes(2);
+  });
+  it('PUT leaves a fresh pending read pending (its save will settle it)', async () => {
+    h.getSession.mockResolvedValueOnce(row({ mapStatus: 'pending' }));
+    expect((await (await PUT(json('PUT', { sessionId: 'sess-1', map: MAP }), ctx)).json()).status).toBe('pending');
+    expect(h.markReady).not.toHaveBeenCalled();
   });
 });
 

@@ -7,7 +7,7 @@ import { loadSkill } from '@/lib/ai/skills/load-skill';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { recordSpend } from '@/lib/rate-limit/daily-cap';
-import { EvidenceMapJsonSchema, EvidenceMapSchema, type EvidenceMap } from './evidence-map';
+import { EvidenceMapJsonSchema, EvidenceMapSchema, clampEvidenceMap, type EvidenceMap } from './evidence-map';
 
 export type PreReadResult = { map: EvidenceMap | null; status: 'ready' | 'failed' | 'none'; fingerprint: string | null };
 
@@ -53,7 +53,9 @@ export async function runPreRead(courseCode: string): Promise<PreReadResult> {
       });
       console.info(`[pre-read] ${courseCode}: ${r.ms} ms, ${r.usdUnits} spend units`);
       await recordSpend(r.usdUnits).catch(err => console.error(`[pre-read] ${courseCode}: recordSpend failed`, err));
-      return { map: EvidenceMapSchema.parse(r.value), status: 'ready', fingerprint };
+      const { value, clamped } = clampEvidenceMap(r.value);
+      if (clamped) console.warn(`[pre-read] ${courseCode}: clamped ${clamped} over-limit string/list value(s) in the model's map`);
+      return { map: EvidenceMapSchema.parse(value), status: 'ready', fingerprint };
     } finally {
       clearTimeout(timer);
     }
