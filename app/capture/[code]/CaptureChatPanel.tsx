@@ -350,8 +350,14 @@ export function CaptureChatPanel({
     if (busy) return;
     await postChat(messages, undefined, { finish: true });
   }
-  // Staged: once the recap turn is out, the same button generates the profile.
-  const recapDone = staged && stagedBlock?.kind === 'recap';
+  // Staged: once the recap turn is out, the same button generates the profile. Keyed on stage state, not
+  // only the last kind: after the recap is answered the next reply is answer_only (or a recap follow_up), and
+  // the button must not fall back to Finish (final-review C1).
+  const recapDone = staged && stagedBlock != null && (
+    stagedBlock.kind === 'recap'
+    || stagedBlock.slotAsked === 'recap'
+    || (stagedBlock.stageProgress.length > 0 && stagedBlock.stageProgress.every(p => p.status === 'done'))
+  );
   const showStageBar = staged && stagedBlock != null;
 
   function appendTranscript(text: string) {

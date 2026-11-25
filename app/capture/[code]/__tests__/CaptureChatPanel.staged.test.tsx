@@ -99,6 +99,41 @@ describe('CaptureChatPanel — staged interview', () => {
     expect(onGenerate).toHaveBeenCalled();
   });
 
+  const allDone = (over: Partial<AuditStagedBlock> = {}) => block(6, {
+    stageProgress: TITLES.map((title, i) => ({ id: (i + 1) as 1 | 2 | 3 | 4 | 5 | 6, title, status: 'done' as const })),
+    ...over,
+  });
+
+  it('final-fix C1: recap answered → an answer_only reply keeps Generate Profile and hides Skip', async () => {
+    const f = vi.fn(async () => chatStream(allDone({ kind: 'answer_only', slotAsked: 'habits', questionsAsked: 15 })));
+    vi.stubGlobal('fetch', f);
+    renderPanel({ initialStaged: block(6, { kind: 'recap', slotAsked: 'recap' }) });
+    fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'Yes, that is right.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(f).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Generate Profile' })).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: 'Finish the interview' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Skip this question' })).toBeNull();
+  });
+
+  it('final-fix C1: a follow_up on the recap still shows Generate Profile', () => {
+    renderPanel({ initialStaged: block(6, { kind: 'follow_up', slotAsked: 'recap' }) });
+    expect(screen.getByRole('button', { name: 'Generate Profile' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Skip this question' })).toBeNull();
+  });
+
+  it('final-fix C1: an answer_only reply after every stage is done (reload) shows Generate Profile', () => {
+    renderPanel({ initialStaged: allDone({ kind: 'answer_only', slotAsked: 'objectives' }) });
+    expect(screen.getByRole('button', { name: 'Generate Profile' })).toBeInTheDocument();
+  });
+
+  it('final-fix: cap-recap (question 20 is the recap) → Generate Profile', () => {
+    const { onGenerate } = renderPanel({ initialStaged: block(3, { kind: 'recap', slotAsked: 'recap', questionsAsked: 20 }) });
+    expect(screen.queryByRole('button', { name: 'Finish the interview' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Generate Profile' }));
+    expect(onGenerate).toHaveBeenCalled();
+  });
+
   it('moves the stage bar when a reply carries a new stage', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => chatStream(block(3, { slotAsked: 'revision' }))));
     renderPanel();

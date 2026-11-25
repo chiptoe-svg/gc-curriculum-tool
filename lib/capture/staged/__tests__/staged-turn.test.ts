@@ -37,7 +37,7 @@ vi.mock('@/lib/ai/agent/pi/turn', () => ({ runPiTurn }));
 vi.mock('@/lib/ai/agent/pi/endpoint', () => ({ piEndpointFor: async () => ({ baseUrl: 'http://x', apiKey: 'k', model: 'cub', api: 'openai-completions' }) }));
 vi.mock('@/lib/rate-limit/daily-cap', () => ({ recordSpend: vi.fn(async () => {}) }));
 
-import { runStagedTurn, streamStagedInterview, ledgerEventsFromTranscript, leadNotesFromTranscript } from '../staged-turn';
+import { runStagedTurn, streamStagedInterview, ledgerEventsFromTranscript, leadNotesFromTranscript, INTERVIEW_FINISHED } from '../staged-turn';
 import { buildLedger, type LedgerEvent } from '../ledger';
 import { exhaust } from './helpers';
 import type { InterviewSessionRow } from '@/lib/db/capture-interview-sessions-queries';
@@ -187,6 +187,31 @@ describe('runStagedTurn', () => {
     expect(db.rows.map(r => [r.role, r.turnIndex])).toEqual([['assistant', 0], ['assistant', 1]]);
     expect(calls[1]!.messages.at(-1)).toMatchObject({ role: 'user' });
     expect(lastStaged()).toMatchObject({ kind: 'recap', finishRequested: true });
+  });
+
+  it('final-fix C1: Finish after the interview is finished, with no message → no model call, no row, a refusal', async () => {
+    steps.push({ submit: { slot_asked: 'recap', kind: 'recap' } });
+    await turn(undefined, { finish: true });
+    steps.push({ submit: { say: 'Thank you.', slot_asked: 'recap', kind: 'answer_only' } });
+    await turn('Yes, that is right.');
+    const rowsBefore = db.rows.length;
+    const callsBefore = runPiTurn.mock.calls.length;
+    await expect(turn(undefined, { finish: true })).rejects.toThrow(INTERVIEW_FINISHED);
+    expect(runPiTurn.mock.calls.length).toBe(callsBefore);
+    expect(db.rows.length).toBe(rowsBefore);
+    // The stream carries the refusal as its error message (the panel shows it), not a "Begin…" turn.
+    const events = [];
+    for await (const e of streamStagedInterview({ sessionId: SID, courseCode: 'GC 4060', auditMode: 'full', finish: true }, session)) events.push(e);
+    expect(events.at(-1)).toEqual({ kind: 'error', message: INTERVIEW_FINISHED });
+    expect(runPiTurn.mock.calls.length).toBe(callsBefore);
+  });
+
+  it('final-fix C1: Finish while the recap is shown but unanswered → no second model call', async () => {
+    steps.push({ submit: { slot_asked: 'recap', kind: 'recap' } });
+    await turn(undefined, { finish: true });
+    const callsBefore = runPiTurn.mock.calls.length;
+    await expect(turn(undefined, { finish: true })).rejects.toThrow(INTERVIEW_FINISHED);
+    expect(runPiTurn.mock.calls.length).toBe(callsBefore);
   });
 
   it('a second finish is not stored twice', async () => {

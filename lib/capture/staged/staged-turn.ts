@@ -55,6 +55,8 @@ export function isSkipMessage(text: string | null | undefined): boolean {
 
 const MAX_TOOL_CALLS = 6;
 export const WRONG_COURSE = 'session does not belong to this course';
+/** The refusal for Finish on a finished interview (final-review C1); shown to the instructor as is. */
+export const INTERVIEW_FINISHED = 'The interview is finished. Use Generate Profile to build the profile.';
 export const COUNTED_WITHOUT_QUESTION = 'A counted turn needs its question in `question`. Answer in `say` and put the next open question in `question`.';
 const RECENT_MESSAGES = 6;
 const RECAP_SUMMARY_MAX = 500;
@@ -175,6 +177,14 @@ export async function runStagedTurn(
   const before = await getSessionMessages(courseCode, sessionId);
   if (!userMessage && before.length > 0 && !input.finish) {
     throw new Error('runStagedTurn: userMessage required when continuing an existing session');
+  }
+  // Finish with no message once the interview is already finished (or done) is refused before any model call or
+  // stored row (final-review C1): there is nothing left to ask, and running the turn would push "Begin the
+  // interview now…" into a finished interview. Chosen over a no-op reply because a reply would add a duplicate
+  // assistant message in the panel; the stream carries this as its error text, which the panel shows.
+  if (!userMessage && input.finish) {
+    const prior = buildLedger(map, ledgerEventsFromTranscript(before));
+    if (prior.finished || engineState(map, prior).done) throw new Error(INTERVIEW_FINISHED);
   }
   if (userMessage) {
     await appendMessage({ sessionId, courseCode, turnIndex: before.length, role: 'user', content: userMessage, instructorName: instructorName ?? null });
