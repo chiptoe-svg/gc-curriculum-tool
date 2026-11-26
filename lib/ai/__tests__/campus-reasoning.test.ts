@@ -8,8 +8,8 @@ describe('campusReasoningParams', () => {
     expect(campusReasoningParams('glm-5.3', undefined)).toEqual({});
   });
 
-  it('turns thinking off through the chat template for GLM, Qwen3.8 and DeepSeek', () => {
-    for (const m of ['glm-5.3', 'qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017']) {
+  it('turns thinking off through the chat template for Qwen3.8 and DeepSeek', () => {
+    for (const m of ['qwen3.8-27b-fp8', 'deepseek-v4.1-flash-1017']) {
       expect(campusReasoningParams(m, 'off')).toEqual({ chat_template_kwargs: { enable_thinking: false } });
     }
   });
@@ -29,6 +29,13 @@ describe('campusReasoningParams', () => {
     expect(campusReasoningParams('qwen3.8-27b-fp8', 'low')).toEqual({
       chat_template_kwargs: { enable_thinking: true, reasoning_effort: 'low' },
     });
+  });
+
+  // Task 9c probe (2026-11-25, RCD): glm-5.3 ignores every "off" form tried (chat_template_kwargs enable_thinking /
+  // thinking false, thinking.type disabled, reasoning_effort none or minimal, /nothink); 'low' is its lightest setting.
+  it('refuses GLM "off" with a clear error instead of sending a form the endpoint ignores', () => {
+    expect(() => campusReasoningParams('glm-5.3', 'off')).toThrow(/GLM.*cannot turn thinking off.*low/i);
+    expect(campusReasoningParams('glm-5.3', 'low')).toEqual({ reasoning_effort: 'low' });
   });
 
   it('refuses a level the model does not accept instead of guessing', () => {
@@ -67,7 +74,7 @@ describe('CampusProvider sends the reasoning setting on every request', () => {
     create
       .mockResolvedValueOnce({ choices: [{ message: { role: 'assistant', content: 'done' } }], usage: {} })
       .mockResolvedValueOnce({ choices: [{ message: { content: '{"a":1}' } }], usage: {} });
-    const p = new CampusProvider('glm-5.3', 'http://x', 'k', { reasoning: 'off' });
+    const p = new CampusProvider('deepseek-v4.1-flash-1017', 'http://x', 'k', { reasoning: 'off' });
     await p.completeWithTools({ systemPrompt: 's', messages: [{ role: 'user', content: 'u' }], tools: [], schemaName: 'n', jsonSchema: {}, validate: (r) => r });
     expect(create).toHaveBeenCalledTimes(2);
     for (const call of create.mock.calls) {

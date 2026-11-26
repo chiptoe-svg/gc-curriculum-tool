@@ -36,8 +36,14 @@ const CAMPUS_REASONING_FAMILIES: Array<{
   match: RegExp;
   levels: CampusReasoning[];
   wire: 'top-level' | 'template';
+  /** Why 'off' is refused, for a family whose endpoint ignores every off form probed. */
+  noOff?: string;
 }> = [
-  { name: 'GLM', match: /glm/i, levels: ['off', 'low', 'medium', 'high'], wire: 'top-level' },
+  // 2026-11-25 probe (Task 9c): glm-5.3 on RCD ignored chat_template_kwargs { enable_thinking: false } and every
+  // other off form tried (thinking false, thinking.type disabled, reasoning_effort none/minimal, /nothink);
+  // reasoning_effort low cut reasoning to 0-18 tokens. So 'off' is refused rather than silently ignored.
+  { name: 'GLM', match: /glm/i, levels: ['low', 'medium', 'high'], wire: 'top-level',
+    noOff: 'the RCD endpoint ignores every thinking-off field probed (2026-11-25); use "low", its lightest setting' },
   { name: 'DeepSeek', match: /deepseek/i, levels: ['off', 'low', 'high', 'xhigh', 'max'], wire: 'top-level' },
   { name: 'gpt-oss', match: /gpt-?oss/i, levels: ['low', 'medium', 'high'], wire: 'top-level' },
   { name: 'Qwen3.8', match: /qwen3\.8/i, levels: ['off', 'low', 'medium', 'xhigh'], wire: 'template' },
@@ -55,6 +61,9 @@ export function campusReasoningParams(model: string, level: CampusReasoning | un
   }
   const family = CAMPUS_REASONING_FAMILIES.find(f => f.match.test(model));
   if (!family) throw new Error(`No known reasoning setting for campus model "${model}"`);
+  if (level === 'off' && family.noOff) {
+    throw new Error(`${family.name} (${model}) cannot turn thinking off: ${family.noOff}`);
+  }
   if (!family.levels.includes(level)) {
     throw new Error(`${family.name} (${model}) does not accept reasoning level "${level}"; it accepts ${family.levels.join(', ')}`);
   }
