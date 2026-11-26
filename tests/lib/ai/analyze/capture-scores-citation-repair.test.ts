@@ -20,6 +20,16 @@ const transcript = [
 ] as unknown as Row[];
 
 describe('repairCitationProvenance', () => {
+  it('Task 9c: drops a chunk citation that names a whole material from the evidence map (material:<id>), keeping real chunks', () => {
+    const raw = { source: 'materials', citations: [
+      { type: 'chunk', chunkId: 'material:3f1c', excerpt: 'from the digest' },
+      { type: 'chunk', chunkId: 'chunk-real-1', excerpt: 'a passage' },
+    ] };
+    const { profile, dropped } = repairCitationProvenance(raw, transcript);
+    expect((profile as { citations: Array<{ chunkId: string }> }).citations.map(c => c.chunkId)).toEqual(['chunk-real-1']);
+    expect(dropped).toBe(1);
+  });
+
   it('resolves a synthetic `user_3` instructor citation to the real message id (the issue #4 case)', () => {
     const raw = { citations: [{ type: 'instructor', messageId: 'user_3', excerpt: 'we build weekly design decks' }] };
     const { profile, repaired, dropped } = repairCitationProvenance(raw, transcript);

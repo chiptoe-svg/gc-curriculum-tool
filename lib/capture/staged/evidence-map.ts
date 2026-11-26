@@ -16,6 +16,11 @@ export type EvidenceMap = {
 // EvidenceMapJsonSchema: whether OpenAI strict mode accepts maxLength/maxItems is unverified here.
 // assumedSkills: the stage-4 card asks about every assumed skill and the stage-4 skill names every one, so the
 // map holds at most 12 (final-review 5): one limit, enforced on the model's map (clamp) and the instructor's PUT.
+/** A `source` that names a whole material (its digest), not a chunk: `material:<material id>` (Task 9c). Never a
+ *  citable chunk id: the chunk viewer and revision provenance resolve chunk ids only. */
+export const MATERIAL_SOURCE_PREFIX = 'material:';
+export const isMaterialSource = (source: string): boolean => source.startsWith(MATERIAL_SOURCE_PREFIX);
+
 export const EVIDENCE_MAP_LIMITS = { string: 2000, list: 60, sublist: 40, assumedSkills: 12 } as const;
 const S = z.string().max(EVIDENCE_MAP_LIMITS.string);
 const list = <T extends z.ZodType>(t: T) => z.array(t).max(EVIDENCE_MAP_LIMITS.list);

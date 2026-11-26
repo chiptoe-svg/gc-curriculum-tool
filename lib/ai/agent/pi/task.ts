@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { renderToolDescription, type ToolDefinition } from '@/lib/ai/tool-use-types';
 import { isCampusModel } from '@/lib/ai/models';
 import { costCredits, costUsdCents, type TokenCounts } from '@/lib/ai/prices';
-import { PI_MAX_TOKENS, PI_TEMPERATURE, piReasoningSetup, type PiEndpoint } from './turn';
+import { PI_INPUT_TOKEN_LIMIT, PI_MAX_TOKENS, PI_TEMPERATURE, piReasoningSetup, type PiEndpoint } from './turn';
 import { nullsToEmpty } from './controls';
 
 export interface PiTaskInput {
@@ -22,6 +22,9 @@ export interface PiTaskInput {
   endpoint: PiEndpoint;
   /** Tool calls allowed before submit is forced (default 6). */
   maxToolCalls?: number;
+  /** Estimated input tokens at which submit is forced (default PI_INPUT_TOKEN_LIMIT), whichever of this and
+   *  maxToolCalls comes first. Keeps the forced submit clear of the context window (Task 9c). */
+  maxInputTokens?: number;
   /** Aborts the run (the agent stops; runPiTask then throws). */
   signal?: AbortSignal;
 }
@@ -37,7 +40,7 @@ export interface PiTaskResult<T> {
   ms: number;
 }
 
-const SUBMIT_INSTRUCTION = '\n\n# How to deliver\n\nDeliver your result by calling the `submit` tool. Never write the result as plain text. Call other tools first if you need them; call `submit` last, once.';
+const submitInstruction = (maxToolCalls: number) => `\n\n# How to deliver\n\nDeliver your result by calling the \`submit\` tool. Never write the result as plain text. Call other tools first if you need them (you have about ${maxToolCalls} tool calls); call \`submit\` last, once.`;
 
 export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>> {
   const started = Date.now();
@@ -45,8 +48,10 @@ export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>>
   const { createModels, createProvider, envApiKeyAuth } = await import('@earendil-works/pi-ai');
   const { openAICompletionsApi } = await import('@earendil-works/pi-ai/api/openai-completions.lazy');
   const { openAIResponsesApi } = await import('@earendil-works/pi-ai/api/openai-responses.lazy');
+  const { estimateContextTokens } = await import('@earendil-works/pi-ai/utils/estimate');
   const { Type } = await import('typebox');
   const maxToolCalls = input.maxToolCalls ?? 6;
+  const maxInputTokens = input.maxInputTokens ?? PI_INPUT_TOKEN_LIMIT;
   const ep = input.endpoint;
   const reasoningSetup = piReasoningSetup(ep);
   const keyVar = 'PI_INTERVIEW_API_KEY';
@@ -75,6 +80,8 @@ export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>>
   let requests = 0;
   let forceSubmit = false;
   let lastRequestForced = false;
+  let inputEstimate = 0;
+  let lastStop = '';
   const trace: string[] = [];
 
   const tools: AgentTool[] = input.tools.map(def => ({
@@ -110,7 +117,7 @@ export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>>
 
   const agent = new Agent({
     initialState: {
-      systemPrompt: input.systemPrompt + SUBMIT_INSTRUCTION,
+      systemPrompt: input.systemPrompt + submitInstruction(maxToolCalls),
       model,
       thinkingLevel: reasoningSetup.piReasoning ? (ep.reasoning ?? 'off') : 'off',
       tools,
@@ -119,8 +126,12 @@ export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>>
     toolExecution: 'sequential',
     streamFn: (m, ctx, opts) => {
       requests++;
+      // Pi's own estimate (last reported usage + what was added since), the one its max_tokens clamp uses.
+      inputEstimate = estimateContextTokens(ctx as never).tokens;
       // Requests also bound the loop: calls that fail validation (or a submit that fails its schema) never reach toolCalls.
-      if (toolCalls.length >= maxToolCalls || requests > maxToolCalls + 2) forceSubmit = true;
+      // The input threshold keeps the forced submit clear of the context window: past ~170k Pi cuts max_tokens
+      // toward 1 and the reply, the forced submit included, stops at 'length' (Task 9c).
+      if (toolCalls.length >= maxToolCalls || requests > maxToolCalls + 2 || inputEstimate >= maxInputTokens) forceSubmit = true;
       lastRequestForced = forceSubmit;
       const samplingParams = {
         ...(opts?.samplingParams ?? {}),
@@ -132,7 +143,8 @@ export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>>
       return models.streamSimple(m, ctx, { ...opts, maxTokens: PI_MAX_TOKENS, ...(temperature !== undefined ? { temperature } : {}), samplingParams } as never);
     },
     finishTurn: async ({ message }) => {
-      trace.push(`req${requests}: ${message.stopReason}${message.errorMessage ? ' ' + message.errorMessage.slice(0, 160) : ''}`);
+      trace.push(`req${requests}: ${message.stopReason} in~${Math.round(inputEstimate / 1000)}k${message.errorMessage ? ' ' + message.errorMessage.slice(0, 160) : ''}`);
+      lastStop = message.stopReason;
       if (message.stopReason === 'error' || message.stopReason === 'aborted') return;
       if (final) return { action: 'end' };
       // A request that already forced submit and still produced no submit is the last one.
@@ -176,7 +188,10 @@ export async function runPiTask<T>(input: PiTaskInput): Promise<PiTaskResult<T>>
   }
   if (input.signal?.aborted) throw withUsage(new Error('pi: aborted'));
   if (agent.state.errorMessage) throw withUsage(new Error(`pi: ${agent.state.errorMessage} | ${trace.join(' | ')}`));
-  if (!final) throw withUsage(new Error(`pi: no submit after ${requests} request(s) | ${trace.join(' | ')}`));
+  if (!final) {
+    const why = lastStop === 'length' ? ': the reply was cut at the output token limit (context nearly full, or the result too long)' : '';
+    throw withUsage(new Error(`pi: no submit after ${requests} request(s)${why} | ${trace.join(' | ')}`));
+  }
 
   const { tokens, usdUnits } = usageSoFar();
   return {

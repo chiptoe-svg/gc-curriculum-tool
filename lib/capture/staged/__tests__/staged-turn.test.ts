@@ -304,6 +304,25 @@ describe('runStagedTurn', () => {
     expect(t.response.citations.map(c => c.chunkId)).toEqual(['chunk-map-1', 'chunk-searched']);
   });
 
+  it('Task 9c: a map source that names a whole material (material:<id>) is not a citable chunk id', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const withMaterial: InterviewSessionRow = {
+      ...session,
+      map: { ...MAP, graded_work: [{ ...MAP.graded_work[0]!, source: 'material:mat-1' }] },
+    };
+    steps.push({
+      submit: {
+        slot_asked: 'outcomes', kind: 'question',
+        citations: [
+          { type: 'chunk', chunkId: 'material:mat-1', messageId: null, excerpt: 'digest' },
+          { type: 'chunk', chunkId: 'chunk-map-2', messageId: null, excerpt: 'map' },
+        ],
+      },
+    });
+    const t = await runStagedTurn({ sessionId: SID, courseCode: 'GC 4060', auditMode: 'full' }, withMaterial);
+    expect(t.response.citations.map(c => c.chunkId)).toEqual(['chunk-map-2']);
+  });
+
   it('the recap answer is recorded by the app when the model did not record it', async () => {
     steps.push({ submit: { slot_asked: 'recap', kind: 'recap' } });
     await turn(undefined, { finish: true });

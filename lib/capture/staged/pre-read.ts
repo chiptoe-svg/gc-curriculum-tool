@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { runPiTask } from '@/lib/ai/agent/pi/task';
 import { piEndpointFor } from '@/lib/ai/agent/pi/endpoint';
-import type { PiEndpoint } from '@/lib/ai/agent/pi/turn';
+import { PI_INPUT_TOKEN_LIMIT, type PiEndpoint } from '@/lib/ai/agent/pi/turn';
 import { buildAuditTools } from '@/lib/ai/agent/audit-tools';
 import { includedMaterialsOf, renderAtRestContext } from '@/lib/ai/agent/audit-agent';
 import { loadSkill } from '@/lib/ai/skills/load-skill';
@@ -18,6 +18,13 @@ export const PRE_READ_TIMEOUT_MS = 180_000;
 /** A 'pending' read older than this (timeout + 60 s) died without saving and may be claimed again. */
 export const PRE_READ_STALE_MS = PRE_READ_TIMEOUT_MS + 60_000;
 const READ_TOOLS = ['search_materials', 'fetch_material_section', 'list_materials'];
+/**
+ * Tool calls before submit is forced (Task 9c; the skill states the same number). The digests already give most of
+ * the map. In the campus traces a fetch added 7-21k input tokens: GC 2070 (50k first message) passed 120k input after
+ * 6 fetches and hit the window at 13; GC 4060 (17k) ran 19-22 fetches when unbounded. The input threshold is the
+ * hard backstop; 12 bounds time and paid spend on courses with small chunks.
+ */
+export const PRE_READ_MAX_TOOL_CALLS = 12;
 
 /**
  * sha256 of the sorted `id:timestamp` of the included materials. course_materials has no updated_at
@@ -54,7 +61,8 @@ export async function runPreRead(courseCode: string, opts: { endpoint?: PiEndpoi
         submitSchema: EvidenceMapJsonSchema,
         submitDescription: 'Deliver the evidence map.',
         endpoint,
-        maxToolCalls: 40,
+        maxToolCalls: PRE_READ_MAX_TOOL_CALLS,
+        maxInputTokens: PI_INPUT_TOKEN_LIMIT,
         signal: controller.signal,
       });
       console.info(`[pre-read] ${courseCode}: ${r.ms} ms, ${r.usdUnits} spend units`);

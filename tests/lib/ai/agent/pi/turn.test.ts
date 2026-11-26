@@ -180,5 +180,31 @@ describe('review fixes', () => {
     await runPiTurn(input({ requireSearchFirst: false }));
     expect(bodies[0]!.tool_choice).toBe('required');
   });
+
+  // Task 9c: the same context guard as runPiTask. Large fetches can fill the window before the tool budget runs out.
+  it('forces submit_turn once the input estimate passes the threshold, before the tool budget', async () => {
+    const forced = (b: Body) => JSON.stringify(b.tool_choice) === JSON.stringify({ type: 'function', function: { name: 'submit_turn' } });
+    let n = 0;
+    script = Array.from({ length: 8 }, () => (b: Body) => {
+      n++;
+      const u = { prompt_tokens: n * 70_000, completion_tokens: 100, prompt_tokens_details: { cached_tokens: 0 } };
+      if (Number(b.max_completion_tokens ?? b.max_tokens ?? 0) < 1000) return [
+        { choices: [{ index: 0, delta: { role: 'assistant', content: '{' } }] },
+        { choices: [{ index: 0, delta: {}, finish_reason: 'length' }], usage: u },
+      ];
+      const [name, args] = forced(b) ? ['submit_turn', reply()] : ['search_materials', { query: `q${n}` }];
+      return [
+        { choices: [{ index: 0, delta: { role: 'assistant', tool_calls: [{ index: 0, id: `c${n}`, type: 'function', function: { name, arguments: '' } }] } }] },
+        { choices: [{ index: 0, delta: { tool_calls: [{ index: 0, function: { arguments: JSON.stringify(args) } }] } }] },
+        { choices: [{ index: 0, delta: {}, finish_reason: 'tool_calls' }], usage: u },
+      ];
+    });
+    const r = await runPiTurn(input({ maxToolCalls: 6 }));
+    expect(r.value.question).toBe('Do students get feedback before the final menu?');
+    // 70k, 140k reported: request 3 is forced (estimate >= 120k), well before the 6-call budget.
+    expect(bodies.length).toBe(3);
+    expect(forced(bodies[2]!)).toBe(true);
+    expect(Number(bodies[2]!.max_completion_tokens ?? bodies[2]!.max_tokens)).toBeGreaterThanOrEqual(1000);
+  });
 });
 

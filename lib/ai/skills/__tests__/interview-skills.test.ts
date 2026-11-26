@@ -143,6 +143,14 @@ describe('interview skills: fix round 1', () => {
     expect(body).toMatch(/only `conflicts` name chunk ids/i);
   });
 
+  it('Task 9c: the pre-read states its search budget and lets a file summary be cited by material id', () => {
+    const body = loadSkill('interview-pre-read').body;
+    expect(body).toMatch(/You have about \d+ searches/);
+    expect(body).toMatch(/search only for what they don't show/i);
+    expect(body).not.toMatch(/until you have covered/i);
+    expect(body).toContain('`material:`');
+  });
+
   it('no quoted instructor-facing question says "slot"', () => {
     for (const name of ALL_SKILLS) {
       for (const line of rawFile(name).split('\n')) {

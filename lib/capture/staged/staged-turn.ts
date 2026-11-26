@@ -25,7 +25,7 @@ import { citableFromHistory, keepValidCitations, repairCitations } from '@/lib/a
 import { piEndpointFor } from '@/lib/ai/agent/pi/endpoint';
 import { runPiTurn, type PiEndpoint, type PiTurnResult } from '@/lib/ai/agent/pi/turn';
 import type { Message, StreamEvent, ToolCall } from '@/lib/ai/tool-use-types';
-import type { EvidenceMap } from './evidence-map';
+import { isMaterialSource, type EvidenceMap } from './evidence-map';
 import { buildLedger, type AskedTurn, type Ledger, type LedgerEvent } from './ledger';
 import { checkTurn, engineState, type EngineState } from './engine';
 import type { StagedKind } from './staged-tools';
@@ -147,10 +147,11 @@ function transcriptMessages(rows: Array<CaptureMessageRow & { id?: string }>): M
       : { role: 'user', content: `[messageId=${r.id ?? ''}]\n${r.content ?? ''}` }));
 }
 
-/** Chunk ids the evidence map cites (`source` fields): citable in every staged turn (decision 10). */
+/** Chunk ids the evidence map cites (`source` fields): citable in every staged turn (decision 10). A
+ *  `material:<id>` source names a whole file's digest, not a chunk, so it is not citable (Task 9c). */
 function mapChunkIds(map: EvidenceMap | null): string[] {
   if (!map) return [];
-  return [...map.graded_work, ...map.tests, ...map.assumed_skills].map(x => x.source).filter(Boolean);
+  return [...map.graded_work, ...map.tests, ...map.assumed_skills].map(x => x.source).filter(s => s && !isMaterialSource(s));
 }
 
 export interface StagedTurnOutcome {

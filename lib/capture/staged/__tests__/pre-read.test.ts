@@ -12,7 +12,8 @@ vi.mock('@/lib/ai/agent/audit-tools', () => ({
 }));
 vi.mock('@/lib/rate-limit/daily-cap', () => ({ recordSpend: h.recordSpend }));
 
-import { runPreRead, materialsFingerprint } from '../pre-read';
+import { runPreRead, materialsFingerprint, PRE_READ_MAX_TOOL_CALLS } from '../pre-read';
+import { PI_INPUT_TOKEN_LIMIT } from '@/lib/ai/agent/pi/turn';
 import { EvidenceMapSchema } from '../evidence-map';
 
 const mat = (id: string, extra: Record<string, unknown> = {}) => ({
@@ -81,6 +82,18 @@ describe('runPreRead', () => {
     const r = await runPreRead('GC 3460', { endpoint: ep });
     expect(h.runPiTask.mock.calls[0]![0].endpoint).toEqual(ep);
     expect(r.usdUnits).toBe(55);
+  });
+
+  it('Task 9c: forces submit at 12 tool calls or at the input-token threshold, whichever comes first', async () => {
+    h.listMaterialsByCourse.mockResolvedValue([mat('a')]);
+    h.runPiTask.mockResolvedValue({ value: MAP, usdUnits: 1, ms: 1 });
+    await runPreRead('GC 3460');
+    const call = h.runPiTask.mock.calls[0]![0];
+    expect(PRE_READ_MAX_TOOL_CALLS).toBe(12);
+    expect(call.maxToolCalls).toBe(PRE_READ_MAX_TOOL_CALLS);
+    expect(call.maxInputTokens).toBe(PI_INPUT_TOKEN_LIMIT);
+    // The skill tells the model the same budget it is held to.
+    expect(call.systemPrompt).toContain(`about ${PRE_READ_MAX_TOOL_CALLS} searches`);
   });
 
   it('defaults to the live setting endpoint', async () => {

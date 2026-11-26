@@ -9,7 +9,7 @@ import {
 import { withDerivedCompetencySources } from '@/lib/ai/synthesis/source-derivation';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { buildCaptureChatUserMessage } from '@/lib/ai/analyze/capture-chat';
-import type { EvidenceMap } from '@/lib/capture/staged/evidence-map';
+import { isMaterialSource, type EvidenceMap } from '@/lib/capture/staged/evidence-map';
 import type { Ledger } from '@/lib/capture/staged/ledger';
 import { engineState } from '@/lib/capture/staged/engine';
 import { STAGES } from '@/lib/capture/staged/stages';
@@ -500,7 +500,8 @@ function buildTurnResolver(transcript: CaptureMessageRow[]): (synthId: string) =
 }
 
 function isValidCitation(c: Record<string, unknown>): boolean {
-  if (c.type === 'chunk') return typeof c.chunkId === 'string' && c.chunkId.length > 0;
+  // A map `material:<id>` source names a whole file, not a chunk: no chunk link can open it (Task 9c).
+  if (c.type === 'chunk') return typeof c.chunkId === 'string' && c.chunkId.length > 0 && !isMaterialSource(c.chunkId);
   if (c.type === 'instructor') {
     return typeof c.messageId === 'string' && (CIT_FULL_UUID_RE.test(c.messageId) || CIT_SHORT_HEX_RE.test(c.messageId));
   }

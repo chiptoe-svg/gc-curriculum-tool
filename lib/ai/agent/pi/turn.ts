@@ -37,6 +37,12 @@ import {
 } from './controls';
 
 export const PI_MAX_TOKENS = 16000;
+/**
+ * Estimated input tokens at which a Pi loop forces its submit (Task 9c). The model is declared with a 200k window;
+ * Pi keeps a 15% margin and cuts max_tokens toward 1 as input nears ~170k, after which no reply fits. At 120k one
+ * more large tool result (a fetch was 7-21k tokens in the GC 4060/2070 traces) still leaves the submit 16k of output.
+ */
+export const PI_INPUT_TOKEN_LIMIT = 120_000;
 export const PI_TEMPERATURE = 0.2;
 
 export interface PiEndpoint {
@@ -122,6 +128,7 @@ export async function runPiTurn<T = AuditResponse>(input: PiTurnInput): Promise<
   const { createModels, createProvider, envApiKeyAuth } = await import('@earendil-works/pi-ai');
   const { openAICompletionsApi } = await import('@earendil-works/pi-ai/api/openai-completions.lazy');
   const { openAIResponsesApi } = await import('@earendil-works/pi-ai/api/openai-responses.lazy');
+  const { estimateContextTokens } = await import('@earendil-works/pi-ai/utils/estimate');
   const { Type } = await import('typebox');
   const maxToolCalls = input.maxToolCalls ?? 4;
   const ep = input.endpoint;
@@ -262,7 +269,8 @@ export async function runPiTurn<T = AuditResponse>(input: PiTurnInput): Promise<
     sessionId: `interview-${input.courseCode}`,
     streamFn: (m, ctx, opts) => {
       requests++;
-      if (toolCallsUsed.length >= maxToolCalls) forceSubmit = true;
+      // Tool budget, or the context guard (Task 9c): past PI_INPUT_TOKEN_LIMIT a forced submit still has output room.
+      if (toolCallsUsed.length >= maxToolCalls || estimateContextTokens(ctx as never).tokens >= PI_INPUT_TOKEN_LIMIT) forceSubmit = true;
       const forceSearch = requests === 1 && forceSearchFirst && !forceSubmit;
       if (forceSearch) controlEvents.push(`search required (${searchRule.reason ?? 'the exchange points at course files'}); forced on the first request`);
       const samplingParams = {

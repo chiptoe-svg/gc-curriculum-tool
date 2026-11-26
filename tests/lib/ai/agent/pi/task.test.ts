@@ -99,6 +99,76 @@ describe('runPiTask', () => {
     expect(r.credits).toBeGreaterThan(0);
   });
 
+  // Task 9c: the pre-read ran out of context. Each fetch added ~10-20k input tokens; near the 200k window Pi's
+  // clamp cut max_tokens to 1, the reply stopped at 'length', and the forced submit had no room either.
+  describe('context budget', () => {
+    const maxOut = (b: Body) => Number(b.max_completion_tokens ?? b.max_tokens ?? 0);
+    const forcedSubmit = (b: Body) => JSON.stringify(b.tool_choice) === JSON.stringify({ type: 'function', function: { name: 'submit' } });
+    // A model that never stops calling tools, whose context grows 30k tokens per request, and that is cut at
+    // 'length' when Pi leaves it less than 1000 output tokens (as the RCD endpoint did).
+    const greedy = (perRequest = 30_000) => {
+      let n = 0;
+      return Array.from({ length: 30 }, () => (b: Body) => {
+        n++;
+        const u = { prompt_tokens: n * perRequest, completion_tokens: 100, prompt_tokens_details: { cached_tokens: 0 } };
+        if (maxOut(b) < 1000) return [
+          { choices: [{ index: 0, delta: { role: 'assistant', content: '{' } }] },
+          { choices: [{ index: 0, delta: {}, finish_reason: 'length' }], usage: u },
+        ];
+        const name = forcedSubmit(b) ? 'submit' : 'lookup';
+        const args = name === 'submit' ? { score: 7 } : { q: `q${n}` };
+        return [
+          { choices: [{ index: 0, delta: { role: 'assistant', tool_calls: [{ index: 0, id: `c${n}`, type: 'function', function: { name, arguments: '' } }] } }] },
+          { choices: [{ index: 0, delta: { tool_calls: [{ index: 0, function: { arguments: JSON.stringify(args) } }] } }] },
+          { choices: [{ index: 0, delta: {}, finish_reason: 'tool_calls' }], usage: u },
+        ];
+      });
+    };
+
+    it('a model that never stops calling tools still ends with a submit once the input passes the threshold', async () => {
+      script = greedy();
+      const r = await runPiTask<{ score: number }>(input({ maxToolCalls: 40, maxInputTokens: 120_000 }));
+      expect(r.value).toEqual({ score: 7 });
+      expect(r.forcedSubmit).toBe(true);
+      // Requests 1-4 report 30k..120k input; request 5 (input >= 120k) is the forced submit, with full output room.
+      expect(bodies.length).toBe(5);
+      expect(forcedSubmit(bodies[4]!)).toBe(true);
+      expect(bodies.slice(0, 4).every(b => !forcedSubmit(b))).toBe(true);
+      expect(maxOut(bodies[4]!)).toBe(16000);
+    });
+
+    it('the input threshold is on by default (no caller can run into the context window)', async () => {
+      script = greedy();
+      const r = await runPiTask<{ score: number }>(input({ maxToolCalls: 40 }));
+      expect(r.value).toEqual({ score: 7 });
+      expect(r.forcedSubmit).toBe(true);
+    });
+
+    it('the tool budget forces submit first when it comes first', async () => {
+      script = greedy(1000);
+      const r = await runPiTask<{ score: number }>(input({ maxToolCalls: 12, maxInputTokens: 120_000 }));
+      expect(r.value).toEqual({ score: 7 });
+      expect(r.toolCalls).toHaveLength(12);
+      expect(forcedSubmit(bodies[12]!)).toBe(true);
+    });
+
+    it('a forced submit cut at the token limit fails with that reason', async () => {
+      // Every reply is cut at 'length' (a map longer than the output cap).
+      script = Array.from({ length: 6 }, () => () => [
+        { choices: [{ index: 0, delta: { role: 'assistant', content: '{' } }] },
+        { choices: [{ index: 0, delta: {}, finish_reason: 'length' }], usage },
+      ]);
+      await expect(runPiTask(input())).rejects.toThrow(/cut at the output token limit/);
+    });
+  });
+
+  it('the submit instruction names the tool budget', async () => {
+    script = [() => call('submit', { score: 3 })];
+    await runPiTask(input({ maxToolCalls: 12 }));
+    const sys = (bodies[0]!.messages as Array<{ role: string; content: string }>)[0]!.content;
+    expect(sys).toMatch(/about 12 tool calls/);
+  });
+
   it('throws when the model never calls submit even after forcing', async () => {
     script = [() => text('I refuse.'), () => text('Still no.'), () => text('No.'), () => text('No.'), () => text('No.'), () => text('No.')];
     await expect(runPiTask(input())).rejects.toThrow(/no submit/);
